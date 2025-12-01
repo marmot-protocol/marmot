@@ -175,7 +175,9 @@ In most cases, it's assumed that clients implementing this NIP will manage the c
 }
 ```
 
-- The `content` hex encoded serialized `KeyPackageBundle` from MLS.
+- The `content` serialized `KeyPackageBundle` from MLS, encoded in one of two formats:
+  - **Version 1 (base64)**: Prefix `v1:` followed by base64-encoded content (preferred, ~33% smaller)
+  - **Legacy (hex)**: No prefix, hex-encoded content (backward compatibility only)
 - The `mls_protocol_version` tag is required and MUST be the version number of the MLS protocol version being used. For now, this is `1.0`.
 - The `ciphersuite` tag is the value of the MLS ciphersuite that this KeyPackage Event supports. [Read more about ciphersuites in MLS](https://www.rfc-editor.org/rfc/rfc9420.html#name-mls-cipher-suites).
 - The `extensions` tag is an array of MLS extension IDs that this KeyPackage Event supports. [Read more about MLS extensions](https://www.rfc-editor.org/rfc/rfc9420.html#name-extensions).
