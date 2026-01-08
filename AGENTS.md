@@ -1,6 +1,6 @@
 # AGENTS.md (aka CLAUDE.md)
 
-A guide for AI coding agents working on the Marmot Protocol specification.
+A guide for AI coding agents working on the Marmot Protocol specification. This will work for most major AI harnesses. The `CLAUDE.md` file in this repo is a symlink to this doc.
 
 ## Project Overview
 
@@ -14,7 +14,7 @@ Marmot is a secure, decentralized group messaging protocol that combines the [ML
 
 ## Project Structure
 
-```
+```plaintext
 marmot/
 ├── README.md              # Main project overview
 ├── AGENTS.md             # This file
