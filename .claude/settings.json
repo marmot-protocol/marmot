@@ -14,17 +14,22 @@
       "Bash(diff:*)",
       "Bash(sed:*)",
       "Bash(awk:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
       "WebSearch(*)",
-      "Read(*)",
-      "Write(*)"
+      "Read(./**)",
+      "Write(./**)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
       "Bash(sudo:*)",
       "Bash(chmod +x:*)",
-      "Bash(./*)"
+      "Bash(./*)",
+      "Bash(bash:*)",
+      "Bash(sh:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./config/credentials.*)",
+      "Write(../**)"
     ]
   }
 }
