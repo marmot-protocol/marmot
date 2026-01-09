@@ -67,7 +67,8 @@ Required MIPs must be implemented for Marmot compatibility. Implementations may 
 | [MIP-01](01.md) | Group Construction & Marmot Group Data Extension | 👀 Review | ✅ Yes |
 | [MIP-02](02.md) | Welcome Events | 👀 Review | ✅ Yes |
 | [MIP-03](03.md) | Group Messages | 👀 Review | ✅ Yes |
-| [MIP-04](04.md) | Encrypted Media | 🚧 Draft | ❌ No |
+| [MIP-04](04.md) | Encrypted Media | 👀 Review | ❌ No |
+| [MIP-05](05.md) | Push Notifications | 🚧 Draft | ❌ No |
 
 
 ## Protocol Implementations
