@@ -195,6 +195,22 @@ sequenceDiagram
 - ✅ Welcome unsigned (cannot be republished)
 - ⚠️ Relay can observe timing correlation
 
+> ### State Fork Prevention
+>
+> **Why Commit confirmation before Welcome is CRITICAL:**
+>
+> The Welcome message contains the group state at epoch N+1 (the epoch created by the Commit). If the Welcome reaches the new member before the Commit reaches existing members:
+>
+> 1. New member activates at epoch N+1
+> 2. Existing members are still at epoch N
+> 3. **State fork occurs**: the new member and existing members have incompatible group states
+> 4. Messages fail to decrypt across the fork boundary
+> 5. Manual recovery (re-invitation or new group creation) is required
+>
+> Distributed relay networks can and do deliver messages out of order. The admin MUST wait for at least one relay to confirm receipt of the Commit before sending the Welcome. This is the only reliable way to prevent state forks.
+>
+> **Note**: This requirement applies to all member additions to existing groups. Initial group creation (where there are no existing members) does not have this constraint.
+
 ---
 
 ## Group Messaging Flow

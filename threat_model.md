@@ -626,14 +626,28 @@ Key packages enable asynchronous group invitations and have specific security co
   - Do NOT delete if Welcome processing fails (to allow retry)
   - Monitor relay deletion confirmations
 
-#### T.7.4 - Welcome Event Timing Race Conditions
+#### T.7.4 - Welcome Event Timing Race Conditions (State Fork Vulnerability)
 
-- **Description**: Welcome events sent before Commits are confirmed could reference stale group state.
-- **Impact**: New members might join with incorrect group state.
+- **Description**: Welcome events sent before Commits are confirmed could cause the new member to activate into an epoch that existing members haven't reached yet. This creates a **state fork** where the group splits into incompatible states.
+- **Prerequisites**: Admin sends Welcome before receiving relay confirmation of the corresponding Commit.
+- **Impact**:
+  - New member activates at epoch N+1 (from Welcome)
+  - Existing members remain at epoch N (Commit not yet delivered)
+  - **State fork**: messages fail to decrypt across the epoch boundary
+  - Group communication breaks down until manual recovery (re-invitation or new group)
+  - This is not preventable by recipients—only senders can prevent this by following proper timing
+- **Why Library-Level Prevention Is Not Feasible**:
+  - Distributed systems cannot guarantee message ordering across relay networks
+  - Blocking Welcome acceptance until Commit arrival could strand joiners indefinitely if Commit is delayed or lost
+  - The MLS specification instructs senders to follow proper ordering, not receivers to validate it
 - **Countermeasures**:
   - **CRITICAL**: Clients MUST wait for relay confirmation of Commit before sending Welcome ([MIP-02](02.md))
+  - This requirement applies to ALL member additions to existing groups (not initial group creation)
   - Ensure group state change is committed before inviting
-  - Validate Welcome against current group state
+  - Consider implementing retry logic with exponential backoff for relay confirmation
+  - **Note**: This is a sender-side requirement. Receivers cannot reliably detect or prevent this condition.
+- **Affected Components**: [MIP-02](02.md) (Timing Requirements), [MIP-03](03.md) (Commit Messages)
+- **Residual Risk**: If senders violate this requirement, state forks will occur and require manual recovery. No receiver-side mitigation is reliable.
 
 #### T.7.5 - Large Group Welcome Limitations
 
@@ -1218,11 +1232,16 @@ These requirements are CRITICAL for security and MUST be implemented correctly. 
 
 #### 3.0.2 Commit/Welcome Ordering ([MIP-02](02.md)) - CRITICAL (Correctness)
 
-**Requirement**: Clients MUST wait for relay confirmation of Commit publication before sending corresponding Welcome events.
+**Requirement**: Clients MUST wait for relay confirmation of Commit publication before sending corresponding Welcome events. This applies to ALL member additions to existing groups.
 
-- **Why Critical**: Prevents race conditions where new members receive Welcome for group state that hasn't been finalized
-- **Related Threat**: T.7.4 - Welcome Event Timing Race Conditions
-- **Specification**: See [MIP-02](02.md) (Timing Requirements)
+- **Why Critical**: Prevents **state forks** where new members activate into an epoch that existing members haven't reached. When this occurs:
+  - The new member is at epoch N+1 (from the Welcome)
+  - Existing members are at epoch N (haven't received the Commit)
+  - Messages cannot be decrypted across this boundary
+  - The group is effectively split and requires manual recovery
+- **Exception**: Initial group creation (single-member group with no prior epochs) does not require this wait because there are no existing members who could have conflicting state.
+- **Related Threat**: T.7.4 - Welcome Event Timing Race Conditions (State Fork Vulnerability)
+- **Specification**: See [MIP-02](02.md) (Timing Requirements), [MIP-03](03.md) (Commit Messages)
 
 #### 3.0.3 Ephemeral Keypair Uniqueness ([MIP-03](03.md)) - HIGH (Security Reduction)
 
@@ -1300,13 +1319,17 @@ Common mistakes that developers should avoid when implementing Marmot:
 
 **Solution**: Implement explicit validation: `credential.identity == event.pubkey`. Add test cases for mismatched credentials.
 
-#### 3.1.3 Commit/Welcome Race Conditions
+#### 3.1.3 Commit/Welcome Race Conditions (State Forks)
 
 **Pitfall**: Sending Welcome immediately after publishing Commit, without waiting for relay confirmation.
 
-**Consequences**: New members join with stale state, group desynchronization.
+**Consequences**: **State fork**—new members activate at epoch N+1 while existing members remain at epoch N. Messages cannot be decrypted across this boundary, group communication breaks down completely, and manual recovery (re-invitation or new group creation) is required.
 
-**Solution**: Implement proper async flow: publish Commit → wait for confirmation → then send Welcome. Use relay OK responses.
+**Why this happens**: Distributed relay networks can deliver messages out of order. The Welcome may reach the new member before the Commit reaches existing members, even if sent in the correct order by the admin.
+
+**Solution**: Implement proper async flow: publish Commit → wait for relay OK confirmation → then send Welcome. This is a hard requirement for ALL member additions to existing groups. Only initial group creation (no existing members) is exempt.
+
+**Testing**: Simulate delayed Commit delivery to verify your client handles this correctly. Never assume network ordering.
 
 #### 3.1.4 Inner Event Signatures
 
