@@ -125,6 +125,8 @@ sequenceDiagram
 - `nostr_group_id` is public-ish (observable by relays)
 - Extension is cryptographically authenticated
 - No data leaves client during creation
+- Initial creation Commit is applied locally only (never sent to relays)
+- This intentionally departs from MLS spec to preserve privacy—no coordination needed when creator is the only member
 
 ---
 
@@ -360,6 +362,8 @@ sequenceDiagram
 5. Members verify admin status
 6. Members process and advance epoch
 7. Race conditions handled by timestamp/ID priority
+
+**Exception - Initial Group Creation**: The very first Commit that creates a group MUST NOT be sent to relays. This initial Commit is applied locally only, establishing epoch 0. It exists purely on the creating admin's device until the first member invitation. This preserves privacy by not exposing group creation metadata to relays. The first Commit published to relays is the one adding the first member. This intentionally departs from MLS spec recommendations—since no other members exist yet, there's no risk of state divergence, and privacy benefits outweigh coordination guarantees.
 
 **Security Notes:**
 - ✅ Admin verification REQUIRED for non-self-update Commits
