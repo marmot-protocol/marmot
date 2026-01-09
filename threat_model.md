@@ -143,7 +143,7 @@ The primary trust boundaries in Marmot are:
 
 2. **Device boundary**: Each device has its own keys and must be explicitly added to groups. Device compromise affects only that device.
 
-3. **Admin privilege boundary**: Only users listed in the `admin_pubkeys` array can commit group state changes (See [MIP-01](01.md) Marmot Group Data Extension).
+3. **Admin privilege boundary**: Only users listed in the `admin_pubkeys` array can commit structural group state changes (membership, settings, extension updates). Non-admin members may only create self-update Commits to rotate their own key material (See [MIP-01](01.md) and [MIP-03](03.md)).
 
 4. **Epoch boundary**: MLS epochs provide forward secrecy and post-compromise security boundaries. Key material rotates with epoch transitions.
 
@@ -1250,9 +1250,9 @@ These requirements are CRITICAL for security and MUST be implemented correctly. 
 
 #### 3.0.6 Admin Authorization Verification ([MIP-01](01.md), [MIP-03](03.md)) - CRITICAL (Security Bypass)
 
-**Requirement**: Clients MUST verify that Commit senders are listed in the current `admin_pubkeys` array before processing any Commit.
+**Requirement**: Clients MUST verify that Commit senders are listed in the current `admin_pubkeys` array before processing any Commit, EXCEPT for self-update Commits. Self-update Commits (containing only an Update proposal for the sender's own LeafNode) MAY be processed from any member without admin verification.
 
-- **Why Critical**: Prevents unauthorized group state changes by non-admin members
+- **Why Critical**: Prevents unauthorized structural group state changes by non-admin members while allowing all members to maintain key hygiene
 - **Related Threat**: T.4.x - Admin Privilege Abuse scenarios
 - **Specification**: See [MIP-01](01.md) (Marmot Group Data Extension), [MIP-03](03.md) (Commit Messages)
 
@@ -1322,7 +1322,7 @@ Common mistakes that developers should avoid when implementing Marmot:
 
 **Consequences**: Unauthorized state changes, privilege escalation.
 
-**Solution**: Verify admin status BEFORE processing Commit, using current epoch's admin list from extension.
+**Solution**: For non-self-update Commits, verify admin status BEFORE processing, using current epoch's admin list from extension. For self-update Commits, verify the Commit contains ONLY an Update proposal for the sender's own LeafNode before processing.
 
 #### 3.1.6 TLS Serialization Edge Cases
 
@@ -1372,7 +1372,7 @@ Implementations MUST:
 - Never reuse ephemeral keypairs for Group Events
 - Keep inner events unsigned to prevent accidental public publishing
 - Rotate signing keys regularly, especially after using last resort KeyPackages
-- Verify admin status before processing Commits
+- Verify admin status before processing Commits (except self-update Commits from any member)
 - Handle Commit race conditions using timestamp/ID priority
 - Use exact TLS serialization for Marmot Group Data Extension
 - Verify file integrity after media decryption
@@ -1511,7 +1511,7 @@ Comprehensive testing is essential to ensure security requirements are properly 
 - **Credential mismatch detection**: Test that clients reject KeyPackages where MLS credential identity doesn't match event pubkey
 - **Ephemeral keypair uniqueness**: Validate that each kind: 445 event uses a unique keypair (add assertions in development)
 - **Inner event signature validation**: Verify clients reject or warn about signed inner events
-- **Admin authorization bypass**: Attempt Commits from non-admin members and verify rejection
+- **Admin authorization bypass**: Attempt non-self-update Commits from non-admin members and verify rejection; verify self-update Commits from non-admins are accepted
 - **Race condition handling**: Send simultaneous Commits and verify consistent state across clients
 
 **Attack Scenario Testing**:

@@ -303,9 +303,11 @@ sequenceDiagram
 - ✅ MLS signature authenticates proposer
 - ✅ Encrypted like application messages
 - ⚠️ Any member can create proposals
-- ✅ Only admins can commit proposals
+- ✅ Only admins can commit proposals (except self-updates)
 
-### Commit Message
+### Commit Message (Admin)
+
+Admins can create Commits that include any proposals. Non-admin members can only create self-update Commits (see Key Rotation Flow).
 
 ```mermaid
 sequenceDiagram
@@ -360,11 +362,11 @@ sequenceDiagram
 7. Race conditions handled by timestamp/ID priority
 
 **Security Notes:**
-- ✅ Admin verification REQUIRED
+- ✅ Admin verification REQUIRED for non-self-update Commits
 - ✅ Epoch advancement provides PCS
 - ✅ Timestamp ordering prevents forks
 - ⚠️ Multiple admins need coordination
-- ✅ Only authenticated admins can commit
+- ✅ Only authenticated admins can make structural changes (membership, settings)
 
 ---
 
@@ -465,6 +467,12 @@ sequenceDiagram
 
 ### Signing Key Rotation
 
+Members can rotate their signing keys via **self-update Commits** (preferred) or by creating an Update Proposal for an admin to commit.
+
+#### Self-Update Commit (Preferred)
+
+Any member can directly commit their own key update without admin involvement:
+
 ```mermaid
 sequenceDiagram
     participant M as Member Client
@@ -474,34 +482,30 @@ sequenceDiagram
 
     Note over M: Weekly rotation<br/>or after compromise
 
-    M->>MLS: Create Update Proposal<br/>with new signing key
+    M->>MLS: Create self-update Commit<br/>with new signing key
 
-    Note over M: Any member can<br/>propose own key update
+    Note over M: Any member can<br/>self-update their own key
 
-    M->>R: Publish Proposal (445)
+    M->>R: Publish Commit (445)
 
-    R->>Others: Deliver Proposal<br/>to admins
+    R-->>M: OK confirmation
 
-    Note over Others: Admin includes in<br/>next Commit
+    M->>MLS: Apply own Commit
 
-    Others->>MLS: Create Commit<br/>(includes Update)
+    R->>Others: Deliver Commit
 
-    MLS->>MLS: Advance epoch<br/>Member's new key active
+    Others->>Others: Verify Commit contains<br/>only sender's Update
 
-    Others->>R: Publish Commit (445)
-
-    R->>M: Deliver Commit
-
-    M->>MLS: Process Commit
+    Others->>MLS: Process Commit
 
     Note over M,Others: Member now using<br/>new signing key<br/>Old key invalidated
 ```
 
 **Data Flow:**
-1. Member creates Update Proposal
-2. Admin includes in Commit
-3. Epoch advances
-4. New signing key active
+1. Member creates self-update Commit (Update for own LeafNode only)
+2. Published to relays and confirmed
+3. Other members verify it's a valid self-update
+4. Epoch advances, new signing key active
 
 **Security Notes:**
 - ✅ Regular rotation limits compromise impact
