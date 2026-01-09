@@ -14,7 +14,6 @@
       "Bash(diff:*)",
       "Bash(sed:*)",
       "Bash(awk:*)",
-      "WebSearch(*)",
       "Read(./**)",
       "Write(./**)"
     ],
