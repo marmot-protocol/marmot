@@ -97,26 +97,28 @@ Standard transport kinds that the Nostr binding reuses unchanged — kind `1059`
 seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay list) — remain defined in
 [../transports/nostr.md](../transports/nostr.md).
 
-| Kind    | Name                                    | Layer                               | Document                                                                                         |
-| ------- | --------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `5`     | Author deletion (NIP-09)                | Marmot app payload                  | [application-messages.md](application-messages.md#author-deletion-kind-5)                        |
-| `9`     | Default chat message                    | Marmot app payload                  | [application-messages.md](application-messages.md)                                               |
-| `444`   | Marmot welcome rumor                    | Nostr welcome transport             | [nostr.md](../transports/nostr.md)                                                               |
-| `445`   | Marmot group message                    | Nostr group transport               | [nostr.md](../transports/nostr.md)                                                               |
-| `446`   | Push notification rumor                 | Push notification transport         | [nostr.md](../transports/nostr.md)                                                               |
-| `447`   | Push token request                      | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md)                                       |
-| `448`   | Push token list response                | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md)                                       |
-| `449`   | Push token removal                      | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md)                                       |
-| `450`   | Account identity proof v2 event         | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md)                   |
-| `451`   | Push owner proof event                  | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md)                                       |
-| `452`   | Multi-device join authorization v1      | Local signing template, not relayed | [multi-device-join-authorization-v1.md](../app-components/multi-device-join-authorization-v1.md) |
-| `1009`  | Message edit                            | Marmot app payload                  | [application-messages.md](application-messages.md)                                               |
-| `1200`  | Agent text stream start                 | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md)                             |
-| `1210`  | Group system event                      | Marmot app payload                  | [application-messages.md](application-messages.md)                                               |
-| `1984`  | Content report (NIP-56)                 | Marmot app payload                  | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1)          |
-| `1985`  | Shared report dismissal labels (NIP-32) | Marmot app payload                  | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1)          |
-| `4891`  | Admin content removal v1                | Marmot app payload                  | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1)          |
-| `30443` | Marmot KeyPackage event                 | Nostr KeyPackage publication        | [nostr.md](../transports/nostr.md)                                                               |
+| Kind    | Name                                | Layer                               | Document                                                |
+| ------- | ----------------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| `5`     | Author deletion (NIP-09)             | Marmot app payload                  | [application-messages.md](application-messages.md#author-deletion-kind-5) |
+| `9`     | Default chat message                | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `444`   | Marmot welcome rumor                | Nostr welcome transport             | [nostr.md](../transports/nostr.md)                      |
+| `445`   | Marmot group message                | Nostr group transport               | [nostr.md](../transports/nostr.md)                      |
+| `446`   | Push notification rumor             | Push notification transport         | [nostr.md](../transports/nostr.md)                      |
+| `447`   | Push token request                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
+| `448`   | Push token list response            | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
+| `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
+| `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
+| `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
+| `452`   | Multi-device join authorization v1 | Local signing template, not relayed | [multi-device-join-authorization-v1.md](../app-components/multi-device-join-authorization-v1.md) |
+| `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
+| `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `1984`  | Content report (NIP-56)              | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#reports-kind-1984) |
+| `1985`  | Report dismissal labels (NIP-32)     | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#dismissal-labels-kind-1985) |
+| `4891`  | Admin content removal v1            | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#admin-removal-kind-4891) |
+| `30443` | Marmot KeyPackage event             | Nostr KeyPackage publication        | [nostr.md](../transports/nostr.md)                      |
+
+Kind `4891` reverses the digits of reporting kind `1984`; it identifies Marmot admin removal inside MLS app payloads.
 
 The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
 chunks are transient QUIC records.
