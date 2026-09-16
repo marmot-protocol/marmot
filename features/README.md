@@ -14,6 +14,7 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 
 ## Current feature docs
 
+- [content-moderation.md](./content-moderation.md) - draft group reports, admin dismissal labels, and admin deletion.
 - [encrypted-media.md](./encrypted-media.md) - current v2 message-attached encrypted blobs.
 - [encrypted-media-v1.md](./encrypted-media-v1.md) - frozen legacy encrypted-media v1 wire behavior.
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text

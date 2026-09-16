@@ -85,6 +85,9 @@ Protocol processing MUST NOT reject an otherwise-valid app payload merely becaus
 Feature or app-payload docs define which additional kinds are protocol-required and what they mean. A client MAY ignore
 or decline to render unsupported application semantics after delivering the accepted payload to its application layer.
 
+The optional [group content moderation](../features/content-moderation.md) feature defines reports (kind `1984`),
+admin dismissal labels (kind `1985`), and admin deletion (kind `4891`).
+
 ## Message edits (kind 1009)
 
 Kind `1009` is an in-place replacement of a prior chat message's text. The edit references the original event id via a
