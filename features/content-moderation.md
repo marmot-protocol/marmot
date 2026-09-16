@@ -33,9 +33,9 @@ guarantee. This feature does not change membership or prevent an author from sen
 ## App-event interpretation
 
 The [application payload contract](../foundation/application-messages.md) owns the common six-field unsigned event
-shape and MLS sender authentication. This feature owns the following kind-specific interpretation. Report and review
-events are modifiers: clients MUST NOT render them as standalone transcript rows. Their references name Marmot app event
-ids in the same group. A chat target means an original kind-9 event, not an edit, system event, or stream-start event.
+shape and MLS sender authentication. This feature owns the following kind-specific interpretation. Events of kinds
+1984, 1985, and 4891 are modifiers: clients MUST NOT render them as standalone transcript rows. Their references name
+Marmot app event ids in the same group. A chat target means an original kind-9 event, not an edit, system event, or stream-start event.
 
 For kinds 1984, 1985, and 4891, an event that fails any stated shape, bound, type, or authorization rule MUST have no
 moderation effect. Receivers MUST NOT partially apply a malformed event. Unknown dependencies remain unresolved as
@@ -118,8 +118,10 @@ have no moderation effect.
 
 An effective removal MUST close pending review for every logical report about that message or any of its revisions.
 Reports received later MAY remain as historical records but MUST NOT reopen review or increase pending counts.
-Removal takes precedence over dismissal and later edits. Ordinary timeline, reply, search, attachment, and report-review
-surfaces MUST NOT reveal the removed message's retained content.
+Removal takes precedence over dismissal and later edits. Clients MUST NOT reveal the removed message's retained content
+in any application view, including transcripts, reply previews, search results,
+[attachments](./encrypted-media.md), and the report review described in this feature. These are client presentation
+views subject to this rule, not separate protocol surfaces.
 
 [Author deletion](../foundation/application-messages.md#author-deletion-kind-5) remains a separate path and does not grant
 non-admins kind-4891 authority. A kind-5 reference to a kind-1984 report, kind-1985 dismissal, or kind-4891 removal MUST
