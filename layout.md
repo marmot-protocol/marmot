@@ -60,6 +60,7 @@ transports/
   quic.md
 features/
   README.md
+  content-moderation.md
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md

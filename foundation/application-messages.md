@@ -196,3 +196,97 @@ The inner Marmot app event and an outer Nostr transport event are different obje
 
 When Marmot uses Nostr relays, the transport MAY wrap MLS bytes in signed or unsigned Nostr events such as kind `445` or
 NIP-59 gift wraps. Those outer events are transport envelopes. They do not replace the inner app payload.
+
+## Content reports and shared review (v1)
+
+Status: draft. The user-visible flow is [group content moderation](../features/content-moderation.md).
+This interpretation adds no group component and uses the existing admin policy. Report and review events are
+modifiers, not standalone transcript rows. Their inner references always name Marmot app event ids in the same group.
+
+### Reports (kind 1984)
+
+A report uses [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md), with one reported chat message:
+
+- Exactly one `e` tag: `["e", original_message_id, report_type]`.
+- Exactly one `p` tag naming the original message's authenticated account author.
+- At most one `revision` tag: `["revision", revision_event_id]`. Producers include this tag; absence refers to the
+  original message. A revision is either the original kind-9 event or a valid kind-1009 edit of it by the same author.
+- `content` is the reporter's UTF-8 explanation, at most 4096 bytes, preserved without Unicode normalization.
+  It may be empty except for report type `other`, which requires non-whitespace text.
+
+Ids and authors use the canonical lowercase 64-hex-character form. Supported report types are `nudity`, `malware`,
+`profanity`, `illegal`, `spam`, `impersonation`, and `other`. Unknown auxiliary tags do not change report semantics.
+An unsupported report type or malformed required field has no moderation effect.
+
+A logical report is keyed by group, original message, revision, and reporting account. Duplicate events count once;
+select their displayed details by the smallest `(created_at, id)` pair. Retrying must not create a new logical report.
+A valid dismissal referencing any duplicate resolves that logical report, including duplicates received later.
+Unknown targets and revisions remain unresolved until their authenticated dependencies are available. A mismatched
+`p` author, cross-group target, unrelated edit, or non-chat target has no moderation effect.
+
+Example kind-specific fields (the common six-field app-event encoding still applies):
+
+```json
+{"kind":1984,"tags":[["e","<original message id>","spam"],["p","<message author>"],["revision","<original or edit id>"]],"content":"Repeated unsolicited advertising"}
+```
+
+### Dismissal labels (kind 1985)
+
+A shared admin dismissal uses [NIP-32](https://github.com/nostr-protocol/nips/blob/master/32.md) to label report
+**events**, leaving the reported message available. It carries exactly one `L` tag naming `marmot.report-review.v1`
+and exactly one `l` tag with label `dismissed` and that namespace. Between 1 and 100 `e` tags name report event ids.
+Producers deduplicate ids and order them lexicographically; repeated references have no additional effect.
+Producers emit empty `content`; received explanatory content does not change the label's meaning. Other tags are
+ignored. Dismissal is effective only with authenticated admin authority as defined below.
+
+```json
+{"kind":1985,"tags":[["L","marmot.report-review.v1"],["l","dismissed","marmot.report-review.v1"],["e","<reviewed report id>"]],"content":""}
+```
+
+Dismissal affects only the logical reports named by its references. Another account's new report or a report about
+another revision remains pending. Multiple valid dismissals commute; the earliest `(created_at, id)` pair supplies
+the displayed review attribution. Unknown report references remain unresolved. Editing a reported message does not
+dismiss its reports. This version defines no report withdrawal, dismissal undo, or restoration action.
+
+### Admin removal (kind 4891)
+
+Kind 4891 is a Marmot-specific admin removal. Exactly one `e` tag names the original chat message id; the action
+removes that message and all its revisions. Its content is a JSON object with exactly `v` and `action`, whose values
+are `1` and `"remove"`. Duplicate JSON keys are invalid. Other tags are ignored. Only authenticated admin authority
+can authorize this event, including when its sender is also the target author. Admins may remove unreported content.
+
+```json
+{"kind":4891,"tags":[["e","<original message id>"]],"content":"{\"v\":1,\"action\":\"remove\"}"}
+```
+
+Kind 5 remains author self-retraction under [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md).
+Admin removal does not extend kind-5 authorization or change NIP-09.
+Removal takes precedence over dismissal and later edits. Ordinary timeline, reply, search, attachment, and report-review
+surfaces must not reveal the removed message's retained content.
+
+### Source-state authority
+
+An admin action is authorized using the admin policy of the authenticated MLS source state that carried the action,
+not the receiver's latest admin list or the event's wall-clock timestamp. Source state means the authenticated branch
+as well as its epoch number. Retain or reconstruct the evidence needed to reproduce this decision after restart.
+Unavailable evidence leaves authority unresolved; do not replace it with the latest policy or freeze a denial.
+A later demotion does not revoke source-state authorization; this does not prove the real-world time the action was
+created. Canonical convergence withdrawal invalidates effects of actions excluded from accepted history.
+
+For the current application profile, admin moderation is disabled when the source group has exactly two members and
+an empty or whitespace-only name. This is a mutable eligibility rule, not a permanent distinction between direct chats
+and groups. Every eligible member may report; only admins may dismiss or remove another account's content.
+
+### Retention and compatibility
+
+Reporting does not extend the target's content-retention lifetime. Report references must not embed copies of target
+text or attachment bytes. Review surfaces expose unavailable content after deletion or expiry. Report explanations
+obey applicable retention. Retain only the minimal reference and resolution evidence needed to keep expired or removed
+content from returning and duplicates from reopening resolved reports.
+
+Clients with the same accepted history derive the same report counts and outcomes regardless of delivery order.
+Personal blocking does not change shared validity. Report and review events do not increment chat unread counts.
+
+These are optional application semantics. Older clients may ignore dismissal labels or removal events;
+this feature cannot guarantee removal on incompatible clients or erase copies already saved outside the application.
+Legacy honored deletion decisions remain intact when their historical authorization evidence cannot be recovered.

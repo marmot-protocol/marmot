@@ -112,6 +112,9 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `1984` | Content report (NIP-56) | Marmot app payload | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1) |
+| `1985` | Shared report dismissal labels (NIP-32) | Marmot app payload | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1) |
+| `4891` | Admin content removal v1 | Marmot app payload | [application-messages.md](application-messages.md#content-reports-and-shared-review-v1) |
 | `30443` | Marmot KeyPackage event             | Nostr KeyPackage publication        | [nostr.md](../transports/nostr.md)                      |
 
 The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
