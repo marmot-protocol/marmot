@@ -60,7 +60,7 @@ A report uses [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md)
 Producers emit the tag prefixes shown above. Receivers MUST ignore trailing elements after those prefixes, including
 any third or later `p` element. Missing required elements invalidate the whole event. Supported report types are
 `nudity`, `malware`, `profanity`, `illegal`, `spam`, `impersonation`, and `other`. Unknown auxiliary tags do not change
-report semantics.
+report semantics. An unrecognized `report_type` invalidates the whole report event.
 
 A logical report is keyed by group, original message, normalized revision id, and reporting account. Receivers MUST
 count duplicate events once and select their displayed details by lower `created_at`, with lexicographically lower
@@ -68,6 +68,9 @@ lowercase-hex `id` breaking a tie. Retrying MUST NOT create a new logical report
 duplicate resolves that logical report, including duplicates received later. Unknown targets and revisions MUST remain
 unresolved until their authenticated dependencies are available. A mismatched `p` author, cross-group target,
 unrelated edit, or non-chat target MUST have no moderation effect.
+
+A retry MUST preserve the original message and normalized revision id of its logical report, including across client
+upgrades. Reporting a later edit is a new logical report, not a retry of a report about the original revision.
 
 Example kind-specific fields (the common six-field app-event encoding still applies; angle-bracket values below are
 placeholders for canonical ids and account keys):
@@ -127,7 +130,7 @@ views subject to this rule, not separate protocol surfaces.
 non-admins kind-4891 authority. A kind-5 reference to a kind-1984 report, kind-1985 dismissal, or kind-4891 removal MUST
 have no effect, even when that control was authored by its sender: it MUST NOT withdraw the control or change its
 moderation effects. Deleting reported chat content with kind 5 MUST NOT close pending review or dismiss reports.
-These restrictions do not change author deletion of other allowed content, including the author's own reactions.
+These restrictions do not change author deletion of other allowed content.
 
 ### Authenticated source-epoch authority and moderation eligibility
 
@@ -161,6 +164,9 @@ This is a mutable application-profile heuristic, not a permanent direct-conversa
 admin changing the group. An active admin can enable moderation in a two-account conversation by naming it or adding
 a third account. Removing the name or returning to two accounts can disable it for later events; each event is judged
 against its own authenticated source-epoch state. Named two-account groups intentionally remain enabled.
+Previously valid reports and decisions retain their effects when the current state becomes excluded; unresolved review
+can remain pending. New dismissals or removals require an eligible source state, which an admin can establish by naming
+the conversation or adding a third account.
 
 [Convergence](../protocol-core/convergence.md#applying-the-selected-branch) owns app-payload delivery and invalidation.
 Clients MUST derive moderation effects from delivered app payloads and their authenticated dependencies. When
@@ -168,14 +174,20 @@ convergence withdraws a payload that decrypts only on a losing branch, clients M
 on it and recompute from the remaining delivered payloads. A branch change MUST NOT leave a withdrawn removal or
 dismissal in effect.
 
+Removal suppresses content; it does not itself require destroying the retained payload. While a removal can still be
+withdrawn by convergence, clients MUST preserve content that would otherwise remain available under the applicable
+content-retention policy so that withdrawing that removal can reveal it again. This does not extend retention or undo
+an independent author deletion: expired content stays unavailable, and any remaining deletion or removal still applies.
+Withdrawing an invalidated action is protocol recomputation, not a user restoration action.
+
 ### Retention and compatibility
 
 Reporting MUST NOT extend the target's content-retention lifetime. Report references MUST NOT embed copies of target
 text or attachment bytes. Review surfaces MUST show an unavailable-content placeholder after deletion or expiry,
 without revealing retained target content. Reporter identity, category, explanation, and review attribution MAY remain
-visible while those records are retained; report explanations obey applicable retention. Clients MUST retain only the
-minimal reference and resolution evidence needed to keep expired or removed content from returning and duplicates
-from reopening resolved reports.
+visible while those records are retained; report explanations obey applicable retention. Beyond applicable content
+retention, clients MUST retain only the minimal reference and resolution evidence needed to keep expired or removed
+content from returning and duplicates from reopening resolved reports.
 
 Clients with the same delivered app payloads and authenticated dependencies MUST derive the same report counts and
 outcomes regardless of delivery order. Personal blocking MUST NOT change shared validity. Report and review events

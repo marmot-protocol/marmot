@@ -200,17 +200,30 @@ NIP-59 gift wraps. Those outer events are transport envelopes. They do not repla
 ## Author deletion (kind 5)
 
 Kind `5` requests author deletion using [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md).
-The `e` tags reference app event ids in the same group; for chat messages they name the original event. A receiver MUST
-verify that its MLS-authenticated sender account equals each target's authenticated account author before honoring
+The following rules cover event-id references inside the common six-field app-event envelope; they do not define
+address-based deletion via `a` tags. Each `e` tag begins `["e", event_id]`, with `event_id` in the canonical lowercase
+64-hex form. Trailing elements are ignored. Receivers evaluate references independently: a missing or invalid id has
+no effect for that reference, and repeated references have no additional effect. There is no kind-specific reference
+count bound. The `content` string MAY be empty or explain the request without changing its effect; `k` tags and other
+auxiliary tags do not select or authorize targets.
+
+The `e` tags reference app event ids in the same group; to delete a whole chat message they name its original event.
+A receiver MUST verify that its MLS-authenticated sender account equals each target's authenticated account author before honoring
 that target's deletion. Admin status MUST NOT authorize kind-5 deletion of another account's content. Unknown targets
-remain unresolved until their authorship can be verified.
+remain unresolved until their authorship can be verified; a known unauthorized or cross-group reference has no effect
+without preventing other valid references from taking effect.
 
 An honored chat-message deletion makes that message unavailable, including in report-review surfaces; later edits
 MUST NOT restore its content. An effective admin removal takes precedence if both actions exist. This interpretation
 uses the NIP-09 author-deletion path; it does not extend NIP-09 authorization or define a deletion-undo action.
-Author deletion also supports an author's own reaction events; these chat-specific rules do not restrict all kind-5
-targets to chat messages. Feature-owned kinds can restrict deletion effects, as
+These chat-specific rules do not restrict all kind-5 targets to chat messages. Other target kinds retain their owning
+application semantics; this section does not define those kinds. Feature-owned kinds can restrict deletion effects, as
 [group content moderation](../features/content-moderation.md#admin-removal-kind-4891) does for its control events.
+
+Deletion suppresses retained content while its request remains delivered. If convergence withdraws the request,
+clients MUST recompute its effects from the remaining delivered payloads. While withdrawal remains possible, clients
+MUST preserve otherwise unexpired content needed for that recomputation; this does not extend content retention or
+restore content still hidden by an independent deletion or admin removal.
 
 ## Content reports and shared review (v1)
 
