@@ -86,6 +86,25 @@ than `app_payload_past_epoch_limit` canonical epoch advances can conformantly lo
 epochs even when their transport objects remain available. Applications that require complete long-term history need a
 separate protocol mechanism; transport retention alone does not extend the MLS decryption window.
 
+## Authorized application plaintext purge
+
+A selected Commit carrying a valid [`marmot.group.history-purge.v1`](../app-components/history-purge-v1.md)
+authorization establishes one reversible local suppression boundary at its resulting activation epoch. The client MUST
+suppress every delivered Marmot app payload whose MLS source epoch is less than that boundary before any application
+surface can render or emit it. If a later convergence pass supersedes the Commit while its parent remains inside the
+rollback horizon, the client withdraws the suppression with the Commit's other application effects and performs no
+destructive deletion.
+
+Idempotent local best-effort deletion becomes eligible only after convergence is settled, the selected branch still
+contains the authorization, and the request's parent epoch is outside the current canonical tip's rollback horizon. The
+client then deletes application-controlled plaintext and resumes unfinished cleanup after restart, as defined by
+[consensual-history-purge.md](../features/consensual-history-purge.md).
+
+The suppression boundary does not move the retained anchor or the app-payload decryption window. It MUST NOT release
+candidate-authentication state, application secret-tree state, pending publication data, replay markers, or any other
+protocol recovery material before that material's release condition in this document is reached. Receiving a No,
+silence, an unsupported member, or expiry of a request creates no suppression boundary.
+
 ## Pruning
 
 After convergence reaches a settled selected branch, a client SHOULD prune retained states older than the group's

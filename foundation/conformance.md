@@ -83,6 +83,59 @@ These tests compare behavior and the projection above. They MUST NOT require a d
 snapshot encoding, process scheduler, or one snapshot per epoch. The owning normative rules are in
 [../protocol-core/durability.md](../protocol-core/durability.md).
 
+## Consensual history purge scenarios
+
+Conformance suites for [`marmot.group.history-purge.v1`](../app-components/history-purge-v1.md) MUST cover:
+
+1. an active non-admin creates the feature-owned request, another active member relays it into temporary GroupContext
+   state, and no actor thereby gains authority to commit the retention update or accepted finalization. The suite MUST
+   accept only the exact paired `0x800d` required-component-list addition and reject any unrelated required-component or
+   GroupContext mutation by that actor;
+2. a supported fixed member snapshot in which every account adds one canonical Yes and the active-admin terminal Commit
+   atomically applies the requested retention value, removes the temporary state, and installs one reversible
+   pre-activation plaintext suppression boundary;
+3. each missing, duplicate, extra, out-of-order, malformed, wrong-request, wrong-group, wrong-parent, late, and
+   wrong-signer decision, verifying that no accepted retention, suppression, or deletion effect begins;
+4. one member produces and canonically commits No, client A observes the No material before the Commit while client B
+   does not, and both then receive the exact rejected Commit bytes. Both clients MUST select the same rejected terminal
+   identity. After restart, a later Yes state update or accepted finalization for that request MUST be invalid and no
+   suppression or deletion begins. A signer asked for No then Yes before terminal selection MUST durably refuse the
+   second proof; a signer whose Yes is already in canonical open state MUST NOT produce No, and a rejected finalization
+   carrying that signer's No MUST be rejected before and after restart even when the No proof was delivered to only one
+   client. A validator presented conflicting proofs MUST reject them;
+5. proposer cancellation while open, cancellation by any other member, cancellation after a terminal transition, and
+   replay of a valid cancellation, verifying that only the first case can become the canonical cancelled identity;
+6. request intervals at one second and exactly `604800` seconds, an interval of `604801`, Yes and accepted-proof
+   timestamps immediately before, at, and after the deadline, local expiry across restart, and canonical expiry. The
+   suite MUST verify that timeout, silence, restart, and expiry never produce consent;
+7. a membership, identity, capability, admin-policy, or retention change while open, verifying atomic supersession,
+   removal of the old state, and rejection of later material for its request id;
+8. a leaf without `app_ephemeral`, `app_data_update`, or component `0x800d` support, verifying that request creation and
+   finalization are blocked rather than treating the leaf as consenting;
+9. every terminal proposal set with each required proposal missing or duplicated and with one unrelated proposal added,
+   including an unrelated required-component-list mutation by a non-admin No signer or proposer, verifying rejection
+   with no retention, suppression, or deletion effect;
+10. competing same-parent accepted, rejected, cancelled, expired, and superseded terminal Commits delivered in
+    different orders, verifying that canonical convergence alone selects one stable terminal identity and replays of
+    losing transitions are inert;
+11. a branch that supersedes the authorizing Commit while its parent remains inside the rollback horizon, verifying that
+    suppression is withdrawn and destructive deletion has not begun;
+12. advancement until the request parent is outside the rollback horizon, verifying that best-effort deletion begins
+    only while the authorization remains on the settled selected branch;
+13. duplicate delivery and restart at the prepared, confirmed-not-applied, suppression-observed, deletion-eligible,
+    partially cleaned, and effect-observed boundaries, verifying one suppression boundary, completion of remaining
+    eligible cleanup after restart, and one effective output per stable effect identity;
+14. late or replayed pre-activation app payloads after activation, verifying suppression before delivery while retained
+    anchors, candidate state, pending publication, and other protocol recovery material remain available; and
+15. duplicate, forged, wrong-finalization, applied, failed, and missing receipts. The suite MUST verify one receipt per
+    account, no receipt before durable local cleanup, aggregate-only presentation, `group_complete` only with all-applied
+    cohort receipts, and `partially_completed` without message, file, count, device, precise-time, or failure-detail
+    leakage.
+
+The suite MUST compare canonical state and the versioned request, response, cancellation, finalization, receipt, and
+stable effect identities. It MUST NOT claim physical overwrite, deletion of external copies, or completion on another
+member's device.
+
 ## Exporter commitment
 
 The conformance exporter secret is:

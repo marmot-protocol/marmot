@@ -1,0 +1,28 @@
+name: Spec validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spec-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Deterministic spec validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run fast and focused spec checks
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.repository.default_branch }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/spec_validate.py --base "$BASE_SHA" --head "$HEAD_SHA" --mode all

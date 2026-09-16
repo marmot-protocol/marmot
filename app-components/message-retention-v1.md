@@ -23,7 +23,9 @@ Any nonzero value is a requested application retention duration in seconds.
 
 Each application message pins the retention state from its own MLS source epoch. Later component updates or removal do
 not shorten, extend, or restore that message's expiry. A retry or transport republication of the same MLS message uses
-the same pinned duration and expiry value.
+the same pinned duration and expiry value. The only adopted exception is the separately negotiated, unanimous local
+plaintext effect in [marmot.group.history-purge.v1](./history-purge-v1.md); that one-shot authorization does not change
+the pinned expiry value or the prospective default.
 
 The retention duration is signed group state, and the transport-level expiry timestamp uses the exact calculation
 defined below. Transport expiry applies to application messages only: group-state history — commits and proposals —
@@ -61,7 +63,7 @@ group state and MUST NOT invalidate otherwise-valid retention state received fro
 
 This component governs application plaintext retention. It MUST NOT force deletion of MLS state, retained anchors,
 pending message records, publish obligations, or other protocol data before the protocol retention rules allow that data
-to be discarded.
+to be discarded. A consensual history purge remains subject to the same protocol-data exclusion.
 
 ## Authorization
 

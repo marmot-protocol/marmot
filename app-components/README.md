@@ -239,6 +239,12 @@ Group-level component proposals and commits are admin-gated by default.
 A component MAY define a looser rule, but it MUST do so explicitly. In v1, the admin set is defined by
 `marmot.group.admin-policy.v1`.
 
+A GroupContext component that temporarily requires its own component id MAY also define a narrower actor for the exact
+paired mutation of the GroupContext `app_components` required-component list. That exception MUST be stated in the
+owning component document, MUST add or remove only that component id, and MUST be atomic with the component transition
+that requires the list change. It does not authorize the actor to change any other required component or any unrelated
+GroupContext state.
+
 ## Current Marmot Components
 
 Assigned component ids are registered in [../foundation/registries.md](../foundation/registries.md).
@@ -260,6 +266,9 @@ The following persistent GroupContext component is experimental and is not requi
 
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.
+
+The adopted [marmot.group.history-purge.v1](./history-purge-v1.md) component uses temporary GroupContext state while
+one bounded request is open and one terminal `AppEphemeral` value in the Commit that removes that state.
 
 Every Marmot leaf uses the adopted
 [marmot.member.account-identity-proof.v2](./account-identity-proof-v2.md) LeafNode component.
