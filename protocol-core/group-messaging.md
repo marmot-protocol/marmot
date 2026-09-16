@@ -45,14 +45,17 @@ Non-admin members MUST NOT commit anything except the narrow flows the spec expl
 
 - a self-update Commit that updates only the sender's own LeafNode;
 - a dedicated SelfRemove-only Commit that processes valid pending SelfRemove proposals by reference.
+- when experimental component `marmot.same-account-membership.v1` is required, its exactly-one-Add or one-to-four-
+  sibling-Remove inline Commit shape.
 
-Those two non-admin commit shapes MUST NOT be combined with each other or with other proposal types.
+Those shapes MUST NOT be combined with each other or with other proposal types. Same-account membership authorization,
+candidate-parent checks, and resulting-state limits are defined by
+[`marmot.same-account-membership.v1`](../app-components/same-account-membership-v1.md).
 
 All other Commits from non-admins are invalid.
 
-In particular, adopted v1 defines no non-admin `new_member_commit` External Commit path. The draft
-[multi-device feature](../features/multi-device.md) does not relax this rule. Its proposed External Commit flow remains
-non-normative unless a future adopted protocol-core revision explicitly authorizes that commit shape.
+In particular, adopted v1 defines no non-admin `new_member_commit` External Commit path. The optional experimental
+multi-device component uses an ordinary member Commit with one inline Add, never an External Commit.
 
 Non-admin members MAY send standalone MLS proposals only where the spec explicitly allows them. In v1 protocol core,
 that proposal flow is SelfRemove. A request for an admin-gated group-state change is an application payload or

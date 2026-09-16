@@ -21,9 +21,12 @@ Marmot app components use MLS private-use component ids.
 | `0x8007`     | `marmot.group.avatar-url.v1`                    | [doc](../app-components/group-avatar-url-v1.md)                     |
 | `0x8008`     | `marmot.group.encrypted-media.v1`               | [doc](../app-components/group-encrypted-media-v1.md)                |
 | `0x8009`     | `marmot.member.account-identity-proof.v2`       | [doc](../app-components/account-identity-proof-v2.md)               |
-| `0x800a`     | `marmot.authorization.multi-device-join.v1`     | [draft](../app-components/multi-device-join-authorization-v1.md)    |
 | `0x800b`     | `marmot.group.encrypted-media.v2`               | [doc](../app-components/group-encrypted-media-v2.md)                |
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
+| `0x800d`     | `marmot.same-account-membership.v1`             | [doc](../app-components/same-account-membership-v1.md)              |
+
+Component id `0x800a` was released by the withdrawn multi-device draft and is currently unassigned. It has no Marmot
+meaning and MUST NOT be emitted or interpreted unless a future document claims it in this table.
 
 ## Upstream MLS extension draft ids
 
@@ -56,12 +59,13 @@ carriers and MUST NOT be treated as interchangeable merely because both use a `C
 | `0xf2d1`       | `marmot.feature.agent_text_stream_quic.receive.v1` | [doc](../app-components/agent-text-stream-quic-v1.md)    |
 | `0xf2d2`       | `marmot.feature.agent_text_stream_quic.send.v1`    | [doc](../app-components/agent-text-stream-quic-v1.md)    |
 | `0xf2d4`       | `marmot.feature.agent_text_stream_quic.fanout.v1`  | [doc](../app-components/agent-text-stream-quic-v1.md)    |
-| `0xf2ef`       | `marmot.encrypted-device-name.v1`               | [doc](../features/multi-device.md)                         |
-| `0xf2f0`       | `marmot.multi-device.v1`                        | [doc](../features/multi-device.md)                         |
 | `0xf2f1`       | `marmot.account-identity-proof.v1`              | [doc](./account-identity-proof-v1.md)                       |
 
 `0xf2d3` is intentionally unassigned and has no reserved meaning. A future use MUST claim it in this registry before
 emitting it.
+
+Extension types `0xf2ef` and `0xf2f0` were released by the withdrawn multi-device draft and are currently unassigned.
+They have no Marmot meaning and MUST NOT be emitted or interpreted unless a future document claims them in this table.
 
 `0xf2d1`, `0xf2d2`, and `0xf2d4` are the agent-text-stream-QUIC member role capabilities. A member advertises a role by
 listing the matching extension type in its LeafNode capabilities; the `required_member_roles` mask in
@@ -74,9 +78,8 @@ These three extension types are capability markers only: v1 defines no extension
 `LeafNode.capabilities.extensions` to advertise role support and are never emitted as LeafNode or GroupContext
 extension bodies.
 
-`0xf2ef` and `0xf2f0` are reserved for the draft multi-device feature (see
-[../features/multi-device.md](../features/multi-device.md)) and are not yet implemented; confirm the values when that
-feature lands.
+The experimental multi-device feature uses component negotiation rather than a custom extension type; see
+[`marmot.same-account-membership.v1`](../app-components/same-account-membership-v1.md).
 
 `0xf2f1` is the superseded v1 account-identity-proof extension. It is not required or emitted by the current profile;
 component id `0x8009` replaces it. It remains registered so the legacy wire value is never reassigned.
@@ -108,7 +111,8 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
-| `452`   | Multi-device join authorization v1 | Local signing template, not relayed | [multi-device-join-authorization-v1.md](../app-components/multi-device-join-authorization-v1.md) |
+| `452`   | Same-account enrollment ack         | Marmot app payload                  | [multi-device.md](../features/multi-device.md)             |
+| `453`   | Same-account pairing proof          | Local signing template, not relayed | [multi-device.md](../features/multi-device.md)             |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -130,16 +134,15 @@ use.
 
 Kind `450` is the local signing event for the adopted account identity proof v2. Its exact event shape is defined by its
 component document and uses the envelope and validation rules in
-[authorization-proofs.md](./authorization-proofs.md). Kind `452` is reserved for the separate draft multi-device
-active-admin join authorization, whose component document uses the same common proof rules.
+[authorization-proofs.md](./authorization-proofs.md).
 
 Kind `451` is the local signing event for current push token-record and removal owner proofs. Its two templates use
 distinct `d` tags and are defined by [push-notifications.md](../features/push-notifications.md). Its signature-only
 carrier is feature-specific and does not use `MarmotAuthorizationProof`.
 
-Kinds `450`, `451`, and `452` are local signing templates, not transport objects. Clients MUST NOT publish them to
-relays. Legacy-group verification of push signatures created with kind `450` does not change the current allocation:
-clients MUST NOT produce a new push owner proof with kind `450`.
+Kinds `450`, `451`, and `453` are local signing templates, not transport objects. Clients MUST NOT publish them to relays.
+Legacy-group verification of push signatures created with kind `450` does not change the current allocation: clients
+MUST NOT produce a new push owner proof with kind `450`.
 
 The `d` tag strings in these local signing events are fixed proof-domain labels, not component names. Implementations
 MUST use the exact `d` value in each owning proof document and MUST NOT derive it from the component name.
@@ -177,10 +180,5 @@ used below the exporter output.
 | `"marmot"` | `"encrypted-media"`            | `32`     | encrypted-media per-file key schedule  |
 | `"marmot"` | `"agent-text-stream-quic"`     | `32`     | agent text stream QUIC record crypto   |
 | `"marmot"` | `"convergence-conformance-v1"` | `32`     | synthetic conformance state commitment |
-| `"marmot"` | `join_psk_id`                  | `KDF.Nh` | multi-device external PSK material     |
 
 Fixed `32`-byte outputs are used where the owning document feeds a 32-byte AEAD key or feature key schedule.
-`KDF.Nh` is used for the multi-device join PSK because that output is external PSK material for the MLS ciphersuite KDF.
-
-The multi-device join entry is versioned inside the structured `join_psk_id` context. A future incompatible join-PSK
-design MUST register a new exporter label or context shape.

@@ -36,11 +36,13 @@ work and is tracked here because it affects this spec's design.
     [app-components/group-encrypted-media-v1.md](./app-components/group-encrypted-media-v1.md)
 - MIP-05, Push Notifications: Draft and optional.
   - Feature flow: [features/push-notifications.md](./features/push-notifications.md)
-- MIP-06, Multi-Device Support: Branch-draft and optional.
+- MIP-06, Multi-Device Support: Branch-draft and optional. The MIP-era External-Commit design and its join
+  authorization component were withdrawn from this spec; the current experimental direction is the same-account
+  enrollment baseline.
   - Feature flow: [features/multi-device.md](./features/multi-device.md)
+  - App component: [app-components/same-account-membership-v1.md](./app-components/same-account-membership-v1.md)
+  - Content synchronization exploration: [features/account-sync.md](./features/account-sync.md)
   - Commit authorization boundary: [protocol-core/group-messaging.md](./protocol-core/group-messaging.md)
-  - Join authorization component:
-    [app-components/multi-device-join-authorization-v1.md](./app-components/multi-device-join-authorization-v1.md)
   - Foundation: [foundation/identity.md](./foundation/identity.md)
   - Convergence: [protocol-core/convergence.md](./protocol-core/convergence.md)
 

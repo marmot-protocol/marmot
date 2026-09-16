@@ -85,6 +85,23 @@ self-update within 24 hours of joining. This window is local operational guidanc
 other client can observe or enforce it — so it lives here rather than in the protocol document. An implementation may
 schedule the rotation sooner.
 
+## Same-account pairing carriers
+
+The normative multi-device feature treats the pairing carrier as untrusted and replaceable. Platform adapters can use
+Apple peer-to-peer networking, Wi-Fi Direct or Wi-Fi Aware where available, a temporary hotspot, a local-network
+socket, or another rendezvous mechanism. Carrier discovery, permissions, lifecycle, and fallback UI are implementation
+details; the feature's signed descriptor, encryption, bounds, and timeouts still apply.
+
+Enrollment may publish per-group Adds sequentially. An implementation that parallelizes them should limit one pairing
+session to about four concurrently publishing Adds to bound retained candidate states and reduce avoidable convergence
+races. This is scheduling guidance, not an observable protocol limit.
+
+After Welcome delivery, a sponsor should retry the byte-identical Welcome after approximately 1, 2, 4, and 8 minutes,
+with jitter, and stop automatic retransmission after 30 minutes. Absence of an acknowledgement then becomes a local
+published-but-unacknowledged result, not a terminal enrollment failure. The sponsor retains the exact Welcome and
+correlation record until later acknowledgement recovery, pairing reconciliation, canonical branch loss, group
+deletion, or removal of the enrolled leaf.
+
 ## Network destination safety
 
 A URL or endpoint carried in authenticated Marmot state or an authenticated app payload proves only that a

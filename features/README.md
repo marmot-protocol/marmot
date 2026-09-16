@@ -20,7 +20,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text
   streams, anchored by normal durable final messages.
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
-- [multi-device.md](./multi-device.md) - branch-draft multi-device support.
+- [multi-device.md](./multi-device.md) - experimental same-account device enrollment and removal baseline.
+- [account-sync.md](./account-sync.md) - exploratory content and account-state synchronization boundaries.
 
 ## Relationship to app components
 

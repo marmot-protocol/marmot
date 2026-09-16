@@ -102,12 +102,17 @@ The following non-component operations also require an active admin to commit:
 - change the GroupContext `app_components` list of required Marmot components; and
 - change the GroupContext `required_capabilities` extension through an MLS `GroupContextExtensions` proposal.
 
+The experimental [`marmot.same-account-membership.v1`](./same-account-membership-v1.md) component is the narrow
+exception for its exactly-one-Add and one-to-four-sibling-Remove Commit shapes. Its rules apply equally to admins and
+non-admins when `0x800d` is required. It authorizes neither standalone proposals nor mixed Commit shapes.
+
 Existing members authorize an Add Commit against its candidate parent state. A Welcome receiver cannot perform that
 same parent-state check; it instead applies the distinct join-time resulting-state check defined in
 [../protocol-core/joining.md](../protocol-core/joining.md). The receiver identifies the inviter from the MLS GroupInfo
 signer leaf and rejects the Welcome unless that leaf's MLS-authenticated Marmot account identity is an active admin in
-the joined group state. This component is the sole membership-add authority for v1 groups: if it is absent, no member is
-authorized to add, so the receiver rejects the Welcome. The resulting-state check's trust model and limits are described
+the joined group state. This component is the default membership-add authority for v1 groups. A Welcome receiver
+rejects another authority unless an enabled component explicitly defines a separate join-time check; experimental
+component `0x800d` defines that check for same-account admission. The resulting-state check's trust model is described
 in [../protocol-core/joining.md](../protocol-core/joining.md), "Welcome-bootstrap trust."
 
 SelfRemove is special:
