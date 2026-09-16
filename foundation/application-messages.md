@@ -224,6 +224,11 @@ Deletion suppresses retained content while its request remains delivered. If con
 clients MUST recompute its effects from the remaining delivered payloads. While withdrawal remains possible, clients
 MUST preserve otherwise unexpired content needed for that recomputation; this does not extend content retention or
 restore content still hidden by an independent deletion or admin removal.
+The withdrawal window is governed by [candidate eligibility](../protocol-core/convergence.md#eligibility), including
+the `max_rewind_commits` rollback horizon and any already-admitted unfinished convergence pass. Once no eligible
+candidate can withdraw the request's source branch and no such pass remains, clients MAY erase the suppressed content
+while retaining the deletion evidence. Content expiry can end availability earlier; this is not a new wall-clock
+retention period.
 
 ## Content reports and shared review (v1)
 

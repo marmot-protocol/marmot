@@ -105,6 +105,9 @@ review attribution by lower `created_at`, with lexicographically lower lowercase
 reported message does not dismiss its reports. This version defines no report withdrawal, dismissal undo, or restoration
 action.
 
+This attribution is a deterministic display choice from sender-asserted timestamps, not proof of who reviewed first
+in real time.
+
 ### Admin removal (kind 4891)
 
 Kind 4891 is a Marmot-specific admin removal. Exactly one `e` tag, beginning `["e", original_message_id]`, names the
@@ -148,6 +151,12 @@ authorized removal or dismissal: clients MUST preserve its recorded verdict and 
 by convergence invalidation. This follows [durability](../protocol-core/durability.md#recoverable-protocol-facts) and
 [retained-history pruning](../protocol-core/retained-history.md#pruning), without requiring expired MLS secrets to remain.
 
+An action with unresolved authority MUST NOT contribute a report count, dismiss a report, or suppress target content.
+The target remains subject to its other validated modifiers and retention policy. In particular, an unresolved removal
+does not override an existing authorized removal, and does not itself hide otherwise available content. Clients MUST
+retry when the missing evidence becomes available. Applying an unproven removal would let a sender without established
+admin authority suppress another member's content.
+
 For this feature, moderation is enabled in every authenticated source-epoch state except when both conditions hold:
 
 - it has exactly two distinct current member accounts; and
@@ -179,6 +188,11 @@ withdrawn by convergence, clients MUST preserve content that would otherwise rem
 content-retention policy so that withdrawing that removal can reveal it again. This does not extend retention or undo
 an independent author deletion: expired content stays unavailable, and any remaining deletion or removal still applies.
 Withdrawing an invalidated action is protocol recomputation, not a user restoration action.
+The withdrawal window is bounded by [candidate eligibility](../protocol-core/convergence.md#eligibility), including
+the `max_rewind_commits` rollback horizon and any already-admitted unfinished convergence pass. Once no eligible
+candidate can withdraw the removal's source branch and no such pass remains, clients MAY erase the suppressed content
+while preserving minimal removal evidence. Ordinary content expiry still applies earlier; this rule adds no wall-clock
+retention period.
 
 ### Retention and compatibility
 
@@ -188,10 +202,15 @@ without revealing retained target content. Reporter identity, category, explanat
 visible while those records are retained; report explanations obey applicable retention. Beyond applicable content
 retention, clients MUST retain only the minimal reference and resolution evidence needed to keep expired or removed
 content from returning and duplicates from reopening resolved reports.
+Explanations are independently authored text and can repeat removed content; suppressing the target does not perform
+semantic redaction of report explanations.
 
 Clients with the same delivered app payloads and authenticated dependencies MUST derive the same report counts and
 outcomes regardless of delivery order. Personal blocking MUST NOT change shared validity. Report and review events
 MUST NOT increment chat unread counts.
+Here, authenticated dependencies include the source-epoch authority evidence or an established verdict. A client still
+missing that evidence can retain an unresolved action while another client has resolved it; equal outcomes are required
+once both have the same authenticated dependencies.
 
 These are optional application semantics. Older clients may ignore dismissal labels or removal events;
 this feature cannot guarantee removal on incompatible clients or erase copies already saved outside the application.
