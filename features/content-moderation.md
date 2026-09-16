@@ -7,16 +7,19 @@ cover the whole message, including its attachments and completed agent content. 
 including reporter identity. Group encryption provides no admin-only confidentiality for this information.
 
 Admins share a review list and either keep the content by dismissing selected reports or remove the entire message.
-Keeping content leaves a reviewed indication. New logical reports reopen review; editing alone does not clear reports.
-Admins can also remove unreported messages. There is no restore or undo flow in this version.
+Keeping content leaves a reviewed indication. New logical reports reopen review unless the message has been removed;
+editing alone does not clear reports. Removal closes pending review for all revisions. Admins can also remove unreported
+messages. There is no restore or undo flow in this version.
 
 The owning wire and authorization contract is
 [application-messages.md](../foundation/application-messages.md#content-reports-and-shared-review-v1).
 It defines reports (kind 1984), dismissal labels on reports (kind 1985), and admin removals of messages (kind 4891),
-including deduplication, revision references, validation, and unavailable dependencies. Kind 5 remains author deletion.
+including deduplication, revision references, validation, and unavailable dependencies. Kind 5 is the separate
+author-deletion path.
 The existing [admin policy](../app-components/admin-policy-v1.md) supplies authority; this feature adds no component.
 [Convergence](../protocol-core/convergence.md), [retained history](../protocol-core/retained-history.md), and
-[message retention](../app-components/message-retention-v1.md) continue to govern accepted history and content lifetime.
+[message retention](../app-components/message-retention-v1.md) continue to govern delivered app payloads and content
+lifetime.
 No transport change is required; these events use normal group messaging.
 
 Clients can activate this optional application behavior without changing group state. Compatible clients display pending,
