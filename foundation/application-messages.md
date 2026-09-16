@@ -85,6 +85,9 @@ Protocol processing MUST NOT reject an otherwise-valid app payload merely becaus
 Feature or app-payload docs define which additional kinds are protocol-required and what they mean. A client MAY ignore
 or decline to render unsupported application semantics after delivering the accepted payload to its application layer.
 
+The optional [group content moderation](../features/content-moderation.md) feature defines reports (kind `1984`),
+admin dismissal labels (kind `1985`), and admin deletion (kind `4891`).
+
 ## Message edits (kind 1009)
 
 Kind `1009` is an in-place replacement of a prior chat message's text. The edit references the original event id via a
@@ -196,43 +199,3 @@ The inner Marmot app event and an outer Nostr transport event are different obje
 
 When Marmot uses Nostr relays, the transport MAY wrap MLS bytes in signed or unsigned Nostr events such as kind `445` or
 NIP-59 gift wraps. Those outer events are transport envelopes. They do not replace the inner app payload.
-
-## Author deletion (kind 5)
-
-Kind `5` requests author deletion using [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md).
-The following rules cover event-id references inside the common six-field app-event envelope; they do not define
-address-based deletion via `a` tags. Each `e` tag begins `["e", event_id]`, with `event_id` in the canonical lowercase
-64-hex form. Trailing elements are ignored. Receivers evaluate references independently: a missing or invalid id has
-no effect for that reference, and repeated references have no additional effect. There is no kind-specific reference
-count bound. The `content` string MAY be empty or explain the request without changing its effect; `k` tags and other
-auxiliary tags do not select or authorize targets.
-
-The `e` tags reference app event ids in the same group; to delete a whole chat message they name its original event.
-A receiver MUST verify that its MLS-authenticated sender account equals each target's authenticated account author before honoring
-that target's deletion. Admin status MUST NOT authorize kind-5 deletion of another account's content. Unknown targets
-remain unresolved until their authorship can be verified; a known unauthorized or cross-group reference has no effect
-without preventing other valid references from taking effect.
-
-An honored chat-message deletion makes that message unavailable, including in report-review surfaces; later edits
-MUST NOT restore its content. An effective admin removal takes precedence if both actions exist. This interpretation
-uses the NIP-09 author-deletion path; it does not extend NIP-09 authorization or define a deletion-undo action.
-These chat-specific rules do not restrict all kind-5 targets to chat messages. Other target kinds retain their owning
-application semantics; this section does not define those kinds. Feature-owned kinds can restrict deletion effects, as
-[group content moderation](../features/content-moderation.md#admin-removal-kind-4891) does for its control events.
-
-Deletion suppresses retained content while its request remains delivered. If convergence withdraws the request,
-clients MUST recompute its effects from the remaining delivered payloads. While withdrawal remains possible, clients
-MUST preserve otherwise unexpired content needed for that recomputation; this does not extend content retention or
-restore content still hidden by an independent deletion or admin removal.
-The withdrawal window is governed by [candidate eligibility](../protocol-core/convergence.md#eligibility), including
-the `max_rewind_commits` rollback horizon and any already-admitted unfinished convergence pass. Once no eligible
-candidate can withdraw the request's source branch and no such pass remains, clients MAY erase the suppressed content
-while retaining the deletion evidence. Content expiry can end availability earlier; this is not a new wall-clock
-retention period.
-
-## Content reports and shared review (v1)
-
-The optional [group content moderation v1](../features/content-moderation.md) feature owns the interpretation of inner
-reports (kind 1984), dismissal labels (kind 1985), and admin removals (kind 4891), including their validation,
-authorization, review lifecycle, and retention. They use the common app-event envelope and sender authentication
-specified in this document.
