@@ -110,6 +110,8 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
 | `452`   | Multi-device join authorization v1 | Local signing template, not relayed | [multi-device-join-authorization-v1.md](../app-components/multi-device-join-authorization-v1.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
+| `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1984`  | Content report (NIP-56)             | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#reports-kind-1984) |

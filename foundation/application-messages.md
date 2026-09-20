@@ -88,6 +88,14 @@ or decline to render unsupported application semantics after delivering the acce
 The optional [group content moderation](../features/content-moderation.md) feature defines reports (kind `1984`),
 admin dismissal labels (kind `1985`), and admin deletion (kind `4891`).
 
+Polls use the standard [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) app-event shapes: kind `1068`
+for a poll and kind `1018` for a response. Both are ordinary Marmot app events inside MLS and remain subject to the
+encoding and receiver-authentication rules above. Their inner `relay` tags, when present, never affect delivery;
+Marmot implementations SHOULD omit them because the group's authenticated transport routing selects the relays.
+Implementations MAY support a bounded subset of NIP-88 and MUST ignore unsupported or invalid poll semantics without
+rejecting otherwise-valid MLS state. Poll results are authenticated, best-effort group coordination state; they are
+not anonymous and are not suitable for election-grade voting.
+
 ## Message edits (kind 1009)
 
 Kind `1009` is an in-place replacement of a prior chat message's text. The edit references the original event id via a
