@@ -52,6 +52,9 @@ The surfaces, each with its own section README (human orientation) and `AGENTS.m
 - [transports/](./transports/README.md) - how Marmot bytes move over a network (Nostr, QUIC).
 - [features/](./features/README.md) - optional or user-visible flows that span surfaces.
 
+Non-normative work in progress lives in [ideas/](./ideas/README.md): future protocol directions published for early
+feedback. Nothing there is part of the protocol.
+
 ## Working Rules
 
 - Keep implementation architecture out of normative protocol documents.

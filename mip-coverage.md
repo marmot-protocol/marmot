@@ -4,8 +4,8 @@ Status: adopted.
 
 This file maps the deprecated Marmot MIPs to this spec. It is a review aid, not a normative surface.
 
-The merged canonical MIP set currently lives on the old Marmot repo's `origin/master`. MIP-06 remains branch-draft
-work and is tracked here because it affects this spec's design.
+The merged canonical MIP set currently lives on the old Marmot repo's `origin/master`. MIP-06 is being redesigned; its
+new direction is tracked in [ideas/](./ideas/README.md) because it affects this spec's design.
 
 ## Deprecated MIPs
 
@@ -36,12 +36,10 @@ work and is tracked here because it affects this spec's design.
     [app-components/group-encrypted-media-v1.md](./app-components/group-encrypted-media-v1.md)
 - MIP-05, Push Notifications: Draft and optional.
   - Feature flow: [features/push-notifications.md](./features/push-notifications.md)
-- MIP-06, Multi-Device Support: Branch-draft and optional.
-  - Feature flow: [features/multi-device.md](./features/multi-device.md)
+- MIP-06, Multi-Device Support: Being redesigned; not specified.
+  - Direction (non-normative): [ideas/multi-device.md](./ideas/multi-device.md)
+  - Existing account-versus-leaf rules: [foundation/identity.md](./foundation/identity.md)
   - Commit authorization boundary: [protocol-core/group-messaging.md](./protocol-core/group-messaging.md)
-  - Join authorization component:
-    [app-components/multi-device-join-authorization-v1.md](./app-components/multi-device-join-authorization-v1.md)
-  - Foundation: [foundation/identity.md](./foundation/identity.md)
   - Convergence: [protocol-core/convergence.md](./protocol-core/convergence.md)
 
 ## MIP-01 field split

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 596" width="960" height="596" role="img" aria-labelledby="title desc">
+<title id="title">Scene 7: managing and removing devices</title>
+<desc id="desc">Alice's Devices screen lists this device, her linked devices with last activity, and unrecognized sign-ins. Removing the laptop takes it out of every chat and the device group and deletes its KeyPackage slot. A timeline shows inactive devices going stale, prompting at 30 days, and being removed at 90 days unless kept.</desc>
+<style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.bg{fill:#f6f8fa}
+.t{fill:#1f2328} .m{fill:#59636e} .a{fill:#0969da} .d{fill:#cf222e}
+.g{fill:#1a7f37} .y{fill:#9a6700} .r{fill:#8250df} .f{fill:#afb8c1}
+.frame{fill:#2d333b;stroke:#2d333b} .scr{fill:#ffffff}
+.card{fill:#f6f8fa;stroke:#d1d9e0} .cardf{fill:#ffffff;stroke:#d1d9e0}
+.ln{fill:none;stroke:#d1d9e0} .lnf{fill:#d1d9e0}
+.btn{fill:#0969da} .btn2{fill:#ffffff;stroke:#d1d9e0} .btnd{fill:#ffffff;stroke:#cf222e}
+.ta{fill:#ddf4ff} .td{fill:#ffebe9} .tg{fill:#dafbe1} .ty{fill:#fff8c5} .tr{fill:#fbefff}
+.sa{stroke:#0969da} .sd{stroke:#cf222e} .sg{stroke:#1a7f37} .sy{stroke:#9a6700}
+.sr{stroke:#8250df} .sm{stroke:#59636e} .sf{stroke:#afb8c1} .sl{stroke:#d1d9e0}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#ddf4ff;stroke:#0969da;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#afb8c1;stroke-dasharray:6 4}
+@media (prefers-color-scheme: dark){
+.bg{fill:#151b23}
+.t{fill:#e6edf3} .m{fill:#9198a1} .a{fill:#4493f8} .d{fill:#f85149}
+.g{fill:#3fb950} .y{fill:#d29922} .r{fill:#ab7df8} .f{fill:#484f58}
+.frame{fill:#2f3742;stroke:#4a535e} .scr{fill:#0d1117}
+.card{fill:#151b23;stroke:#3d444d} .cardf{fill:#0d1117;stroke:#3d444d}
+.ln{fill:none;stroke:#3d444d} .lnf{fill:#3d444d}
+.btn{fill:#1f6feb} .btn2{fill:#0d1117;stroke:#3d444d} .btnd{fill:#0d1117;stroke:#f85149}
+.ta{fill:#12294a} .td{fill:#3c1618} .tg{fill:#12261e} .ty{fill:#2e2610} .tr{fill:#2a1d45}
+.sa{stroke:#4493f8} .sd{stroke:#f85149} .sg{stroke:#3fb950} .sy{stroke:#d29922}
+.sr{stroke:#ab7df8} .sm{stroke:#9198a1} .sf{stroke:#484f58} .sl{stroke:#3d444d}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#12294a;stroke:#4493f8;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#484f58;stroke-dasharray:6 4}
+}
+</style>
+<defs>
+<marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="a"/></marker>
+<marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+<marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d"/></marker>
+<marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="r"/></marker>
+<marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
+<marker id="hf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="960" height="596" rx="16"/>
+<g transform="translate(40,40)">
+<rect x="0" y="0" width="210" height="400" rx="32" class="frame" stroke-width="1.5"/><rect x="10" y="10" width="190" height="380" rx="24" class="scr"/><rect x="75.0" y="17" width="60" height="14" rx="7" class="frame"/><g transform="translate(10,10)">
+<text x="14" y="52" class="t" font-size="20" font-weight="700">Devices</text><text x="14" y="78" class="m" font-size="10" font-weight="700">THIS DEVICE</text><rect x="12" y="84" width="166" height="40" rx="8" class="card"/><text x="24" y="101" class="t" font-size="12.5" font-weight="600">iPhone</text><text x="24" y="116" class="m" font-size="10.5">White Noise · iOS</text><text x="14" y="144" class="m" font-size="10" font-weight="700">YOUR DEVICES</text><rect x="12" y="150" width="166" height="52" rx="8" class="card"/><rect x="12" y="150" width="166" height="52" rx="8" class="ln sa" stroke-width="2"/><text x="24" y="168" class="t" font-size="12.5" font-weight="600">Laptop</text><text x="24" y="183" class="m" font-size="10.5">Linked Sep 12 by iPhone</text><text x="24" y="196" class="m" font-size="10.5">Active 2 days ago</text><rect x="12" y="208" width="166" height="52" rx="8" class="card"/><text x="24" y="226" class="t" font-size="12.5" font-weight="600">iPad</text><text x="24" y="241" class="m" font-size="10.5">Linked Aug 3 by iPhone</text><text x="24" y="254" class="y" font-size="10.5" font-weight="600">Active 34 days ago</text><rect x="122" y="216" width="48" height="18" rx="9" class="ty"/><text x="146" y="229" class="y" font-size="9.5" font-weight="700" text-anchor="middle">Inactive</text><text x="14" y="282" class="m" font-size="10" font-weight="700">UNRECOGNIZED SIGN-INS</text><rect x="12" y="288" width="166" height="48" rx="8" class="td"/><text x="24" y="306" class="d" font-size="12.5" font-weight="600">Unknown device</text><text x="24" y="322" class="m" font-size="10.5">White Noise · 1 hour ago</text><path d="M160,306 l6,6 l-6,6" class="sa" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g><text x="145.0" y="464" class="m" font-size="13" font-weight="600" text-anchor="middle">Alice’s iPhone</text><path d="M262,214 L276,206 L276,222 z" class="cardf"/><rect x="276" y="170" width="172" height="116" rx="10" class="cardf"/><text x="292" y="196" class="t" font-size="12.5">Rename</text><line x1="288" x2="436" y1="208" y2="208" class="ln"/><text x="292" y="230" class="t" font-size="12.5">Keep while inactive</text><line x1="288" x2="436" y1="242" y2="242" class="ln"/><text x="292" y="266" class="d" font-size="12.5" font-weight="700">Remove device</text><path d="M448,262 H500" class="arr sd" marker-end="url(#hd)"/><rect x="506" y="206" width="190" height="110" rx="10" class="cardf"/><circle cx="522" cy="226" r="10.5" class="a"/><text x="522" y="230.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">1</text><text x="540" y="231" class="t" font-size="12">removed from every</text><text x="540" y="247" class="t" font-size="12">chat and the device group</text><circle cx="522" cy="270" r="10.5" class="a"/><text x="522" y="274.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">2</text><text x="540" y="275" class="t" font-size="12">its KeyPackage slot</text><text x="540" y="291" class="t" font-size="12">is deleted</text><rect x="506" y="40" width="190" height="138" rx="10" class="cardf"/><text x="520" y="62" class="t" font-size="12" font-weight="700">Alice’s KeyPackage slots</text><line x1="520" x2="682" y1="72" y2="72" class="ln"/><text x="520" y="94" class="a mono" font-size="12.5" font-weight="700">A</text><text x="542" y="94" class="t" font-size="12">iPhone</text><text x="520" y="118" class="a mono" font-size="12.5" font-weight="700">C</text><text x="542" y="118" class="t" font-size="12">iPad</text><text x="520" y="142" class="f mono" font-size="12.5" font-weight="700">B</text><text x="542" y="142" class="f" font-size="12">Laptop</text><line x1="518" x2="590" y1="138" y2="138" class="sd" stroke-width="1.6"/><text x="598" y="142" class="d" font-size="11" font-weight="600">deleted</text><text x="520" y="164" class="m" font-size="11">roster remembers slot B</text><path d="M600,202 V184" class="arr sd" marker-end="url(#hd)"/><g transform="translate(724,64) scale(0.62)">
+<rect x="0" y="0" width="340" height="220" rx="12" class="frame" stroke-width="1.5"/><rect x="10" y="10" width="320" height="200" rx="5" class="scr"/><g transform="translate(10,10)">
+<path d="M160,27.6 L176.0,54.8 L144.0,54.8 z" class="y"/><rect x="158.72" y="36.4" width="2.5600000000000005" height="10.4" rx="1.4" fill="#ffffff"/><circle cx="160" cy="50.4" r="1.6" fill="#ffffff"/><text x="160" y="90" class="t" font-size="15" font-weight="700" text-anchor="middle">This device was removed</text><text x="160" y="114" class="m" font-size="12" text-anchor="middle">Alice’s iPhone removed it from</text>
+<text x="160" y="131" class="m" font-size="12" text-anchor="middle">your account.</text><rect x="90" y="150" width="140" height="30" rx="15.0" class="btn"/><text x="160.0" y="169.32" font-size="12" font-weight="600" text-anchor="middle" class="" fill="#ffffff">Sign in again</text>
+</g><path d="M-24,220 H364 l-10,13 H-14 z" class="frame" stroke-width="1.5"/><rect x="142.0" y="220" width="56" height="5" rx="2" class="lnf"/>
+</g><text x="829.4" y="232.46" class="m" font-size="12" font-weight="600" text-anchor="middle">Laptop, next time it opens</text><rect x="712" y="250" width="228" height="66" rx="10" class="ty"/><text x="724" y="270" class="y" font-size="11.5">If slot B publishes again:</text>
+<text x="724" y="285" class="y" font-size="11.5">“A device you removed is</text>
+<text x="724" y="300" class="y" font-size="11.5">trying to come back.”</text><text x="40" y="494" class="m" font-size="12" font-weight="700">INACTIVE DEVICES</text><line x1="60" x2="900" y1="530" y2="530" class="sl" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="530" r="7" class="m"/><text x="54" y="558" class="t" font-size="12.5" font-weight="600">Last seen</text><circle cx="450" cy="530" r="7" class="y"/><text x="450" y="558" class="t" font-size="12.5" font-weight="600" text-anchor="middle">30 days</text><text x="450" y="575" class="m" font-size="11.5" text-anchor="middle">stale for invites · “Remove it?”</text><circle cx="840" cy="530" r="7" class="d"/><text x="900" y="558" class="t" font-size="12.5" font-weight="600" text-anchor="end">90 days</text><text x="900" y="575" class="m" font-size="11.5" text-anchor="end">removed unless Keep</text>
+</svg>

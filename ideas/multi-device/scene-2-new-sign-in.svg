@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 516" width="960" height="516" role="img" aria-labelledby="title desc">
+<title id="title">Scene 2: signing in on a new laptop</title>
+<desc id="desc">The new laptop publishes its KeyPackage, sees another device on the account, asks whether Alice still has it, and on Yes shows a four-word code to match on the other device.</desc>
+<style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.bg{fill:#f6f8fa}
+.t{fill:#1f2328} .m{fill:#59636e} .a{fill:#0969da} .d{fill:#cf222e}
+.g{fill:#1a7f37} .y{fill:#9a6700} .r{fill:#8250df} .f{fill:#afb8c1}
+.frame{fill:#2d333b;stroke:#2d333b} .scr{fill:#ffffff}
+.card{fill:#f6f8fa;stroke:#d1d9e0} .cardf{fill:#ffffff;stroke:#d1d9e0}
+.ln{fill:none;stroke:#d1d9e0} .lnf{fill:#d1d9e0}
+.btn{fill:#0969da} .btn2{fill:#ffffff;stroke:#d1d9e0} .btnd{fill:#ffffff;stroke:#cf222e}
+.ta{fill:#ddf4ff} .td{fill:#ffebe9} .tg{fill:#dafbe1} .ty{fill:#fff8c5} .tr{fill:#fbefff}
+.sa{stroke:#0969da} .sd{stroke:#cf222e} .sg{stroke:#1a7f37} .sy{stroke:#9a6700}
+.sr{stroke:#8250df} .sm{stroke:#59636e} .sf{stroke:#afb8c1} .sl{stroke:#d1d9e0}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#ddf4ff;stroke:#0969da;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#afb8c1;stroke-dasharray:6 4}
+@media (prefers-color-scheme: dark){
+.bg{fill:#151b23}
+.t{fill:#e6edf3} .m{fill:#9198a1} .a{fill:#4493f8} .d{fill:#f85149}
+.g{fill:#3fb950} .y{fill:#d29922} .r{fill:#ab7df8} .f{fill:#484f58}
+.frame{fill:#2f3742;stroke:#4a535e} .scr{fill:#0d1117}
+.card{fill:#151b23;stroke:#3d444d} .cardf{fill:#0d1117;stroke:#3d444d}
+.ln{fill:none;stroke:#3d444d} .lnf{fill:#3d444d}
+.btn{fill:#1f6feb} .btn2{fill:#0d1117;stroke:#3d444d} .btnd{fill:#0d1117;stroke:#f85149}
+.ta{fill:#12294a} .td{fill:#3c1618} .tg{fill:#12261e} .ty{fill:#2e2610} .tr{fill:#2a1d45}
+.sa{stroke:#4493f8} .sd{stroke:#f85149} .sg{stroke:#3fb950} .sy{stroke:#d29922}
+.sr{stroke:#ab7df8} .sm{stroke:#9198a1} .sf{stroke:#484f58} .sl{stroke:#3d444d}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#12294a;stroke:#4493f8;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#484f58;stroke-dasharray:6 4}
+}
+</style>
+<defs>
+<marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="a"/></marker>
+<marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+<marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d"/></marker>
+<marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="r"/></marker>
+<marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
+<marker id="hf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="960" height="516" rx="16"/>
+<g transform="translate(40,166)">
+<rect x="0" y="0" width="340" height="220" rx="12" class="frame" stroke-width="1.5"/><rect x="10" y="10" width="320" height="200" rx="5" class="scr"/><g transform="translate(10,10)">
+<text x="20" y="36" class="t" font-size="16" font-weight="700">Welcome back, Alice</text><text x="20" y="64" class="t" font-size="12.5">You’re already signed in on another</text>
+<text x="20" y="81" class="t" font-size="12.5">device (last seen 2 hours ago).</text><text x="20" y="112" class="t" font-size="13" font-weight="700">Do you still have it?</text><rect x="20" y="124" width="280" height="30" rx="15.0" class="btn"/><text x="160.0" y="143.32" font-size="12" font-weight="600" text-anchor="middle" class="" fill="#ffffff">Yes, link this device</text><rect x="20" y="162" width="280" height="28" rx="14.0" class="btn2"/><text x="160.0" y="180.32" font-size="12" font-weight="600" text-anchor="middle" class="t">No, start fresh</text>
+</g><path d="M-24,220 H364 l-10,13 H-14 z" class="frame" stroke-width="1.5"/><rect x="142.0" y="220" width="56" height="5" rx="2" class="lnf"/>
+</g><text x="210.0" y="425" class="m" font-size="13" font-weight="600" text-anchor="middle">Alice’s new laptop</text><g transform="translate(580,166)">
+<rect x="0" y="0" width="340" height="220" rx="12" class="frame" stroke-width="1.5"/><rect x="10" y="10" width="320" height="200" rx="5" class="scr"/><g transform="translate(10,10)">
+<text x="20" y="34" class="t" font-size="15" font-weight="700">Approve on your other device</text><text x="20" y="60" class="m" font-size="12">Open Marmot on a device you’re already</text>
+<text x="20" y="77" class="m" font-size="12">signed in on and check that it shows:</text><rect x="20" y="96" width="280" height="40" rx="8" class="ta"/><text x="160.0" y="121.4" class="a mono" font-size="15" font-weight="600" text-anchor="middle">river  apple  seven  moon</text><circle cx="28" cy="166" r="6" class="sl" fill="none" stroke-width="2"/><path d="M28,160 a6,6 0 0 1 6,6" class="sa" fill="none" stroke-width="2" stroke-linecap="round"/><text x="42" y="170" class="m" font-size="12">Waiting for approval…</text>
+</g><path d="M-24,220 H364 l-10,13 H-14 z" class="frame" stroke-width="1.5"/><rect x="142.0" y="220" width="56" height="5" rx="2" class="lnf"/>
+</g><text x="750.0" y="425" class="m" font-size="13" font-weight="600" text-anchor="middle">Same laptop, after “Yes”</text><rect x="430" y="24" width="100" height="22" rx="6" class="tr" stroke-width="1.2"/><rect x="430" y="24" width="100" height="22" rx="6" class="sr" fill="none"/>
+<circle cx="442" cy="35" r="3" class="r"/><circle cx="452" cy="35" r="3" class="r" fill-opacity=".5"/>
+<rect x="492" y="33" width="28" height="4" rx="2" class="r" fill-opacity=".45"/>
+<rect x="430" y="50" width="100" height="22" rx="6" class="tr" stroke-width="1.2"/><rect x="430" y="50" width="100" height="22" rx="6" class="sr" fill="none"/>
+<circle cx="442" cy="61" r="3" class="r"/><circle cx="452" cy="61" r="3" class="r" fill-opacity=".5"/>
+<rect x="492" y="59" width="28" height="4" rx="2" class="r" fill-opacity=".45"/>
+<rect x="430" y="76" width="100" height="22" rx="6" class="tr" stroke-width="1.2"/><rect x="430" y="76" width="100" height="22" rx="6" class="sr" fill="none"/>
+<circle cx="442" cy="87" r="3" class="r"/><circle cx="452" cy="87" r="3" class="r" fill-opacity=".5"/>
+<rect x="492" y="85" width="28" height="4" rx="2" class="r" fill-opacity=".45"/>
+<text x="480.0" y="120" class="r" font-size="13" font-weight="700" text-anchor="middle">Relays</text><path d="M190,166 V52 H418" class="arr sa" marker-end="url(#ha)"/><circle cx="214" cy="30" r="10.5" class="a"/><text x="214" y="34.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">1</text><text x="232" y="35" class="t" font-size="12.5" font-weight="600">publishes KeyPackage, slot B</text><path d="M430,100 H250 V158" class="arr sm dash" marker-end="url(#hm)"/><circle cx="270" cy="124" r="10.5" class="a"/><text x="270" y="128.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">2</text><text x="288" y="128" class="m" font-size="12">finds slot A, refreshed</text><text x="288" y="144" class="m" font-size="12">2 hours ago</text><path d="M414,286 H552" class="arr sa" marker-end="url(#ha)"/><circle cx="460" cy="264" r="10.5" class="a"/><text x="460" y="268.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">3</text><text x="478" y="269" class="t" font-size="12.5" font-weight="600">Yes</text><text x="480" y="494" class="m" font-size="13" text-anchor="middle">The code is computed from the laptop’s own KeyPackage, so the iPhone can compute it too. No new messages are needed.</text>
+</svg>

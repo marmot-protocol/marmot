@@ -412,7 +412,7 @@ message because of a token record's age, absence, or supersession.
 
 The record key is the tuple `(member_id_hex, leaf_index, platform, server_pubkey_hex)`. At most one active record
 exists per key per group. `leaf_index` is part of the key because one Marmot account can participate from multiple MLS
-leaves (see [multi-device.md](multi-device.md)); omitting it would collapse sibling devices, letting one leaf's list
+leaves (see [../foundation/identity.md](../foundation/identity.md#accounts-and-members)); omitting it would collapse sibling devices, letting one leaf's list
 entry or removal overwrite or suppress another leaf's active token.
 
 Each entry carries its owner's `owner_ts` and `owner_sig` (see "Owner authentication"). The ordering primitive for a
