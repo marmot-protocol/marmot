@@ -25,7 +25,8 @@ options remain open for discussion; the figures below illustrate the baseline, n
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
   retires its KeyPackage.
 - **Your nsec still controls account identity.** Anyone holding it can act as you. Observed sign-ins can trigger alerts,
-  but detection is not guaranteed, and the nsec alone does not recover old chat messages or MLS state.
+  but detection is not guaranteed. The nsec does not directly decrypt old chats; tricking a sibling into enrollment or
+  history release is a separate risk discussed in the companion.
 
 ## Words used here
 
@@ -107,8 +108,9 @@ its siblings better liveness (the "last active" on the Devices screen in Scene 7
 group only ever sees KeyPackage refreshes.
 
 **The code:** four words from a fixed 2,048-word list (about 44 bits), computed from the laptop's own KeyPackage. The iPhone sees that KeyPackage on
-relays and can compute the same code, so the code needs no extra messages. Checking that the two codes match ties the approval to the
-device in Alice's hand, rather than to some other new sign-in that appeared at the same moment.
+relays and can compute the same code, so displaying the code needs no extra messages. Comparing the screens is intended
+to identify the candidate Alice approves. Its security depends on the session binding, grinding analysis and
+private-key possession exchange left open in Scene 4 and the companion; the code alone does not establish those.
 
 **Trade-offs:**
 
@@ -144,14 +146,15 @@ survives.
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
+![Baseline flow: Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
 to name the device, two toggles, and Link device, This wasn't me, and Not now.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
 the iPhone can know, because KeyPackages carry only a client tag. She checks the code against the laptop and chooses:
 
 - **Link device.** She names the device (the label, such as "Laptop") and sets two toggles: **Add to all my chats** and
-  **Bring chat history**. Both default to on. The label lives only in the roster. The new device can share its model
+  **Bring chat history**. Both default to on in this baseline illustration; the companion leaves the defaults open
+  when introducing selective sync. The label lives only in the roster. The new device can share its model
   and platform privately in the device group once it is linked.
 - **This wasn't me:** Scene 8.
 - **Not now:** the sign-in stays listed under Unrecognized sign-ins on the Devices screen (Scene 7).
@@ -180,7 +183,8 @@ does not prove possession of the private Welcome initialization key; the compani
 - **Approval from any one device is enough.** Alice's other devices change their prompt to "Laptop was added by iPhone"
   rather than silently dropping it. A device linked later doesn't prompt about devices already in the roster.
 - **Conflicting answers:** the first decision recorded in the device group wins. A later "This wasn't me" from another
-  device becomes an ordinary removal of that device. There are no seniority rules.
+  device initiates removal, raises the persistent signing-access warning, and cancels unfinished transfers. There are
+  no seniority rules. How decisions are ordered during partitions remains an open question in the companion.
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 
@@ -309,7 +313,7 @@ account still has to give up admin first, as today.
 
 ## Scene 8: "This wasn't me"
 
-![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
+![Baseline raw-key compromise example: a full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
 chats and history, and remove it from chats they share with it. The key holder can still be invited to new chats, send
 as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not-me.svg)
 
@@ -361,8 +365,9 @@ These are the pieces we know are unsettled.
 6. **The client tag.** Detection and the new sign-in prompt rely on a client tag on KeyPackages, but the Nostr transport
    doesn't define one yet.
 7. **Code details.** Exactly how the four words are derived from the KeyPackage, and which word list to use.
-8. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
-   markers, pins, notification state), and backups that are never encrypted to the nsec alone.
+8. **History, state sync, and backups.** The companion's [initial history sketch](./multi-device-security.md#how-old-messages-reach-a-new-device)
+   leaves the complete transfer and recovery design open: chunked history, small-state sync (read markers, pins,
+   notification state), and backups that are never encrypted to the nsec alone.
 9. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
    early so that it doesn't force changes to this design later.
 10. **Security and selective sync refinements.** The companion's

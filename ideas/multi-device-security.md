@@ -193,7 +193,7 @@ sibling under the current any-one-device approval proposal.
 
 | Adversary or failure | Proposed protection | Remaining exposure |
 | --- | --- | --- |
-| Attacker with nsec, without device secrets | Verified prompts, trusted continuity and explicit enrollment | Can create valid account proofs and new slots, impersonate the account, and receive future invites; nsec alone does not decrypt old chats. |
+| Attacker with nsec, without device secrets | Verified prompts, trusted continuity and explicit enrollment | Can create valid account proofs, replace slots, impersonate the account and receive future invites. Nsec does not directly decrypt old chats, but deceiving gap filling or history release can expose them until continuity is enforced. |
 | Compromised signer session or grant | Revoke affected access, check grants and verify new device approval | The exact authority depends on the signer; a stolen raw key remains usable after grant revocation. |
 | Lost or compromised installation | Remove its leaves, retire its slot and revoke signer access | Stored plaintext and captured keys remain exposed; removal is prospective and depends on accepted chat commits. |
 | Malicious approved sibling | Explicit scope and visible approval/removal history | Under single-sibling authorization it may enroll others, export available history or remove siblings; stronger consent would require a different trust model. |
