@@ -19,8 +19,9 @@ options remain open for discussion; the figures below illustrate the baseline, n
   between devices, and no device is primary.
 - **Your devices know about each other through a device group.** Once you link a second device, your devices share a
   hidden Marmot group that only they belong to. It holds the device list, heartbeats, and small coordination messages.
-- **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that a short code matches on both screens.
+- **Observed new sign-ins ask for verification.** When your devices receive and validate evidence of a new
+  installation, they ask "Was this you?" You compare a short code on both screens before approving. Publication alone
+  does not guarantee observation; relays can withhold evidence and a replaced known slot needs continuity checks.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
   retires its KeyPackage.
@@ -52,7 +53,8 @@ options remain open for discussion; the figures below illustrate the baseline, n
   it, and an attacker with signing access can overwrite a known slot. The companion discusses
   [trusted continuity](./multi-device-security.md#existing-signatures-and-the-missing-continuity-guarantee) for that case.
 - **Removal blocks use of old membership after the removal is accepted.** A removed leaf cannot rejoin through its
-  old MLS state. Coming back needs a newly authorized add; observed publications can alert siblings, but a stolen
+  old MLS state. Coming back needs a new add authorized by a chat admin or sibling, not necessarily Alice's approval;
+  observed publications can alert siblings, but a stolen
   account key still permits new valid packages. Last-resort initialization keys also remain an exposure to review.
 - **Device count is not private.** Chat members see every leaf, and each carries the account's key. Showing Alice as one
   member is a display choice, not a privacy property. Public KeyPackages also show roughly how many installations an
@@ -146,7 +148,7 @@ survives.
 
 ## Scene 4: The existing device approves
 
-![Baseline flow: Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
+![Baseline flow: Alice's iPhone shows a New sign-in prompt with the client name, the same code as the laptop, a field
 to name the device, two toggles, and Link device, This wasn't me, and Not now.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
@@ -165,8 +167,10 @@ the iPhone can know, because KeyPackages carry only a client tag. She checks the
 
 - a KeyPackage under the account in a slot outside the roster (the main signal, and the normal way linking starts);
 - a Welcome sent to the account for a KeyPackage no roster device owns. Every device can open gift wraps addressed to
-  the account, so any of them can notice this;
-- a client tag the account's devices have never used is an additional, self-reported signal, not proof of a new device.
+  the account, so any of them can notice this.
+
+A new client tag is supporting, self-reported information. By itself it does not trigger a security prompt or prove a
+new installation.
 
 These signals need validated evidence before a security alert; a Welcome reference alone is not proof of a valid
 account publication. The proposed [warning policy](./multi-device-security.md#warning-policy-for-discussion) adds
@@ -313,9 +317,12 @@ account still has to give up admin first, as today.
 
 ## Scene 8: "This wasn't me"
 
-![Baseline raw-key compromise example: a full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
-chats and history, and remove it from chats they share with it. The key holder can still be invited to new chats, send
-as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not-me.svg)
+![Baseline raw-key compromise example: Alice's devices reject the sign-in, keep it out of existing chats and history,
+and request removal from shared chats; cleanup can remain incomplete. The key holder can still receive new invites,
+send as Alice, remove her devices and publish KeyPackages.](multi-device/scene-8-not-me.svg)
+
+The illustration assumes raw-nsec theft. A real warning would describe possible signing-access compromise without
+claiming which secret was stolen.
 
 **What Alice sees:** a full-screen warning that her account's signing access may be compromised, through a private key
 or authorized signer. The figure shows the raw-key compromise case. The app explains signer-access revocation where
