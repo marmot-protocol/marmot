@@ -21,7 +21,7 @@ transport message
         -> emit application-visible output when canonical state or delivered payloads change
 ```
 
-The exact local API is implementation-defined. The protocol-visible outcome is either a rejection category or a
+The concrete invocation is implementation-defined. The protocol-visible outcome is either a rejection category or a
 convergence disposition. The category and disposition vocabularies, including the four dispositions (`accepted`,
 `deferred`, `stale`, `invalidated`), are pinned in [../foundation/errors.md](../foundation/errors.md).
 
