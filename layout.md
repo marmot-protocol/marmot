@@ -67,6 +67,7 @@ features/
 ideas/
   README.md
   multi-device.md
+  multi-device-security.md
 implementation-model.md
 ```
 

@@ -17,6 +17,8 @@ Implementations MUST NOT treat an idea document as an interop surface.
 ## Current ideas
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
+- [multi-device-security.md](./multi-device-security.md) - proposed continuity protections, selective sync, Welcome
+  carriers, warning policy, threat model and unresolved security questions for multi-device.
 
 ## From idea to spec
 

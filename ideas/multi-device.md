@@ -9,19 +9,25 @@ the direction we have agreed on. The protocol details come later, surface by sur
 The goal is for adding a device to feel like signing in to a big-provider account and confirming on a phone you already
 have, without a server that controls the device list.
 
+[Security and sync choices](./multi-device-security.md) explores refinements to this baseline: selective chats and
+history, linked-device Welcome delivery, warning policy, trusted KeyPackage continuity, and a threat model. Those
+options remain open for discussion; the figures below illustrate the baseline, not settled UI for the refinements.
+
 ## At a glance
 
 - **Every device is its own MLS member.** Each device has its own leaf, keys, and local state. MLS state is never copied
   between devices, and no device is primary.
 - **Your devices know about each other through a device group.** Once you link a second device, your devices share a
   hidden Marmot group that only they belong to. It holds the device list, heartbeats, and small coordination messages.
-- **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that a short code matches on both screens.
+- **Observed new sign-ins ask for verification.** When your devices receive and validate evidence of a new
+  installation, they ask "Was this you?" You compare a short code on both screens before approving. Publication alone
+  does not guarantee observation; relays can withhold evidence and a replaced known slot needs continuity checks.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
   retires its KeyPackage.
-- **Your nsec is still everything.** Anyone holding it can act as you. This design makes a new installation visible; it
-  cannot stop one.
+- **Your nsec still controls account identity.** Anyone holding it can act as you. Observed sign-ins can trigger alerts,
+  but detection is not guaranteed. The nsec does not directly decrypt old chats; tricking a sibling into enrollment or
+  history release is a separate risk discussed in the companion.
 
 ## Words used here
 
@@ -38,21 +44,25 @@ have, without a server that controls the device list.
 
 ## What this does and does not protect
 
-- **Compromise of the nsec is out of scope.** Whoever holds it can install a client, publish KeyPackages, be added to
-  new chats by other people's inviters, and act as the account. Nostr has no key rotation, and nothing here tries to add
-  one.
+- **Compromise of the nsec cannot be repaired by linking.** Whoever holds it can install a client, publish KeyPackages,
+  be added to new chats by other people's inviters, and act as the account. Nostr has no key rotation, and nothing here
+  tries to add one.
 - **Approval controls your own device group, not your key.** It decides which installations your devices treat as
   known: which ones are added to your existing chats, receive history, and take part in the device group.
-- **Detection is the mitigation.** A KeyPackage in a slot your devices don't know about always produces a visible
-  prompt. Either you skipped linking, or someone else has your key and you now know.
-- **Removed devices stay removed.** A removed leaf cannot rejoin a chat through its old MLS state. Coming back needs a
-  new KeyPackage, which your devices see.
+- **Detection is a mitigation with limits.** An observed, validated new slot prompts for verification. Relays can hide
+  it, and an attacker with signing access can overwrite a known slot. The companion discusses
+  [trusted continuity](./multi-device-security.md#existing-signatures-and-the-missing-continuity-guarantee) for that case.
+- **Removal blocks use of old membership after the removal is accepted.** A removed leaf cannot rejoin through its
+  old MLS state. Coming back needs a new add authorized by a chat admin or sibling, not necessarily Alice's approval;
+  observed publications can alert siblings, but a stolen
+  account key still permits new valid packages. Last-resort initialization keys also remain an exposure to review.
 - **Device count is not private.** Chat members see every leaf, and each carries the account's key. Showing Alice as one
   member is a display choice, not a privacy property. Public KeyPackages also show roughly how many installations an
   account has. Hiding devices entirely would need a shared-leaf design, which needs stricter message ordering than
   relays give us.
-- **A lost or stolen device that holds the raw nsec is a key compromise.** Removing it cleans up your device list, but
-  it does not protect the key. Signers that keep the key off the device avoid this.
+- **A lost or stolen device that holds the raw nsec risks key compromise.** Removing it cleans up your device list, but
+  does not revoke a stolen key. An external signer reduces raw-key exposure; its grants and the device's stored
+  messages and MLS secrets still need attention.
 
 ## Scene 1: Alice's first device
 
@@ -100,8 +110,9 @@ its siblings better liveness (the "last active" on the Devices screen in Scene 7
 group only ever sees KeyPackage refreshes.
 
 **The code:** four words from a fixed 2,048-word list (about 44 bits), computed from the laptop's own KeyPackage. The iPhone sees that KeyPackage on
-relays and can compute the same code, so the code needs no extra messages. Checking that the two codes match ties the approval to the
-device in Alice's hand, rather than to some other new sign-in that appeared at the same moment.
+relays and can compute the same code, so displaying the code needs no extra messages. Comparing the screens is intended
+to identify the candidate Alice approves. Its security depends on the session binding, grinding analysis and
+private-key possession exchange left open in Scene 4 and the companion; the code alone does not establish those.
 
 **Trade-offs:**
 
@@ -137,14 +148,15 @@ survives.
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
+![Baseline flow: Alice's iPhone shows a New sign-in prompt with the client name, the same code as the laptop, a field
 to name the device, two toggles, and Link device, This wasn't me, and Not now.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
 the iPhone can know, because KeyPackages carry only a client tag. She checks the code against the laptop and chooses:
 
 - **Link device.** She names the device (the label, such as "Laptop") and sets two toggles: **Add to all my chats** and
-  **Bring chat history**. Both default to on. The label lives only in the roster. The new device can share its model
+  **Bring chat history**. Both default to on in this baseline illustration; the companion leaves the defaults open
+  when introducing selective sync. The label lives only in the roster. The new device can share its model
   and platform privately in the device group once it is linked.
 - **This wasn't me:** Scene 8.
 - **Not now:** the sign-in stays listed under Unrecognized sign-ins on the Devices screen (Scene 7).
@@ -155,20 +167,28 @@ the iPhone can know, because KeyPackages carry only a client tag. She checks the
 
 - a KeyPackage under the account in a slot outside the roster (the main signal, and the normal way linking starts);
 - a Welcome sent to the account for a KeyPackage no roster device owns. Every device can open gift wraps addressed to
-  the account, so any of them can notice this;
-- a client tag the account's devices have never used.
+  the account, so any of them can notice this.
+
+A new client tag is supporting, self-reported information. By itself it does not trigger a security prompt or prove a
+new installation.
+
+These signals need validated evidence before a security alert; a Welcome reference alone is not proof of a valid
+account publication. The proposed [warning policy](./multi-device-security.md#warning-policy-for-discussion) adds
+known-slot replacement and returning-device cases, and distinguishes signing-access compromise from raw-key theft.
 
 **Matching codes:** the laptop's KeyPackage is public, so someone who has Alice's key could try generating KeyPackages
-until one produces the same code. They would have to succeed in the minutes between the laptop publishing and Alice
-tapping Link, which four words make impractical. As a backup, if two pending sign-ins show the same code, Alice's
-devices treat that as an anomaly and don't offer Link for either.
+until one produces the same code. The four-word design needs a grinding analysis and a bounded approval session before
+its security claim is settled. If two pending sign-ins show the same code, Alice's devices treat that as an anomaly and
+don't offer Link for either. Package replacement during approval also stops that attempt. A matching public code alone
+does not prove possession of the private Welcome initialization key; the companion leaves that exchange open.
 
 **Rules of thumb:**
 
 - **Approval from any one device is enough.** Alice's other devices change their prompt to "Laptop was added by iPhone"
   rather than silently dropping it. A device linked later doesn't prompt about devices already in the roster.
 - **Conflicting answers:** the first decision recorded in the device group wins. A later "This wasn't me" from another
-  device becomes an ordinary removal of that device. There are no seniority rules.
+  device initiates removal, raises the persistent signing-access warning, and cancels unfinished transfers. There are
+  no seniority rules. How decisions are ordered during partitions remains an open question in the companion.
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 
@@ -192,7 +212,13 @@ that toggle on.
    material that came from the shared KeyPackage.
 4. Chats the approving device isn't in are covered by **gap filling**: a sibling that is in the chat adds the missing
    device.
-5. History transfer runs afterwards and is a separate document (see open questions).
+5. History transfer runs afterwards, separately from the Welcome; see the proposed
+   [history flow](./multi-device-security.md#how-old-messages-reach-a-new-device) and open questions.
+
+The adopted Welcome carrier is an account-addressed gift wrap. Carrying later chat Welcomes inside the device group
+after bootstrap is a [proposed alternative](./multi-device-security.md#welcome-delivery-bootstrap-first-then-private-coordination),
+not a change made by this walkthrough. Likewise, [selective sync](./multi-device-security.md#selective-chats-history-and-future-invites)
+would constrain both the approving device's adds and sibling gap filling; exclusion cannot be treated as a missing leaf.
 
 **Trade-offs:**
 
@@ -248,6 +274,9 @@ going stale with a prompt at 30 days, and removal at 90 days unless kept.](multi
 | Your devices | label, client and platform (shared inside the device group), when linked and by which device, last active (from device-group heartbeats) | rename, keep while inactive, remove |
 | Unrecognized sign-ins | client and when it appeared, for new slots not yet linked or rejected | link, this wasn't me |
 
+These baseline sections would need additional status and actions for paused known-slot replacements and outstanding
+chat removals if the companion's warning refinements are adopted. Their placement is part of the open warning-UI design.
+
 **Removing a device from another device**, for example a lost laptop:
 
 1. The laptop is removed from every chat Alice's devices are in, and from the device group.
@@ -291,15 +320,20 @@ account still has to give up admin first, as today.
 
 ## Scene 8: "This wasn't me"
 
-![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
-chats and history, and remove it from chats they share with it. The key holder can still be invited to new chats, send
-as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not-me.svg)
+![Baseline raw-key compromise example: Alice's devices reject the sign-in, keep it out of existing chats and history,
+and request removal from shared chats; cleanup can remain incomplete. The key holder can still receive new invites,
+send as Alice, remove her devices and publish KeyPackages.](multi-device/scene-8-not-me.svg)
 
-**What Alice sees:** a full-screen warning that someone else has her key. It says plainly that the only complete fix is
-moving to a new account.
+The illustration assumes raw-nsec theft. A real warning would describe possible signing-access compromise without
+claiming which secret was stolen.
 
-**What her devices do:** they mark the slot rejected so no device prompts about it again, never add it to existing chats
-or send it history, and remove its leaf from any chat they share with it.
+**What Alice sees:** a full-screen warning that her account's signing access may be compromised, through a private key
+or authorized signer. The figure shows the raw-key compromise case. The app explains signer-access revocation where
+applicable; if the raw nsec was stolen, moving to a new account is the complete identity remedy.
+
+**What her devices do:** they reject this sign-in, suppress repeats of the same evidence, cancel pending adds and
+history transfers, and request removal of its leaves from shared chats. Incomplete removals remain visible. A later
+suspicious replacement in the same slot remains a warning case, and history already delivered cannot be recalled.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
 devices, and publish more KeyPackages. The warning must not promise more protection than that.
@@ -338,13 +372,18 @@ These are the pieces we know are unsettled.
    all of these the same way.
 5. **The chat readiness component.** Which group app component marks a chat as ready for multi-device, and what exactly
    it turns on: sibling adds, sibling removal, an admin's device leaving, and the leaf cap.
-6. **The client tag.** Detection and the new sign-in prompt rely on a client tag on KeyPackages, but the Nostr transport
-   doesn't define one yet.
+6. **The client tag.** The new sign-in prompt displays a client tag on KeyPackages, but the Nostr transport doesn't
+   define one yet. Slot detection does not depend on that self-reported tag.
 7. **Code details.** Exactly how the four words are derived from the KeyPackage, and which word list to use.
-8. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
-   markers, pins, notification state), and backups that are never encrypted to the nsec alone.
+8. **History, state sync, and backups.** The companion's [initial history sketch](./multi-device-security.md#how-old-messages-reach-a-new-device)
+   leaves the complete transfer and recovery design open: chunked history, small-state sync (read markers, pins,
+   notification state), and backups that are never encrypted to the nsec alone.
 9. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
    early so that it doesn't force changes to this design later.
+10. **Security and selective sync refinements.** The companion's
+    [question register](./multi-device-security.md#questions-to-settle-before-spec-work) covers continuity keys and
+    bidirectional signatures, private-key possession, Welcome carriers, per-chat consent, warning rules, privacy,
+    decision ordering, history provenance and adversary cases. These need resolution before their rules enter the spec.
 
 ## Path into the spec
 
