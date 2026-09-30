@@ -274,6 +274,9 @@ going stale with a prompt at 30 days, and removal at 90 days unless kept.](multi
 | Your devices | label, client and platform (shared inside the device group), when linked and by which device, last active (from device-group heartbeats) | rename, keep while inactive, remove |
 | Unrecognized sign-ins | client and when it appeared, for new slots not yet linked or rejected | link, this wasn't me |
 
+These baseline sections would need additional status and actions for paused known-slot replacements and outstanding
+chat removals if the companion's warning refinements are adopted. Their placement is part of the open warning-UI design.
+
 **Removing a device from another device**, for example a lost laptop:
 
 1. The laptop is removed from every chat Alice's devices are in, and from the device group.
@@ -369,8 +372,8 @@ These are the pieces we know are unsettled.
    all of these the same way.
 5. **The chat readiness component.** Which group app component marks a chat as ready for multi-device, and what exactly
    it turns on: sibling adds, sibling removal, an admin's device leaving, and the leaf cap.
-6. **The client tag.** Detection and the new sign-in prompt rely on a client tag on KeyPackages, but the Nostr transport
-   doesn't define one yet.
+6. **The client tag.** The new sign-in prompt displays a client tag on KeyPackages, but the Nostr transport doesn't
+   define one yet. Slot detection does not depend on that self-reported tag.
 7. **Code details.** Exactly how the four words are derived from the KeyPackage, and which word list to use.
 8. **History, state sync, and backups.** The companion's [initial history sketch](./multi-device-security.md#how-old-messages-reach-a-new-device)
    leaves the complete transfer and recovery design open: chunked history, small-state sync (read markers, pins,

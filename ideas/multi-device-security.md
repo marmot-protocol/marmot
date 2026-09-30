@@ -162,7 +162,9 @@ input is not evidence that account signing access was stolen.
 | New client tag without other anomaly evidence | Treat as a self-reported client change, not proof of a new physical device or theft. |
 
 The continuity rows depend on choosing and specifying a continuity mechanism. Older clients cannot claim to provide
-that guarantee. Expired evidence is not a current invitation candidate; authenticated historical anomalies may still
+that guarantee. Without it, the baseline quietly handles known-slot refreshes and cannot reliably detect an attacker
+replacing a known slot; that is an accepted limitation of the baseline, not a verified continuity check. Expired
+evidence is not a current invitation candidate; authenticated historical anomalies may still
 merit investigation, with wording that distinguishes a past event from an active sign-in.
 
 Suggested wording after denial:
