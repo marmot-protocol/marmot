@@ -123,6 +123,7 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
    rejected until a prior canonical closure. With all admins unavailable, a non-admin cohort member commits expiry
    after the deadline and recovery proceeds against the closed parent without any purge effect. Disband is rejected
    while open and becomes eligible only after a prior canonical closure;
+   cover a SelfRemove batch's scoped atomic supersession without granting the leaving leaf self-commit authority;
 8. a leaf without `app_ephemeral`, `app_data_update`, or component `0x800d` support, verifying that request creation and
    finalization are blocked rather than treating the leaf as consenting;
 9. every terminal proposal set with each required proposal missing or duplicated and with one unrelated proposal added,

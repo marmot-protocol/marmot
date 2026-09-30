@@ -140,6 +140,7 @@ class EncodingTest(unittest.TestCase):
 
     def test_maximum_open_state_yes_vector(self):
         core = copy.deepcopy(FIXTURE["request"])
+        core["group_id"] = "11" * 255
         core["members"] = [i.to_bytes(32, "big").hex() for i in range(1023)] + [core["proposer_pubkey"]]
         request = {"core": core, "proposer_proof": {**FIXTURE["proof"], "created_at": core["created_at"]}}
         state = {"request": request, "yes_decisions": [
@@ -148,6 +149,7 @@ class EncodingTest(unittest.TestCase):
         offset = len(wire.encode_request(request))
         self.assertEqual(encoded[offset:offset+4], wire.quic_length(107520))
         self.assertEqual(len(encoded)-offset-4, 107520)
+        self.assertEqual(len(encoded), 140794)
         self.assertEqual(wire.decode_open_state(encoded), state)
 
 

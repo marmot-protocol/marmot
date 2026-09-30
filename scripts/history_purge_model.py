@@ -135,7 +135,7 @@ class Purge:
 
     def emit_receipt(self, account, outcome, all_stores_complete, coordinated):
         if (self.terminal != "accepted" or not self.selected or account not in self.members
-                or account in self.emitted or outcome not in {"applied", "failed"}):
+                or account in self.emitted or outcome not in {"applied", "failed"} or not coordinated):
             return False
         if outcome == "applied" and not (self.cleaned and all_stores_complete and coordinated):
             return False

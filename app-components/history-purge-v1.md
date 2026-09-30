@@ -311,7 +311,7 @@ Every terminal Commit removes the GroupContext `0x800d` entry and its temporary 
 Commit additionally contains exactly one full-replacement update for `marmot.group.message-retention.v1` with
 `target_retention_secs`. Other terminal Commits contain no retention update except the independently authorized retention
 change that causes `superseded`; that update remains subject to the retention component's normal authorization. Except
-for the exact canonical-state change that causes `superseded`, a terminal Commit contains no proposal beyond the history-purge removal, required-component
+for the exact independently authorized binding changes that cause `superseded`, a terminal Commit contains no proposal beyond the history-purge removal, required-component
 removal, the terminal `AppEphemeral`, and the accepted retention update when applicable. Any missing, duplicate, or
 extra proposal makes the terminal transition invalid.
 
@@ -319,6 +319,11 @@ When a legitimate superseding change also edits `app_components`, the required-l
 authorized change MUST be combined in one full-replacement operation for that component. Both proposal sender and
 committer must have authority for every delta; a non-admin's exception covers only removing `0x800d`. Duplicate
 operations for one component remain invalid, and no other actor's admin authority can be borrowed.
+
+A superseding Commit may carry several such binding changes, including their mandatory authorization bookkeeping;
+each must independently satisfy its owning rules and contribute to a real binding change. Unrelated updates remain
+forbidden. In groups using this draft component, a SelfRemove batch follows the conditional atomic-supersession
+exception in [member departure](../protocol-core/member-departure.md); the leaving leaf never commits its own removal.
 
 The accepted Commit is the sole purge linearization point. Neither a request, a Yes, a No proof that has not reached a
 selected Commit, nor local expiry starts suppression or deletion. The first terminal transition on the selected
@@ -361,8 +366,9 @@ superseded, or non-canonical finalization is invalid and MUST NOT contribute to 
 authenticated sender MUST be one member account in the accepted request cohort. A sender emits at most one receipt for
 a finalization. Receipt emission MUST be coordinated and durably single-use across that account's conforming leaves.
 `applied` may be emitted only after all of that account's controlled conforming stores complete the required idempotent
-cleanup. Unknown completeness or unavailable coordination MUST withhold `applied`; clients may instead emit one
-coarse `failed` result. V1 defines no device-discovery or cross-device coordination protocol, so active-leaf presence
+cleanup. Unknown completeness MUST withhold `applied`; with available single-use coordination the account may instead
+emit one coarse `failed` result. Without that coordination it MUST emit neither outcome, so `group_complete` remains
+unreachable until a coordinated applied receipt becomes available. V1 defines no device-discovery or cross-device coordination protocol, so active-leaf presence
 alone never proves account-wide completion. Repeated identical account receipts are idempotent. Conflicting outcomes
 for one account prevent `group_complete` and yield a coarse partial result independent of arrival order. The receipt
 identity is:
@@ -477,6 +483,10 @@ No valid persistent state may be removed without the matching terminal `AppEphem
 for a group containing an unsupported leaf. Legacy groups continue without it. A future incompatible request, state,
 proof, finalization, receipt, or authorization rule requires a new component id and new proof kinds; V1 bytes MUST NOT
 be reinterpreted.
+
+Before adoption, implementations must demonstrate all required history-purge conformance scenarios with real signed
+proofs, MLS processing/convergence and durable cleanup/restart evidence. The reference tests below are placeholders
+for that integration gate, not evidence of its completion.
 
 ## Non-normative reference checks
 

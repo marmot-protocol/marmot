@@ -28,6 +28,12 @@ reconstruct and re-sign it for the new parent instead of silently rebinding it. 
 update, so collecting the full cohort's decisions requires sequential Commits. A member that has not signed Yes can
 immediately commit No to close voting and allow a peer's recovery; a member that already signed Yes cannot switch to No.
 
+The wire ceilings permit 1024 accounts, but a maximum open-state value is 140794 bytes before MLS framing, encryption
+and transport encoding. Full replacement for each Yes gives quadratic aggregate traffic. The Nostr binding has no
+universal event-size cap; relay/client resource limits can still make this unavailable. A client MUST disable request
+opening when its known end-to-end transport budget cannot carry the complete eventual state, and MUST never silently
+drop cohort accounts to fit a budget. These ceilings are not a promise of practical support for a 1024-account group.
+
 The request binds the group and parent state, proposer, prior and target retention values, exact active-account cohort,
 capability-state digest, creation time, and deadline. Membership, account identity, capability, admin policy, or
 retention changes while it is open supersede it; the client requires a new request id rather than silently removing a

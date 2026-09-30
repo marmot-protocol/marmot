@@ -20,3 +20,8 @@ establish signature validity, curve-point validity, or complete protocol conform
 
 The layout regression rejects a feature listed under `ideas/` when its actual file is under `features/`.
 The validator's separate phrase checks provide structural documentation coverage only.
+Its boundary scan covers each entire changed normative file, including pre-existing wording.
+
+The encoding helper follows [Marmot's QUIC length profile](../foundation/canonical-encoding.md), including its eight-byte
+prefix, rather than substituting MLS's distinct variable-length encoding. Response and cancellation ids are derived
+local/conformance identities; no extra wire field is implied by testing them.

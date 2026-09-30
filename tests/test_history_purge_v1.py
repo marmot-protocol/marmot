@@ -194,6 +194,7 @@ class PurgeSafetyTest(unittest.TestCase):
         state.cleanup(16, 2)
         self.assertFalse(state.emit_receipt("alice", "applied", False, True))
         self.assertFalse(state.emit_receipt("alice", "applied", True, False))
+        self.assertFalse(state.emit_receipt("alice", "failed", False, False))
         self.assertTrue(state.emit_receipt("alice", "applied", True, True))
         self.assertFalse(state.emit_receipt("alice", "failed", True, True))
         self.assertFalse(state.observe_receipt("alice", "applied", canonical=False))
