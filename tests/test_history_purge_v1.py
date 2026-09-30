@@ -37,7 +37,7 @@ class PurgeSafetyTest(unittest.TestCase):
                 self.assertFalse(state.suppresses(epoch))
             self.assertFalse(state.suppresses(10, recovery_material=True))
 
-    def test_restart_rollback_and_late_delivery(self):
+    def test_copied_model_state_preserves_cleanup_and_rollback_flags(self):
         state = copy.deepcopy(accepted())
         self.assertTrue(state.suppresses(9))
         self.assertFalse(state.cleanup(15, 2))
@@ -179,7 +179,7 @@ class PurgeSafetyTest(unittest.TestCase):
         self.assertFalse(policy.can_open(799, 799, 900, admin=True))
         self.assertTrue(policy.can_open(800, 800, 900, admin=True))
 
-    def test_selected_terminal_race_never_uses_receipt_order(self):
+    def test_selected_model_terminal_is_single_use(self):
         for first, second in (("accepted", "cancelled"), ("cancelled", "accepted")):
             state = unanimous()
             actor = "alice" if first == "accepted" else "bob"

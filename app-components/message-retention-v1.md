@@ -23,8 +23,9 @@ Any nonzero value is a requested application retention duration in seconds.
 
 Each application message pins the retention state from its own MLS source epoch. Later component updates or removal do
 not shorten, extend, or restore that message's expiry. A retry or transport republication of the same MLS message uses
-the same pinned duration and expiry value. The only adopted exception is the separately negotiated, unanimous local
-plaintext effect in [marmot.group.history-purge.v1](./history-purge-v1.md); that one-shot authorization does not change
+the same pinned duration and expiry value. A draft exception, conditional on groups carrying component `0x800d`, is the
+separately negotiated, unanimous local plaintext effect in [marmot.group.history-purge.v1](./history-purge-v1.md); that
+one-shot authorization does not change
 the pinned expiry value or the prospective default.
 
 The retention duration is signed group state, and the transport-level expiry timestamp uses the exact calculation

@@ -280,6 +280,11 @@ The authorization envelope is interpreted by terminal value:
 - `superseded`: kind `457`, signed by the committer of the canonical membership, identity, capability, admin-policy, or
   retention change that invalidates a request binding; the signer MUST equal the terminal Commit sender.
 
+Supersession requires an actual change to a bound value: the cohort/account-identity bindings, capability digest,
+prior retention value or admin policy from the bound source state. A no-op replacement with the same bound value does
+not invalidate the request and cannot authorize `superseded`. The client retains the bound values needed to validate
+this comparison while the request remains replayable.
+
 For kind `457`, the local signing event has exact tags:
 
 ```text

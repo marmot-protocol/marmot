@@ -57,6 +57,8 @@ proposal is invalid.
 
 A Commit carrying the transition is valid only when:
 
+- the candidate parent has no open [history-purge request](./history-purge-v1.md); a group using that draft component
+  must first close the request in a prior canonical Commit because disband cannot carry its terminal `AppEphemeral`;
 - the authenticated committer is an active admin in the candidate parent;
 - `0x800c` is already required in the candidate parent;
 - the resulting lifecycle state is `disbanded`;

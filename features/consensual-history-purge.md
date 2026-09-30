@@ -23,6 +23,11 @@ the feature-owned kind `453` app event. Only an active admin may propose and com
 component's local admission, cooldown and recovery-priority checks. This replaces unrestricted member opening while
 preserving non-admin request creation. Acceptance and the retention update remain admin-only.
 
+Opening consumes the exact bound parent. An intervening Commit can invalidate an unopened request, so the client must
+reconstruct and re-sign it for the new parent instead of silently rebinding it. Each canonical Yes advances one state
+update, so collecting the full cohort's decisions requires sequential Commits. A member that has not signed Yes can
+immediately commit No to close voting and allow a peer's recovery; a member that already signed Yes cannot switch to No.
+
 The request binds the group and parent state, proposer, prior and target retention values, exact active-account cohort,
 capability-state digest, creation time, and deadline. Membership, account identity, capability, admin policy, or
 retention changes while it is open supersede it; the client requires a new request id rather than silently removing a

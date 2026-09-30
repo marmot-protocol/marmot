@@ -76,6 +76,8 @@ class Purge:
                 or parent_epoch >= 2**64 - 1):
             return False
         in_window = self.created_at <= timestamp <= self.expires_at
+        # change_authorized externalizes the normal authority for the causing change;
+        # it must be false for a non-admin Add, unrelated list mutation, or no-op supersession.
         rules = {
             "accepted": actor in self.admins and self.yes == set(self.members) and in_window,
             "rejected": actor in self.members and actor not in self.yes and in_window,
