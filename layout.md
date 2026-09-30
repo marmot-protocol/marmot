@@ -53,7 +53,6 @@ app-components/
   group-encrypted-media-v2.md
   group-lifecycle-v1.md
   account-identity-proof-v2.md
-  multi-device-join-authorization-v1.md
 transports/
   README.md
   nostr.md
@@ -65,6 +64,8 @@ features/
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+ideas/
+  README.md
   multi-device.md
 implementation-model.md
 ```
@@ -145,6 +146,12 @@ format, key derivation, and AEAD behavior.
 When a feature has an interop-visible breaking change, the owning document MUST name the new version in a capability,
 component id, proposal id, event kind, or feature document. Git history is not a version-negotiation mechanism; an
 interop-visible change needs an explicit protocol versioning hook.
+
+## Ideas
+
+Idea documents are non-normative explorations of future protocol work, published for early feedback. They describe
+user-visible flows, trade-offs, and open questions, and they do not assign ids or define bytes. When part of an idea is
+settled, its rules move into the owning surface above. See [ideas/README.md](./ideas/README.md).
 
 ## Implementation Model
 

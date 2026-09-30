@@ -264,10 +264,6 @@ bytes but is not part of the current profile.
 Every Marmot leaf uses the adopted
 [marmot.member.account-identity-proof.v2](./account-identity-proof-v2.md) LeafNode component.
 
-The branch-draft multi-device flow uses
-[marmot.authorization.multi-device-join.v1](./multi-device-join-authorization-v1.md) as commit-scoped component data
-in `AppEphemeral`. Its assigned bytes do not make the feature adopted.
-
 ## Resolved Direction
 
 - Marmot component ids stay in the private-use range for the foreseeable future.

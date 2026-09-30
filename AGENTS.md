@@ -23,6 +23,7 @@ top-level file stays cross-surface only.
 | Versioned MLS `app_data_dictionary` component bytes | `app-components/AGENTS.md` |
 | How Marmot bytes move over a network (Nostr, QUIC) | `transports/AGENTS.md` |
 | Optional or user-visible flows that span surfaces | `features/AGENTS.md` |
+| Non-normative future directions for early feedback | `ideas/AGENTS.md` |
 | Where new text belongs (canonical tree + ownership) | `layout.md` |
 | How to write the spec (placement + detail rules) | `principles.md` |
 | Map from deprecated MIPs to this spec's surfaces | `mip-coverage.md` |

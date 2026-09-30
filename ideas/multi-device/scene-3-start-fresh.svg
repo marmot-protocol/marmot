@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 494" width="960" height="494" role="img" aria-labelledby="title desc">
+<title id="title">Scene 3: starting fresh and merging device groups</title>
+<desc id="desc">Alice's lost iPhone and sleeping iPad form device group 1. Her laptop started fresh and linked a desktop into device group 2. When the iPad wakes and Alice approves the new sign-ins, group 1 absorbs the laptop and desktop and group 2 is deleted.</desc>
+<style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.bg{fill:#f6f8fa}
+.t{fill:#1f2328} .m{fill:#59636e} .a{fill:#0969da} .d{fill:#cf222e}
+.g{fill:#1a7f37} .y{fill:#9a6700} .r{fill:#8250df} .f{fill:#afb8c1}
+.frame{fill:#2d333b;stroke:#2d333b} .scr{fill:#ffffff}
+.card{fill:#f6f8fa;stroke:#d1d9e0} .cardf{fill:#ffffff;stroke:#d1d9e0}
+.ln{fill:none;stroke:#d1d9e0} .lnf{fill:#d1d9e0}
+.btn{fill:#0969da} .btn2{fill:#ffffff;stroke:#d1d9e0} .btnd{fill:#ffffff;stroke:#cf222e}
+.ta{fill:#ddf4ff} .td{fill:#ffebe9} .tg{fill:#dafbe1} .ty{fill:#fff8c5} .tr{fill:#fbefff}
+.sa{stroke:#0969da} .sd{stroke:#cf222e} .sg{stroke:#1a7f37} .sy{stroke:#9a6700}
+.sr{stroke:#8250df} .sm{stroke:#59636e} .sf{stroke:#afb8c1} .sl{stroke:#d1d9e0}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#ddf4ff;stroke:#0969da;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#afb8c1;stroke-dasharray:6 4}
+@media (prefers-color-scheme: dark){
+.bg{fill:#151b23}
+.t{fill:#e6edf3} .m{fill:#9198a1} .a{fill:#4493f8} .d{fill:#f85149}
+.g{fill:#3fb950} .y{fill:#d29922} .r{fill:#ab7df8} .f{fill:#484f58}
+.frame{fill:#2f3742;stroke:#4a535e} .scr{fill:#0d1117}
+.card{fill:#151b23;stroke:#3d444d} .cardf{fill:#0d1117;stroke:#3d444d}
+.ln{fill:none;stroke:#3d444d} .lnf{fill:#3d444d}
+.btn{fill:#1f6feb} .btn2{fill:#0d1117;stroke:#3d444d} .btnd{fill:#0d1117;stroke:#f85149}
+.ta{fill:#12294a} .td{fill:#3c1618} .tg{fill:#12261e} .ty{fill:#2e2610} .tr{fill:#2a1d45}
+.sa{stroke:#4493f8} .sd{stroke:#f85149} .sg{stroke:#3fb950} .sy{stroke:#d29922}
+.sr{stroke:#ab7df8} .sm{stroke:#9198a1} .sf{stroke:#484f58} .sl{stroke:#3d444d}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#12294a;stroke:#4493f8;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#484f58;stroke-dasharray:6 4}
+}
+</style>
+<defs>
+<marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="a"/></marker>
+<marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+<marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d"/></marker>
+<marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="r"/></marker>
+<marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
+<marker id="hf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="960" height="494" rx="16"/>
+<text x="40" y="44" class="m" font-size="12" font-weight="700">BEFORE</text><rect x="40" y="60" width="290" height="150" rx="14" class="grp"/><text x="56" y="84" class="a" font-size="13" font-weight="700">Device group 1</text><g opacity=".4"><rect x="80" y="100" width="36" height="64" rx="8" class="frame"/><rect x="83" y="104" width="30" height="56" rx="5" class="scr"/></g><text x="98" y="182" class="t" font-size="12" font-weight="600" text-anchor="middle">iPhone</text><text x="98" y="197" class="m" font-size="11" text-anchor="middle">lost</text><path d="M93,127 L103,137 M103,127 L93,137" class="sd" fill="none" stroke-width="2.2" stroke-linecap="round"/><rect x="210" y="96" width="56" height="72" rx="8" class="frame"/><rect x="214" y="100" width="48" height="64" rx="4" class="scr"/><text x="238" y="186" class="t" font-size="12" font-weight="600" text-anchor="middle">iPad</text><text x="238" y="201" class="m" font-size="11" text-anchor="middle">in a drawer</text><rect x="630" y="60" width="290" height="150" rx="14" class="grp"/><text x="646" y="84" class="a" font-size="13" font-weight="700">Device group 2</text><text x="904" y="84" class="m" font-size="11.5" text-anchor="end">started fresh</text><rect x="666" y="114" width="64" height="44" rx="5" class="frame"/><rect x="670" y="118" width="56" height="36" rx="2" class="scr"/><path d="M660,158 H736 l-5,6 H665 z" class="frame"/><text x="698" y="182" class="t" font-size="12" font-weight="600" text-anchor="middle">Laptop</text><rect x="804" y="108" width="68" height="46" rx="5" class="frame"/><rect x="808" y="112" width="60" height="38" rx="2" class="scr"/><rect x="833" y="154" width="10" height="6" rx="1" class="frame"/><rect x="824" y="160" width="28" height="4" rx="2" class="frame"/><text x="838" y="182" class="t" font-size="12" font-weight="600" text-anchor="middle">Desktop</text><rect x="370" y="64" width="220" height="142" rx="12" class="cardf"/><text x="386" y="88" class="m" font-size="11.5">On the iPad, when it wakes up</text><text x="386" y="112" class="t" font-size="14" font-weight="700">2 new sign-ins</text><text x="386" y="131" class="t" font-size="12">both White Noise</text><rect x="386" y="146" width="90" height="26" rx="13.0" class="btn"/><text x="431.0" y="163.32" font-size="12" font-weight="600" text-anchor="middle" class="" fill="#ffffff">Link</text><rect x="484" y="146" width="90" height="26" rx="13.0" class="btnd"/><text x="529.0" y="163.32" font-size="12" font-weight="600" text-anchor="middle" class="d">Not me</text><text x="386" y="194" class="m" font-size="11">codes shown for each</text><path d="M624,136 H598" class="arr sm dash" marker-end="url(#hm)"/><path d="M480,212 V268" class="arr sa" marker-end="url(#ha)"/><circle cx="498" cy="240" r="10.5" class="a"/><text x="498" y="244.2" font-size="12" font-weight="700" text-anchor="middle" fill="#ffffff">1</text><text x="516" y="245" class="t" font-size="12.5" font-weight="600">Alice taps Link</text><text x="40" y="262" class="m" font-size="12" font-weight="700">AFTER</text><rect x="160" y="280" width="520" height="150" rx="14" class="grp"/><text x="176" y="304" class="a" font-size="13" font-weight="700">Device group 1</text><rect x="210" y="320" width="56" height="72" rx="8" class="frame"/><rect x="214" y="324" width="48" height="64" rx="4" class="scr"/><text x="238" y="410" class="t" font-size="12" font-weight="600" text-anchor="middle">iPad</text><rect x="336" y="336" width="64" height="44" rx="5" class="frame"/><rect x="340" y="340" width="56" height="36" rx="2" class="scr"/><path d="M330,380 H406 l-5,6 H335 z" class="frame"/><text x="368" y="404" class="t" font-size="12" font-weight="600" text-anchor="middle">Laptop</text><text x="368" y="419" class="m" font-size="11" text-anchor="middle">old chats back</text><rect x="474" y="330" width="68" height="46" rx="5" class="frame"/><rect x="478" y="334" width="60" height="38" rx="2" class="scr"/><rect x="503" y="376" width="10" height="6" rx="1" class="frame"/><rect x="494" y="382" width="28" height="4" rx="2" class="frame"/><text x="508" y="404" class="t" font-size="12" font-weight="600" text-anchor="middle">Desktop</text><text x="508" y="419" class="m" font-size="11" text-anchor="middle">old chats back</text><g opacity=".4"><rect x="600" y="324" width="36" height="64" rx="8" class="frame"/><rect x="603" y="328" width="30" height="56" rx="5" class="scr"/></g><text x="618" y="406" class="t" font-size="12" font-weight="600" text-anchor="middle">iPhone</text><text x="618" y="421" class="m" font-size="11" text-anchor="middle">until removed</text><rect x="720" y="300" width="200" height="110" rx="14" class="grpx"/><text x="736" y="324" class="f" font-size="13" font-weight="700">Device group 2</text><path d="M806,348 L834,376 M834,348 L806,376" class="sf" fill="none" stroke-width="2.2" stroke-linecap="round"/><text x="820" y="398" class="m" font-size="11.5" text-anchor="middle">left and deleted</text><text x="480" y="472" class="m" font-size="13" text-anchor="middle">The approving device’s group absorbs the other one. Laptop and Desktop are then added to Alice’s old chats.</text>
+</svg>
