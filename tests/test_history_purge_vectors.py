@@ -87,6 +87,12 @@ class EncodingTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 wire.identities(FIXTURE["request"], FIXTURE["leaves"], FIXTURE["proof"], **change)
 
+    def test_signing_templates_bind_request_parent_for_every_proof_kind(self):
+        for kind, event in FIXTURE["signing_templates"].items():
+            proof = FIXTURE["proof"] if kind != "455" else {**FIXTURE["proof"], "created_at": FIXTURE["request"]["created_at"]}
+            self.assertEqual(wire.proof_event(FIXTURE["request"], proof, int(kind)), event)
+            self.assertIn(["parent_epoch", "7"], event["tags"])
+
 
 if __name__ == "__main__":
     unittest.main()

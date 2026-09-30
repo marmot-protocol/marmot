@@ -58,6 +58,12 @@ membership tag, the input remains deferred while its parent may still arrive. On
 candidate parent, a failed sender-signature or authorization check is terminal for that input. The candidate-edge and
 terminal-rejection rules are defined in [convergence.md](./convergence.md), "Candidate branches."
 
+When the candidate parent has an open [history-purge request](../app-components/history-purge-v1.md), an external join
+or resync Commit is invalid until the request closes canonically. Such external Commits cannot carry its required
+terminal proposal set. Any active cohort member may commit expiry after the response deadline under the component's
+proof rules, so closure does not require an online admin. Member-driven binding changes instead require atomic
+supersession with the normal authority for that change. A disband Commit requires closure in a prior canonical Commit.
+
 Input naming a group for which the client has no processable group state receives the `unknown_group` category before
 convergence and no convergence disposition. The client cannot authenticate or classify a branch without that state.
 

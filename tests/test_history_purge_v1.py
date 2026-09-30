@@ -99,7 +99,6 @@ class PurgeSafetyTest(unittest.TestCase):
         for terminal, actor, timestamp, change in (
             ("accepted", "bob", 130, None),
             ("cancelled", "alice", 130, None),
-            ("expired", "bob", 201, None),
             ("superseded", "bob", 130, "retention"),
             ("superseded", "bob", 130, "admin"),
         ):
@@ -109,6 +108,15 @@ class PurgeSafetyTest(unittest.TestCase):
         self.assertFalse(unanimous().finalize(
             "superseded", "alice", 130, 13, Purge.proposals("superseded", "retention"),
             change="retention", change_authorized=False))
+
+    def test_expiry_without_online_admin_can_unblock_recovery(self):
+        state = unanimous()
+        state.admins = frozenset()
+        self.assertFalse(state.finalize("expired", "bob", 200, 13, Purge.proposals("expired")))
+        self.assertFalse(state.finalize("expired", "outsider", 201, 13, Purge.proposals("expired")))
+        self.assertTrue(state.finalize("expired", "bob", 201, 13, Purge.proposals("expired")))
+        self.assertFalse(state.suppresses(9))
+        self.assertFalse(state.cleanup(100, 2))
 
     def test_selected_terminal_race_never_uses_receipt_order(self):
         for first, second in (("accepted", "cancelled"), ("cancelled", "accepted")):

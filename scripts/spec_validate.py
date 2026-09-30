@@ -198,6 +198,11 @@ def check_history_purge_v1_structure() -> None:
     component = read_utf8(ROOT / component_name)
     conformance = read_utf8(ROOT / conformance_name)
     registry = read_utf8(ROOT / registry_name)
+    retained = read_utf8(ROOT / "protocol-core/retained-history.md")
+    feature_index = read_utf8(ROOT / "features/README.md")
+    require(retained, "request's fixed `purge_before_epoch = parent_epoch + 1`", "protocol-core/retained-history.md")
+    require(retained, "not the activation epoch", "protocol-core/retained-history.md")
+    require(feature_index, "unanimous one-shot deletion of pre-opening", "features/README.md")
 
     component_fragments = [
         "at most one open request per group",
@@ -207,6 +212,8 @@ def check_history_purge_v1_structure() -> None:
         "A No is not an advisory app event",
         "MUST refuse a second or conflicting decision",
         "one valid Yes for every `members` account",
+        "`parent_epoch_decimal` is the request's parent epoch, never the parent of a later decision or terminal Commit",
+        "Any active cohort member can canonically close the request as `expired`, without an online admin",
         "Every terminal Commit removes the GroupContext `0x800d` entry",
         "Any missing, duplicate, or\nextra proposal makes the terminal transition invalid.",
         "Expiry is never consent.",

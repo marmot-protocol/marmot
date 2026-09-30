@@ -67,7 +67,7 @@ class Purge:
             "accepted": actor in self.admins and self.yes == set(self.members) and in_window,
             "rejected": actor in self.members and actor not in self.yes and in_window,
             "cancelled": actor == self.proposer and in_window,
-            "expired": actor in self.admins and self.expires_at < timestamp <= 2**53 - 1,
+            "expired": actor in self.members and self.expires_at < timestamp <= 2**53 - 1,
             "superseded": actor in self.members and change_authorized and change in
                 {"membership", "identity", "capability", "admin", "retention"}
                 and (change not in {"admin", "retention"} or actor in self.admins)

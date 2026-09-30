@@ -14,6 +14,11 @@ This document describes the member join flow built around MLS Welcomes.
 
 ## Behavior
 
+For groups with an open [history-purge request](../app-components/history-purge-v1.md), a member-driven Add Commit must
+atomically supersede that request under its component rules. An external join or resync Commit is rejected while the
+request is open; any active cohort member can canonically close it as expired after the response deadline, without an
+online admin. Joining then follows the normal rules against the closed parent.
+
 For Add commits after initial group creation, the inviter MUST wait for the Commit publish obligation to succeed
 before sending the Welcome. Sending the Welcome first can activate the new member at an epoch existing members
 have not seen yet.

@@ -37,6 +37,8 @@ The request UI MUST show:
 - the fixed history boundary from before the request opened, excluding messages written during voting and protocol recovery state;
 - the absolute response deadline, the consequences of Yes and No, and that an existing Yes can authorize later
   acceptance until a canonical terminal outcome closes the request;
+- that any cohort member can close voting as expired without an online admin, and a malicious member can abort voting
+  early with a forward-dated proof, which cannot authorize a purge;
 - that cleanup is cooperative and cannot guarantee removal from former, hostile, unsupported, or offline
   non-conforming clients, relays, exports, screenshots, backups, or other external copies.
 

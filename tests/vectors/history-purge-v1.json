@@ -52,5 +52,127 @@
     "finalization_bytes": "3ed927a96eb03a788bc666b0ae82d8bcff8ed94bedc90f4e1c466b0959fa7edd0179be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798000000006553f16400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "finalization_id": "4a687790da42dd1fe03b5f04bd299466bdfd30c759813b28f14f2f772cca418a",
     "receipt_id": "bccc0cc3c8f54344a837eeea1f368244b312b372acc23f02d9048e28f32c1663"
+  },
+  "signing_templates": {
+    "454": {
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000100,
+      "kind": 454,
+      "tags": [
+        [
+          "d",
+          "marmot-history-purge-decision-v1"
+        ],
+        [
+          "component",
+          "0x800d"
+        ],
+        [
+          "group_id",
+          "70757267652d766563746f72"
+        ],
+        [
+          "parent_epoch",
+          "7"
+        ],
+        [
+          "request",
+          "3ed927a96eb03a788bc666b0ae82d8bcff8ed94bedc90f4e1c466b0959fa7edd"
+        ],
+        [
+          "decision",
+          "yes"
+        ]
+      ],
+      "content": ""
+    },
+    "455": {
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 455,
+      "tags": [
+        [
+          "d",
+          "marmot-history-purge-request-v1"
+        ],
+        [
+          "component",
+          "0x800d"
+        ],
+        [
+          "group_id",
+          "70757267652d766563746f72"
+        ],
+        [
+          "parent_epoch",
+          "7"
+        ],
+        [
+          "request",
+          "3ed927a96eb03a788bc666b0ae82d8bcff8ed94bedc90f4e1c466b0959fa7edd"
+        ]
+      ],
+      "content": "6ba80dfdd6bff92247dac6ca609fec820228ca3b469713bca48fff8970d03022"
+    },
+    "456": {
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000100,
+      "kind": 456,
+      "tags": [
+        [
+          "d",
+          "marmot-history-purge-cancellation-v1"
+        ],
+        [
+          "component",
+          "0x800d"
+        ],
+        [
+          "group_id",
+          "70757267652d766563746f72"
+        ],
+        [
+          "parent_epoch",
+          "7"
+        ],
+        [
+          "request",
+          "3ed927a96eb03a788bc666b0ae82d8bcff8ed94bedc90f4e1c466b0959fa7edd"
+        ]
+      ],
+      "content": ""
+    },
+    "457": {
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000100,
+      "kind": 457,
+      "tags": [
+        [
+          "d",
+          "marmot-history-purge-terminal-v1"
+        ],
+        [
+          "component",
+          "0x800d"
+        ],
+        [
+          "group_id",
+          "70757267652d766563746f72"
+        ],
+        [
+          "parent_epoch",
+          "7"
+        ],
+        [
+          "request",
+          "3ed927a96eb03a788bc666b0ae82d8bcff8ed94bedc90f4e1c466b0959fa7edd"
+        ],
+        [
+          "terminal",
+          "accepted"
+        ]
+      ],
+      "content": "3e51109f9b0c9fbc686085380115a6f14b170093928f130ef31b03c626288a12"
+    }
   }
 }

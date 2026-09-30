@@ -269,7 +269,7 @@ The authorization envelope is interpreted by terminal value:
 - `rejected`: the kind `454` No decision proof; its signer is an active cohort member, MUST equal the Commit sender, and
   MUST NOT already occur in the parent open state's `yes_decisions`;
 - `cancelled`: the kind `456` cancellation proof; its signer is the proposer and MUST equal the Commit sender;
-- `expired`: kind `457`, signed by the active-admin committer, with a timestamp greater than `expires_at`;
+- `expired`: kind `457`, signed by any active cohort-member committer, with a timestamp greater than `expires_at`;
 - `superseded`: kind `457`, signed by the committer of the canonical membership, identity, capability, admin-policy, or
   retention change that invalidates a request binding; the signer MUST equal the terminal Commit sender.
 
@@ -290,6 +290,10 @@ Its content is lowercase hex of `SHA-256(encode(MarmotHistoryPurgeFinalizationCo
 exactly `accepted`, `expired`, or `superseded`, corresponding to terminal values 1, 4, and 5. Rejected and cancelled
 finalizations use kinds `454` and `456`, respectively; they do not use kind `457`. Kind `457` is local-only and MUST
 NOT be relayed.
+
+In every proof template (kinds `454`, `455`, `456`, and `457`), `group_id` and `parent_epoch` are from the request core.
+In particular, `parent_epoch_decimal` is the request's parent epoch, never the parent of a later decision or terminal
+Commit. All proof kinds bind the same immutable request identity.
 
 Every terminal Commit removes the GroupContext `0x800d` entry and its temporary required-component listing. An accepted
 Commit additionally contains exactly one full-replacement update for `marmot.group.message-retention.v1` with
@@ -372,6 +376,11 @@ It still targets only source epochs below the immutable `purge_before_epoch`. Th
 can authorize later acceptance until canonical closure; it MUST NOT promise a cryptographically enforced wall-clock
 acceptance deadline. A conforming admin uses its current local time and MUST NOT backdate a proof.
 
+Any active cohort member can canonically close the request as `expired`, without an online admin. A conforming signer
+uses its current local time and MUST NOT forward-date that proof; self-asserted timestamps cannot prevent a malicious
+member from ending voting early. The UI MUST disclose that this early closure can abort voting but cannot authorize a
+purge. Once closure is selected, join or recovery attempts use that closed parent under their normal rules.
+
 ## Application and completion projections
 
 An accepted finalization produces these stable projections:
@@ -425,6 +434,11 @@ cannot carry this feature's required terminal transition under
 [RFC 9420 section 12.2](https://www.rfc-editor.org/rfc/rfc9420.html#section-12.2). The request must first close canonically,
 or an authorized member Commit must perform the relevant binding change and atomic supersession. V1 does not relax
 the external-Commit proposal rules.
+
+A disband transition MUST first close any open request in a prior canonical Commit. It cannot carry the required
+terminal `AppEphemeral` under the lifecycle component's exact proposal-set rule. Any other required-component change
+that invalidates the request's capability binding must use an independently authorized atomic `superseded` transition;
+changes unrelated to that binding neither remove nor reset the request.
 
 No valid persistent state may be removed without the matching terminal `AppEphemeral`. The component cannot be enabled
 for a group containing an unsupported leaf. Legacy groups continue without it. A future incompatible request, state,
