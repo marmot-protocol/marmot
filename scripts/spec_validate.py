@@ -122,6 +122,14 @@ def check_registry_and_components(paths: list[Path]) -> None:
 
     registry_by_doc = {m.group("doc"): (m.group("id"), m.group("name")) for m in components}
     layout = read_utf8(ROOT / "layout.md")
+    tree = layout.split("```text", 1)[1].split("```", 1)[0]
+    layout_paths = set()
+    directory = ""
+    for line in tree.splitlines():
+        if line.endswith("/") and not line.startswith(" "):
+            directory = line.rstrip("/")
+        elif line.startswith("  ") and line.strip().endswith(".md"):
+            layout_paths.add(f"{directory}/{line.strip()}")
     component_index = read_utf8(ROOT / "app-components/README.md")
 
     for path in paths:
@@ -130,7 +138,7 @@ def check_registry_and_components(paths: list[Path]) -> None:
             continue
         if path.name in {"README.md", "AGENTS.md"}:
             continue
-        if path.name not in layout:
+        if relative.as_posix() not in layout_paths:
             fail(f"{relative} is missing from layout.md")
         surface_index = read_utf8(ROOT / relative.parts[0] / "README.md")
         if path.name not in surface_index:
@@ -180,10 +188,10 @@ def require(text: str, fragment: str, source: str) -> None:
     normalized_text = " ".join(text.split())
     normalized_fragment = " ".join(fragment.split())
     if normalized_fragment not in normalized_text:
-        fail(f"{source} is missing focused V1 assertion: {fragment}")
+        fail(f"{source} is missing structural V1 phrase: {fragment}")
 
 
-def check_history_purge_v1() -> None:
+def check_history_purge_v1_structure() -> None:
     component_name = "app-components/history-purge-v1.md"
     conformance_name = "foundation/conformance.md"
     registry_name = "foundation/registries.md"
@@ -215,7 +223,7 @@ def check_history_purge_v1() -> None:
     conformance_fragments = [
         "## Consensual history purge scenarios",
         "wrong-signer decision",
-        "validator presented conflicting proofs MUST reject them",
+        "validator presented conflicting proofs in the same candidate state or transition MUST reject them",
         "timeout, silence, restart, and expiry never produce consent",
         "verifying rejection with no retention, suppression, or deletion effect",
         "suppression is withdrawn and destructive deletion has not begun",
@@ -236,7 +244,7 @@ def check_history_purge_v1() -> None:
     for fragment in registry_fragments:
         require(registry, fragment, registry_name)
 
-    print("PASS focused history-purge V1 assertions (authorization, lifecycle, replay, restart, recovery limits)")
+    print("PASS history-purge V1 structural phrase checks (not semantic conformance)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -259,7 +267,7 @@ def main() -> int:
             check_registry_and_components(paths)
             check_surface_boundaries(paths)
         if args.mode in {"focused", "all"}:
-            check_history_purge_v1()
+            check_history_purge_v1_structure()
     except (ValidationError, subprocess.CalledProcessError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
         return 1

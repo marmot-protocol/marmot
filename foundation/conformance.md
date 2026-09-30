@@ -93,23 +93,29 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
    GroupContext mutation by that actor;
 2. a supported fixed member snapshot in which every account adds one canonical Yes and the active-admin terminal Commit
    atomically applies the requested retention value, removes the temporary state, and installs one reversible
-   pre-activation plaintext suppression boundary;
+   request-bound plaintext suppression boundary. The range ends exclusively at the opening epoch, never at the later
+   activation epoch, and voting-era messages retain their original retention semantics;
 3. each missing, duplicate, extra, out-of-order, malformed, wrong-request, wrong-group, wrong-parent, late, and
    wrong-signer decision, verifying that no accepted retention, suppression, or deletion effect begins;
 4. one member produces and canonically commits No, client A observes the No material before the Commit while client B
    does not, and both then receive the exact rejected Commit bytes. Both clients MUST select the same rejected terminal
    identity. After restart, a later Yes state update or accepted finalization for that request MUST be invalid and no
    suppression or deletion begins. A signer asked for No then Yes before terminal selection MUST durably refuse the
-   second proof; a signer whose Yes is already in canonical open state MUST NOT produce No, and a rejected finalization
+   second proof even after local expiry while the request remains replayable; a signer whose Yes is already in canonical open state MUST NOT produce No, and a rejected finalization
    carrying that signer's No MUST be rejected before and after restart even when the No proof was delivered to only one
-   client. A validator presented conflicting proofs MUST reject them;
+   client. A validator presented conflicting proofs in the same candidate state or transition MUST reject them;
+   conflicting material delivered only off-branch MUST NOT change canonical validation;
 5. proposer cancellation while open, cancellation by any other member, cancellation after a terminal transition, and
    replay of a valid cancellation, verifying that only the first case can become the canonical cancelled identity;
 6. request intervals at one second and exactly `604800` seconds, an interval of `604801`, Yes and accepted-proof
    timestamps immediately before, at, and after the deadline, local expiry across restart, and canonical expiry. The
-   suite MUST verify that timeout, silence, restart, and expiry never produce consent;
+   suite MUST verify that timeout, silence, restart, and expiry never produce consent. A delayed or backdated acceptance
+   at a much later epoch with an in-window proof timestamp MUST keep the same request-bound target for every receiver
+   clock value, preserve voting-era messages, and never claim that the timestamp proves wall-clock timely acceptance;
 7. a membership, identity, capability, admin-policy, or retention change while open, verifying atomic supersession,
-   removal of the old state, and rejection of later material for its request id;
+   removal of the old state, and rejection of later material for its request id. A causal independently authorized
+   retention update is permitted only in the superseded transition. External join/resync Commits while open are
+   rejected until a prior canonical closure;
 8. a leaf without `app_ephemeral`, `app_data_update`, or component `0x800d` support, verifying that request creation and
    finalization are blocked rather than treating the leaf as consenting;
 9. every terminal proposal set with each required proposal missing or duplicated and with one unrelated proposal added,
@@ -120,15 +126,18 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
     losing transitions are inert;
 11. a branch that supersedes the authorizing Commit while its parent remains inside the rollback horizon, verifying that
     suppression is withdrawn and destructive deletion has not begun;
-12. advancement until the request parent is outside the rollback horizon, verifying that best-effort deletion begins
-    only while the authorization remains on the settled selected branch;
+12. advancement until the request parent is outside the rollback horizon while the accepted Commit's parent remains
+    inside, verifying that deletion is still blocked. At equality with the horizon deletion remains blocked; it begins
+    only strictly beyond the accepted Commit's parent while authorization remains on the settled selected branch;
 13. duplicate delivery and restart at the prepared, confirmed-not-applied, suppression-observed, deletion-eligible,
     partially cleaned, and effect-observed boundaries, verifying one suppression boundary, completion of remaining
     eligible cleanup after restart, and one effective output per stable effect identity;
-14. late or replayed pre-activation app payloads after activation, verifying suppression before delivery while retained
+14. late or replayed pre-boundary app payloads after activation, verifying suppression before delivery while retained
     anchors, candidate state, pending publication, and other protocol recovery material remain available; and
 15. duplicate, forged, wrong-finalization, applied, failed, and missing receipts. The suite MUST verify one receipt per
-    account, no receipt before durable local cleanup, aggregate-only presentation, `group_complete` only with all-applied
+    account, no applied receipt with unknown controlled-store completeness or unavailable account-wide coordination,
+    arrival-order-independent handling of conflicting account outcomes, no applied receipt before durable local cleanup,
+    aggregate-only presentation, `group_complete` only with all-applied
     cohort receipts, and `partially_completed` without message, file, count, device, precise-time, or failure-detail
     leakage.
 

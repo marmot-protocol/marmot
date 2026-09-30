@@ -4,9 +4,9 @@ Status: adopted.
 
 `marmot.group.history-purge.v1` carries one bounded consensual request from an application event into temporary canonical
 GroupContext state, records each member's single decision, and carries the terminal authorization in `AppEphemeral`. The
-accepted terminal transition may authorize removal of application plaintext from before a new retention policy takes
-effect. It does not authorize deleting protocol recovery material or copies outside a conforming member's controlled
-stores.
+accepted terminal transition may authorize removal of application plaintext from before the request opened. The
+prospective retention policy takes effect at acceptance. It does not authorize deleting protocol recovery material or
+copies outside a conforming member's controlled stores.
 
 ## Registry and locations
 
@@ -94,6 +94,11 @@ The request interval is absolute Unix time in whole seconds. `created_at` MUST e
 `proposer_proof.created_at`; `expires_at` MUST be greater than `created_at` and no more than `604800` seconds later.
 V1 has no caller-selected prompt text and permits at most one open request per group.
 
+The exclusive purge boundary is `purge_before_epoch = parent_epoch + 1`, computed with checked unsigned arithmetic.
+A request with `parent_epoch = 2^64 - 1` is invalid. Opening MUST consume the exact bound candidate parent and therefore
+produces epoch `purge_before_epoch`. The boundary never advances with voting, acceptance, expiry, replay, or delivery.
+Application payloads from the opening epoch onward are outside this purge, even if acceptance is delayed.
+
 The request identity is:
 
 ```text
@@ -160,6 +165,9 @@ a full replacement. From an existing state it may add exactly one previously abs
 byte. The proposal sender MUST equal that record's signer, and both sender and committer MUST be active members in the
 bound cohort. A member's own Yes is the only decision that may remain in open state.
 
+A conforming client MUST offer and sign a decision only after the bound request has opened canonically. A decision
+update requires that exact request in the candidate parent; an uncommitted request event cannot collect canonical votes.
+
 A No is not an advisory app event and is never stored as an open-state value. It is a terminal response carried in the
 rejected finalization Commit below. The No signer MAY commit that response directly. Consequently, after a valid No is
 on the selected canonical branch, the component entry is gone and no later Yes can replace it. Competing same-parent
@@ -185,13 +193,17 @@ content    = ""
 
 `decision` in the event is exactly `yes` or `no`. The signer MUST occur in `members`. The proof timestamp MUST be from
 `created_at` through `expires_at`, inclusive. These byte comparisons, rather than a verifier's wall clock, determine
-Commit validity. A conforming signer MUST durably remember the first decision it signed for a request through expiry
-and MUST refuse a second or conflicting decision. The response identity is:
+Commit validity. These self-asserted timestamps do not prove an adversarial signer's wall-clock time. A conforming
+signer MUST durably remember the first decision it signed for a request and MUST refuse a second or conflicting
+decision. Local expiry does not release that protection; it may be released only after canonical closure is beyond
+the rollback horizon and no pending replay or recovery work needs the request. Canonical validation uses only proofs
+carried by the candidate state or transition, never conflicting material observed solely off-branch. The response
+identity is:
 
 ```text
 response_id = SHA-256(
   "marmot-history-purge-response-v1" ||
-  0x00 || request_id || decision || encode(proof)
+  0x00 || request_id || encode(MarmotHistoryPurgeDecisionV1) || encode(proof)
 )
 ```
 
@@ -281,8 +293,9 @@ NOT be relayed.
 
 Every terminal Commit removes the GroupContext `0x800d` entry and its temporary required-component listing. An accepted
 Commit additionally contains exactly one full-replacement update for `marmot.group.message-retention.v1` with
-`target_retention_secs`. Other terminal Commits contain no retention update. Except for the exact canonical-state change
-that causes `superseded`, a terminal Commit contains no proposal beyond the history-purge removal, required-component
+`target_retention_secs`. Other terminal Commits contain no retention update except the independently authorized retention
+change that causes `superseded`; that update remains subject to the retention component's normal authorization. Except
+for the exact canonical-state change that causes `superseded`, a terminal Commit contains no proposal beyond the history-purge removal, required-component
 removal, the terminal `AppEphemeral`, and the accepted retention update when applicable. Any missing, duplicate, or
 extra proposal makes the terminal transition invalid.
 
@@ -325,8 +338,13 @@ Its content is empty. `outcome` is exactly `applied` or `failed`. A receipt is v
 the accepted finalization on the selected canonical branch. A receipt that identifies a rejected, cancelled, expired,
 superseded, or non-canonical finalization is invalid and MUST NOT contribute to a completion projection. The
 authenticated sender MUST be one member account in the accepted request cohort. A sender emits at most one receipt for
-a finalization. `applied` may be emitted only after all of that account's controlled conforming stores complete the
-required idempotent cleanup; `failed` is a terminal coarse result when they cannot. The receipt identity is:
+a finalization. Receipt emission MUST be coordinated and durably single-use across that account's conforming leaves.
+`applied` may be emitted only after all of that account's controlled conforming stores complete the required idempotent
+cleanup. Unknown completeness or unavailable coordination MUST withhold `applied`; clients may instead emit one
+coarse `failed` result. V1 defines no device-discovery or cross-device coordination protocol, so active-leaf presence
+alone never proves account-wide completion. Repeated identical account receipts are idempotent. Conflicting outcomes
+for one account prevent `group_complete` and yield a coarse partial result independent of arrival order. The receipt
+identity is:
 
 ```text
 receipt_id = SHA-256(
@@ -334,6 +352,8 @@ receipt_id = SHA-256(
   0x00 || finalization_id || sender_account_pubkey || outcome
 )
 ```
+
+In the receipt-id preimage, `outcome` is exactly the ASCII bytes `applied` or `failed`, without a length prefix.
 
 Receipts expose no message id, content hash, filename, per-message count, device inventory, failure reason, or cleanup
 timestamp. Although MLS authenticates each sender, the user-visible group projection MUST expose only the aggregate
@@ -345,8 +365,12 @@ A client uses `expires_at` for its local open-request UI and MUST retain or reco
 signed decision, canonical open state, accepted suppression boundary, cleanup progress, and emitted receipt across
 restart. At or after its local `expires_at`, it stops offering Yes/No and treats timeout only as a provisional local
 `expired` projection. Expiry is never consent. Canonical expiry requires the terminal Commit above, so Commit validation
-never depends on receiver clock skew. A valid accepted finalization signed inside the response interval remains valid
-when delivered late unless another terminal transition already won canonically.
+never depends on receiver clock skew. The seven-day limit bounds the honest signer's response window, not an
+adversarial admin's acceptance time. A valid accepted finalization whose proof timestamp is inside the response
+interval remains valid when committed or delivered late unless another terminal transition already won canonically.
+It still targets only source epochs below the immutable `purge_before_epoch`. The UI MUST explain that an existing Yes
+can authorize later acceptance until canonical closure; it MUST NOT promise a cryptographically enforced wall-clock
+acceptance deadline. A conforming admin uses its current local time and MUST NOT backdate a proof.
 
 ## Application and completion projections
 
@@ -365,7 +389,11 @@ NOT be presented as `group_complete`.
 
 ## Target boundary and deletion gate
 
-The target is application plaintext whose MLS source epoch is less than the accepted Commit's resulting epoch. It
+The target is application plaintext whose MLS source epoch is less than `purge_before_epoch`, derived from the bound
+request parent above. The accepted Commit's resulting epoch is `activation_epoch`: authorization, suppression and
+prospective retention begin there, but the purge boundary does not move. Messages with source epochs from
+`purge_before_epoch` through `activation_epoch - 1` keep their original retention semantics. This V1 choice replaces an
+acceptance-relative history range, which would let delayed or backdated acceptance expand the consented target. It
 excludes MLS Commits and proposals, retained recovery anchors, candidate state, pending publication obligations,
 audit/security material required for protocol correctness, and messages already governed by another independent delete
 action.
@@ -375,9 +403,13 @@ including late or replayed arrivals, are suppressed before timeline, search, not
 or media-cache presentation. Suppression follows the selected branch and is withdrawn if convergence supersedes the
 authorizing Commit while its parent remains inside the rollback horizon.
 
-Best-effort destructive cleanup begins only after the authorization remains selected and its parent is outside the
-rollback horizon. Cleanup is idempotent by `(request_id, activation_epoch)`, checkpoints before exposing
-`local_applied`, resumes after restart, and never deletes required protocol recovery material. Logical removal is not a
+Best-effort destructive cleanup begins only after the authorization remains selected, convergence is settled, and the
+accepted Commit's parent epoch is outside the rollback horizon. Specifically, require
+`canonical_tip_epoch - authorization_parent_epoch > max_rewind_commits`; equality remains protected. Neither the
+request parent nor the purge boundary substitutes for `authorization_parent_epoch = activation_epoch - 1`.
+The client durably retains the authorizing Commit identity, purge boundary and cleanup progress.
+Cleanup is idempotent by `(request_id, activation_epoch)`, checkpoints before exposing `local_applied`, resumes after
+restart, and never deletes required protocol recovery material. Logical removal is not a
 physical-overwrite guarantee. Former members, hostile or non-conforming clients, relays, exports, screenshots, backups,
 and external copies are outside enforceable scope.
 
@@ -388,7 +420,18 @@ or decisions, a mismatched parent/request/capability/retention binding, and any 
 transition above. A membership, identity, capability, admin-policy, or retention change while open MUST atomically
 supersede and remove the request; it cannot silently drop a voter or bind a newcomer.
 
+An external join or resync Commit against a parent with an open request MUST be rejected. Its permitted proposal set
+cannot carry this feature's required terminal transition under
+[RFC 9420 section 12.2](https://www.rfc-editor.org/rfc/rfc9420.html#section-12.2). The request must first close canonically,
+or an authorized member Commit must perform the relevant binding change and atomic supersession. V1 does not relax
+the external-Commit proposal rules.
+
 No valid persistent state may be removed without the matching terminal `AppEphemeral`. The component cannot be enabled
 for a group containing an unsupported leaf. Legacy groups continue without it. A future incompatible request, state,
 proof, finalization, receipt, or authorization rule requires a new component id and new proof kinds; V1 bytes MUST NOT
 be reinterpreted.
+
+## Non-normative reference checks
+
+[Reference tests and encoding fixtures](../tests/README.md) exercise a limited state model and pin canonical hash
+preimages. They do not establish signature validity, MLS convergence, actual store deletion, or full conformance.

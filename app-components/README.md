@@ -239,9 +239,10 @@ Group-level component proposals and commits are admin-gated by default.
 A component MAY define a looser rule, but it MUST do so explicitly. In v1, the admin set is defined by
 `marmot.group.admin-policy.v1`.
 
-A GroupContext component that temporarily requires its own component id MAY also define a narrower actor for the exact
-paired mutation of the GroupContext `app_components` required-component list. That exception MUST be stated in the
-owning component document, MUST add or remove only that component id, and MUST be atomic with the component transition
+A GroupContext component that temporarily requires its own component id MAY authorize a different actor, including a
+non-admin, for only the exact paired mutation of the GroupContext `app_components` required-component list. That
+exception MUST be stated in the owning component document, MUST add or remove only that component id, and MUST be
+atomic with the component transition
 that requires the list change. It does not authorize the actor to change any other required component or any unrelated
 GroupContext state.
 

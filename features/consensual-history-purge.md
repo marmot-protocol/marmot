@@ -3,7 +3,7 @@
 Status: adopted.
 
 This feature is a separate, high-consequence group action for changing prospective message retention and, only after
-unanimous consent, hiding and best-effort deleting pre-activation application plaintext. It is not implied by enabling
+unanimous consent, hiding and best-effort deleting application plaintext from before the request opened. It is not implied by enabling
 or changing disappearing messages.
 
 The exact request, proof, temporary state, terminal finalization, receipt, TTL, and identity bytes are owned by
@@ -34,8 +34,9 @@ The request UI MUST show:
 
 - the proposed retention duration;
 - the complete active-member cohort;
-- that the target is application plaintext from before the accepted activation epoch, not protocol recovery state;
-- the absolute expiry and the consequences of Yes and No;
+- the fixed history boundary from before the request opened, excluding messages written during voting and protocol recovery state;
+- the absolute response deadline, the consequences of Yes and No, and that an existing Yes can authorize later
+  acceptance until a canonical terminal outcome closes the request;
 - that cleanup is cooperative and cannot guarantee removal from former, hostile, unsupported, or offline
   non-conforming clients, relays, exports, screenshots, backups, or other external copies.
 
@@ -58,16 +59,19 @@ cancelled, expired, and superseded requests require a new request id.
 
 Acceptance requires one canonical Yes from every account in the bound cohort. The active-admin Commit atomically:
 
-1. sets the exact requested retention value;
+1. sets the exact requested prospective retention value;
 2. removes the temporary request state and requirement;
 3. carries the accepted finalization bytes; and
-4. installs the logical pre-activation suppression effect.
+4. installs suppression for the immutable request-bound history range.
 
 The component owner's exact proposal-set rule rejects missing, duplicate, or unrelated proposals. No client starts
 suppression or deletion from a request, an individual Yes, an uncommitted No proof, local expiry, or receipt. The
 accepted Commit is the linearization point.
 
-The target is application plaintext whose MLS source epoch precedes the accepted Commit's resulting epoch. It excludes
+The target is application plaintext whose MLS source epoch precedes the request's opening epoch, as derived by the
+component owner. Acceptance does not expand that range. Messages written during voting retain their original retention
+semantics; the requested prospective policy starts at acceptance. This replaces the tracker proposal's acceptance-relative
+range so delayed or backdated acceptance cannot authorize deleting later messages. The target excludes
 MLS Commits and proposals, retained recovery anchors, candidate state, pending publication obligations, required audit
 or security material, and content already governed by an independent delete action. This one-shot flow does not change
 the prospective retention invariant for ordinary timer changes.
@@ -82,7 +86,7 @@ A client checkpoints the effect before exposing progress, applies cleanup idempo
 epoch, resumes at every restart boundary, and emits no applied receipt before all stores it controls have finished.
 Suppression follows canonical branch selection. If convergence supersedes the authorization while its parent is still
 inside the rollback horizon, suppression is withdrawn and destructive cleanup has not begun. Best-effort deletion starts
-only after the selected authorization is outside that horizon.
+only after the accepted Commit's parent is outside that horizon, while authorization remains on the settled selected branch.
 
 Logical removal is not a physical-overwrite claim. Storage encryption, filesystem behavior, platform backups, exports,
 and non-conforming copies limit secure-erasure guarantees.

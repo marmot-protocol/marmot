@@ -65,10 +65,10 @@ features/
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+  consensual-history-purge.md
 ideas/
   README.md
   multi-device.md
-  consensual-history-purge.md
 implementation-model.md
 ```
 

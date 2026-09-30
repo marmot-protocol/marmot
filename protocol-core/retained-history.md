@@ -89,14 +89,14 @@ separate protocol mechanism; transport retention alone does not extend the MLS d
 ## Authorized application plaintext purge
 
 A selected Commit carrying a valid [`marmot.group.history-purge.v1`](../app-components/history-purge-v1.md)
-authorization establishes one reversible local suppression boundary at its resulting activation epoch. The client MUST
+authorization establishes the request's immutable purge boundary at the Commit's resulting activation epoch. The client MUST
 suppress every delivered Marmot app payload whose MLS source epoch is less than that boundary before any application
 surface can render or emit it. If a later convergence pass supersedes the Commit while its parent remains inside the
 rollback horizon, the client withdraws the suppression with the Commit's other application effects and performs no
 destructive deletion.
 
 Idempotent local best-effort deletion becomes eligible only after convergence is settled, the selected branch still
-contains the authorization, and the request's parent epoch is outside the current canonical tip's rollback horizon. The
+contains the authorization, and the accepted Commit's parent epoch is outside the current canonical tip's rollback horizon. The
 client then deletes application-controlled plaintext and resumes unfinished cleanup after restart, as defined by
 [consensual-history-purge.md](../features/consensual-history-purge.md).
 
