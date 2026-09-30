@@ -60,8 +60,11 @@ terminal-rejection rules are defined in [convergence.md](./convergence.md), "Can
 
 When the candidate parent has an open [history-purge request](../app-components/history-purge-v1.md), an external join
 or resync Commit is invalid until the request closes canonically. Such external Commits cannot carry its required
-terminal proposal set. Any active cohort member may commit expiry after the response deadline under the component's
-proof rules, so closure does not require an online admin. Member-driven binding changes instead require atomic
+terminal proposal set. Capable cohort clients automatically attempt expiry for elapsed or unusably future-dated
+windows under the component's proof rules, so closure does not require an online admin. Opening requires an admin,
+local admission and a group-wide cooldown, with known recovery taking priority. Progress still requires a capable
+surviving member and eventual delivery/convergence; malicious admins and all-offline groups have no liveness guarantee.
+Recovery constructs fresh external Commit bytes against the closed parent. Member-driven binding changes require atomic
 supersession with the normal authority for that change. A disband Commit requires closure in a prior canonical Commit.
 
 Input naming a group for which the client has no processable group state receives the `unknown_group` category before

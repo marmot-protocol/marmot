@@ -1,6 +1,6 @@
 # marmot.group.history-purge.v1
 
-Status: adopted.
+Status: draft.
 
 `marmot.group.history-purge.v1` carries one bounded consensual request from an application event into temporary canonical
 GroupContext state, records each member's single decision, and carries the terminal authorization in `AppEphemeral`. The
@@ -133,11 +133,17 @@ The proof signer MUST equal `proposer_pubkey` and be an active member in the bou
 template and MUST NOT be published to relays.
 
 Any active member, including a non-admin, MAY create and send the request app event below. Any active member MAY relay a
-valid request into an `AppDataUpdate` that adds the temporary GroupContext entry; the proposer proof, not relay identity,
-authenticates creation. This explicit feature-owned app route does not loosen the active-admin requirement for the
-retention update or accepted finalization.
+request app event, but only active admins may propose and commit the opening `AppDataUpdate`. The proposer proof
+authenticates request creation; the opening proposal sender and Commit sender must each satisfy active-admin authority
+under the normal source-epoch and candidate-parent rules. Opening carries an empty decision list and exactly the paired
+component/requirement addition. This admin-mediated opening replaces unrestricted member opening; it preserves any-member
+request creation without granting a non-admin the ability to repeatedly gate group recovery.
 
-The member that relays a valid request is authorized to commit only the exact paired addition of the `0x800d`
+Immediately before opening, a conforming admin MUST require `abs(local_now - created_at) <= 300` seconds and
+`local_now < expires_at`. It MUST also honor the cooldown and recovery priority below. These are local producer
+obligations, never receiver-clock-dependent Commit validation rules. Request timestamps follow the common proof bounds.
+
+The admin that opens a valid request is authorized to commit only the exact paired addition of the `0x800d`
 GroupContext entry and `0x800d` required-component listing. For every terminal transition, the actor authorized below is
 also authorized to commit only the exact paired removal of that entry and listing. These feature-owned exceptions to
 the default GroupContext authorization do not permit changing any other required component or unrelated GroupContext
@@ -169,7 +175,7 @@ A conforming client MUST offer and sign a decision only after the bound request 
 update requires that exact request in the candidate parent; an uncommitted request event cannot collect canonical votes.
 
 A No is not an advisory app event and is never stored as an open-state value. It is a terminal response carried in the
-rejected finalization Commit below. The No signer MAY commit that response directly. Consequently, after a valid No is
+rejected finalization Commit below. Only the No signer may commit that rejected finalization. Consequently, after a valid No is
 on the selected canonical branch, the component entry is gone and no later Yes can replace it. Competing same-parent
 terminal Commits remain ordinary candidate branches; canonical convergence chooses one transition, and off-branch
 proof delivery cannot mutate the selected state.
@@ -269,7 +275,8 @@ The authorization envelope is interpreted by terminal value:
 - `rejected`: the kind `454` No decision proof; its signer is an active cohort member, MUST equal the Commit sender, and
   MUST NOT already occur in the parent open state's `yes_decisions`;
 - `cancelled`: the kind `456` cancellation proof; its signer is the proposer and MUST equal the Commit sender;
-- `expired`: kind `457`, signed by any active cohort-member committer, with a timestamp greater than `expires_at`;
+- `expired`: kind `457`, signed by any active cohort-member committer, with timestamp `t >= expires_at`, or with
+  `t < created_at` and `created_at - t > 300`; it closes an elapsed or unusably future-dated response window;
 - `superseded`: kind `457`, signed by the committer of the canonical membership, identity, capability, admin-policy, or
   retention change that invalidates a request binding; the signer MUST equal the terminal Commit sender.
 
@@ -302,6 +309,11 @@ change that causes `superseded`; that update remains subject to the retention co
 for the exact canonical-state change that causes `superseded`, a terminal Commit contains no proposal beyond the history-purge removal, required-component
 removal, the terminal `AppEphemeral`, and the accepted retention update when applicable. Any missing, duplicate, or
 extra proposal makes the terminal transition invalid.
+
+When a legitimate superseding change also edits `app_components`, the required-list removal and independently
+authorized change MUST be combined in one full-replacement operation for that component. Both proposal sender and
+committer must have authority for every delta; a non-admin's exception covers only removing `0x800d`. Duplicate
+operations for one component remain invalid, and no other actor's admin authority can be borrowed.
 
 The accepted Commit is the sole purge linearization point. Neither a request, a Yes, a No proof that has not reached a
 selected Commit, nor local expiry starts suppression or deletion. The first terminal transition on the selected
@@ -376,10 +388,27 @@ It still targets only source epochs below the immutable `purge_before_epoch`. Th
 can authorize later acceptance until canonical closure; it MUST NOT promise a cryptographically enforced wall-clock
 acceptance deadline. A conforming admin uses its current local time and MUST NOT backdate a proof.
 
-Any active cohort member can canonically close the request as `expired`, without an online admin. A conforming signer
-uses its current local time and MUST NOT forward-date that proof; self-asserted timestamps cannot prevent a malicious
-member from ending voting early. The UI MUST disclose that this early closure can abort voting but cannot authorize a
-purge. Once closure is selected, join or recovery attempts use that closed parent under their normal rules.
+Any active cohort member can canonically close the request as `expired`, without an online admin, when its current
+time satisfies either expiry condition above. A conforming signer MUST use current local time without backdating or
+forward-dating. Self-asserted timestamps cannot prevent a malicious member from aborting voting early; the UI MUST
+disclose that this cannot authorize a purge. At the exact deadline, accepted and expired candidates may both validate;
+canonical convergence selects the terminal transition.
+
+Every capable active cohort client MUST schedule expiry once either condition becomes locally true. While online with
+usable group state and signing capability, it MUST initiate publication within 60 seconds, including any jitter. This
+bounds an attempt, not delivery or canonical completion. The closure obligation is durable across restart, publication
+failure and branch replacement and retries through the normal publication/convergence rules until closure is selected
+or membership authority is lost. Observing an unselected competing candidate does not discharge it.
+
+Opening admins MUST observe a group-wide 300-second local cooldown after any selected terminal transition and prioritize
+known pending recovery over a new opening. They retain or reconstruct this cooldown across restart; when unavailable,
+they wait a fresh interval. Duplicate terminal delivery MUST NOT extend it. Alternating proposers cannot bypass the
+group-wide rule. These are producer obligations, not canonical time validation.
+
+Recovery still requires a capable surviving member and eventual delivery and convergence. All-offline groups,
+unavailable signers, malicious admins and adversarial scheduling have no guaranteed liveness. Once closure is selected,
+external join or recovery must construct fresh Commit bytes against that closed parent; invalid old bytes do not become
+valid retroactively.
 
 ## Application and completion projections
 
@@ -436,9 +465,8 @@ or an authorized member Commit must perform the relevant binding change and atom
 the external-Commit proposal rules.
 
 A disband transition MUST first close any open request in a prior canonical Commit. It cannot carry the required
-terminal `AppEphemeral` under the lifecycle component's exact proposal-set rule. Any other required-component change
-that invalidates the request's capability binding must use an independently authorized atomic `superseded` transition;
-changes unrelated to that binding neither remove nor reset the request.
+terminal `AppEphemeral` under the lifecycle component's exact proposal-set rule. Required-list edits alone do not
+change the three-flag capability digest. Unrelated list changes neither supersede, remove nor reset the request.
 
 No valid persistent state may be removed without the matching terminal `AppEphemeral`. The component cannot be enabled
 for a group containing an unsupported leaf. Legacy groups continue without it. A future incompatible request, state,

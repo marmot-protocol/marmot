@@ -20,7 +20,7 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text
   streams, anchored by normal durable final messages.
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
-- [consensual-history-purge.md](./consensual-history-purge.md) - unanimous one-shot deletion of pre-opening
+- [consensual-history-purge.md](./consensual-history-purge.md) - draft unanimous one-shot deletion of pre-opening
   application plaintext alongside a prospective retention change.
 
 ## Relationship to app components

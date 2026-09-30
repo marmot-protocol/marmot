@@ -246,6 +246,10 @@ atomic with the component transition
 that requires the list change. It does not authorize the actor to change any other required component or any unrelated
 GroupContext state.
 
+If an independently authorized transition also changes that required list, it combines all deltas in one
+full-replacement operation for `app_components`. The proposal sender and committer each require authority for every
+delta; the component-specific exception supplies only authority for its own component id.
+
 ## Current Marmot Components
 
 Assigned component ids are registered in [../foundation/registries.md](../foundation/registries.md).
@@ -268,7 +272,7 @@ The following persistent GroupContext component is experimental and is not requi
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.
 
-The adopted [marmot.group.history-purge.v1](./history-purge-v1.md) component uses temporary GroupContext state while
+The draft [marmot.group.history-purge.v1](./history-purge-v1.md) component uses temporary GroupContext state while
 one bounded request is open and one terminal `AppEphemeral` value in the Commit that removes that state.
 
 Every Marmot leaf uses the adopted

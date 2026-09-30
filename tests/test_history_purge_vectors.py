@@ -92,6 +92,63 @@ class EncodingTest(unittest.TestCase):
             proof = FIXTURE["proof"] if kind != "455" else {**FIXTURE["proof"], "created_at": FIXTURE["request"]["created_at"]}
             self.assertEqual(wire.proof_event(FIXTURE["request"], proof, int(kind)), event)
             self.assertIn(["parent_epoch", "7"], event["tags"])
+        self.assertEqual(wire.proof_event(FIXTURE["request"], FIXTURE["proof"], 454, decision="no"),
+                         FIXTURE["no_template"])
+
+    def test_full_structures_fixed_bytes_and_decode(self):
+        expected = FIXTURE["structures"]
+        proof = {**FIXTURE["proof"], "created_at": FIXTURE["request"]["created_at"]}
+        request = {"core": FIXTURE["request"], "proposer_proof": proof}
+        encoded = wire.encode_request(request)
+        self.assertEqual(encoded.hex(), expected["request_bytes"])
+        self.assertEqual(wire.decode_request(encoded), request)
+        records = [{"decision": 1, "proof": {**FIXTURE["proof"], "signer_pubkey": key}}
+                   for key in FIXTURE["request"]["members"]]
+        state = {"request": request, "yes_decisions": records}
+        encoded = wire.encode_open_state(state)
+        self.assertEqual(encoded.hex(), expected["open_state_bytes"])
+        self.assertEqual(wire.decode_open_state(encoded), state)
+        self.assertEqual(wire.encode_open_state({**state, "yes_decisions": []}).hex(),
+                         expected["empty_open_state_bytes"])
+        final = bytes.fromhex(FIXTURE["expected"]["finalization_bytes"])
+        self.assertEqual(wire.decode_finalization(final),
+                         {"request_id": FIXTURE["expected"]["request_id"], "terminal": 1,
+                          "authorization": FIXTURE["proof"]})
+
+    def test_full_structure_mutations_reject(self):
+        request = bytes.fromhex(FIXTURE["structures"]["request_bytes"])
+        opened = bytes.fromhex(FIXTURE["structures"]["open_state_bytes"])
+        final = bytes.fromhex(FIXTURE["expected"]["finalization_bytes"])
+        for decoder, encoded in ((wire.decode_request, request), (wire.decode_open_state, opened),
+                                 (wire.decode_finalization, final)):
+            for malformed in (encoded[:-1], encoded+b"\x00"):
+                with self.assertRaises(ValueError):
+                    decoder(malformed)
+        for malformed in (final[:32]+b"\x00"+final[33:], final[:32]+b"\x06"+final[33:]):
+            with self.assertRaises(ValueError):
+                wire.decode_finalization(malformed)
+        with self.assertRaises(ValueError):
+            wire.decode_request(request[:-104]+bytes.fromhex(FIXTURE["request"]["members"][1])+request[-72:])
+        state = wire.decode_open_state(opened)
+        records = state["yes_decisions"]
+        for bad in (records[::-1], [records[0]]*2, [{**records[0], "decision": 2}],
+                    [{**records[0], "proof": {**records[0]["proof"], "created_at": 1700003601}}]):
+            with self.assertRaises(ValueError):
+                wire.encode_open_state({**state, "yes_decisions": bad})
+        with self.assertRaises(ValueError):
+            wire.decode_open_state(request+wire.vector(bytes(107521)))
+
+    def test_maximum_open_state_yes_vector(self):
+        core = copy.deepcopy(FIXTURE["request"])
+        core["members"] = [i.to_bytes(32, "big").hex() for i in range(1023)] + [core["proposer_pubkey"]]
+        request = {"core": core, "proposer_proof": {**FIXTURE["proof"], "created_at": core["created_at"]}}
+        state = {"request": request, "yes_decisions": [
+            {"decision": 1, "proof": {**FIXTURE["proof"], "signer_pubkey": key}} for key in core["members"]]}
+        encoded = wire.encode_open_state(state)
+        offset = len(wire.encode_request(request))
+        self.assertEqual(encoded[offset:offset+4], wire.quic_length(107520))
+        self.assertEqual(len(encoded)-offset-4, 107520)
+        self.assertEqual(wire.decode_open_state(encoded), state)
 
 
 if __name__ == "__main__":

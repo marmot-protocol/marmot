@@ -3,11 +3,12 @@
 import copy
 import unittest
 
-from scripts.history_purge_model import Purge
+from scripts.history_purge_model import OpeningPolicy, Purge
 
 
 def unanimous():
     state = Purge(10, frozenset({"alice", "bob"}), frozenset({"alice"}), "bob")
+    assert state.open("alice")
     assert state.vote("alice", 110)
     assert state.vote("bob", 120)
     return state
@@ -51,6 +52,7 @@ class PurgeSafetyTest(unittest.TestCase):
 
     def test_unanimity_membership_and_single_decisions(self):
         state = Purge(10, frozenset({"alice", "bob"}), frozenset({"alice"}), "bob")
+        self.assertTrue(state.open("alice"))
         self.assertFalse(state.vote("outsider", 110))
         self.assertFalse(state.vote("alice", 201))
         self.assertTrue(state.vote("alice", 110))
@@ -112,11 +114,70 @@ class PurgeSafetyTest(unittest.TestCase):
     def test_expiry_without_online_admin_can_unblock_recovery(self):
         state = unanimous()
         state.admins = frozenset()
-        self.assertFalse(state.finalize("expired", "bob", 200, 13, Purge.proposals("expired")))
+        self.assertFalse(state.finalize("expired", "bob", 199, 13, Purge.proposals("expired")))
         self.assertFalse(state.finalize("expired", "outsider", 201, 13, Purge.proposals("expired")))
         self.assertTrue(state.finalize("expired", "bob", 201, 13, Purge.proposals("expired")))
         self.assertFalse(state.suppresses(9))
         self.assertFalse(state.cleanup(100, 2))
+
+    def test_opening_authority_capability_and_preopening_votes(self):
+        state = Purge(10, frozenset({"alice", "bob"}), frozenset({"alice"}), "bob")
+        self.assertFalse(state.vote("bob", 120))
+        self.assertFalse(state.open("bob"))
+        self.assertFalse(state.open("alice", proposal_sender="bob"))
+        self.assertFalse(state.open("alice", capable=False))
+        self.assertFalse(state.open("alice", candidate_parent=11))
+        self.assertFalse(state.open("alice", proposals=["add_request"]))
+        self.assertFalse(state.open("alice", proposals=["add_request", "add_requirement", "unrelated"]))
+        self.assertTrue(state.open("alice"))
+        self.assertFalse(state.open("alice"))
+        self.assertTrue(state.vote("bob", 120))
+
+    def test_future_expired_and_maximum_timestamp_closure(self):
+        for created, expires, now in ((1000, 1100, 699), (100, 200, 200),
+                                      (2**53-2, 2**53-1, 2**53-1)):
+            for receiver_clock in (0, 10**12):
+                state = Purge(10, frozenset({"alice", "bob"}), frozenset({"alice"}), "bob",
+                              created_at=created, expires_at=expires)
+                self.assertTrue(state.open("alice"))
+                self.assertTrue(state.finalize("expired", "bob", now, 13, Purge.proposals("expired"),
+                                               receiver_clock=receiver_clock))
+                self.assertFalse(state.suppresses(9))
+        state = Purge(10, frozenset({"alice"}), frozenset({"alice"}), "alice",
+                      created_at=1000, expires_at=1100)
+        state.open("alice")
+        self.assertFalse(state.finalize("expired", "alice", 700, 13, Purge.proposals("expired")))
+
+    def test_closure_obligation_survives_offline_restart_and_retry(self):
+        state = unanimous()
+        self.assertIsNone(state.schedule_closure(199))
+        self.assertIsNone(state.schedule_closure(200, online=False))
+        self.assertTrue(state.closure_obligation)
+        state = copy.deepcopy(state)
+        self.assertEqual(state.schedule_closure(250), 310)
+        self.assertEqual(state.schedule_closure(270), 310)
+        self.assertTrue(state.closure_obligation)
+        self.assertTrue(state.finalize("expired", "bob", 270, 13, Purge.proposals("expired")))
+        self.assertFalse(state.closure_obligation)
+
+    def test_group_wide_admission_cooldown_and_recovery_priority(self):
+        policy = OpeningPolicy()
+        self.assertFalse(policy.can_open(100, 100, 200, admin=False))
+        self.assertFalse(policy.can_open(100, 401, 500, admin=True))
+        self.assertFalse(policy.can_open(200, 100, 200, admin=True))
+        self.assertTrue(policy.can_open(100, 400, 500, admin=True))
+        policy.terminal_selected("closed-first", 100)
+        policy.terminal_selected("closed-first", 250)
+        policy = copy.deepcopy(policy)
+        for proposer in ("alice", "bob"):
+            self.assertFalse(policy.can_open(399, 399, 500, admin=True), proposer)
+        self.assertTrue(policy.can_open(400, 400, 500, admin=True))
+        policy.recovery_pending = True
+        self.assertFalse(policy.can_open(400, 400, 500, admin=True))
+        policy.recovery_pending = False
+        policy.lost_cooldown_after_restart(500)
+        self.assertFalse(policy.can_open(799, 799, 900, admin=True))
+        self.assertTrue(policy.can_open(800, 800, 900, admin=True))
 
     def test_selected_terminal_race_never_uses_receipt_order(self):
         for first, second in (("accepted", "cancelled"), ("cancelled", "accepted")):

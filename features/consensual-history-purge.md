@@ -1,6 +1,6 @@
 # Consensual history purge
 
-Status: adopted.
+Status: draft.
 
 This feature is a separate, high-consequence group action for changing prospective message retention and, only after
 unanimous consent, hiding and best-effort deleting application plaintext from before the request opened. It is not implied by enabling
@@ -19,9 +19,9 @@ The rich action is available only when every nonblank active leaf advertises the
 request is already open. An old or unsupported client is never counted as consenting.
 
 Any active member may create a request, including a non-admin. The member signs the versioned request proof and sends
-the feature-owned kind `453` app event. The request may then be relayed into the temporary GroupContext component by an
-active member. This route exists specifically so non-admin request creation does not weaken authorization: only an
-active admin may commit the accepted finalization and the retention update.
+the feature-owned kind `453` app event. Only an active admin may propose and commit canonical opening, after the
+component's local admission, cooldown and recovery-priority checks. This replaces unrestricted member opening while
+preserving non-admin request creation. Acceptance and the retention update remain admin-only.
 
 The request binds the group and parent state, proposer, prior and target retention values, exact active-account cohort,
 capability-state digest, creation time, and deadline. Membership, account identity, capability, admin policy, or
@@ -38,7 +38,7 @@ The request UI MUST show:
 - the absolute response deadline, the consequences of Yes and No, and that an existing Yes can authorize later
   acceptance until a canonical terminal outcome closes the request;
 - that any cohort member can close voting as expired without an online admin, and a malicious member can abort voting
-  early with a forward-dated proof, which cannot authorize a purge;
+  early with a false timestamp, which cannot authorize a purge;
 - that cleanup is cooperative and cannot guarantee removal from former, hostile, unsupported, or offline
   non-conforming clients, relays, exports, screenshots, backups, or other external copies.
 
@@ -56,6 +56,11 @@ to at most seven days by request bytes. At the local deadline a client stops off
 provisional expired projection across restart, but expiry never means consent. Canonical accepted, rejected, cancelled,
 expired, and superseded outcomes are the versioned terminal finalizations defined by the component owner. Rejected,
 cancelled, expired, and superseded requests require a new request id.
+
+Capable online cohort clients automatically attempt canonical expiry within the component's bounded interval, including
+for an unusably future-dated window. The durable obligation survives restart and failed publication. Admins honor the
+group-wide cooldown and prioritize pending recovery before another opening. These rules do not guarantee progress with
+all members offline, unavailable signers, malicious admins or adversarial delivery.
 
 ## Atomic finalization
 

@@ -202,7 +202,7 @@ def check_history_purge_v1_structure() -> None:
     feature_index = read_utf8(ROOT / "features/README.md")
     require(retained, "request's fixed `purge_before_epoch = parent_epoch + 1`", "protocol-core/retained-history.md")
     require(retained, "not the activation epoch", "protocol-core/retained-history.md")
-    require(feature_index, "unanimous one-shot deletion of pre-opening", "features/README.md")
+    require(feature_index, "draft unanimous one-shot deletion of pre-opening", "features/README.md")
 
     component_fragments = [
         "at most one open request per group",

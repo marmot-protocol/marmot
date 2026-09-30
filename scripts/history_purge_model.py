@@ -26,19 +26,32 @@ class Purge:
     cleaned: bool = False
     emitted: dict[str, str] = field(default_factory=dict)
     receipts: dict[str, set[str]] = field(default_factory=dict)
+    opened: bool = False
+    closure_obligation: bool = False
+    attempt_by: int | None = None
 
     def __post_init__(self):
         if not 0 <= self.request_parent < 2**64 - 1:
             raise ValueError("opening epoch overflows")
-        if not self.members or self.proposer not in self.members:
+        if not self.members or self.proposer not in self.members or not self.admins <= self.members:
             raise ValueError("invalid cohort")
         if not 1 <= self.created_at < self.expires_at <= 2**53 - 1:
             raise ValueError("invalid proof interval")
         if self.expires_at - self.created_at > 604800:
             raise ValueError("response interval exceeds seven days")
 
+    def open(self, actor, candidate_parent=None, capable=True, proposals=None, proposal_sender=None):
+        expected = ["add_request", "add_requirement"]
+        if (self.opened or self.terminal is not None or actor not in self.admins or self.yes or not capable
+                or (proposal_sender is not None and proposal_sender not in self.admins)
+                or (candidate_parent is not None and candidate_parent != self.request_parent)
+                or Counter(expected if proposals is None else proposals) != Counter(expected)):
+            return False
+        self.opened = True
+        return True
+
     def vote(self, actor, timestamp, request_id="request"):
-        if (self.terminal is not None or request_id != self.request_id
+        if (not self.opened or self.terminal is not None or request_id != self.request_id
                 or actor not in self.members or actor in self.yes
                 or not self.created_at <= timestamp <= self.expires_at):
             return False
@@ -58,7 +71,7 @@ class Purge:
                  request_id="request", change=None, change_authorized=False,
                  external=False, receiver_clock=None):
         # receiver_clock deliberately cannot affect canonical validity.
-        if (self.terminal is not None or request_id != self.request_id or external
+        if (not self.opened or self.terminal is not None or request_id != self.request_id or external
                 or not self.selected or parent_epoch < self.request_parent + 1
                 or parent_epoch >= 2**64 - 1):
             return False
@@ -67,7 +80,8 @@ class Purge:
             "accepted": actor in self.admins and self.yes == set(self.members) and in_window,
             "rejected": actor in self.members and actor not in self.yes and in_window,
             "cancelled": actor == self.proposer and in_window,
-            "expired": actor in self.members and self.expires_at < timestamp <= 2**53 - 1,
+            "expired": actor in self.members and 1 <= timestamp <= 2**53 - 1
+                and (timestamp >= self.expires_at or self.created_at - timestamp > 300),
             "superseded": actor in self.members and change_authorized and change in
                 {"membership", "identity", "capability", "admin", "retention"}
                 and (change not in {"admin", "retention"} or actor in self.admins)
@@ -79,10 +93,20 @@ class Purge:
         if Counter(proposals) != expected:
             return False
         self.terminal = terminal
+        self.closure_obligation = False
         if terminal == "accepted":
             self.authorization_parent = parent_epoch
             self.activation = parent_epoch + 1
         return True
+
+    def schedule_closure(self, now, online=True, usable=True, signing=True):
+        if not self.opened or self.terminal is not None:
+            return None
+        if now >= self.expires_at or self.created_at - now > 300:
+            self.closure_obligation = True
+        if self.closure_obligation and online and usable and signing and self.attempt_by is None:
+            self.attempt_by = now + 60
+        return self.attempt_by
 
     @property
     def boundary(self):
@@ -127,3 +151,24 @@ class Purge:
     def group_complete(self):
         return (self.selected and self.terminal == "accepted"
                 and all(self.receipts.get(account) == {"applied"} for account in self.members))
+
+
+@dataclass
+class OpeningPolicy:
+    """Local producer policy, deliberately separate from canonical validation."""
+
+    cooldown_until: int = 0
+    recovery_pending: bool = False
+    selected_terminals: set[str] = field(default_factory=set)
+
+    def can_open(self, now, created, expires, admin):
+        return (admin and abs(now - created) <= 300 and now < expires
+                and now >= self.cooldown_until and not self.recovery_pending)
+
+    def terminal_selected(self, identity, now):
+        if identity not in self.selected_terminals:
+            self.selected_terminals.add(identity)
+            self.cooldown_until = now + 300
+
+    def lost_cooldown_after_restart(self, now):
+        self.cooldown_until = now + 300

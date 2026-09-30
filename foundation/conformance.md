@@ -87,8 +87,9 @@ snapshot encoding, process scheduler, or one snapshot per epoch. The owning norm
 
 Conformance suites for [`marmot.group.history-purge.v1`](../app-components/history-purge-v1.md) MUST cover:
 
-1. an active non-admin creates the feature-owned request, another active member relays it into temporary GroupContext
-   state, and no actor thereby gains authority to commit the retention update or accepted finalization. The suite MUST
+1. an active non-admin creates the feature-owned request; only an active admin proposes and commits opening with an
+   empty decision list, and no actor thereby gains retention-update or finalization authority. Cover pre-opening votes,
+   wrong opening parent and unsupported leaves. The suite MUST
    accept only the exact paired `0x800d` required-component-list addition and reject any unrelated required-component or
    GroupContext mutation by that actor;
 2. a supported fixed member snapshot in which every account adds one canonical Yes and the active-admin terminal Commit
@@ -111,7 +112,11 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
    timestamps immediately before, at, and after the deadline, local expiry across restart, and canonical expiry. The
    suite MUST verify that timeout, silence, restart, and expiry never produce consent. A delayed or backdated acceptance
    at a much later epoch with an in-window proof timestamp MUST keep the same request-bound target for every receiver
-   clock value, preserve voting-era messages, and never claim that the timestamp proves wall-clock timely acceptance;
+   clock value, preserve voting-era messages, and never claim that the timestamp proves wall-clock timely acceptance.
+   Also cover already-expired and future-dated requests, the exact 300-second admission/closure boundaries, maximum
+   proof timestamps, automatic closure within 60 seconds of usable online conditions, restart and publication retry,
+   group-wide cooldown with alternating proposers, duplicate terminal delivery and recovery priority. Local producer
+   admission and scheduling MUST NOT change candidate validity according to receiver clocks;
 7. a membership, identity, capability, admin-policy, or retention change while open, verifying atomic supersession,
    removal of the old state, and rejection of later material for its request id. A causal independently authorized
    retention update is permitted only in the superseded transition. External join/resync Commits while open are

@@ -86,6 +86,12 @@ def encode_request_core(request):
 
 def decode_request_core(data):
     reader = Reader(data)
+    result = read_request_core(reader)
+    reader.finish()
+    return result
+
+
+def read_request_core(reader):
     result = {"group_id": reader.vector(1, 255).hex(), "parent_epoch": reader.integer(8),
               "parent_group_context_hash": reader.take(32).hex(), "proposer_pubkey": reader.take(32).hex(),
               "created_at": reader.integer(8), "expires_at": reader.integer(8),
@@ -96,7 +102,6 @@ def decode_request_core(data):
         raise ValueError("partial member")
     result["members"] = [members[i:i+32].hex() for i in range(0, len(members), 32)]
     result["capability_state_hash"] = reader.take(32).hex()
-    reader.finish()
     if (result["parent_epoch"] == 2**64 - 1 or result["prior_retention_present"] not in (0, 1)
             or (result["prior_retention_present"] == 0 and result["prior_retention_secs"] != 0)
             or result["members"] != sorted(set(result["members"]))
@@ -111,6 +116,70 @@ def encode_proof(proof):
     if not 1 <= proof["created_at"] <= 2**53 - 1:
         raise ValueError("proof timestamp")
     return fixed(proof["signer_pubkey"], 32) + u64(proof["created_at"]) + fixed(proof["signature"], 64)
+
+
+def read_proof(reader):
+    proof = {"signer_pubkey": reader.take(32).hex(), "created_at": reader.integer(8),
+             "signature": reader.take(64).hex()}
+    encode_proof(proof)
+    return proof
+
+
+def read_request(reader):
+    request = {"core": read_request_core(reader), "proposer_proof": read_proof(reader)}
+    core, proof = request["core"], request["proposer_proof"]
+    if proof["signer_pubkey"] != core["proposer_pubkey"] or proof["created_at"] != core["created_at"]:
+        raise ValueError("request proof binding")
+    return request
+
+
+def decode_request(data):
+    reader = Reader(data)
+    request = read_request(reader)
+    reader.finish()
+    return request
+
+
+def encode_request(request):
+    encoded = encode_request_core(request["core"]) + encode_proof(request["proposer_proof"])
+    decode_request(encoded)
+    return encoded
+
+
+def decode_open_state(data):
+    reader = Reader(data)
+    request = read_request(reader)
+    decisions = Reader(reader.vector(0, 107520))
+    reader.finish()
+    records = []
+    previous = ""
+    while decisions.offset < len(decisions.data):
+        record = {"decision": decisions.integer(1), "proof": read_proof(decisions)}
+        proof, core = record["proof"], request["core"]
+        if (record["decision"] != 1 or proof["signer_pubkey"] <= previous
+                or proof["signer_pubkey"] not in core["members"]
+                or not core["created_at"] <= proof["created_at"] <= core["expires_at"]):
+            raise ValueError("Yes ordering, cohort or interval")
+        previous = proof["signer_pubkey"]
+        records.append(record)
+    return {"request": request, "yes_decisions": records}
+
+
+def encode_open_state(state):
+    encoded = encode_request(state["request"]) + vector(b"".join(
+        bytes([r["decision"]]) + encode_proof(r["proof"]) for r in state["yes_decisions"]))
+    decode_open_state(encoded)
+    return encoded
+
+
+def decode_finalization(data):
+    reader = Reader(data)
+    result = {"request_id": reader.take(32).hex(), "terminal": reader.integer(1),
+              "authorization": read_proof(reader)}
+    reader.finish()
+    if result["terminal"] not in range(1, 6):
+        raise ValueError("unknown terminal")
+    return result
 
 
 def digest(domain, *parts):
