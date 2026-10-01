@@ -208,8 +208,10 @@ normally require manual review. Once status authority is defined, a status updat
 Waiting for approval.
 
 Link revocation, requester withdrawal, rejection, security-driven retirement, and group disbanding need distinct
-semantics. Whether explicit revocation also cancels old pending requests remains open. None removes existing members
-as a side effect.
+semantics. Whether explicit revocation also cancels old pending requests remains open. Link revocation, requester
+withdrawal, rejection, and security-driven retirement do not remove existing members as a side effect. Group
+disbanding follows the adopted [group lifecycle](../app-components/group-lifecycle-v1.md): its terminal Commit removes
+every candidate-parent leaf except the committing leaf and leaves only the committer in the admin policy.
 
 ## Security and availability limits
 
@@ -219,8 +221,9 @@ as a side effect.
   Outside readers can estimate request volume; a distinctive descriptor kind can also identify a Marmot invite inbox.
   Someone holding the link can associate that address with its preview.
 - Existing Welcome envelopes expose the recipient npub publicly. Sender identity and group contents remain wrapped.
-  This proposal protects request contents and associations; full admission-path anonymity would need different
-  Welcome transport work.
+  Public-event timing can associate an inbox request with a later Welcome and suggest the requester's identity.
+  This proposal protects encrypted request contents; full admission-path anonymity would need different Welcome
+  transport work.
 - [NIP-44 limitations](https://github.com/nostr-protocol/nips/blob/master/44.md#limitations) include lack of forward
   secrecy. Inbox-key compromise exposes retained request ciphertext; rotation protects fresh endpoints.
   Nesting distribution inside MLS does not retract secrets copied by a recipient.
@@ -244,8 +247,10 @@ The idea allocates no component ids, event kinds, exporter labels, or wire bytes
 
 Open questions:
 
-1. Invitation prefix and Bech32m payload; descriptor coordinates and authentication, secret-material carriage, and
-   relay-hint disclosure.
+1. Invitation prefix and Bech32m payload, including total length and QR usability bounds; descriptor coordinates and
+   authentication, secret-material carriage, and relay-hint disclosure. The custom encoding needs its own length
+   policy for the secret-bearing payload. Any current or former inbox-key custodian can rewrite the descriptor
+   for that key; replacement inboxes and links protect future previews, while copied old links retain that risk.
 2. Exact nested-envelope bindings and the disclosure cost of transferable signatures; signer support, bounded
    distribution, generation convergence, and catch-up.
 3. Request-to-Welcome correlation and requester-visible status authority under first-contact trust.
