@@ -67,6 +67,7 @@ features/
 ideas/
   README.md
   multi-device.md
+  group-invite-links.md
 implementation-model.md
 ```
 

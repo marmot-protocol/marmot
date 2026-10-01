@@ -17,6 +17,7 @@ Implementations MUST NOT treat an idea document as an interop surface.
 ## Current ideas
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
+- [group-invite-links.md](./group-invite-links.md) - preview a group and privately request an admin-issued invitation.
 
 ## From idea to spec
 
