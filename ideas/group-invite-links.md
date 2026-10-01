@@ -34,7 +34,7 @@ unverified requests discovered after expiry. Descriptor details and interoperabl
 ## Scene 1: Create and share a link
 
 An admin enables links and sets the mode and expiration, then shares a link or QR code. Clients encode a fresh random
-inbox public key, relay hints, preview material, and an unguessable bearer token. Admins retain the NSEC.
+inbox public key, relay hints, preview material, and an unguessable bearer token. Admins retain the inbox private key.
 A fresh inbox address is independent of account identities and existing group identifiers, including the MLS group id
 and normal group delivery address.
 
@@ -152,7 +152,7 @@ decisions need explicit convergence rules before adoption. First arrival remains
 - **New admin:** after authenticated promotion, an existing active admin sends a fresh encrypted copy.
 - **New device:** a device currently in the group under an active admin account receives fresh material as needed.
   Account-key decryption through external signers and device recovery require an explicit integration design.
-- **Missing custodian:** wait while another admin with a retained copy is offline.
+- **Missing custodian:** wait until an admin with a retained copy comes online and sends fresh material.
 - **Every copy lost:** issue a replacement inbox and link. Retained request metadata cannot reconstruct an unknown key
   or decrypt requests that remain unread.
 
@@ -210,7 +210,8 @@ as a side effect.
   secrecy. Inbox-key compromise exposes retained request ciphertext; rotation protects fresh endpoints.
   Nesting distribution inside MLS does not retract secrets copied by a recipient.
 - Admins can disclose decrypted requests or signed seals. Encryption cannot guarantee deletion or deniability against
-  a custodian.
+  a custodian. Nested account-signed admin seals can become transferable evidence when disclosed, even though the
+  surrounding Marmot app event is unsigned.
 - Processing needs bounds on recipient counts, envelope sizes, pending requests, retries, and preview rendering.
   A leaked bearer permits admission attempts under the link's policy, and automatic mode increases that exposure.
 - Unsupported clients need defined capability and presentation behavior. Account-signer support needs validation,
@@ -229,7 +230,8 @@ The idea allocates no component ids, event kinds, exporter labels, or wire bytes
 Open questions:
 
 1. Inline or fetched preview; descriptor authentication and relay-hint disclosure.
-2. Exact nested-envelope bindings, signer support, bounded distribution, generation convergence, and catch-up.
+2. Exact nested-envelope bindings and the disclosure cost of transferable signatures; signer support, bounded
+   distribution, generation convergence, and catch-up.
 3. Request-to-Welcome correlation and requester-visible status authority under first-contact trust.
 4. Concurrent decisions and reproducible pre-expiry evidence, including confirmation of the manual late-request fallback.
 5. Revocation, withdrawal, security-driven retirement, and retired-key retention for pending requests.
