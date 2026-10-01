@@ -16,7 +16,7 @@ negotiation, and interoperable rules remain work for the owning surfaces before 
 - **Explicit joining:** show the name, description, and image; submit a request only after the person chooses Join.
 - **Private requests:** gift-wrap to a random link inbox; authenticate the real requesting account inside encryption.
 - **Admin-only secrets:** encrypt a copy for each active admin, then carry those copies inside MLS group traffic.
-- **Offline waiting:** show "Waiting for approval" or "Waiting for an invite" while every admin is offline.
+- **Offline waiting:** show "Waiting for approval" or "Waiting for an invite" until an admin responds.
 - **Pending requests survive expiry:** any active admin can approve them later under current membership policy.
 - **History starts at joining:** the invitation transfers only the state needed for the existing Welcome flow.
 
@@ -204,7 +204,8 @@ delivery provides insufficient evidence of submission before expiry.
 The proposed fallback preserves first-discovered late requests for explicit approval as "timing unverified".
 Automatic admission after expiry needs trustworthy pre-expiry acceptance evidence, whose format and cross-admin
 availability are still open. Until that exists, requests first discovered after all admins were offline across expiry
-normally require manual review. An authenticated status update explains the transition to Waiting for approval.
+normally require manual review. Once status authority is defined, a status update can explain the transition to
+Waiting for approval.
 
 Link revocation, requester withdrawal, rejection, security-driven retirement, and group disbanding need distinct
 semantics. Whether explicit revocation also cancels old pending requests remains open. None removes existing members
@@ -214,6 +215,8 @@ as a side effect.
 
 - Public request envelopes expose a random inbox address. They also show event sizes and activity. Requests to one
   inbox are linkable.
+  The descriptor's public author connects it to requests addressed to that inbox, even without the invitation code.
+  Outside readers can estimate request volume; a distinctive descriptor kind can also identify a Marmot invite inbox.
   Someone holding the link can associate that address with its preview.
 - Existing Welcome envelopes expose the recipient npub publicly. Sender identity and group contents remain wrapped.
   This proposal protects request contents and associations; full admission-path anonymity would need different
