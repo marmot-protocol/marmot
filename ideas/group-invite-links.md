@@ -2,8 +2,9 @@
 
 Status: proposal (non-normative). See [README.md](./README.md).
 
-An admin shares a link; someone previews the group and requests an invitation. Admins receive the request privately
-and add the person through the existing MLS Welcome flow. A shared inbox key lets any active admin receive requests.
+An admin shares a portable invitation address; someone previews the group and requests an invitation. Admins receive
+the request privately and add the person through the existing MLS Welcome flow. A shared inbox key lets any active
+admin receive requests.
 Recipient-encrypted admin records travel inside the group's existing MLS channel.
 
 This discussion draft proposes the experience and mechanisms for review. Identifiers, wire formats, capability
@@ -33,18 +34,29 @@ unverified requests discovered after expiry. Descriptor details and interoperabl
 
 ## Scene 1: Create and share a link
 
-An admin enables links and sets the mode and expiration, then shares a link or QR code. Clients encode a fresh random
-inbox public key, relay hints, preview material, and an unguessable bearer token. Admins retain the inbox private key.
+An admin enables links and sets the mode and expiration, then shares an invitation code as text or a QR code.
+The proposed primary form uses Nostr address coordinates to locate an encrypted preview descriptor. A fresh random
+inbox public key, relay hints, preview decryption material, and an unguessable bearer token accompany the invitation.
+Admins retain the inbox private key.
 A fresh inbox address is independent of account identities and existing group identifiers, including the MLS group id
 and normal group delivery address.
 
 The token distinguishes someone holding the link from someone who only saw the inbox address in a public request.
 It permits requesting admission; membership still depends on current group policy and a valid Welcome.
 
-The preview can be inline or an encrypted fetched descriptor. Images use encrypted assets whose decryption material
-travels with the link. The client shows the full preview; web unfurls stay generic. Secret-bearing web links use
-fragments, with analytics and secret-bearing unfurl requests excluded. The opening website or application can still
-read the fragment. Distinctive relay hints can identify a group.
+The address model follows [NIP-19's `naddr`](https://github.com/nostr-protocol/nips/blob/master/19.md): a descriptor's
+author, kind, identifier, and optional relay hints. A custom [Bech32m](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki)
+invitation code with a prefix such as `wn` or `marmot` is the proposed sharing form. Ordinary NIP-19 `naddr` uses
+Bech32, so this custom code would be a separate Marmot encoding, not a standard `naddr` with its prefix replaced.
+The fresh inbox identity authors the descriptor, keeping its public address independent of admin accounts and
+known groups.
+The prefix, descriptor coordinates, and secret-bearing payload remain adoption questions; this idea reserves none.
+
+Bearer and preview decryption material travel in the secret invitation code, outside the publicly fetched descriptor.
+Images use encrypted assets whose decryption material travels with that code. The client shows the full preview.
+A web link can wrap the code for application opening; it does not supply group authenticity. Web unfurls stay generic.
+Secret-bearing web links use fragments, with analytics and secret-bearing unfurl requests excluded. The opening
+website or application can still read the fragment. Distinctive relay hints can identify a group.
 
 Anyone holding or forwarding the link can disclose its preview. Publishing the link deliberately discloses the preview
 and inbox. Trust starts with whoever supplied the link: endpoint key possession alone proves neither admin status
@@ -229,7 +241,8 @@ The idea allocates no component ids, event kinds, exporter labels, or wire bytes
 
 Open questions:
 
-1. Inline or fetched preview; descriptor authentication and relay-hint disclosure.
+1. Invitation prefix and Bech32m payload; descriptor coordinates and authentication, secret-material carriage, and
+   relay-hint disclosure.
 2. Exact nested-envelope bindings and the disclosure cost of transferable signatures; signer support, bounded
    distribution, generation convergence, and catch-up.
 3. Request-to-Welcome correlation and requester-visible status authority under first-contact trust.
