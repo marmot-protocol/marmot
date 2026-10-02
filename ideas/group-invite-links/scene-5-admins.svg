@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" role="img" aria-labelledby="title desc">
+<title id="title">Scene 5: admins share the inbox key inside the group</title>
+<desc id="desc">Alice encrypts a copy of the inbox key to herself and to Carol inside a normal group message. Ordinary members see the envelopes and cannot open them.</desc>
+<style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.bg{fill:#f6f8fa}
+.t{fill:#1f2328} .m{fill:#59636e} .a{fill:#0969da} .d{fill:#cf222e}
+.g{fill:#1a7f37} .y{fill:#9a6700} .r{fill:#8250df} .f{fill:#afb8c1}
+.frame{fill:#2d333b;stroke:#2d333b} .scr{fill:#ffffff}
+.card{fill:#f6f8fa;stroke:#d1d9e0} .cardf{fill:#ffffff;stroke:#d1d9e0}
+.ln{fill:none;stroke:#d1d9e0} .lnf{fill:#d1d9e0}
+.btn{fill:#0969da} .btn2{fill:#ffffff;stroke:#d1d9e0} .btnd{fill:#ffffff;stroke:#cf222e}
+.ta{fill:#ddf4ff} .td{fill:#ffebe9} .tg{fill:#dafbe1} .ty{fill:#fff8c5} .tr{fill:#fbefff}
+.sa{stroke:#0969da} .sd{stroke:#cf222e} .sg{stroke:#1a7f37} .sy{stroke:#9a6700}
+.sr{stroke:#8250df} .sm{stroke:#59636e} .sf{stroke:#afb8c1} .sl{stroke:#d1d9e0}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#ddf4ff;stroke:#0969da;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#afb8c1;stroke-dasharray:6 4}
+@media (prefers-color-scheme: dark){
+.bg{fill:#151b23}
+.t{fill:#e6edf3} .m{fill:#9198a1} .a{fill:#4493f8} .d{fill:#f85149}
+.g{fill:#3fb950} .y{fill:#d29922} .r{fill:#ab7df8} .f{fill:#484f58}
+.frame{fill:#2f3742;stroke:#4a535e} .scr{fill:#0d1117}
+.card{fill:#151b23;stroke:#3d444d} .cardf{fill:#0d1117;stroke:#3d444d}
+.ln{fill:none;stroke:#3d444d} .lnf{fill:#3d444d}
+.btn{fill:#1f6feb} .btn2{fill:#0d1117;stroke:#3d444d} .btnd{fill:#0d1117;stroke:#f85149}
+.ta{fill:#12294a} .td{fill:#3c1618} .tg{fill:#12261e} .ty{fill:#2e2610} .tr{fill:#2a1d45}
+.sa{stroke:#4493f8} .sd{stroke:#f85149} .sg{stroke:#3fb950} .sy{stroke:#d29922}
+.sr{stroke:#ab7df8} .sm{stroke:#9198a1} .sf{stroke:#484f58} .sl{stroke:#3d444d}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#12294a;stroke:#4493f8;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#484f58;stroke-dasharray:6 4}
+}
+</style>
+<defs>
+<marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="a"/></marker>
+<marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+<marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d"/></marker>
+<marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
+<marker id="hy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="y"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="960" height="420" rx="16"/>
+
+<g transform="translate(40,70)">
+<rect x="0" y="0" width="200" height="120" rx="12" class="frame" stroke-width="1.5"/>
+<rect x="8" y="8" width="184" height="104" rx="8" class="scr"/>
+<text x="100" y="48" class="t" font-size="15" font-weight="700" text-anchor="middle">Alice</text>
+<text x="100" y="72" class="m" font-size="12" text-anchor="middle">creates the inbox key</text>
+<text x="100" y="90" class="m" font-size="12" text-anchor="middle">for this link</text>
+</g>
+<g transform="translate(360,48)">
+<rect x="0" y="0" width="240" height="164" rx="12" class="cardf"/>
+<text x="120" y="28" class="t" font-size="13" font-weight="700" text-anchor="middle">Group message</text>
+<text x="120" y="48" class="m" font-size="11" text-anchor="middle">seen by members, sealed per admin</text>
+<rect x="16" y="64" width="208" height="36" rx="8" class="ta"/>
+<text x="120" y="86" class="a" font-size="12" font-weight="600" text-anchor="middle">Copy for Alice</text>
+<rect x="16" y="108" width="208" height="36" rx="8" class="tr"/>
+<text x="120" y="130" class="r" font-size="12" font-weight="600" text-anchor="middle">Copy for Carol</text>
+</g>
+<g transform="translate(720,70)">
+<rect x="0" y="0" width="200" height="120" rx="12" class="frame" stroke-width="1.5"/>
+<rect x="8" y="8" width="184" height="104" rx="8" class="scr"/>
+<text x="100" y="48" class="t" font-size="15" font-weight="700" text-anchor="middle">Carol</text>
+<text x="100" y="72" class="m" font-size="12" text-anchor="middle">opens her copy</text>
+<text x="100" y="90" class="m" font-size="12" text-anchor="middle">and sees Bob</text>
+</g>
+<path d="M250,130 H348" class="arr sa" marker-end="url(#ha)"/>
+<path d="M612,130 H708" class="arr sa" marker-end="url(#ha)"/>
+<rect x="80" y="250" width="800" height="88" rx="10" class="card"/>
+<text x="100" y="278" class="t" font-size="13" font-weight="700">Ordinary members</text>
+<text x="100" y="302" class="m" font-size="13">see that two admin envelopes exist. They already know who the admins are.</text>
+<text x="100" y="322" class="m" font-size="13">They do not learn the inbox key, the bearer, or who Bob is.</text>
+<text x="480" y="390" class="m" font-size="13" text-anchor="middle">Relays see ordinary group traffic. The envelopes are not published on their own.</text>
+
+</svg>
