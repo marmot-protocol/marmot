@@ -1,263 +1,325 @@
 # Group invite links
 
-Status: proposal (non-normative). See [README.md](./README.md).
+Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. See [README.md](./README.md).
 
-An admin shares a portable invitation address; someone previews the group and requests an invitation. Admins receive
-the request privately and add the person through the existing MLS Welcome flow. A shared inbox key lets any active
-admin receive requests.
-Recipient-encrypted admin records travel inside the group's existing MLS channel.
+This idea covers inviting someone into a group with a link: you share it, they see the group, they ask to join, and an
+admin adds them with the Welcome flow Marmot already has. It describes the experience and the direction we want. The
+protocol details come later, surface by surface.
 
-This discussion draft proposes the experience and mechanisms for review. Identifiers, wire formats, capability
-negotiation, and interoperable rules remain work for the owning surfaces before implementation.
+The goal is for this to feel like sending someone a link to a chat. They should not have to handle keys or relays.
+You should be able to hand them something short, and they should be able to wait if every admin is away.
 
 ## At a glance
 
-- **Admin controls:** enable links and choose an admission mode with a validity period.
-- **Explicit joining:** show the name, description, and image; submit a request only after the person chooses Join.
-- **Private requests:** gift-wrap to a random link inbox; authenticate the real requesting account inside encryption.
-- **Admin-only secrets:** encrypt a copy for each active admin, then carry those copies inside MLS group traffic.
-- **Offline waiting:** show "Waiting for approval" or "Waiting for an invite" until an admin responds.
-- **Pending requests survive expiry:** any active admin can approve them later under current membership policy.
-- **History starts at joining:** the invitation transfers only the state needed for the existing Welcome flow.
+- **You share a link, not a key.** The invitation itself is a long code. A short `wn.fo` link, or a QR code, is how that
+  code gets onto their phone.
+- **They see the group, then tap Join.** The name, the description, and the picture come first. Nothing is sent until
+  they ask. The app says the preview is confirmed when an admin's invitation arrives.
+- **Any admin can say yes.** Admins share a key for the request inbox, so whoever is around can read the request.
+  Adding someone still follows [admin policy](../app-components/admin-policy-v1.md) and the normal Welcome.
+- **Waiting is a normal outcome.** An admin who is offline does not drop the request. Expiry stops new people. It does
+  not throw away a request an admin already has.
+- **History starts at joining.** The invitation carries only what a Welcome already carries.
+- **The picture is not the group.** The app shows who sent the Welcome. If the preview does not match that invitation,
+  it says so before they accept.
 
-Active admins retain equal authority. The inbox key supplies decryption, while
-[admin policy](../app-components/admin-policy-v1.md) supplies membership authority.
+## Words used here
 
-## Scope and privacy target
+| Term | Meaning |
+| --- | --- |
+| Long code | The Bech32m invitation. It locates an encrypted preview and carries the secrets that decrypt it. Text, or a QR code of the text. |
+| Short link | About eight characters on `wn.fo`, for example `wn.fo/k3m9qx2a`. A lookup for one long code. |
+| Inbox | A fresh random key that receives requests for one link. It is not an account, and it is not the group's delivery address. Active admins hold the private key. |
+| Bearer | A secret in the long code. Holding it lets someone file a request. It does not put them in the group. |
+| Preview | The name, description, and image the long code decrypts. |
+| Preview commitment | A commitment to that preview in the group's authenticated state. Admins update it the same way they update other group policy. The inbox key cannot. |
 
-The target is outside readers of public events. Relay operators and network or timing correlation are excluded.
-Link holders see the preview. Current members already see membership and admin policy; only admins receive the inbox
-secret and decrypted request details.
+## What this does and does not protect
 
-The proposed baseline uses an admin-only key, one inbox per link, a separate secret bearer, and manual handling of
-unverified requests discovered after expiry. Descriptor details and interoperable lifecycle rules remain open.
+- **`wn.fo` can read the short links it hosts.** It stores the long code, so it can see the preview and file a request.
+  Sharing the long code directly never sends it through that host.
+- **The preview on the request screen is unconfirmed.** The inbox key publishes the encrypted preview, and anyone who
+  kept that key can replace it. The commitment in group state is what gets checked when the Welcome arrives. If the
+  two differ, the app says so before the person accepts.
+- **A matching preview does not name the group they joined.** Whoever authors the Welcome authors the group state
+  inside it, commitment included. The first-contact limit in
+  [Welcome-bootstrap trust](../protocol-core/joining.md#welcome-bootstrap-trust) still applies. They are trusting the
+  inviter the app shows them.
+- **The bearer stops strangers, not a leaked link.** A public request reveals the inbox address. The bearer is how the
+  app tells a link holder from someone who only saw that address. In automatic mode, holding the link is enough for an
+  online admin's app to add them without a person looking.
+- **Removing an admin does not take the inbox key back.** Requests already sent to that inbox stay readable by anyone
+  who learned the key. Later requests need a new link. A removed admin still cannot change the preview commitment.
+- **Joining is not anonymous.** The request's contents are encrypted to the inbox. The Welcome is still addressed to
+  the joiner's npub, as in [Nostr Welcome delivery](../transports/nostr.md#welcome-delivery), and the timing of the two
+  public events can connect them.
+- **An admin seal can be shown outside the group.** The [Marmot app event](../foundation/application-messages.md)
+  around it stays unsigned. A signed seal nested inside can be forwarded to someone who never received the group
+  message.
 
-## Scene 1: Create and share a link
+## Scene 1: Alice shares a link
 
-An admin enables links and sets the mode and expiration, then shares an invitation code as text or a QR code.
-The proposed primary form uses Nostr address coordinates to locate an encrypted preview descriptor. A fresh random
-inbox public key, relay hints, preview decryption material, and an unguessable bearer token accompany the invitation.
-Admins retain the inbox private key.
-A fresh inbox address is independent of account identities and existing group identifiers, including the MLS group id
-and normal group delivery address.
+![Alice turns invite links on for Book club, chooses approval and a 7 day expiry, then shares a short wn.fo link, a QR
+code, or the long code.](group-invite-links/scene-1-share.svg)
 
-The token distinguishes someone holding the link from someone who only saw the inbox address in a public request.
-It permits requesting admission; membership still depends on current group policy and a valid Welcome.
+**What Alice sees:** in the group, she turns invite links on. She picks what happens when someone asks, and how long
+the link works.
 
-The address model follows [NIP-19's `naddr`](https://github.com/nostr-protocol/nips/blob/master/19.md): a descriptor's
-author, kind, identifier, and optional relay hints. A custom [Bech32m](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki)
-invitation code with a prefix such as `wn` or `marmot` is the proposed sharing form. Ordinary NIP-19 `naddr` uses
-Bech32, so this custom code would be a separate Marmot encoding, not a standard `naddr` with its prefix replaced.
-The fresh inbox identity authors the descriptor, keeping its public address independent of admin accounts and
-known groups.
-The prefix, descriptor coordinates, and secret-bearing payload remain adoption questions; this idea reserves none.
+- **Approve requests.** Bob shows up on the Requests screen. An admin taps Approve or Reject.
+- **Add automatically.** The same checks run in the background. Bob sees "Waiting for an invite" until an admin's app
+  is online to send it.
 
-Bearer and preview decryption material travel in the secret invitation code, outside the publicly fetched descriptor.
-Images use encrypted assets whose decryption material travels with that code. The client shows the full preview.
-A web link can wrap the code for application opening; it does not supply group authenticity. Web unfurls stay generic.
-Secret-bearing web links use fragments, with analytics and secret-bearing unfurl requests excluded. The opening
-website or application can still read the fragment. Distinctive relay hints can identify a group.
+The share sheet then offers three ways to hand over one invitation:
 
-Anyone holding or forwarding the link can disclose its preview. Publishing the link deliberately discloses the preview
-and inbox. Trust starts with whoever supplied the link: endpoint key possession alone proves neither admin status
-nor authenticity of a previously known group.
+- **Short link.** `https://wn.fo/k3m9qx2a`. This is the one she pastes into a chat.
+- **QR code.** Of the short link, for a poster, or of the long code, for when `wn.fo` should not be involved.
+- **Long code.** The Bech32m string, for pasting or for that second QR.
 
-## Scene 2: Request an invitation
+**The long code:** a custom [Bech32m](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki) value. A prefix
+such as `wn` or `marmot` is the candidate; this idea does not reserve one. The shape follows
+[NIP-19 `naddr`](https://github.com/nostr-protocol/nips/blob/master/19.md): an author, a kind, an identifier, and
+optional relay hints. It then carries secrets an `naddr` has no place for, and ordinary `naddr` is Bech32, so this is
+its own encoding rather than an `naddr` with the prefix swapped.
 
-After explicit consent, the client sends a persistent [NIP-59 gift wrap](https://github.com/nostr-protocol/nips/blob/master/59.md)
-to the random inbox. The outer signer is a one-time random key. The authenticated requester account stays inside the
-encryption, together with the request details.
+The inbox public key is the descriptor's author, so the public address is not Alice's account, not the MLS group id,
+and not the group's delivery address. Admins keep the inbox private key. The bearer and the preview key travel in the
+long code. The image is fetched with the descriptor. The code carries the key for that image, not the image itself.
+Alice's app also writes the preview commitment into group state. That commitment is what makes the preview the
+group's. The inbox key is only what outsiders encrypt a request to.
 
-Conceptually, the request identifies its link and a stable request, proves bearer possession, supplies a compatible
-KeyPackage publication reference and validation material, and supplies Welcome routing. A private status-return
-address is an option. These conceptual inputs need encodings in their future owning documents.
+**The short link:** about eight characters after `wn.fo/`. `wn.fo` stores the long code under that id. There is no
+public list of ids.
 
-The identity chain ties the authenticated seal author to the requesting account, KeyPackage credential and account
-proof, publication provenance, selected package reference, and eventual Welcome recipient. Delivery hints supply
-routing only. [KeyPackage validation and lifecycle](../foundation/key-packages.md) continue to apply, including
-single-use packages and supported last-resort reuse.
+- **The app is installed.** The phone treats the link as Marmot's. It opens the app and passes the Bech32m in. Bob
+  lands on the preview in Scene 2.
+- **The app is not installed.** `wn.fo` shows how to download it, and nothing about the group. After he installs, the
+  same link opens the app with the Bech32m.
 
-Persistent delivery supports offline retrieval. Redundant relays and retries improve availability, while relay
-retention remains best effort. Retrying the same intent keeps its stable request identity. Long offline periods or
-loss of every stored copy can require resubmission.
+**Trade-offs:**
 
-## Scene 3: Admins process the request
+- `wn.fo` holds the long code, so it can read the preview and the bearer. The long code, shared as text or as its own
+  QR, never goes through that host. A QR of the short link still needs `wn.fo` to be up when it is scanned.
+- Chat apps that unfurl links see a generic page. They do not get the group name or the picture. The site that serves
+  the page can still read the id, because it is in the path.
+- Deleting the short link only breaks that URL. Anyone who already opened it, and anyone holding the long code, still
+  has the invitation. Turning the invitation off is Scene 6.
+- Eight characters is short enough to read over a shoulder. Guessing one at random is not practical if the host does
+  not offer a directory and does not answer bulk lookups.
 
-Each active admin can receive the inbox key and listen for requests. The Requests screen shows the requesting profile,
-source link, status, and any package or timing problem. Local notifications can use a generic lock-screen label.
+**Decision:** the invitation is the long code. The short link and the QR codes are ways to get that code into the app.
+`wn.fo` does not admit anyone.
 
-Approval mode offers Approve and Reject. Automatic mode performs the same membership checks in the background.
-Request decisions identify the acting admin privately and use the admin channel below. Clients consult current group
-policy before acting. Receipt of a control message supplies evidence, not a policy change.
+## Scene 2: Bob asks to join
 
-Concurrent approvals, rejection races, retries, and legitimate multi-device requests need defined outcomes coupled
-to existing MLS convergence. Arrival order and relay timestamps cannot choose group policy. A rejection leaves already
-established membership unchanged.
+![Bob opens wn.fo/k3m9qx2a. With no app he gets a download page. With the app he sees the Book club preview, marked
+unconfirmed, and a Join button.](group-invite-links/scene-2-open.svg)
 
-## Scene 4: Receive the Welcome
+**What Bob sees:**
 
-The admin follows the existing [join flow](../protocol-core/joining.md), including successful Commit publication before
-Welcome delivery for an existing group. [Nostr Welcome delivery](../transports/nostr.md#welcome-delivery) stays addressed
-to the requester's actual account and references the selected KeyPackage publication.
+1. He taps the short link, scans a QR, or pastes the long code.
+2. **No app.** The page says someone sent him a Marmot invite, tells him how to install the app, and tells him to open
+   the same link again afterward. It does not show Book club.
+3. **App installed.** Marmot shows the name, the description, and the picture, with a line that this preview is
+   confirmed when an admin invites him.
+4. He taps **Join**. Nothing was sent before that.
+5. He then sees **Waiting for approval**, or **Waiting for an invite** if Alice chose automatic.
 
-The client marks the link request Joined only after successful Welcome validation and association with that request.
-An unrelated valid Welcome remains an ordinary invitation. A proposed private correlation response binds the request
-to its Welcome and a matching link record in the joined group state; names and package references alone are insufficient.
+**Underneath:** the app sends a [NIP-59 gift wrap](https://github.com/nostr-protocol/nips/blob/master/59.md) to the
+inbox. The outer signer is a one-time key. Inside, Bob's account is authenticated, the request names this link and a
+stable request id, shows the bearer, points at a KeyPackage, and says where to deliver the Welcome. A private address
+for status replies is optional. Those fields get their encodings in the documents that will own them.
 
-Request-to-Welcome association remains an adoption question. A forged group can copy public link records; shared inbox
-signatures prove key possession only. The [Welcome-bootstrap trust](../protocol-core/joining.md#welcome-bootstrap-trust)
-limits still apply. The requester ultimately trusts the authenticated inviter, with that identity presented at join.
+The chain ties that account to the KeyPackage credential, the account proof, the publication, and the Welcome
+recipient. Hints are for routing only. [KeyPackage validation](../foundation/key-packages.md) still applies, including
+single-use packages and supported last-resort reuse. Retrying keeps the same request id. If every relay copy
+disappears, Bob submits again.
 
-Status replies are advisory until their authority is established. An admin-account signature reveals that admin to
-the requester; an inbox-key signature can be forged by any inbox custodian. Encryption hides either reply from public
-readers. Missing replies mean waiting, and a claimed rejection requires authentication.
+**Trade-offs:**
 
-## Encrypted admin records inside MLS
+- Publishing a fresh KeyPackage in the same minute as the gift wrap gives observers a timing hint. A package that is
+  already public avoids that pairing.
+- In automatic mode, anyone who has the link will be added as soon as an admin's app is online. That is what Alice
+  chose. Approval mode is the one where a person looks at Bob first.
 
-### Distribution
+**Decision:** the bearer lets Bob file a request. It does not add him. The Welcome adds the device that sent the
+request. His other devices catch up the way [multi-device](./multi-device.md) already describes.
 
-The proposed admin channel reuses group delivery with a second encryption layer:
+## Scene 3: An admin handles it
 
-1. An active admin creates the link inbox secret and the associated secret link material.
-2. The client makes an authenticated recipient-encrypted copy for every active admin account. NIP-59 envelopes are
-   the proposed Nostr-key baseline, retaining their signed seals.
-3. The copies are carried inside the content of a Marmot app event, then inside an MLS application message.
-4. Each recipient unwraps its copy, associates it with the intended group, and checks the link's secret generation.
+![Alice and Carol both see Bob waiting on the Book club Requests screen, with Approve and Reject.](group-invite-links/scene-3-requests.svg)
 
-Recipient envelopes stay inside MLS; publishing them separately would expose their recipient npubs. The surrounding
-[Marmot app event](../foundation/application-messages.md) keeps its existing unsigned shape. The signatures belong to
-the nested envelopes, not the surrounding app event.
+**What Alice sees** on the Requests screen:
 
-```text
-Existing group transport
-  MLS application message: authenticated member sender
-    Unsigned Marmot app event: proposed control-record content
-      Recipient-encrypted envelope for admin A
-      Recipient-encrypted envelope for admin B
-```
+| Shows | What she can do |
+| --- | --- |
+| Who asked, and which link they used | Approve, Reject |
+| A problem with the KeyPackage, or with timing | The row says why it cannot be added as-is |
+| Automatic-mode requests | No prompt. The app runs the same checks and sends the Welcome. The row appears as already handled. |
 
-Public readers see existing encrypted group traffic. Group members see recipient addresses and encrypted copies.
-Only the intended admin accounts can decrypt their copies, assuming uncompromised keys. Clients process the payload
-as a control record, separately from visible chat.
+A lock-screen alert can say that a request is waiting, without Bob's name.
 
-The same channel carries identifying admission decisions and request records. Sending a plaintext request record
-inside ordinary all-member MLS traffic would disclose it to every member.
+**Underneath:** every active admin who holds the inbox key can fetch the gift wrap. Carol sees the same row even
+though Alice created the link. The decision is recorded on the admin channel in Scene 5, and it names which admin
+acted. The app reads current group policy before it acts. A delivered control message shows that an admin sent it. It
+does not change policy by itself.
 
-### Authority and replay
+Two admins can approve or reject at the same time, and Bob can ask from two devices. Arrival order and relay
+timestamps do not choose membership. The Commit does. A rejection leaves someone who is already a member in the group.
 
-Nested envelope authors agree with the MLS-authenticated sender account. That sender's admin authority comes from
-the authenticated source group state. Recipients also check intended group, link, generation, and recipient association.
-These bindings prevent a valid envelope being transplanted from another group or operation.
+**Decision:** every active admin has the same say. The inbox key lets them read the request. Admin policy lets them
+add or refuse.
 
-Current authenticated group state supplies enablement, mode, validity, and generation. Application delivery alone
-cannot establish those settings. Historical control records can support pending-request evidence; present actions
-still require current active-admin authority and current policy.
+## Scene 4: Bob gets the Welcome
 
-A current custodian authors fresh redistribution. Forwarding an old envelope preserves its old authority and context.
-Duplicates and delayed records leave already applied decisions unchanged. Concurrent generations and conflicting
-decisions need explicit convergence rules before adoption. First arrival remains delivery evidence only.
+![If the preview matches the invitation, Bob sees Book club and Alice as the inviter. If it does not, the app says the
+link showed a different group and still names Alice.](group-invite-links/scene-4-welcome.svg)
 
-### Catch-up and key loss
+**What Bob sees:** the request becomes Joined only after the Welcome checks out and belongs to this request. Some
+other Welcome is an ordinary invitation and does not close the request.
 
-- **Offline admin:** retrieve retained MLS traffic when possible. Erased epoch keys or missing relay copies can prevent
-  decryption; an existing custodian can send fresh current-state material.
-- **New admin:** after authenticated promotion, an existing active admin sends a fresh encrypted copy.
-- **New device:** a device currently in the group under an active admin account receives fresh material as needed.
-  Account-key decryption through external signers and device recovery require an explicit integration design.
-- **Missing custodian:** wait until an admin with a retained copy comes online and sends fresh material.
-- **Every copy lost:** issue a replacement inbox and link. Retained request metadata cannot reconstruct an unknown key
-  or decrypt requests that remain unread.
+On that screen the inviter's account is the identity he is accepting, next to the preview.
 
-Fresh delivery includes only the material needed for current links and unresolved requests. It gives the new admin
-or device neither old chat history nor blanket access to retired inboxes. Supporting pending requests across promotion
-can require deliberately sharing selected retired key material.
-Sharing a retired key also exposes any retained request ciphertext encrypted to it. Forwarding selected decrypted
-pending records through the admin channel limits disclosure when access to the whole retired inbox is unnecessary.
+- **The preview matches** the commitment in the group he is joining. The app shows the group he already saw, and who
+  invited him.
+- **It does not match.** The app says the link showed a different group than this invitation. It still shows the
+  inviter. He can join that person's group, or not.
 
-### Admin removal and key rotation
+The app fetches the descriptor again before it calls a mismatch, so a slow preview update is not shown as a conflict.
 
-Demoting or removing an admin leaves previously learned secrets with that person. Future request confidentiality
-requires a fresh inbox key distributed to the remaining admins and replacement links. Authenticated policy retires
-the old endpoint for automatic admission.
+**Underneath:** the approving admin follows the existing [join flow](../protocol-core/joining.md). For a group that
+already exists, the Commit is published successfully before the Welcome is sent. The Welcome is addressed to Bob and
+names the KeyPackage he offered.
 
-Copied old links still encrypt to the old key. Retiring an endpoint stops its admission authority; it cannot stop
-former custodians decrypting requests sent there. Existing admins retain or recover the old material needed to handle
-pending requests. Expiry alone keeps pending requests approvable. Security-driven retirement needs a separate,
-explicit rule for pending requests.
+A forged group can copy the public link records. Holding the inbox key proves custody of that key. It does not prove
+this is the Book club Bob meant.
 
-### Alternative: every member holds the key
+**Decision:** the preview check is the commitment inside the Welcome's group state. Bob is deciding about the inviter.
+How a status reply binds this request to this Welcome is still open. The preview's name is not that binding. A missing
+reply means keep waiting. A claimed rejection has to be authenticated before the app treats it as final. An
+admin-account signature on a reply tells Bob which admin answered. An inbox-key signature can be made by anyone who
+holds that key.
 
-An all-member distribution would be simpler but would reveal requester identities and bearer material to every
-member, including former members who retained a copy. Members could forge inbox-only status replies. The proposal
-uses admin-only custody; all-member custody is a separate privacy choice. Possessing either shared key grants only
-inbox capabilities, while membership changes remain admin-gated.
+## Scene 5: Carol can read the request too
 
-## Expiry and pending requests
+![Alice puts a copy of the inbox key for herself and for Carol inside a normal group message. Members see the
+envelopes. Only Alice and Carol open them.](group-invite-links/scene-5-admins.svg)
 
-Expiration closes the link to new submissions and preserves pending requests. Later approval uses current admin
-authority and revalidates account binding, package lifetime, capabilities, provenance, and existing reuse rules.
-Package refresh remains tied to the original authenticated requester and intent.
+**What Carol sees:** Bob on her Requests screen, including when she was offline and opens the app later. If the relay
+copy is gone and no admin forwarded the request, she waits until one who still has it sends it again.
 
-A requester timestamp can be backdated. NIP-59 outer timestamps are deliberately fuzzed. Ordinary offline relay
-delivery provides insufficient evidence of submission before expiry.
+**Underneath:** group messages go to every member, so a secret that ordinary members must not read is encrypted a
+second time.
 
-The proposed fallback preserves first-discovered late requests for explicit approval as "timing unverified".
-Automatic admission after expiry needs trustworthy pre-expiry acceptance evidence, whose format and cross-admin
-availability are still open. Until that exists, requests first discovered after all admins were offline across expiry
-normally require manual review. Once status authority is defined, a status update can explain the transition to
-Waiting for approval.
+1. Alice creates the inbox key and the rest of the secret link material.
+2. Her app encrypts a copy for every active admin, Alice included. On Nostr keys the proposed shape is a NIP-59
+   envelope with its signed seal.
+3. Those copies ride inside an unsigned Marmot app event, inside a normal group message.
+4. Each admin opens their own copy and checks that it is for this group and this generation of the link.
 
-Link revocation, requester withdrawal, rejection, security-driven retirement, and group disbanding need distinct
-semantics. Whether explicit revocation also cancels old pending requests remains open. Link revocation, requester
-withdrawal, rejection, and security-driven retirement do not remove existing members as a side effect. Group
-disbanding follows the adopted [group lifecycle](../app-components/group-lifecycle-v1.md): its terminal Commit removes
-every candidate-parent leaf except the committing leaf and leaves only the committer in the admin policy.
+The inbox public key, the bearer, and the preview key stay inside those copies. The surrounding event's tags do not
+carry them, or every member would learn the inbox. Members can see the admin addresses on the envelopes. They already
+know the admin list from group policy. Relays see ordinary group traffic, because the envelopes were not published by
+themselves.
 
-## Security and availability limits
+The same channel carries the approve or reject, and a copy of the request for admins who missed the gift wrap.
+Putting the request in a normal group message, in the clear, would show Bob to every member.
 
-- Public request envelopes expose a random inbox address. They also show event sizes and activity. Requests to one
-  inbox are linkable.
-  The descriptor's public author connects it to requests addressed to that inbox, even without the invitation code.
-  Outside readers can estimate request volume; a distinctive descriptor kind can also identify a Marmot invite inbox.
-  Someone holding the link can associate that address with its preview.
-- Existing Welcome envelopes expose the recipient npub publicly. Sender identity and group contents remain wrapped.
-  Public-event timing can associate an inbox request with a later Welcome and suggest the requester's identity.
-  This proposal protects encrypted request contents; full admission-path anonymity would need different Welcome
-  transport work.
-- [NIP-44 limitations](https://github.com/nostr-protocol/nips/blob/master/44.md#limitations) include lack of forward
-  secrecy. Inbox-key compromise exposes retained request ciphertext; rotation protects fresh endpoints.
-  Nesting distribution inside MLS does not retract secrets copied by a recipient.
-- Admins can disclose decrypted requests or signed seals. Encryption cannot guarantee deletion or deniability against
-  a custodian. Nested account-signed admin seals can become transferable evidence when disclosed, even though the
-  surrounding Marmot app event is unsigned.
-- Processing needs bounds on recipient counts, envelope sizes, pending requests, retries, and preview rendering.
-  A leaked bearer permits admission attempts under the link's policy, and automatic mode increases that exposure.
-- Unsupported clients need defined capability and presentation behavior. Account-signer support needs validation,
-  together with partial distribution and fresh catch-up.
+A current admin authors a fresh copy when someone new needs it. Forwarding an old envelope keeps that envelope's old
+context. A duplicate does not reopen a decision already applied. First arrival is only evidence that a message showed
+up.
 
-## Work before adoption
+**When someone is missing the key:**
 
-The idea allocates no component ids, event kinds, exporter labels, or wire bytes. Adoption needs work in these surfaces:
+- **Carol was offline.** She reads retained group traffic if it is still there. If the epoch keys are gone, she waits
+  for an admin who still has the material to send a fresh copy.
+- **A new admin.** After the promotion is in group state, a current admin sends a fresh copy.
+- **A new device of an admin.** A device that is already in the group receives a fresh copy. A device that cannot sign
+  with the account key needs a signer design before it can author these records.
+- **Nobody still has it.** Alice issues a new link. Unread requests cannot be reconstructed.
 
-- **Foundation:** control-record representation, requester/package binding, capabilities, and bounded encodings.
-- **App components:** authenticated link policy and generation, plus admin-authorized lifecycle state.
-- **Protocol core:** request-to-Add behavior and Welcome association, including duplicate and concurrent decisions.
-- **Transport:** descriptor addressing, nested recipient envelopes, persistent request/status delivery, and relay hints.
-- **Feature:** preview and admin controls, notifications, pending requests, privacy disclosure, and error presentation.
+Fresh copies cover current links and requests still open. They do not include old chat, and they do not include every
+retired inbox. Sending a retired inbox key also exposes whatever requests are still encrypted to it. Forwarding the
+specific pending requests, already decrypted, is the smaller disclosure.
 
-Open questions:
+**Trade-offs:**
 
-1. Invitation prefix and Bech32m payload, including total length and QR usability bounds; descriptor coordinates and
-   authentication, secret-material carriage, and relay-hint disclosure. The custom encoding needs its own length
-   policy for the secret-bearing payload. Any current or former inbox-key custodian can rewrite the descriptor
-   for that key; replacement inboxes and links protect future previews, while copied old links retain that risk.
-2. Exact nested-envelope bindings and the disclosure cost of transferable signatures; signer support, bounded
-   distribution, generation convergence, and catch-up.
-3. Request-to-Welcome correlation and requester-visible status authority under first-contact trust.
-4. Concurrent decisions and reproducible pre-expiry evidence, including confirmation of the manual late-request fallback.
-5. Revocation, withdrawal, security-driven retirement, and retired-key retention for pending requests.
+- Giving the inbox key to every member would be simpler, and every member would see who asked, including someone who
+  left and kept a copy. They could also forge a status reply that is signed only by the inbox key.
+- Removing Carol as admin leaves her with any key she already learned. New requests need a new link. She cannot change
+  the preview commitment, and automatic admission stops using the old inbox.
+- The signed seals are the disclosable records in the section above. MLS already says which member sent the group
+  message.
 
-Review scenarios cover normal joining; offline admins across expiry; late or backdated requests; duplicate and
-conflicting decisions; reusable and single-use packages; unrelated Welcomes; forged group records; mismatched nested
-authors or groups; replay after demotion; promotion and device catch-up; partial distribution and total key loss;
-copied retired links; public metadata inspection; and unsupported clients.
+**Decision:** only admins hold the inbox key. Group state, not this message, says whether the link is on and which
+generation is current.
+
+## Scene 6: The link expires
+
+![After expiry a new visitor is told the link is closed. Alice's queue still has Bob, and a request found only after
+expiry is marked timing unverified.](group-invite-links/scene-6-expiry.svg)
+
+**What a new person sees:** the link no longer takes requests. If they had already asked, they still see waiting.
+
+**What Alice sees:** Bob's request stays on the list after the expiry time, and she can still approve it. A request
+that turns up only after expiry is marked **timing unverified**. She approves that one by hand. If a Welcome already
+went out, the row follows the Commit. The late label does not undo it.
+
+**Underneath:** Bob can put any time he wants on the request, and NIP-59 fuzzes the outer timestamp on purpose. The
+app does not treat either one as proof he asked before expiry. Automatic admission after expiry would need evidence
+this idea does not have. Until it does, a request first found after every admin was offline across the expiry goes to
+the manual queue.
+
+Approving later still checks the account binding, the package lifetime, capabilities, provenance, and the usual reuse
+rules. A refreshed package stays tied to the same person and the same request.
+
+Revoking the link, Bob withdrawing, and rejecting him do not remove members. Whether revocation also drops requests
+already in the queue is open. Disbanding the group follows the adopted
+[group lifecycle](../app-components/group-lifecycle-v1.md), which does remove members. A security-driven retirement of
+an inbox, where Alice suspects the key leaked, needs its own rule for the queue. That rule is open. Expiry by itself
+is not that retirement.
+
+**Decision:** expiry means stop taking new people. It does not decide a request an admin has already seen, and it does
+not outrank a Commit that already added someone.
+
+## Numbers
+
+| | |
+| --- | --- |
+| Short link | about 8 characters, hosted at `wn.fo` |
+| Example | `https://wn.fo/k3m9qx2a` |
+| What the short link resolves to | the long Bech32m code |
+| Long-code prefix | not chosen (`wn` and `marmot` are the candidates) |
+| QR of the short link | needs `wn.fo` when scanned |
+| QR of the long code | opens in the app with no lookup |
+
+## Open questions
+
+These are the pieces we know are unsettled.
+
+1. **Long-code layout.** The prefix, the Bech32m payload, the total length, and how many relay hints are worth the
+   fingerprint and the QR size.
+2. **Short-link details.** The exact alphabet, how `wn.fo` rate-limits lookups, and how long it keeps a code after the
+   invitation expires. The group's expiry is what stops new requests. The host's retention only affects the short URL.
+3. **Two admins at once.** What should happen when Alice and Carol both act, and what evidence would ever be enough to
+   add someone automatically after expiry.
+4. **Revocation and the queue.** Whether turning a link off, withdrawing, or retiring an inbox after a suspected leak
+   cancels requests already waiting, and how long a retired key is kept for that queue.
+5. **Status replies.** Who Bob is entitled to believe, and how a reply points at one Welcome. The preview name is not
+   the binding.
+6. **Signers.** A device that is in the group but does not hold the account key cannot author the sealed admin copies
+   until there is an explicit signer design.
+
+## Path into the spec
+
+Nothing here assigns component ids, event kinds, exporter labels, or wire bytes. `wn.fo` is a way to deliver the long
+code. It is not a protocol role.
+
+1. **App components.** Link policy, generation, and the preview commitment in group state.
+2. **Transport.** The long-code encoding, where the descriptor lives, the admin envelopes, and how requests and status
+   replies stay available for an offline admin.
+3. **Foundation.** How a request binds a person to a KeyPackage, and the bounds on envelope size, pending requests,
+   retries, and preview rendering.
+4. **Protocol core.** How a request becomes an Add, how it lines up with one Welcome, and how two decisions meet
+   existing convergence.
+5. **Feature.** The share sheet, the download page, the unconfirmed preview, the inviter shown at join, and the
+   Requests screen.
