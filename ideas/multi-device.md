@@ -224,7 +224,8 @@ naming it. Once Alice confirms on both screens, each device sends a short confir
 
 - **The laptop's covers its exact KeyPackage.** Link applies to that KeyPackage, not to whatever the slot holds later.
 - **The iPhone's covers the device group** it is about to add the laptop to. The laptop accepts a Welcome only for that
-  group. A group that merely carries the hidden device-group marker can't pull the laptop in.
+  group. A group that merely carries the hidden device-group marker can't pull the laptop in. Exactly what the laptop
+  checks belongs to the device group's spec (Path into the spec, item 3).
 
 The tap on the laptop is not a formality. Someone with the nsec could pose as Alice's existing device and try to pull
 the laptop into a device group they control. Without the laptop's own confirmation, nothing would stop that.
@@ -238,11 +239,11 @@ the laptop into a device group they control. Without the laptop's own confirmati
 A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Someone else
 replaced it, so it goes straight to the warning in Scene 8.
 
-**Only checked evidence counts.** Before anything raises a prompt, a device checks the Nostr signature, the
-KeyPackage's own signature, the account proof and the lifetime. A Welcome that names an unfamiliar KeyPackage counts
-only once that KeyPackage has been fetched and checked. Malformed or unverifiable input is dropped, never treated as a
-sign that Alice's key was stolen, so nobody can set off a stream of warnings by sending junk. The client tag is shown
-in the prompt, but it is self-reported, so a new one never triggers a prompt by itself.
+**Only checked evidence counts.** Before anything raises a prompt, a device validates what it saw under the existing
+KeyPackage and Nostr transport rules; this idea adds no checks of its own. A Welcome that names an unfamiliar KeyPackage
+counts only once that KeyPackage has been fetched and validated the same way. Malformed or unverifiable input is
+dropped, never treated as a sign that Alice's key was stolen, so nobody can set off a stream of warnings by sending
+junk. The client tag is shown in the prompt, but it is self-reported, so a new one never triggers a prompt by itself.
 
 **Why the code can't be faked:**
 
@@ -407,10 +408,14 @@ doesn't take the device out of chats it is already in. Removing the device, or l
 3. **The roster remembers the removed slot.** If that installation, still holding its old state, publishes into its
    old slot again, Alice's devices show a stronger warning: "A device you removed is trying to come back."
 4. **Siblings check for leftovers.** A stolen device could have added extra leaves before it was removed, so siblings
-   check every chat for account leaves that no remaining device claims, and remove them.
+   check every chat they are in for account leaves that no remaining device claims, and remove them.
 5. **If the laptop used a signer,** the app tells Alice to revoke that device's session in the signer. Removal alone
    doesn't end it, and the app doesn't claim the device is fully cut off until she has.
 6. The next time the removed laptop opens, it says it was removed and offers to sign in again.
+
+A limit on points 1 and 4: siblings can only clean up chats they are in. If the laptop was in a chat none of Alice's
+remaining devices is in, its leaf stays there until a chat admin removes it. The roster's leaf map still records that
+chat, so the Devices screen can list it and Alice can ask an admin there.
 
 A limit on point 3: a reinstalled app creates a new slot, so it looks like any other new sign-in (Scene 4), not a
 returning device. That's fine, since it goes through normal approval. The stronger warning only catches the case where
