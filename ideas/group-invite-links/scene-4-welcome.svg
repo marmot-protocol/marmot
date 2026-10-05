@@ -51,7 +51,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <text x="16" y="102" class="m" font-size="12">Thursday nights</text>
 <rect x="16" y="122" width="178" height="52" rx="8" class="tg"/>
 <text x="28" y="144" class="g" font-size="12" font-weight="700">Preview matches</text>
-<text x="28" y="162" class="g" font-size="11.5">This is the group you saw.</text>
+<text x="28" y="162" class="g" font-size="11.5">Matches the preview you saw.</text>
 <text x="16" y="204" class="t" font-size="13" font-weight="700">Invited by</text>
 <circle cx="32" cy="236" r="14" class="ta"/>
 <text x="32" y="241" class="a" font-size="13" font-weight="700" text-anchor="middle">A</text>

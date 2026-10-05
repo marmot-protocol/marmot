@@ -165,7 +165,7 @@ request. His other devices catch up the way [multi-device](./multi-device.md) al
 | --- | --- |
 | Who asked, and which link they used | Approve, Reject |
 | A problem with the KeyPackage, or with timing | The row says why it cannot be added as-is |
-| Automatic-mode requests | No prompt. The app runs the same checks and sends the Welcome. The row appears as already handled. |
+| Automatic-mode requests | No prompt when eligible. The app runs the same checks and sends the Welcome; timing-unverified requests after expiry wait for manual approval as in Scene 6. |
 
 A lock-screen alert can say that a request is waiting, without Bob's name.
 
@@ -190,12 +190,15 @@ other Welcome is an ordinary invitation and does not close the request.
 
 On that screen the inviter's account is the identity he is accepting, next to the preview.
 
-- **The preview matches** the commitment in the group he is joining. The app shows the group he already saw, and who
-  invited him.
+- **The preview matches** the commitment in the group he is joining. The app says the invitation matches the preview
+  he saw, and shows who invited him. That match does not independently authenticate the intended group.
 - **It does not match.** The app says the link showed a different group than this invitation. It still shows the
   inviter. He can join that person's group, or not.
 
-The app fetches the descriptor again before it calls a mismatch, so a slow preview update is not shown as a conflict.
+The comparison keeps the preview Bob actually saw when he tapped Join. The app can fetch the descriptor again to
+diagnose a slow update, but a changed preview is shown as **updated since you saw it**, not silently substituted as
+a match. Bob can review that updated preview and make a fresh choice; an inbox-key holder cannot rewrite what his
+earlier confirmation meant.
 
 **Underneath:** the approving admin follows the existing [join flow](../protocol-core/joining.md). For a group that
 already exists, the Commit is published successfully before the Welcome is sent. The Welcome is addressed to Bob and
