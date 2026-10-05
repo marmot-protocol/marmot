@@ -40,7 +40,6 @@ def require(ok):
 def text(value, limit):
     require(isinstance(value, str))
     require(len(value.encode("utf-8")) <= limit)
-    require(all(ord(c) >= 32 or c in "\b\f\n\r\t" for c in value))
 
 
 def hex64(value):
@@ -48,7 +47,7 @@ def hex64(value):
 
 
 def content_shape(raw):
-    require(len(raw.encode("utf-8")) <= 32768)
+    require(len(raw.encode("utf-8")) <= 65536)
     value = json.loads(raw, object_pairs_hook=unique_object)
     require(isinstance(value, dict))
     require(type(value.get("v")) is int and value["v"] == 1)
@@ -116,17 +115,18 @@ def event_id(content, created_at=1700000000):
 
 
 def evidence(action, **changes):
-    result = {"action": action, "group": "group-a", "sender": "admin-account",
+    result = {"action": action, "request": "request-a", "group": "group-a", "sender": "admin-account",
               "source_admin": True, "selected_branch": True, "request_seen": True,
               "commit_matches": True, "commit_accepted": True, "receipt_causal": True}
     result.update(changes)
     return result
 
 
-def project(records, group="group-a", requester="member-account", committer="admin-account"):
+def project(records, target="request-a", group="group-a", requester="member-account", committer="admin-account"):
     effects = set()
     for item in records:
-        if item["group"] != group or not item["selected_branch"] or not item["request_seen"]:
+        if (item["request"] != target or item["group"] != group
+                or not item["selected_branch"] or not item["request_seen"]):
             continue
         action = item["action"]
         if action == "applied":
@@ -195,10 +195,23 @@ class Fixtures(unittest.TestCase):
         self.assertIn("opaque name<0..256>", profile)
         self.assertIn("opaque description<0..4096>", profile)
         self.assertIn("uint64 disappearing_message_secs", retention)
+        for filename, expected in (("group-avatar-url-v1.md", 2566),
+                                   ("group-blossom-image-v1.md", 242)):
+            source = (root / "app-components" / filename).read_text()
+            schema = re.search(r"```text\n(.*?)\n```", source, re.S).group(1)
+            limits = [int(n) for n in re.findall(r"opaque \w+<0\.\.(\d+)>", schema)]
+            maximum = sum(n + (1 if n <= 63 else 2 if n <= 16383 else 4) for n in limits)
+            self.assertEqual(maximum, expected)
+            self.assertLessEqual(maximum, 4096)
 
     def test_description_named_escapes_fit_envelope(self):
         content_shape(canonical(request("set_description",
                                         {"expected": "\n" * 4096, "value": "\t" * 4096})))
+
+    def test_existing_control_characters_round_trip(self):
+        for operation, limit in (("set_name", 256), ("set_description", 4096)):
+            value = request(operation, {"expected": "\0" * limit, "value": "\x01" * limit})
+            self.assertEqual(content_shape(canonical(value)), value)
 
     def test_decimal_full_range_and_null(self):
         for old in (None, "0"):
@@ -237,7 +250,7 @@ class Fixtures(unittest.TestCase):
             self.assertEqual(project(order), "Applied")
 
     def test_unresolved_or_invalid_authority_is_not_applied(self):
-        for field, value in (("group", "group-b"), ("sender", "another-admin"),
+        for field, value in (("request", "request-b"), ("group", "group-b"), ("sender", "another-admin"),
                              ("source_admin", False), ("selected_branch", False),
                              ("request_seen", False), ("commit_matches", False),
                              ("commit_accepted", False), ("receipt_causal", False)):
@@ -246,6 +259,13 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(project([evidence("withdrawn", sender="another-member")]), "Pending")
         self.assertEqual(project([evidence("rejected"),
                                   evidence("withdrawn", sender="member-account")]), "Withdrawn")
+
+    def test_two_requests_have_independent_status(self):
+        records = [evidence("applied", request="request-a"),
+                   evidence("rejected", request="request-b")]
+        self.assertEqual(project(records, target="request-a"), "Applied")
+        self.assertEqual(project(records, target="request-b"), "Rejected")
+        self.assertEqual(project(records, target="request-c"), "Pending")
 
     def test_reorg_withdraws_only_supported_effects(self):
         effects = [evidence("applied"), evidence("rejected")]

@@ -60,13 +60,15 @@ unchanged; no new Joined receipt or first-contact authenticity guarantee is defi
 
 All actions use kind `458`, the ordinary six-field unsigned app-event envelope, and `tags: []`. `content` is UTF-8 JSON
 with the exact members below; unknown members, duplicate keys, unsupported actions/operations/versions, wrong types,
-noncanonical encodings, and content longer than 32,768 UTF-8 bytes have no request/decision effect. This does not reject
+noncanonical encodings, and content longer than 65,536 UTF-8 bytes have no request/decision effect. This does not reject
 otherwise-valid MLS processing or create a group-state authorization check.
 
 Content objects, including nested objects, use lexicographically sorted ASCII member names, no whitespace between
-tokens, and the string escaping in [canonical encoding](../foundation/canonical-encoding.md#nostr-shaped-values).
-Strings contain Unicode scalar values; control characters below U+0020 are excluded except backspace, form feed,
-newline, carriage return, and tab, whose named JSON escapes are used. Receivers MUST require byte equality with that
+tokens. Content string values contain Unicode scalar values. Escape quote and backslash as `\"` and `\\`, and
+backspace, form feed, newline, carriage return, and tab with their named JSON escapes. Other characters below U+0020
+use lowercase six-character `\u00xx` escapes; all other characters, including slash and non-ASCII characters, are
+literal UTF-8. The outer app-event id still uses [canonical encoding](../foundation/canonical-encoding.md#nostr-shaped-values)
+on the complete content string, including its literal backslashes. Receivers MUST require byte equality with that
 canonical serialization. JSON object ordering therefore has one encoding; strings are never normalized or trimmed.
 The complete app-event id is calculated by the existing foundation rule over the exact content string.
 
@@ -104,6 +106,10 @@ A new request or an independent admin action can supersede it. Unrelated epoch c
 For profile fields, the admin changes only the requested field and preserves the other current field in the full
 replacement component. When creating an absent profile, its other field is the empty string. Image requests replace
 only the named component; they do not clear a coexisting image component. Component removal is not defined here.
+The 4096-byte decoded image bound is this feature's wire budget, not a new component validity rule. Every state of
+the two current image schemas fits it (their maximum encoded lengths are 2566 and 242 bytes respectively); the
+reference fixtures check these bounds against the owning documents. A future larger image schema needs an explicit
+new request operation/version, not an implicit change to these v1 requests.
 
 ### Rejection and withdrawal
 
