@@ -1,0 +1,22 @@
+name: Group change request fixtures
+on:
+  pull_request:
+    paths:
+      - features/group-change-requests.md
+      - tests/test_group_change_requests.py
+      - .github/workflows/group-change-request-fixtures.yml
+  push:
+    branches: [master]
+    paths:
+      - features/group-change-requests.md
+      - tests/test_group_change_requests.py
+      - .github/workflows/group-change-request-fixtures.yml
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bounded reference fixtures
+        run: python3 -m unittest discover -s tests -p 'test_group_change_requests.py' -v

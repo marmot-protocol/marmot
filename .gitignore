@@ -14,3 +14,7 @@
 *.swp
 *.swo
 *~
+
+# Python reference fixtures
+__pycache__/
+*.pyc
