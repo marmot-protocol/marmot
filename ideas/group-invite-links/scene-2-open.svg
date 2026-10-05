@@ -73,7 +73,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <circle cx="36" cy="86" r="18" class="ta"/>
 <text x="36" y="92" class="a" font-size="16" font-weight="700" text-anchor="middle">B</text>
 <text x="64" y="82" class="t" font-size="16" font-weight="700">Book club</text>
-<text x="64" y="100" class="m" font-size="12">12 members</text>
+<text x="64" y="100" class="m" font-size="12">Group preview</text>
 <text x="16" y="140" class="t" font-size="13">Thursday nights. Bring</text>
 <text x="16" y="158" class="t" font-size="13">whatever you're reading.</text>
 <rect x="16" y="180" width="178" height="56" rx="8" class="ty"/>
