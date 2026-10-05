@@ -317,6 +317,49 @@ When candidates from different `(author, kind, d)` slots are otherwise equivalen
 SHOULD select the candidate with the lexicographically lower decoded KeyPackageRef from the `i` tag. The `i` tag is
 hex-decoded before comparison.
 
+### Migration from kind 10051
+
+Kind `10051` was the former dedicated KeyPackage relay-list scheme. It is not part of this binding. The account's kind
+`10002` write-capable set above is now the source of kind `30443` publication and fetch destinations; there is no kind
+`10051` publication or lookup step in this binding. This migration does not change Welcome delivery: the recipient's
+kind `10050` list remains the source of its advertised inbox destinations.
+
+The existing publisher rules give the following preparation sequence:
+
+1. publish a current signed kind `10002` record through metadata lookup paths where intended inviters can retrieve it;
+2. publish each kind `30443` KeyPackage to the resulting write-capable set; and
+3. publish a current signed kind `10050` record through retrievable metadata lookup paths and listen on its advertised
+   inbox set before expecting reliable Welcome delivery.
+
+The corresponding inviter sequence is:
+
+1. retrieve and verify the invitee's kind `10002` metadata, then resolve its write-capable set;
+2. fetch one or more of that account's kind `30443` events from that set and validate candidates under
+   [KeyPackages](../foundation/key-packages.md) and "KeyPackage publication" above; and
+3. separately retrieve and verify the invitee's kind `10050` metadata, resolve its inbox set, and publish the Welcome
+   under "Account inbox relays" and "Welcome delivery" above.
+
+The relays from which kind `10002` or kind `10050` metadata is retrieved are metadata lookup locations, not implied
+KeyPackage or Welcome destinations. Finding one record at a bootstrap or hint relay does not prove that the other record
+is reachable there, and it does not prove that either account advertises that relay as a destination. This binding does
+not guarantee metadata discovery from an arbitrary default relay. The applicable receive queries are summarized in
+"[Subscriptions and fetch rules](#subscriptions-and-fetch-rules)" below.
+
+An absent current record, a current record that resolves to an empty usable destination set, and a record that cannot be
+retrieved because its metadata lookup locations are unavailable are distinct operational outcomes. In all three cases,
+that lookup has supplied no usable advertised destination set. Without a usable kind `10002` record, the discovery step
+above has no write-capable set to query; for kind `10050`, the contextual-hint permission in "Account inbox relays"
+remains unchanged. This note does not define cache freshness or retry policy. Local retry, cache, or fallback choices
+do not turn a read-only NIP-65 entry, a metadata lookup relay, or an arbitrary default relay into an advertised
+destination or an interoperability guarantee.
+
+For example, suppose an invitee's kind `10002` has `["r", K, "write"]`, `["r", R, "read"]`, and `["r", U]`, while
+its kind `10050` advertises inbox relay `I`. An inviter can retrieve the signed metadata records through discovery relay
+`D`, fetch the invitee's KeyPackages from `K` or `U` but not `R`, and deliver the Welcome to `I`. Established-group
+messages can use a separate group relay `G`; the inviter's own inbox and NIP-65 relays can also be separate. No overlap
+among these roles is required. The example assumes that the metadata is reachable through the inviter's configured
+lookup inputs; it does not make `D` a fallback destination.
+
 ## Subscriptions and fetch rules
 
 A Nostr transport client subscribes to:
