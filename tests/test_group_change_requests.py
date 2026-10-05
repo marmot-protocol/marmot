@@ -1,7 +1,8 @@
 """Bounded encoding/projection fixtures, not an MLS or component implementation.
 
-Authorization, component decoding, account-key validity, package discovery and
-Commit matching are external verified inputs. These tests do not prove them.
+Source-authority and Commit-matching facts are supplied inputs. The model checks
+their use, not their cryptographic derivation. Component decoding, account-key
+validity and package discovery are outside this reference model.
 """
 import base64
 import hashlib
@@ -114,8 +115,28 @@ def event_id(content, created_at=1700000000):
     return hashlib.sha256(preimage.encode("utf-8")).hexdigest()
 
 
-def project(verified_effects):
-    effects = set(verified_effects)
+def evidence(action, **changes):
+    result = {"action": action, "group": "group-a", "sender": "admin-account",
+              "source_admin": True, "selected_branch": True, "request_seen": True,
+              "commit_matches": True, "commit_accepted": True, "receipt_causal": True}
+    result.update(changes)
+    return result
+
+
+def project(records, group="group-a", requester="member-account", committer="admin-account"):
+    effects = set()
+    for item in records:
+        if item["group"] != group or not item["selected_branch"] or not item["request_seen"]:
+            continue
+        action = item["action"]
+        if action == "applied":
+            if (item["source_admin"] and item["sender"] == committer
+                    and item["commit_matches"] and item["commit_accepted"] and item["receipt_causal"]):
+                effects.add("matching_applied")
+        elif action == "rejected" and item["source_admin"]:
+            effects.add("rejected")
+        elif action == "withdrawn" and item["sender"] == requester:
+            effects.add("withdrawn")
     for effect, status in (("matching_applied", "Applied"),
                            ("withdrawn", "Withdrawn"), ("rejected", "Rejected")):
         if effect in effects:
@@ -160,6 +181,21 @@ class Fixtures(unittest.TestCase):
         with self.assertRaises(ValueError):
             content_shape(canonical(good))
 
+    def test_non_scalar_strings_are_invalid(self):
+        # UnicodeEncodeError is a ValueError; escaped and raw surrogates both fail.
+        value = request("set_name", {"expected": "", "value": "\ud800"})
+        for raw in (json.dumps(value, sort_keys=True, separators=(",", ":")), canonical(value)):
+            with self.assertRaises(ValueError):
+                content_shape(raw)
+
+    def test_component_limit_alignment(self):
+        root = Path(__file__).resolve().parents[1]
+        profile = (root / "app-components/group-profile-v1.md").read_text()
+        retention = (root / "app-components/message-retention-v1.md").read_text()
+        self.assertIn("opaque name<0..256>", profile)
+        self.assertIn("opaque description<0..4096>", profile)
+        self.assertIn("uint64 disappearing_message_secs", retention)
+
     def test_description_named_escapes_fit_envelope(self):
         content_shape(canonical(request("set_description",
                                         {"expected": "\n" * 4096, "value": "\t" * 4096})))
@@ -195,18 +231,26 @@ class Fixtures(unittest.TestCase):
                          "e5ab295cece5e1a951e8d0c591f42f4a0666c26f9f7f7d34d9e09fe21ab36d31")
 
     def test_delivery_order_does_not_select_status(self):
-        effects = ["matching_applied", "rejected", "withdrawn"]
+        effects = [evidence("applied"), evidence("rejected"),
+                   evidence("withdrawn", sender="member-account")]
         for order in itertools.permutations(effects):
             self.assertEqual(project(order), "Applied")
 
     def test_unresolved_or_invalid_authority_is_not_applied(self):
-        self.assertEqual(project(["unresolved_receipt", "unauthorized_rejection"]), "Pending")
-        self.assertEqual(project(["rejected", "withdrawn"]), "Withdrawn")
+        for field, value in (("group", "group-b"), ("sender", "another-admin"),
+                             ("source_admin", False), ("selected_branch", False),
+                             ("request_seen", False), ("commit_matches", False),
+                             ("commit_accepted", False), ("receipt_causal", False)):
+            self.assertEqual(project([evidence("applied", **{field: value})]), "Pending", field)
+        self.assertEqual(project([evidence("rejected", source_admin=False)]), "Pending")
+        self.assertEqual(project([evidence("withdrawn", sender="another-member")]), "Pending")
+        self.assertEqual(project([evidence("rejected"),
+                                  evidence("withdrawn", sender="member-account")]), "Withdrawn")
 
     def test_reorg_withdraws_only_supported_effects(self):
-        effects = ["matching_applied", "rejected"]
+        effects = [evidence("applied"), evidence("rejected")]
         self.assertEqual(project(effects), "Applied")
-        effects.remove("matching_applied")
+        effects[0]["commit_accepted"] = False
         self.assertEqual(project(effects), "Rejected")
         # Restart from the same retained facts produces the same view.
         self.assertEqual(project(json.loads(json.dumps(effects))), "Rejected")

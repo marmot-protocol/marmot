@@ -28,7 +28,7 @@ The [group invite-links proposal](https://github.com/marmot-protocol/marmot/pull
 dependency. Both experiences use Requests, Approve/Reject, active admins, waiting, and the existing Welcome flow.
 An invite-link join request comes from outside the group and targets a particular joining device; this feature's
 member request suggests an account and deliberately carries no package or device reference. Its group-visible
-privacy, account-level subject, and retention rules MUST NOT be applied to the invite-link admin-private flow.
+privacy, account-level subject, and retention rules do not specify the invite-link admin-private flow.
 
 ## Eligibility before requesting an invitation
 
@@ -41,6 +41,9 @@ No valid candidate found and discovery unavailable are distinct local outcomes. 
 the client explains the problem and offers retry. Failure to find a candidate is not proof that none exists anywhere.
 No other invitee data is sent: `data` contains only the requested account's public key. KeyPackage bytes, references,
 publication references, device identifiers, and discovery hints are not part of the request.
+
+Clients SHOULD explain that group members can see the requested account and that preflight discovery can expose
+interest in that account to the queried transport services. Encryption of the request does not hide those lookups.
 
 This preflight is not verifiable from a public-key-only request. Receivers MUST NOT treat it as a security proof.
 When approving, the admin client MUST independently discover and validate a currently usable package for the exact
@@ -77,9 +80,9 @@ event; editing a request creates a new request and withdraws the old one when po
 | Operation | Exact `data` members | Values and existing owner |
 | --- | --- | --- |
 | `invite_account` | `pubkey` | 64 lowercase hex characters encoding a valid x-only account key; [identity](../foundation/identity.md). |
-| `set_name` | `expected`, `value` | UTF-8 strings, each at most 256 bytes; [profile](../app-components/group-profile-v1.md). |
-| `set_description` | `expected`, `value` | UTF-8 strings, each at most 4096 bytes; [profile](../app-components/group-profile-v1.md). |
-| `set_retention` | `expected`, `value` | Unsigned decimal strings in `0..2^64-1`; [retention](../app-components/message-retention-v1.md). |
+| `set_name` | `expected`, `value` | UTF-8 strings satisfying the name bounds in [profile](../app-components/group-profile-v1.md). |
+| `set_description` | `expected`, `value` | UTF-8 strings satisfying the description bounds in [profile](../app-components/group-profile-v1.md). |
+| `set_retention` | `expected`, `value` | Unsigned decimal strings representing the duration range in [retention](../app-components/message-retention-v1.md). |
 | `set_avatar_url` | `expected`, `value` | Encoded complete component state; [URL avatar](../app-components/group-avatar-url-v1.md). |
 | `set_blossom_image` | `expected`, `value` | Encoded complete component state; [Blossom image](../app-components/group-blossom-image-v1.md). |
 
@@ -118,8 +121,9 @@ it does not veto an admin's independent action or remove an already-added accoun
 Exact members: `v: 1`, `action: "applied"`, `request`, and `commit`.
 `request` has the same encoding as above. `commit` is the 64-character lowercase hex SHA-256 digest of the complete
 serialized Commit MLSMessage bytes, as used by [convergence](../protocol-core/convergence.md#same-epoch-races), not an
-outer transport event id. The receipt sender MUST be the authenticated committer and an active admin in the receipt's
-source-epoch branch. A receipt never applies or authorizes its referenced Commit.
+outer transport event id. The receipt sender's MLS-authenticated account MUST equal the committer's account; another
+valid leaf of that account is allowed. The sender MUST be an active admin in the receipt's source-epoch branch.
+A receipt never applies or authorizes its referenced Commit.
 
 All references are resolved within the same MLS group. Receivers MUST establish the retained request, receipt
 authorization, and an accepted matching Commit before showing Applied. Missing evidence remains Unresolved, not
@@ -138,6 +142,14 @@ validation still applies. An unrelated or broader admin change is not fulfillmen
 The admin emits a receipt only after successful Commit publication and local canonical application under the existing
 publish lifecycle. Publication failure leaves the request unapplied. An Add receipt means Invited, never Joined;
 Welcome delivery failure MUST remain separately visible, not be hidden behind the Applied request status.
+
+Before publishing a request-driven Commit, the admin MUST retain or be able to reconstruct its request correlation
+under [durability](../protocol-core/durability.md#recoverable-protocol-facts). After restart it SHOULD publish a missing
+receipt for an accepted matching Commit when the request is still retained/unexpired and its current leaf can author
+an authorized receipt. A prepared receipt retains its exact app-event identity across retries. The admin MUST NOT
+repeat an Add or settings mutation solely because its receipt is missing. Without retained correlation or current
+receipt authority, the client reports the group change separately and leaves request fulfillment Unresolved rather
+than fabricating success; old authenticated receipts retain their source-epoch authorization after demotion.
 
 ## Projection, concurrency, and recovery
 
@@ -210,7 +222,7 @@ The example references are placeholders, not evidence that a Commit exists. Reje
 
 ## Conformance and migration
 
-Conformance covers canonical content and app-event ids, no package fields in invitation requests, proposer preflight
+Implementations of this feature need conformance cases for canonical content and app-event ids, no package fields in invitation requests, proposer preflight
 and independent approval discovery, expired/rotated/incompatible packages, stale field checks, preservation of other
 profile fields, exact image bytes and precedence, absent versus empty state, response-before-request delivery,
 non-admin decisions, cross-group references, two-admin races, losing Commit invalidation, restart, expiry, missing
