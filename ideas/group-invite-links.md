@@ -34,6 +34,17 @@ You should be able to hand them something short, and they should be able to wait
 | Preview | The name, description, and image the long code decrypts. |
 | Preview commitment | A commitment to that preview in the group's authenticated state. Admins update it the same way they update other group policy. The inbox key cannot. |
 
+The **requester** is the account asking to join from a particular device. **Active admin** has the meaning in admin
+policy. **Approve** means attempt the authorized invitation, not that it has already succeeded. An accepted Add makes
+the group-side result **Invited**; **Joined** waits for that requesting device's successful Welcome processing and
+request association. No response is waiting, not rejection. These words also fit a future Requests screen containing
+suggestions from existing members, but the two request sources are different.
+
+An existing member suggesting another account can check that account's eligibility first and send only its public
+key; the admin then discovers and validates a package independently. This link flow instead receives a request from
+the joining device itself, with its offered package and private delivery context. It does not turn a member's
+account-level suggestion into consent from an outsider or expose link request details to ordinary group members.
+
 ## What this does and does not protect
 
 - **`wn.fo` can read the short links it hosts.** It stores the long code, so it can see the preview and file a request.
@@ -270,7 +281,11 @@ this idea does not have. Until it does, a request first found after every admin 
 the manual queue.
 
 Approving later still checks the account binding, the package lifetime, capabilities, provenance, and the usual reuse
-rules. A refreshed package stays tied to the same person and the same request.
+rules. A refreshed package comes from the authenticated requester and stays tied to the same account, request, and
+intended joining device. An admin does not substitute an arbitrary package just because it names the same account:
+that could invite a different device than the one that asked. How a refresh proves continuity when the device's leaf
+signing key also changes remains an explicit wire-format question. Rotation after validation can still make a delayed
+Welcome unusable, so Invited never promises Joined.
 
 Revoking the link, Bob withdrawing, and rejecting him do not remove members. Whether revocation also drops requests
 already in the queue is open. Disbanding the group follows the adopted
@@ -308,6 +323,8 @@ These are the pieces we know are unsettled.
    the binding.
 6. **Signers.** A device that is in the group but does not hold the account key cannot author the sealed admin copies
    until there is an explicit signer design.
+7. **Package refresh.** The authenticated refresh message, package selection/reference, and proof of continuity to
+   the intended requesting device, including a changed leaf signing key. An account match alone is not that proof.
 
 ## Path into the spec
 
@@ -323,3 +340,10 @@ code. It is not a protocol role.
    existing convergence.
 5. **Feature.** The share sheet, the download page, the unconfirmed preview, the inviter shown at join, and the
    Requests screen.
+
+Before those rules are adopted, the owning documents spell out versioned bounded request and decision formats,
+canonical encodings and references, account/device/group/link/generation bindings, package refresh and Welcome
+correlation, sender authorization at source epoch and action time, duplicate/replay handling, competing decisions,
+restart and retention behavior, unknown-version handling, and fixed examples with negative conformance cases. This
+checklist does not assign wire identifiers or settle those open questions inside an idea document. Expiring a link
+and losing a retained request copy remain separate events; neither is evidence of rejection or a completed join.
