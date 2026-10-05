@@ -218,7 +218,7 @@ envelopes. Only Alice and Carol open them.](group-invite-links/scene-5-admins.sv
 **What Carol sees:** Bob on her Requests screen, including when she was offline and opens the app later. If the relay
 copy is gone and no admin forwarded the request, she waits until one who still has it sends it again.
 
-**Underneath:** group messages go to every member, so a secret that ordinary members must not read is encrypted a
+**Underneath:** group messages go to every member, so a secret that ordinary members are not meant to read is encrypted a
 second time.
 
 1. Alice creates the inbox key and the rest of the secret link material.
@@ -305,7 +305,7 @@ not outrank a Commit that already added someone.
 | What the short link resolves to | the long Bech32m code |
 | Long-code prefix | not chosen (`wn` and `marmot` are the candidates) |
 | QR of the short link | needs `wn.fo` when scanned |
-| QR of the long code | opens in the app with no lookup |
+| QR of the long code | opens in the app with no `wn.fo` lookup; preview assets can still need network fetches |
 
 ## Open questions
 
