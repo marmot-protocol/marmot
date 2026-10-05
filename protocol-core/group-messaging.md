@@ -56,6 +56,9 @@ Non-admin members MAY send standalone MLS proposals only where the spec explicit
 that proposal flow is SelfRemove. A request for an admin-gated group-state change is an application payload or
 feature-owned request flow, not a standalone MLS proposal.
 
+The optional draft [group change requests](../features/group-change-requests.md) feature defines one such flow.
+Its request or decision alone does not authorize or apply a Commit; existing authorization and convergence still apply.
+
 ## Publish before apply
 
 A locally generated Commit MUST NOT become the sender's canonical local state until its publish obligation succeeds.

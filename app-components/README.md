@@ -189,6 +189,10 @@ group-level components default to the same active-admin role that may commit it.
 component change, if a feature defines one, is carried as a Marmot app payload or feature-owned request flow rather than
 as an MLS AppDataUpdate proposal.
 
+The optional draft [group change requests](../features/group-change-requests.md) feature defines member requests
+for ordinary group settings. Approval uses the owning component's existing update bytes and authorization; the
+request does not relax either proposal-sender or Commit authorization.
+
 For a Commit, a Marmot client evaluates the single AppDataUpdate operation, if any, for each component. The component
 validates the proposal sender, the committer, the prior state, and the operation. It returns the new state bytes, removes
 the component, or returns an invalid result. If any component operation is invalid, the Commit is invalid.

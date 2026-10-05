@@ -99,6 +99,7 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
+| `458`   | Group change request control v1     | Marmot app payload                  | [group-change-requests.md](../features/group-change-requests.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -110,6 +111,9 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `30443` | Marmot KeyPackage event             | Nostr KeyPackage publication        | [nostr.md](../transports/nostr.md)                      |
 
 Kind `4891` is allocated by Marmot for admin deletion inside MLS app payloads.
+
+Kind `458` identifies the draft optional group-change request, rejection, withdrawal, and applied-receipt actions.
+It is an inner app-event allocation only; it does not add a public Nostr transport event.
 
 The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
 chunks are transient QUIC records.
