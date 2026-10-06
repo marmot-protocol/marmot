@@ -19,6 +19,8 @@ The tests cover:
 - deterministic preview AEAD and hash, rejection of changed key, AAD or ciphertext;
 - cross-bindings among code, component, preview and AAD, component signing domains, revision limits, and status/admin record examples;
 - worst-case preview, code, forwarded evidence and nested NIP-44 payload sizes;
+- abstract component transitions for candidate-parent authorization, immutable generations, self-demotion,
+  admin-leaf removal, successor requirements and the disband exception;
 - agreement among proposed registry entries, their owners, indexes and layout.
 
 The fixture fields ending in `_hex` are exact bytes. `request_sign_content_hex` includes RFC 9420's two vector fields
@@ -26,7 +28,8 @@ and the component-scoped operation label inside the RFC label prefix. The contex
 are x-only secp256k1 points derived from synthetic private scalars one and two. The preview has no image.
 The ciphertext omits the nonce, which is in its separate fixture field, and includes the AEAD tag.
 
-The receiver helpers are intentionally partial. They do not implement full relay URL parsing, RFC 8785, NIP-01/NIP-59,
-KeyPackage validation, component Commit authorization, Welcome processing or MLS convergence. Implementers must run the
+The transition helper assumes authenticated candidate-parent identities and resolved proposals; it is a policy model,
+not an MLS Commit processor. The receiver helpers are intentionally partial. They do not implement full relay URL parsing, RFC 8785, NIP-01/NIP-59,
+KeyPackage validation, MLS Commit authentication, Welcome processing or MLS convergence. Implementers must run the
 [required lifecycle scenarios](../features/group-invite-links.md#required-conformance-scenarios) with those stacks.
 The workflow checks fixture assertions only; passing it does not mean this draft has been adopted.

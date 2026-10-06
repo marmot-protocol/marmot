@@ -27,7 +27,8 @@ Alice chooses manual approval or automatic admission, then an expiry. Her app cr
 keys and a bearer, and commits the preview and policy to group state before sharing. Changing those choices creates
 a new invitation generation. Nobody can silently change the semantics of a copied code.
 
-The share sheet offers the complete code, its QR, and optionally a short URL. The proposed code is Bech32m with the
+The share sheet offers the complete code, a QR if it fits, and optionally a short URL. Large codes stay available as
+text or through a short URL; the app does not truncate them to fit a QR. The proposed code is Bech32m with the
 `marmot` prefix; it carries the encrypted preview's location, its decryption key and the bearer. The bounded picture
 is inside the encrypted preview, so the code needs no separate image key or image URL.
 
@@ -111,7 +112,10 @@ Reading or forwarding a request does not delete it. Decisions remain recoverable
 retention and capacity. Full capacity pauses new admission rather than evicting records needed to prevent duplicate
 Adds. An uncertain publication keeps its ordinary durability obligation even after the request expires.
 
-Removing an admin rotates all active invitation generations in the same policy Commit. Old ciphertext stays readable
+Demoting an admin or removing an admin device retires all active invitation generations in the same policy Commit.
+All old codes stop granting admission, and everyone still waiting needs a new code and fresh consent. Promotion alone
+does not do this. An admin who steps down leaves links disabled; a staying admin creates new generations later, so
+the departing device never generates their secrets. Old ciphertext stays readable
 by anyone who retained its key; rotation protects requests sent using the new codes. Someone opening an old code can
 still disclose their identity to an old inbox-key holder. Existing members already know the public component
 state, including inbox addresses. Private grant bytes stay inside the recipient encryption.
@@ -125,8 +129,9 @@ its own signed deadline. A request first discovered after expiry is timing-unver
 cannot prove the device asked before the link expired.
 
 Revocation or security-driven retirement cancels all unfulfilled requests for that generation. Withdrawal closes one
-device context. None of these removes an existing member. Disbanding uses Marmot's adopted terminal lifecycle and
-stops all request processing.
+device context. None of these removes an existing member. An admin can privately report that the invitation was retired; Bob sees
+who reported it and can ask for a new code. Silence is still waiting, not evidence of retirement, and a notice does
+not undo a Welcome he already validated. Disbanding uses Marmot's adopted terminal lifecycle and stops all processing.
 
 A delayed Welcome may become unusable after ordinary KeyPackage private-key deletion. Invited never promises Joined,
 and the feature does not prolong private initialization-key retention. The admin reconciles membership before a new

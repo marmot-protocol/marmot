@@ -28,7 +28,7 @@ A promoted admin or another device already in the group receives a fresh grant f
 admin can recover the material, issue a new generation; do not derive the inbox from the group or an account.
 The component is public to group members; only administrators receive its secret material and private requests.
 
-The share sheet offers the complete code, its QR, and optionally a short URL. Opening a preview MUST NOT send a join
+The share sheet offers the complete code, a QR when the complete payload fits, and optionally a short URL. Opening a preview MUST NOT send a join
 request. The preview is marked unconfirmed and the app explains who can see a request. A short URL host can read the
 preview and bearer. A direct code or its QR avoids that host.
 Previews contain a bounded inline image in v1; implementations MUST NOT fetch URLs embedded in preview text.
@@ -135,15 +135,26 @@ Removing an invitation entry revokes all unfulfilled requests for that generatio
 Security-driven inbox retirement follows the same rule. It never removes a member already added on the selected
 branch, destroys another device's saved copy, or prevents an admin from making an ordinary independent invitation.
 Demoting an admin or removing an admin leaf requires the component's generation rotation in the same Commit,
-including a removed device whose account retains another admin leaf. Voluntary departure uses the adopted demotion
-before SelfRemove: retire links at demotion, then leave the component unchanged in a non-admin SelfRemove-only Commit.
-A sole admin promotes a successor before demotion. Promoting an admin grants no access until a current admin supplies
-private material. A known retired generation never reopens closed requests merely by reappearing in component state.
+including a removed device whose account retains another admin leaf. Each such change retires every shared code and
+cancels every still-pending request for those generations, not just requests handled by the departing admin. The
+admin UI MUST explain that effect before preparing the policy change. Requesters need new codes and renewed consent;
+promotion alone does not retire links. Voluntary departure uses the adopted demotion before SelfRemove: retire links
+at demotion, then leave the component unchanged in a non-admin SelfRemove-only Commit.
+A self-demotion Commit leaves links empty; a staying admin creates replacements later. The departing device does not
+generate replacement secrets. A sole admin promotes a successor before demotion. Promoting an admin grants no access
+until a current admin supplies private material. A known retired generation never reopens closed requests merely by reappearing in
+component state.
 
 Withdrawal or decline suppresses automatic processing of that context. A current admin may approve a declined
 request only through a new explicit manual decision while its consent and generation remain valid. A withdrawn
 context needs fresh requester consent and a new context. To outsiders, a decline is an account-attributed claim,
 not proof of global rejection by all admins. An authenticated Add realization always determines membership.
+When retirement is selected, current admins SHOULD send an attributed retired status for each retained open request,
+using its validated revision and ordinary status delivery. The requester UI MUST distinguish that notice from a
+personal decline or membership removal, show who reported it, and offer obtaining a new code. The notice is not
+independent proof of current policy; a former inbox holder could forge such an account-attributed claim. No status
+can undo a validated Welcome. If no notice arrives, the requester cannot infer revocation from silence and remains
+waiting until its deadline. Status failure never delays the policy Commit.
 Disbanding follows the adopted terminal lifecycle; all request processing stops without modifying its Commit shape.
 
 ## Retention, capacity and restart
@@ -189,7 +200,8 @@ key-package publication makes the request inbox confidential after its private k
 Implementations MUST cover: duplicate wraps, a refresh before its parent, conflicting refreshes, two devices sharing
 one account, another account's withdrawal, former-admin replay, admin removal with stale grants, preview substitution,
 link expiry during offline time, request deadline replay, capacity without eviction, capacity relief through generation retirement, admin demotion then non-admin SelfRemove,
-sole-admin succession, Commit publication uncertainty,
+sole-admin succession, self-demotion with replacement links rejected, retired-status attribution and loss,
+QR capacity without truncation, Commit publication uncertainty,
 Add success with failed Welcome/status delivery, losing-branch invitation invalidation, and process interruption at
 each adopted publish boundary. Fixtures exercise both correct bytes and negative authorization, not only happy-path UX.
 

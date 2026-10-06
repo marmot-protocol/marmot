@@ -52,6 +52,11 @@ eight-to-five-bit conversion with zero padding. Decoding rejects excess/nonzero 
 bad checksums, the Bech32 checksum variant, unknown versions, and malformed binary values. Producers emit lowercase;
 decoders accept entirely uppercase forms. This format explicitly permits up to 7000 characters rather than the
 generic Bech32 ninety-character limit. Longer strings are invalid before allocation or decoding.
+QR capacity is a separate bound, determined by the chosen version, character mode and error correction level
+([capacity reference](https://www.qrcode.com/en/about/version.html)). A producer MUST verify that the complete code fits the chosen QR version and error
+correction level before offering that QR. It SHOULD use an entirely uppercase code for QR alphanumeric mode; this
+is the same accepted code, not mixed case. Codes near the 7000-character ceiling may not fit any QR. Offer text or
+a short URL instead; never truncate a code or alter encoded relay bytes to force it to fit.
 It is not an `naddr` or a `nostr:` entity and MUST NOT be passed to an ordinary NIP-19 decoder as either.
 
 Apps MAY wrap the code in an HTTPS URL fragment or encode it directly in a QR. A fragment is not sent in an ordinary
