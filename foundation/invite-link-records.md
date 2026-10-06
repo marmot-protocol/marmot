@@ -66,7 +66,10 @@ An account match or a replaceable publication slot match does not prove originat
 
 Two distinct valid requests at the same revision under one context constitute `conflicting_refresh`. They MUST NOT
 be automatically resolved by arrival time or hash ordering. Automatic processing stops for that context until the
-requester withdraws it and starts a fresh request id with renewed consent. Exact byte duplicates are idempotent.
+requester withdraws it and starts a fresh request id with renewed consent. `conflicting_refresh` is a feature-local
+request-state annotation, not a new inbound rejection or MLS convergence disposition: the individual signed records
+remain valid. A blocked automatic action maps to `authorization_failed` for ambiguous consent under the
+[shared vocabulary](errors.md). Exact byte duplicates are idempotent.
 Missing ancestors are recoverable missing prerequisites, not rejection.
 
 ## Withdrawal
@@ -102,11 +105,14 @@ struct {
 } InviteStatusV1;
 ```
 
-Outcomes are `observed=0`, `declined=1`, and `invited=2`. Unknown values are invalid. For observed or declined, both
-hashes are zero. For invited they are SHA-256 hashes of the complete serialized `MLSMessage` Commit and Welcome
+Outcomes are `observed=0`, `declined=1`, `invited=2`, and `retired=3`. Unknown values are invalid. For observed,
+declined or retired, both hashes are zero. For invited they are SHA-256 hashes of the complete serialized
+`MLSMessage` Commit and Welcome
 respectively; zero hashes are invalid. The status is authenticated by its transport's admin-account seal.
 A status carries no independent proof of current group-admin authority to an outsider. The app MUST attribute
-observed/declined claims to that account, not present them as group consensus. Invited is provisional until a
+observed/declined/retired claims to that account, not present them as group consensus. A retired notice reports that
+the invitation generation was withdrawn, not that this person was rejected or removed from membership.
+Invited is provisional until a
 matching Welcome passes the adopted join flow and its GroupInfo signer account equals the status author.
 The client MUST NOT wait for a status to process an otherwise valid ordinary Welcome.
 

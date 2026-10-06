@@ -70,6 +70,12 @@ rotation protects requests sent with the new codes. Holders of an old code may s
 package to a former admin who retains its inbox key, even if the new group policy rejects the request.
 Promoting an admin does not require rotating links.
 
+If the Commit demotes its own committer's account, the resulting invite-links vector MUST be empty. The departing
+committer MUST NOT create replacement generations while stepping down. A remaining admin creates fresh links in a
+later authorized Commit and distributes secrets only to the resulting current admins. The demoted device MUST stop
+using and delete cached invitation secrets after any required handoff; deletion cannot erase ciphertext or copies
+already retained elsewhere.
+
 The adopted [member-departure flow](../protocol-core/member-departure.md) is unchanged: an active admin cannot send
 SelfRemove. It first completes an admin-policy demotion with at least one other active admin remaining. That
 admin-authorized demotion Commit retires the old invitation generations. A subsequent non-admin SelfRemove-only
@@ -106,6 +112,8 @@ longer-than-minimal lengths, invalid keys, trailing bytes, and a changed entry u
 Reject a non-admin update and an admin-removal Commit that retains an old invitation generation.
 Reject an active admin's SelfRemove under the adopted sender check. Accept demotion with retirement followed by a
 non-admin SelfRemove-only Commit that leaves this component unchanged. A sole admin must promote a successor first.
+Reject a self-demotion Commit that adds replacement links, even when
+another admin remains. Accept a later fresh-generation Commit from an admin who stays.
 Do not reopen revoked requests if an authorized malicious admin reintroduces a known retired generation.
 Accept disabling links through an empty replacement. Reject component removal after enablement.
 Accept a structurally valid expired entry during replay; reject automatic admission using it under the feature gate.

@@ -1,7 +1,8 @@
 """Executable examples for the proposed invite profile, not a production client.
 
 These fixtures check canonical bytes, consent binding, preview authentication and
-bounds. They deliberately do not implement MLS, NIP-59 or state convergence.
+bounds, plus an abstract candidate-parent transition model. They deliberately do
+not implement MLS, NIP-59 or state convergence.
 """
 import hashlib
 import json
@@ -217,9 +218,50 @@ def parse_status(b):
     outcome = r.num(1)
     hashes = [r.take(32), r.take(32)]
     r.end()
-    if outcome not in [0, 1, 2] or any((h == bytes(32)) != (outcome != 2) for h in hashes):
+    if outcome not in [0, 1, 2, 3] or any((h == bytes(32)) != (outcome != 2) for h in hashes):
         raise ValueError('status')
     return outcome
+
+
+def transition(parent, result, actor, parent_admins, result_admins, *,
+               removed_leaf_accounts=(), self_remove_accounts=(),
+               required=True, supported=True, disband=False):
+    """Abstract policy model; caller supplies already MLS-authenticated facts.
+
+    None means absent component. Leaves resolve to account identities in the
+    authenticated candidate parent; this model does not authenticate MLS inputs.
+    """
+    old = component(parent) if parent is not None else []
+    new = component(result) if result is not None else []
+    if parent is not None and result is None:
+        raise ValueError('component removal')
+    if result is not None and (not required or not supported):
+        raise ValueError('capability')
+    if disband:
+        if parent != result or self_remove_accounts:
+            raise ValueError('restricted disband shape')
+        return
+    if not result_admins:
+        raise ValueError('last admin needs successor')
+    demoted = set(parent_admins) - set(result_admins)
+    removed_admin = set(removed_leaf_accounts) & set(parent_admins)
+    if self_remove_accounts:
+        if set(self_remove_accounts) & set(parent_admins):
+            raise ValueError('admin SelfRemove')
+        if parent != result or removed_leaf_accounts or demoted:
+            raise ValueError('SelfRemove-only shape')
+    if (parent != result or demoted or removed_admin) and actor not in parent_admins:
+        raise ValueError('parent authorization')
+    retained = {row[:32]: row for row in old}
+    if any(row[:32] in retained and row != retained[row[:32]] for row in new):
+        raise ValueError('immutable generation')
+    if result is not None and (demoted or removed_admin):
+        if {row[:32] for row in old} & {row[:32] for row in new}:
+            raise ValueError('retired id retained')
+        if {row[32:64] for row in old} & {row[32:64] for row in new}:
+            raise ValueError('retired inbox retained')
+        if actor in demoted and new:
+            raise ValueError('departing committer knows replacement keys')
 
 
 def parse_admin(b):
@@ -374,7 +416,10 @@ class InviteFixtures(unittest.TestCase):
     def test_status_and_admin_records(self):
         status = bytes.fromhex(V['status_hex'])
         self.assertEqual(2, parse_status(status))
-        for bad in [status+b'\0', status[:202]+b'\x03'+status[203:],
+        self.assertEqual(3, parse_status(bytes.fromhex(V['retired_status_hex'])))
+        for outcome in [0, 1]:
+            self.assertEqual(outcome, parse_status(status[:202]+bytes([outcome])+bytes(64)))
+        for bad in [status+b'\0', status[:202]+b'\x04'+status[203:],
                     status[:203]+bytes(32)+status[235:], status[:202]+b'\0'+status[203:]]:
             with self.assertRaises(ValueError):
                 parse_status(bad)
@@ -413,6 +458,62 @@ class InviteFixtures(unittest.TestCase):
         max_preview = 2+96+8+1+2+256+2+4096+1+4+49152
         self.assertLessEqual(12+max_preview+16, 54000)
         self.assertLessEqual(7+((130+2+4096)*8+4)//5+6, 7000)
+
+    def test_safe_sign_literal_framing(self):
+        # Independent literal encoding of draft-10 ComponentOperationLabel and
+        # RFC SignContent, not another invocation of the fixture generator.
+        tbs = bytes.fromhex(V['request_hex'])[:-64]
+        label = b'\x0dMLS Component\x80\x0e\x07request'
+        expected = b'\x20MLS 1.0 ' + label + qlen(len(tbs)) + tbs
+        self.assertEqual(expected.hex(), V['request_sign_content_hex'])
+
+    def test_transition_activation_and_immutable_generation(self):
+        p = bytes.fromhex(V['component_hex'])
+        transition(None, p, 'alice', {'alice'}, {'alice'})
+        transition(p, p, 'bob', {'alice'}, {'alice'})
+        transition(p, b'\0', 'alice', {'alice'}, {'alice'})
+        for kwargs in [{'required': False}, {'supported': False}]:
+            with self.assertRaises(ValueError):
+                transition(None, p, 'alice', {'alice'}, {'alice'}, **kwargs)
+        for result in [None, vector(bytes.fromhex(V['entry_hex'])[:-1]+b'\1')]:
+            with self.assertRaises(ValueError):
+                transition(p, result, 'alice', {'alice'}, {'alice'})
+        with self.assertRaises(ValueError):
+            transition(p, b'\0', 'bob', {'alice'}, {'alice', 'bob'})
+
+    def test_transition_departure_and_rotation(self):
+        p = bytes.fromhex(V['component_hex'])
+        entry = bytes.fromhex(V['entry_hex'])
+        fresh_key = ec.derive_private_key(3, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
+        fresh = vector(b'\x99'*32 + fresh_key + entry[64:])
+        # Self-demotion disables links, then a staying admin can create new ones.
+        transition(p, b'\0', 'alice', {'alice', 'bob'}, {'bob'})
+        with self.assertRaises(ValueError):
+            transition(p, fresh, 'alice', {'alice', 'bob'}, {'bob'})
+        transition(b'\0', fresh, 'bob', {'bob'}, {'bob'})
+        # Another admin can demote Alice and create replacement generations.
+        transition(p, fresh, 'bob', {'alice', 'bob'}, {'bob'})
+        # Removing one admin leaf retires links even if its account stays admin.
+        transition(p, fresh, 'bob', {'alice', 'bob'}, {'alice', 'bob'}, removed_leaf_accounts=['alice'])
+        for result in [p, vector(b'\x99'*32+entry[32:])]:
+            with self.assertRaises(ValueError):
+                transition(p, result, 'bob', {'alice', 'bob'}, {'alice', 'bob'}, removed_leaf_accounts=['alice'])
+        # Promotion alone preserves a generation.
+        transition(p, p, 'alice', {'alice'}, {'alice', 'bob'})
+
+    def test_transition_self_remove_and_terminal_exception(self):
+        p = bytes.fromhex(V['component_hex'])
+        transition(p, p, 'charlie', {'bob'}, {'bob'}, self_remove_accounts=['alice'])
+        with self.assertRaises(ValueError):
+            transition(p, p, 'bob', {'alice', 'bob'}, {'bob'}, self_remove_accounts=['alice'])
+        with self.assertRaises(ValueError):
+            transition(p, b'\0', 'bob', {'bob'}, {'bob'}, self_remove_accounts=['alice'])
+        with self.assertRaises(ValueError):
+            transition(p, b'\0', 'alice', {'alice'}, set())
+        # Adopted disband does not append an unrelated component update.
+        transition(p, p, 'alice', {'alice'}, set(), disband=True)
+        with self.assertRaises(ValueError):
+            transition(p, b'\0', 'alice', {'alice'}, set(), disband=True)
 
     def test_registry_and_surface_sync(self):
         expected = {'0x800e': 'app-components/group-invite-links-v1.md',
