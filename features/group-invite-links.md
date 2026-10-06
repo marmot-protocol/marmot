@@ -85,6 +85,10 @@ commitment and policy fields during tentative validation, before durable group s
 initialization-key deletion. No matching entry or a preview mismatch leaves those mutations unapplied and requires
 a new explicit user choice, including when accepting the Welcome as an ordinary invitation instead. The requester
 MUST NOT silently swap its preview for a newer descriptor. Missing status does not bypass this consent check.
+Waiting for that choice MUST NOT extend private-key retention under the adopted
+[KeyPackage lifecycle](../foundation/key-packages.md#selection-and-lifecycle). If the required material is
+deleted before a choice is made, the Welcome remains unusable; show a recoverable offer problem and use the
+refresh or renewed-consent path below rather than retaining keys past their deletion bound.
 When multiple retained contexts offered the same package, any preview used for this check MUST belong to a context
 with that exact offer and a matching invitation entry; an unrelated request cannot supply consent.
 

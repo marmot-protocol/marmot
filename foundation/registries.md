@@ -146,7 +146,6 @@ replacement onto the original row's body, never as a separate transcript row.
 
 These values belong to the proposed [private group invite links v1](../features/group-invite-links.md), not adopted
 baseline Marmot. They claim draft values within this proposal; they are not upstream IANA or Nostr allocations.
-Other open proposals already use component `0x800d` and kinds `453` through `458`; this draft avoids those values.
 
 | Namespace | Value | Meaning | Owner |
 | --- | --- | --- | --- |
