@@ -16,6 +16,9 @@ The associated state and record formats are owned by the
 
 These proposed allocations are indexed in [registries.md](../foundation/registries.md#proposed-invite-link-allocations).
 The outer kinds `1059` and `13`, NIP-44 encryption, and NIP-59 validation remain upstream primitives.
+For every new request, status and admin gift wrap, the seal has empty tags and the outer gift wrap has exactly one
+`p` tag with exactly the recipient's lowercase-hex account/inbox key. No extra tags are permitted. The outer author
+is the fresh NIP-59 ephemeral key, never an inviter or group identity.
 There is no new MLS exporter or account-signature proof class.
 All new rumors use exactly the adopted unsigned Nostr-shaped fields and NIP-01 id calculation; no extra JSON members
 are accepted. Signed descriptor, seal and gift-wrap objects have those fields plus `sig`. `created_at` is an integer
@@ -163,8 +166,9 @@ struct {
 } InviteAdminBatchV1;
 ```
 
-Each batch contains one through sixteen unique recipients sorted by account bytes. Larger admin sets use multiple
-batches. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
+Each batch contains one through sixteen unique recipients sorted by account bytes. Producers MUST split by both
+recipient count and total encoded byte length; sixteen full-sized envelopes do not fit one batch. Larger sets or
+payloads use multiple batches, with each record retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
 NIP-59 recipient `p` tag, naming `recipient_account`; validate the signature and each NIP-59 layer before using it.
 The decrypted kind `461` rumor has no tags or `sig`, and content is padded base64 of InviteAdminRecordV1.
 Its pubkey and seal author MUST equal the account of the enclosing MLS-authenticated app-event sender.
@@ -181,6 +185,21 @@ Fetch and catch-up follow normal group delivery. Transport duplicates do not ret
 authorization are evaluated by the feature, not by an outer event timestamp. Key grants name one group/generation;
 they MUST NOT be accepted merely because an inbox private key decrypts other ciphertext successfully.
 
+## Relay budgets and failures
+
+The structural bounds permit events larger than some relays accept. They are receiver safety ceilings, not a promise
+that every relay supports them. Before preparing a descriptor, record or batch, producers SHOULD estimate its complete
+relay event size after JSON, all nested encryption, base64 and MLS overhead. Use compatible code/group relays, reduce
+preview image bytes, and split admin batches within both bounds and endpoint budgets. A single oversized request or
+forwarded package evidence cannot be truncated; report a recoverable size/delivery problem or use another conforming
+relay. A 54000-byte decoded descriptor can exceed a 64 KiB event budget after base64.
+
+Relay rejection, size-policy refusal or unavailable endpoint is delivery failure, not a request decision or MLS state
+change. Preserve the outstanding exact logical record or prepared MLS obligation, show the actionable delivery error,
+and follow existing publish recovery without generating a duplicate Add. This deployment assumption must be tested
+with intended relays before enabling the feature. A smaller receiver ceiling needs a future version rather than
+silently rejecting conforming bytes as malformed.
+
 ## Limits and privacy
 
 This v1 profile limits each NIP-44 plaintext to 65535 UTF-8 bytes, including both the rumor and the signed seal
@@ -192,7 +211,9 @@ MUST reject gift-wrap JSON above 90000 bytes and enforce the same two decrypted-
 Before decoding base64, enforce its encoded-length bound derived from each decoded maximum; reject malformed padding
 or alternative alphabets. Unknown record kinds/versions do not fall back to chat or another invite format.
 Receivers MUST limit unauthenticated envelope processing and retain at most 100 open contexts per link, at most eight
-retained refresh revisions per context, and at most 1000 terminal context tombstones per group. Admission limits do
+retained refresh revisions per context, and at most 1000 terminal context tombstones across currently active generations per group.
+Retired-generation accounting and still-required recovery facts follow the feature; additional local storage safety
+limits MAY refuse new work without deleting required facts. Admission limits do
 not grant senders authority to erase other records. Overflow returns a local capacity outcome without claiming the
 request was rejected or joined. The feature specifies retention and retries.
 

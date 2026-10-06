@@ -48,10 +48,14 @@ delivery coordinates into the request, without making those coordinates identity
 `valid_until` is a nonzero Unix time in seconds no greater than `9007199254740991`, fixed for the entire context.
 Admission and tombstone retention use it as defined by the feature; it is separate from link and package expiry.
 
-The signature uses RFC 9420 SignWithLabel with the Ed25519 private key corresponding to `consent_key`, label
-`marmot invite request v1`, and content equal to the exact encoded `InviteRequestTBSV1`. RFC 9420's `SignContent`
-framing and `MLS 1.0 ` label prefix apply unchanged; they use MLS encoding, not Marmot vector lengths.
-The signature proves consent from the originating leaf key, independently of the account-to-leaf proof.
+The signature uses the pinned [MLS extensions draft-10 SafeSignWithLabel](https://datatracker.ietf.org/doc/html/draft-ietf-mls-extensions-10#section-4.3)
+with the Ed25519 private key corresponding to `consent_key`, component id `0x800e`, operation label `request`, and
+content equal to the exact encoded `InviteRequestTBSV1`. Verification uses SafeVerifyWithLabel with the same inputs.
+The draft's encoded ComponentOperationLabel contains base label `MLS Component`, that uint16 component id and the
+operation label. RFC 9420 SignWithLabel then prefixes those encoded label bytes with `MLS 1.0 ` inside SignContent.
+Both upstream structures use RFC 9420 `<V>` variable lengths (one, two or four bytes, maximum `2^30-1`), not fixed TLS
+lengths. For these bounded inputs their minimal encodings equal the Marmot profile. No independent IANA signature
+label is introduced. The signature proves originating-leaf consent independently of the account-to-leaf proof.
 
 For revision zero, `previous_request_hash` is all zero bytes and `consent_key` equals the offered LeafNode signature
 key. Define `request_hash = SHA-256(encoded InviteRequestV1)`. A refresh increments revision by exactly one, names
@@ -78,7 +82,8 @@ struct {
 } InviteWithdrawalV1;
 ```
 
-SignWithLabel uses label `marmot invite withdrawal v1` and the encoded TBS. The signer is the original consent key
+SafeSignWithLabel uses component id `0x800e`, operation label `withdrawal`, and the encoded TBS, with the same
+ComponentOperationLabel and SignContent framing as requests. The signer is the original consent key
 from a validated revision-zero request. Withdrawal closes that context across all revisions and never removes a
 member. It may arrive before the original request; processing waits for the original binding. If the consent key
 is lost, the account may start a fresh request but MUST NOT forge continuity or a withdrawal for that device.

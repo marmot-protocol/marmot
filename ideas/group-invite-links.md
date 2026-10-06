@@ -112,7 +112,8 @@ retention and capacity. Full capacity pauses new admission rather than evicting 
 Adds. An uncertain publication keeps its ordinary durability obligation even after the request expires.
 
 Removing an admin rotates all active invitation generations in the same policy Commit. Old ciphertext stays readable
-by anyone who retained its key; rotation protects future requests. Existing members already know the public component
+by anyone who retained its key; rotation protects requests sent using the new codes. Someone opening an old code can
+still disclose their identity to an old inbox-key holder. Existing members already know the public component
 state, including inbox addresses. Private grant bytes stay inside the recipient encryption.
 
 ## Scene 6: Expiry and retirement

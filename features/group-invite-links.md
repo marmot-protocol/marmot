@@ -135,8 +135,10 @@ Removing an invitation entry revokes all unfulfilled requests for that generatio
 Security-driven inbox retirement follows the same rule. It never removes a member already added on the selected
 branch, destroys another device's saved copy, or prevents an admin from making an ordinary independent invitation.
 Demoting an admin or removing an admin leaf requires the component's generation rotation in the same Commit,
-including a removed device whose account retains another admin leaf. Promoting an admin grants no
-access until a current admin supplies private material.
+including a removed device whose account retains another admin leaf. Voluntary departure uses the adopted demotion
+before SelfRemove: retire links at demotion, then leave the component unchanged in a non-admin SelfRemove-only Commit.
+A sole admin promotes a successor before demotion. Promoting an admin grants no access until a current admin supplies
+private material. A known retired generation never reopens closed requests merely by reappearing in component state.
 
 Withdrawal or decline suppresses automatic processing of that context. A current admin may approve a declined
 request only through a new explicit manual decision while its consent and generation remain valid. A withdrawn
@@ -156,6 +158,13 @@ Open records expire at their signed `valid_until`. An expired context cannot bec
 restart. Retain its terminal outcome and duplicate-suppression tombstone until at least twenty-four hours after that
 deadline; thereafter the signed deadline rejects a replay without needing the tombstone. Outstanding uncertain MLS
 publication and convergence facts retain their adopted lifetimes even if a request expires.
+
+A retired generation's contexts and tombstones no longer count against current admission capacity, because its entry
+is absent. Its requests remain revoked. Retain facts still needed for rollback, uncertain publication and recovery
+under the adopted lifetimes; capacity release is not permission to erase them. If convergence restores a previously
+selected live generation, reconstitute its capacity accounting before admitting work. Do not treat a malicious
+reintroduction as new consent. Retained selected-history retirement evidence keeps it inert for automatic processing.
+This lets an admin retire a spam-filled generation and issue a fresh one without waiting for old request deadlines.
 
 The transport's 100-context per-link and 1000-tombstone per-group ceilings are capacity gates. A client MUST NOT evict
 still-required facts to admit another request. It stops admitting new contexts when the relevant capacity is reached,
@@ -179,7 +188,8 @@ key-package publication makes the request inbox confidential after its private k
 
 Implementations MUST cover: duplicate wraps, a refresh before its parent, conflicting refreshes, two devices sharing
 one account, another account's withdrawal, former-admin replay, admin removal with stale grants, preview substitution,
-link expiry during offline time, request deadline replay, capacity without eviction, Commit publication uncertainty,
+link expiry during offline time, request deadline replay, capacity without eviction, capacity relief through generation retirement, admin demotion then non-admin SelfRemove,
+sole-admin succession, Commit publication uncertainty,
 Add success with failed Welcome/status delivery, losing-branch invitation invalidation, and process interruption at
 each adopted publish boundary. Fixtures exercise both correct bytes and negative authorization, not only happy-path UX.
 
@@ -190,11 +200,11 @@ each adopted publish boundary. Fixtures exercise both correct bytes and negative
 | Relay drops, duplicates or reorders ciphertext | Retained exact requests, signed ancestry and idempotent retry | Availability is best effort; no retained copy means no recovery |
 | Link holder submits unwanted requests | Bearer gate, explicit device consent, bounded admission and manual mode | Automatic mode deliberately admits eligible link holders; a leaked link permits spam |
 | Account-key attacker substitutes a package | Original leaf-key consent chain binds the exact offer | Account compromise still allows new account-authorized devices and fresh malicious requests |
-| Former admin retains private inbox material | Current policy gates action; admin/device removal rotates generations | Old requests and signed seals remain readable/disclosable |
+| Former admin retains private inbox material | Current policy gates action; admin/device removal rotates generations | Old codes can still disclose new requests to old key holders; old records remain readable/disclosable |
 | Malicious admin changes a preview | Immutable component commitment and preserved preview-at-consent | An authorized inviter can create a different group with the same commitment; first-contact trust remains |
 | Admins race or restart during publication | Adopted candidate-parent authorization, durable exact obligations and convergence | Private decisions are best effort; an unseen withdrawal cannot revoke an already prepared/published Add |
 | Untrusted preview contains an image or URL | Bounded inline rendering, plain text and no external fetch | Recipient and hosting network metadata remain observable |
 
 Before adopting or deploying this draft, maintainers must reconcile the proposed ids with the complete registry,
-coordinate the Nostr kind allocations and RFC 9420 signature-label registrations, and run cross-implementation MLS,
+coordinate the Nostr kind allocations and verify draft-10 component-scoped signing, and run cross-implementation MLS,
 NIP-59 and external-signer tests. The repository's byte fixtures are partial evidence, not a production security audit.

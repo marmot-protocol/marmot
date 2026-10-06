@@ -30,6 +30,11 @@ def vector(b):
     return qlen(len(b)) + b
 
 
+def sign_content(operation, content, component_id=0x800e):
+    operation_label = vector(b'MLS Component') + component_id.to_bytes(2, 'big') + vector(operation)
+    return vector(b'MLS 1.0 ' + operation_label) + vector(content)
+
+
 class Reader:
     def __init__(self, b):
         self.b = b
@@ -126,7 +131,7 @@ def request(b):
     r.end()
     if rev == 0 and prev != bytes(32):
         raise ValueError('initial predecessor')
-    preimage = vector(b'MLS 1.0 marmot invite request v1') + vector(b[:-64])
+    preimage = sign_content(b'request', b[:-64])
     ed25519.Ed25519PublicKey.from_public_bytes(context[130:162]).verify(sig, preimage)
     return context, rev, prev, bearer, kp, event_id
 
@@ -205,6 +210,52 @@ def nip44_length(n):
     return 4 * ((1 + 32 + 2 + padded_len(n) + 32 + 2)//3)
 
 
+def parse_status(b):
+    r = Reader(b)
+    r.take(170)
+    r.take(32)
+    outcome = r.num(1)
+    hashes = [r.take(32), r.take(32)]
+    r.end()
+    if outcome not in [0, 1, 2] or any((h == bytes(32)) != (outcome != 2) for h in hashes):
+        raise ValueError('status')
+    return outcome
+
+
+def parse_admin(b):
+    r = Reader(b)
+    r.vec(1, 255)
+    r.take(8)
+    link_id = r.take(32)
+    action = r.num(1)
+    body = Reader(r.vec(1, 24576))
+    r.end()
+    if action == 0:
+        entry = body.take(137)
+        component(vector(entry))
+        scalar = int.from_bytes(body.take(32), 'big')
+        pub = ec.derive_private_key(scalar, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
+        bearer = body.take(32)
+        body.take(32)
+        if entry[:32] != link_id or entry[32:64] != pub or hashlib.sha256(bearer).digest() != entry[64:96]:
+            raise ValueError('grant binding')
+    elif action == 1:
+        # Locate the signature after the request's last vector; preserve those exact bytes.
+        start = Reader(body.b)
+        start.take(270)
+        start.vec(1, 8192)
+        start.take(64)
+        original = body.take(start.pos)
+        ctx = request(original)[0]
+        if ctx[34:66] != link_id:
+            raise ValueError('forward binding')
+        json.loads(body.vec(1, 12288))  # Illustrative evidence, not NIP-01 verification.
+    else:
+        raise ValueError('unsupported example action')
+    body.end()
+    return action
+
+
 class InviteFixtures(unittest.TestCase):
     def test_frozen_encodings(self):
         self.assertEqual(137, len(bytes.fromhex(V['entry_hex'])))
@@ -213,6 +264,30 @@ class InviteFixtures(unittest.TestCase):
         b = bytes.fromhex(V['code_hex'])
         self.assertEqual(V['code_bech32m'], bech32m(b))
         self.assertEqual(b, decode_code(V['code_bech32m'].upper()))
+
+    def test_fixture_cross_bindings(self):
+        fields, _ = code(bytes.fromhex(V['code_hex']))
+        e = bytes.fromhex(V['entry_hex'])
+        p = Reader(bytes.fromhex(V['preview_hex']))
+        self.assertEqual(1, p.num(2))
+        self.assertEqual(e[32:64], p.take(32))
+        self.assertEqual(fields[1], p.take(32))
+        self.assertEqual(e[64:96], p.take(32))
+        self.assertEqual(e[128:136], p.take(8))
+        self.assertEqual(e[136], p.num(1))
+        self.assertEqual(b'Book club', p.vec(1, 256))
+        self.assertEqual(b"Thursday nights. Bring whatever you're reading.", p.vec(0, 4096))
+        self.assertEqual(0, p.num(1))
+        self.assertEqual(b'', p.vec(0, 49152))
+        p.end()
+        self.assertEqual(fields[0], e[32:64])
+        self.assertEqual(fields[1], e[:32])
+        self.assertEqual(hashlib.sha256(fields[2]).digest(), e[64:96])
+        self.assertEqual(V['preview_hash'], e[96:128].hex())
+        self.assertEqual(b'\0\1'+fields[0]+fields[1], bytes.fromhex(V['preview_aad_hex']))
+        ctx, _, _, bearer, _, _ = request(bytes.fromhex(V['request_hex']))
+        self.assertEqual(fields[:2], [ctx[2:34], ctx[34:66]])
+        self.assertEqual(fields[2], bearer)
 
     def test_noncanonical_component_rejections(self):
         e = bytes.fromhex(V['entry_hex'])
@@ -251,7 +326,7 @@ class InviteFixtures(unittest.TestCase):
         refresh(r0, r1)
         self.assertEqual(V['request_hash'], hashlib.sha256(r0).hexdigest())
         self.assertEqual(V['request_sign_content_hex'],
-                         (vector(b'MLS 1.0 marmot invite request v1')+vector(r0[:-64])).hex())
+                         sign_content(b'request', r0[:-64]).hex())
         for offset in [34, 66, 98, 130, 169, 173, 210, 242, len(r0)-1]:
             bad = bytearray(r0)
             bad[offset] ^= 1
@@ -270,7 +345,7 @@ class InviteFixtures(unittest.TestCase):
             bad = bytearray(valid[:-64])
             bad[offset] ^= 1
             changed = bytes(bad)
-            signed = changed + signer.sign(vector(b'MLS 1.0 marmot invite request v1')+vector(changed))
+            signed = changed + signer.sign(sign_content(b'request', changed))
             request(signed)  # Cryptographically valid, but wrong continuity.
             with self.subTest(offset=offset), self.assertRaises(ValueError):
                 refresh(original, signed)
@@ -279,11 +354,37 @@ class InviteFixtures(unittest.TestCase):
         signed = bytes.fromhex(V['withdrawal_hex'])
         ctx, signature = signed[:-64], signed[-64:]
         key = ed25519.Ed25519PublicKey.from_public_bytes(ctx[130:162])
-        key.verify(signature, vector(b'MLS 1.0 marmot invite withdrawal v1')+vector(ctx))
+        key.verify(signature, sign_content(b'withdrawal', ctx))
         with self.assertRaises(InvalidSignature):
-            key.verify(signature, vector(b'MLS 1.0 marmot invite request v1')+vector(ctx))
+            key.verify(signature, sign_content(b'request', ctx))
         with self.assertRaises(InvalidSignature):
-            key.verify(signature, vector(b'MLS 1.0 marmot invite withdrawal v1')+vector(ctx[:-1]+b'\0'))
+            key.verify(signature, sign_content(b'withdrawal', ctx[:-1]+b'\0'))
+
+    def test_component_signature_domain_and_revision_limit(self):
+        r = bytes.fromhex(V['request_hex'])
+        key = ed25519.Ed25519PublicKey.from_public_bytes(r[130:162])
+        with self.assertRaises(InvalidSignature):
+            key.verify(r[-64:], sign_content(b'request', r[:-64], component_id=0x800d))
+        signer = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(V['consent_seed_hex']))
+        tbs = r[:170]+(8).to_bytes(4, 'big')+r[174:-64]
+        signed = tbs+signer.sign(sign_content(b'request', tbs))
+        with self.assertRaises(ValueError):
+            request(signed)
+
+    def test_status_and_admin_records(self):
+        status = bytes.fromhex(V['status_hex'])
+        self.assertEqual(2, parse_status(status))
+        for bad in [status+b'\0', status[:202]+b'\x03'+status[203:],
+                    status[:203]+bytes(32)+status[235:], status[:202]+b'\0'+status[203:]]:
+            with self.assertRaises(ValueError):
+                parse_status(bad)
+        grant = bytes.fromhex(V['grant_record_hex'])
+        self.assertEqual(0, parse_admin(grant))
+        forwarded = bytes.fromhex(V['forward_record_hex'])
+        self.assertEqual(1, parse_admin(forwarded))
+        for bad in [grant+b'\0', grant[:-1], grant[:-96]+bytes(32)+grant[-64:]]:
+            with self.assertRaises(ValueError):
+                parse_admin(bad)
 
     def test_preview_crypto_binding(self):
         key = bytes.fromhex(V['preview_key_hex'])
