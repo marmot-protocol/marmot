@@ -1,0 +1,147 @@
+# Invite-link records v1
+
+Status: proposed; not adopted. This document owns the feature's canonical records and device-consent signature.
+Delivery envelopes are owned by the [Nostr extension](../transports/nostr-invite-links.md), state by the
+[invite-links component](../app-components/group-invite-links-v1.md), and processing by the
+[feature](../features/group-invite-links.md).
+
+## Encoding and scope
+
+Structures below use the [Marmot binary profile](canonical-encoding.md). Variable fields have shortest QUIC lengths.
+Decoders MUST consume the entire record, reject unknown discriminants, reject out-of-bound values, and reject
+non-canonical bytes rather than normalize them. Fixed identifiers and hashes are bytes, not hex text.
+This first version supports the required MLS ciphersuite `0x0001` only. Other suites require a future record version.
+
+```text
+struct {
+  uint16 version;
+  opaque inbox_pubkey[32];
+  opaque link_id[32];
+  opaque request_id[32];
+  opaque requester_account[32];
+  opaque consent_key[32];
+  uint64 valid_until;
+} InviteRequestContextV1;
+
+struct {
+  InviteRequestContextV1 context;
+  uint32 revision;
+  opaque previous_request_hash[32];
+  opaque bearer[32];
+  opaque key_package_ref[32];
+  opaque transport_offer<1..8192>;
+} InviteRequestTBSV1;
+
+struct {
+  InviteRequestTBSV1 tbs;
+  opaque consent_signature[64];
+} InviteRequestV1;
+```
+
+`version` is exactly one. `request_id` is fresh random bytes created for this account-device attempt; retries preserve
+it. Revision values are zero through seven; greater values are invalid in v1. The public keys are valid keys for their stated algorithms. `requester_account` is the account in the offered
+KeyPackage's BasicCredential; its adopted
+[account identity proof v2](../app-components/account-identity-proof-v2.md) authorizes the offered leaf key.
+`key_package_ref` is RFC 9420 MakeKeyPackageRef over the inner KeyPackage, not a publication event id or slot id.
+`transport_offer` is the canonical Nostr offer defined by the transport owner; it binds the exact publication and
+delivery coordinates into the request, without making those coordinates identity or membership authority.
+`valid_until` is a nonzero Unix time in seconds no greater than `9007199254740991`, fixed for the entire context.
+Admission and tombstone retention use it as defined by the feature; it is separate from link and package expiry.
+
+The signature uses RFC 9420 SignWithLabel with the Ed25519 private key corresponding to `consent_key`, label
+`marmot invite request v1`, and content equal to the exact encoded `InviteRequestTBSV1`. RFC 9420's `SignContent`
+framing and `MLS 1.0 ` label prefix apply unchanged; they use MLS encoding, not Marmot vector lengths.
+The signature proves consent from the originating leaf key, independently of the account-to-leaf proof.
+
+For revision zero, `previous_request_hash` is all zero bytes and `consent_key` equals the offered LeafNode signature
+key. Define `request_hash = SHA-256(encoded InviteRequestV1)`. A refresh increments revision by exactly one, names
+the immediately preceding `request_hash`, preserves the complete context and bearer, and is signed by the original
+`consent_key`. The refreshed package carries its own valid account identity proof. Its leaf key may differ.
+All ancestors through revision zero MUST be available and validated before a refresh is eligible.
+An account match or a replaceable publication slot match does not prove originating-device continuity.
+
+Two distinct valid requests at the same revision under one context constitute `conflicting_refresh`. They MUST NOT
+be automatically resolved by arrival time or hash ordering. Automatic processing stops for that context until the
+requester withdraws it and starts a fresh request id with renewed consent. Exact byte duplicates are idempotent.
+Missing ancestors are recoverable missing prerequisites, not rejection.
+
+## Withdrawal
+
+```text
+struct {
+  InviteRequestContextV1 context;
+} InviteWithdrawalTBSV1;
+
+struct {
+  InviteWithdrawalTBSV1 tbs;
+  opaque consent_signature[64];
+} InviteWithdrawalV1;
+```
+
+SignWithLabel uses label `marmot invite withdrawal v1` and the encoded TBS. The signer is the original consent key
+from a validated revision-zero request. Withdrawal closes that context across all revisions and never removes a
+member. It may arrive before the original request; processing waits for the original binding. If the consent key
+is lost, the account may start a fresh request but MUST NOT forge continuity or a withdrawal for that device.
+An application may retain that signing key while consent remains open, subject to its existing MLS key lifecycle;
+it MUST NOT retain a deleted KeyPackage initialization key or relax adopted deletion rules to support refresh.
+
+## Status
+
+```text
+struct {
+  InviteRequestContextV1 context;
+  opaque request_hash[32];
+  uint8 outcome;
+  opaque commit_hash[32];
+  opaque welcome_hash[32];
+} InviteStatusV1;
+```
+
+Outcomes are `observed=0`, `declined=1`, and `invited=2`. Unknown values are invalid. For observed or declined, both
+hashes are zero. For invited they are SHA-256 hashes of the complete serialized `MLSMessage` Commit and Welcome
+respectively; zero hashes are invalid. The status is authenticated by its transport's admin-account seal.
+A status carries no independent proof of current group-admin authority to an outsider. The app MUST attribute
+observed/declined claims to that account, not present them as group consensus. Invited is provisional until a
+matching Welcome passes the adopted join flow and its GroupInfo signer account equals the status author.
+The client MUST NOT wait for a status to process an otherwise valid ordinary Welcome.
+
+## Private admin records
+
+```text
+struct {
+  opaque group_id<1..255>;
+  uint64 source_epoch;
+  opaque link_id[32];
+  uint8 action;
+  opaque body<1..24576>;
+} InviteAdminRecordV1;
+```
+
+`group_id` is the MLS group id and stays inside recipient-encrypted records. `source_epoch` identifies the group
+state in which the enclosing MLS application message was authored. Actions and exact body encodings are:
+
+- `grant=0`: encoded `InviteLinkV1`, then inbox private key `[32]`, bearer `[32]`, preview key `[32]`.
+- `forward_request=1`: an encoded `InviteRequestV1`, followed by the transport's length-prefixed authenticated
+  publication evidence for that offer.
+- `withdrawal=2`: an encoded `InviteWithdrawalV1`.
+- `declined=3`: an encoded `InviteStatusV1` whose outcome is declined.
+- `invited=4`: an encoded `InviteStatusV1` whose outcome is invited.
+
+No trailing bytes are allowed inside a body. A grant's entry id equals the enclosing `link_id`; the private key
+derives its inbox public key and the bearer hashes to its commitment. A grant alone cannot authenticate the preview:
+the descriptor and plaintext commitment are checked separately. For other actions the context's link id and inbox
+must match the relevant invitation generation. The transport validates the admin sender binding, and the feature
+validates source/current authorization. Forwarded requester records retain their device signatures.
+Unknown actions fail closed for this version; they do not create decisions or change membership.
+
+## Versioning
+
+Breaking record or consent-signature changes require a new record version and the corresponding transport/app-event
+kind. Implementations MUST NOT reinterpret unknown versions as v1. Account identity proofs retain their own adopted
+component version and MUST NOT be repurposed as request-consent signatures.
+
+## Examples and verification
+
+[Synthetic fixtures](../tests/README.md) provide complete bytes and hashes for request/refresh and withdrawal signing.
+The fixture package/publication references are illustrative; they are not signed MLS KeyPackages or relay events.
+Implementers still need the feature's lifecycle and authorization conformance scenarios with real MLS and Nostr stacks.

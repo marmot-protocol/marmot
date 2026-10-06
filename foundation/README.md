@@ -22,6 +22,8 @@ Foundation docs SHOULD change slowly. A change here usually means the whole prot
   deterministic testing.
 - [errors.md](./errors.md) - shared result and rejection vocabulary.
 - [registries.md](./registries.md) - Marmot-owned ids and namespaces.
+- [invite-link-records.md](./invite-link-records.md) - proposed device-consent and private admin records for invite links;
+  not a baseline requirement.
 
 ## Layering
 

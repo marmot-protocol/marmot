@@ -79,7 +79,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 </g>
 </g>
 <text x="675" y="528" class="m" font-size="13" font-weight="600" text-anchor="middle">Alice still has the queue</text>
-<text x="480" y="36" class="m" font-size="13" font-weight="600" text-anchor="middle">Expiry stops new requests. It keeps ones already seen.</text>
+<text x="480" y="36" class="m" font-size="13" font-weight="600" text-anchor="middle">Link expiry stops new requests; pending ones keep their own deadlines.</text>
 <text x="480" y="584" class="m" font-size="13" text-anchor="middle">Gift-wrap timestamps are fuzzed, so a request discovered late is not treated as proof it arrived in time.</text>
 
 </svg>

@@ -96,6 +96,10 @@ Implementations MAY support a bounded subset of NIP-88 and MUST ignore unsupport
 rejecting otherwise-valid MLS state. Poll results are authenticated, best-effort group coordination state; they are
 not anonymous and are not suitable for election-grade voting.
 
+The proposed [private group invite links v1](../features/group-invite-links.md) uses kind `461` for encrypted admin
+batches under this same unsigned shape and sender binding. Its payload and nested Nostr envelopes are defined in the
+[optional Nostr extension](../transports/nostr-invite-links.md#admin-delivery-inside-mls); it is not adopted baseline behavior.
+
 ## Message edits (kind 1009)
 
 Kind `1009` is an in-place replacement of a prior chat message's text. The edit references the original event id via a

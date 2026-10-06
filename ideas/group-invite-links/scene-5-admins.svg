@@ -69,7 +69,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <rect x="80" y="250" width="800" height="88" rx="10" class="card"/>
 <text x="100" y="278" class="t" font-size="13" font-weight="700">Ordinary members</text>
 <text x="100" y="302" class="m" font-size="13">see that two admin envelopes exist. They already know who the admins are.</text>
-<text x="100" y="322" class="m" font-size="13">They do not learn the inbox key, bearer, or pending requester details.</text>
+<text x="100" y="322" class="m" font-size="13">They cannot read private inbox keys, bearers, or requester details.</text>
 <text x="480" y="390" class="m" font-size="13" text-anchor="middle">Relays see ordinary group traffic. The envelopes are not published on their own.</text>
 
 </svg>
