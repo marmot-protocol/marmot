@@ -51,7 +51,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <circle cx="32" cy="112" r="16" class="ta"/>
 <text x="32" y="117" class="a" font-size="14" font-weight="700" text-anchor="middle">B</text>
 <text x="56" y="108" class="t" font-size="14" font-weight="700">Bob</text>
-<text x="56" y="126" class="m" font-size="11.5">via wn.fo/k3m9qx2a</text>
+<text x="56" y="126" class="m" font-size="11.5">via Book club link</text>
 <rect x="16" y="146" width="92" height="22" rx="11" class="ty"/>
 <text x="62" y="161" class="y" font-size="11" font-weight="700" text-anchor="middle">Waiting</text>
 <rect x="16" y="184" width="86" height="32" rx="16" class="btn"/>
@@ -79,7 +79,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <circle cx="32" cy="112" r="16" class="ta"/>
 <text x="32" y="117" class="a" font-size="14" font-weight="700" text-anchor="middle">B</text>
 <text x="56" y="108" class="t" font-size="14" font-weight="700">Bob</text>
-<text x="56" y="126" class="m" font-size="11.5">via wn.fo/k3m9qx2a</text>
+<text x="56" y="126" class="m" font-size="11.5">via Book club link</text>
 <rect x="16" y="146" width="92" height="22" rx="11" class="ty"/>
 <text x="62" y="161" class="y" font-size="11" font-weight="700" text-anchor="middle">Waiting</text>
 <rect x="16" y="184" width="86" height="32" rx="16" class="btn"/>

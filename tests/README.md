@@ -32,6 +32,11 @@ The fixture fields ending in `_hex` are exact bytes. `request_sign_content_hex` 
 and the component-scoped operation label inside the RFC label prefix. The context's consent key is Ed25519, derived from `consent_seed_hex`; the inbox and requester account
 are x-only secp256k1 points derived from synthetic private scalars one and two. The preview has no image.
 The ciphertext omits the nonce, which is in its separate fixture field, and includes the AEAD tag.
+The literal signing assertion follows [draft-10 section 4.1](https://www.ietf.org/archive/id/draft-ietf-mls-extensions-10.html#section-4.1)
+and [section 4.3](https://www.ietf.org/archive/id/draft-ietf-mls-extensions-10.html#section-4.3): the fixed base label is
+`MLS Component`, followed by the component id and operation label, and SafeSignWithLabel passes that encoded label
+to RFC 9420 SignWithLabel. This source-checked literal is not an independently produced MLS-stack vector; obtaining
+and comparing such a vector remains an adoption requirement.
 
 The transition helper assumes authenticated candidate-parent identities and resolved proposals; it is a policy model,
 not an MLS Commit processor. Admin-policy changes, Remove authorization and last-leaf/admin coupling are assumed

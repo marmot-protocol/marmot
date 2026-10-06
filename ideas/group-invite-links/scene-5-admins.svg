@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="960" height="440" role="img" aria-labelledby="title desc">
 <title id="title">Scene 5: admins share the inbox key inside the group</title>
 <desc id="desc">Alice encrypts a copy of the inbox key to herself and to Carol inside a normal group message. Ordinary members see the envelopes and cannot open them.</desc>
 <style>
@@ -39,7 +39,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
 <marker id="hy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="y"/></marker>
 </defs>
-<rect class="bg" x="0" y="0" width="960" height="420" rx="16"/>
+<rect class="bg" x="0" y="0" width="960" height="440" rx="16"/>
 
 <g transform="translate(40,70)">
 <rect x="0" y="0" width="200" height="120" rx="12" class="frame" stroke-width="1.5"/>
