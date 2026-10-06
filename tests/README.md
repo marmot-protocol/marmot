@@ -4,7 +4,8 @@ These are executable examples for the proposed [feature](../features/group-invit
 All seeds and keys in [vectors/invite-links-v1.json](vectors/invite-links-v1.json) are public synthetic test values.
 The package references and event ids are illustrative bytes, not real MLS or signed Nostr publications.
 
-Run with Python 3.12 or later and `cryptography==50.0.0`:
+Run with Python 3.12 or later and `cryptography==50.0.0`.
+CI installs the versions and release-artifact hashes in `ci-requirements.txt` using `--require-hashes`.
 
 ```sh
 python -m unittest discover -s tests -v

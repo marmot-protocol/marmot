@@ -68,8 +68,10 @@ MUST NOT start a new Add after that refresh is validated. A missing ancestor doe
 retain the incomplete refresh as a recoverable prerequisite. Already prepared obligations keep their adopted
 publication and reconciliation rules rather than being silently replaced by new bytes.
 
-Two distinct valid requests at the same revision under one context constitute `conflicting_refresh`. They MUST NOT
-be resolved by arrival time, hash ordering or a manual choice of one conflicting branch. New admission preparation
+Two distinct fully validated requests at the same revision under one context constitute `conflicting_refresh`.
+For a refresh, this requires validated ancestry through revision zero. Before that ancestry is recovered, both
+records remain incomplete prerequisites rather than superseding or conflicting with the validated chain.
+Conflicts MUST NOT be resolved by arrival time, hash ordering or a manual choice of one conflicting branch. New admission preparation
 stops for that context until the
 requester withdraws it and starts a fresh request id with renewed consent. `conflicting_refresh` is a feature-local
 request-state annotation, not a new inbound rejection or MLS convergence disposition: the individual signed records
