@@ -17,11 +17,12 @@ The tests cover:
 - relay ordering, duplicates and WSS/count limits on the fixture's ASCII URL subset;
 - exact request preimage and hash, signed refresh continuity, protected fields and withdrawal domain separation;
 - deterministic preview AEAD and hash, rejection of changed key, AAD or ciphertext;
+- cross-bindings among code, component, preview and AAD, component signing domains, revision limits, and status/admin record examples;
 - worst-case preview, code, forwarded evidence and nested NIP-44 payload sizes;
 - agreement among proposed registry entries, their owners, indexes and layout.
 
 The fixture fields ending in `_hex` are exact bytes. `request_sign_content_hex` includes RFC 9420's two vector fields
-and label prefix. The context's consent key is Ed25519, derived from `consent_seed_hex`; the inbox and requester account
+and the component-scoped operation label inside the RFC label prefix. The context's consent key is Ed25519, derived from `consent_seed_hex`; the inbox and requester account
 are x-only secp256k1 points derived from synthetic private scalars one and two. The preview has no image.
 The ciphertext omits the nonce, which is in its separate fixture field, and includes the AEAD tag.
 

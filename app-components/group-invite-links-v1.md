@@ -11,8 +11,12 @@ Status: proposed; not adopted. The allocations below are draft allocations for r
 
 Enabling the feature MUST add this component and require its id in `app_components` in the same authorized Commit.
 Every resulting member MUST advertise support. Existing groups without it have no enabled invite links.
+This v1 feature may be enabled only in ciphersuite `0x0001` groups with an MLS group id of one through 255 bytes;
+a resulting state with this component outside those bounds is invalid.
 An unsupported required component fails normal capability negotiation; implementations MUST NOT silently omit it.
 This component defines no LeafNode, KeyPackage, GroupInfo, AppEphemeral, or SafeAAD data.
+Its [request records](../foundation/invite-link-records.md) use the draft-10 Safe Application Interface for
+component-scoped signing with the originating leaf key; that does not require SafeAAD negotiation.
 
 ## State bytes
 
@@ -62,7 +66,23 @@ different semantics. A removed id is revoked. The secret-distribution flow MUST 
 For a nonterminal resulting group, if the Commit demotes any candidate-parent active-admin account or contains a
 resolved Remove of an active-admin leaf (even if another leaf of that account remains), none of the parent's link ids
 or inbox keys may remain in the resulting component. An admin who kept an inbox key can still read old ciphertext;
-rotation protects future requests. Promoting an admin does not require rotating links.
+rotation protects requests sent with the new codes. Holders of an old code may still disclose their account and
+package to a former admin who retains its inbox key, even if the new group policy rejects the request.
+Promoting an admin does not require rotating links.
+
+The adopted [member-departure flow](../protocol-core/member-departure.md) is unchanged: an active admin cannot send
+SelfRemove. It first completes an admin-policy demotion with at least one other active admin remaining. That
+admin-authorized demotion Commit retires the old invitation generations. A subsequent non-admin SelfRemove-only
+Commit does not change this component or trigger rotation. The last admin first promotes a successor; enabling
+this feature adds no new exception, forced extra proposal or departure deadlock.
+
+Fresh-id/key generation and never reusing retired values are producer obligations. The current component cannot
+prove a complete history of retired ids at a first join or after history expiry; reintroducing an old entry is not a
+history-dependent Commit rejection. Honest admins MUST NOT reintroduce it. A client that retains selected-history
+evidence of its retirement MUST NOT reopen revoked requests or automatically admit new requests under that id if it
+reappears. Treat it as a retired invitation needing a fresh generation, without altering MLS branch selection.
+Revocation's future privacy depends on current admins following the fresh-key rule; a malicious current admin can
+always disclose new material too.
 
 These invariants are checked against the complete resulting state, independently of proposal order.
 Clock time MUST NOT affect component-update validity or convergence. Expiry is an admission gate specified by the
@@ -84,5 +104,8 @@ any membership. Link ids are not assigned a new meaning when a group is recreate
 Accept an empty vector and one correctly encoded entry. Reject nine entries, duplicate ids, duplicate inboxes,
 longer-than-minimal lengths, invalid keys, trailing bytes, and a changed entry under an existing id.
 Reject a non-admin update and an admin-removal Commit that retains an old invitation generation.
+Reject an active admin's SelfRemove under the adopted sender check. Accept demotion with retirement followed by a
+non-admin SelfRemove-only Commit that leaves this component unchanged. A sole admin must promote a successor first.
+Do not reopen revoked requests if an authorized malicious admin reintroduces a known retired generation.
 Accept disabling links through an empty replacement. Reject component removal after enablement.
 Accept a structurally valid expired entry during replay; reject automatic admission using it under the feature gate.
