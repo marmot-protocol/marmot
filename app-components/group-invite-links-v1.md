@@ -80,7 +80,8 @@ The adopted [member-departure flow](../protocol-core/member-departure.md) is unc
 SelfRemove. It first completes an admin-policy demotion with at least one other active admin remaining. That
 admin-authorized demotion Commit retires the old invitation generations. A subsequent non-admin SelfRemove-only
 Commit does not change this component or trigger rotation. The last admin first promotes a successor; enabling
-this feature adds no new exception, forced extra proposal or departure deadlock.
+this feature adds no new departure exception or extra Commit. When links are nonempty, the demotion Commit
+also carries the invite-links AppDataUpdate that retires them.
 
 Fresh-id/key generation and never reusing retired values are producer obligations. The current component cannot
 prove a complete history of retired ids at a first join or after history expiry; reintroducing an old entry is not a
@@ -95,7 +96,7 @@ Clock time MUST NOT affect component-update validity or convergence. Expiry is a
 [feature flow](../features/group-invite-links.md#expiry-revocation-and-withdrawal), not an automatic state mutation.
 
 Once enabled, the component MUST remain present and required. An AppDataUpdate remove operation is invalid.
-Disbanding follows the adopted lifecycle's restricted Commit shape: this component need not be cleared in that
+Disbanding follows the adopted lifecycle's restricted Commit shape: this component MUST NOT be modified in that
 Commit, and retained entries are inert once the group is disbanded.
 
 ## Versioning and migration
