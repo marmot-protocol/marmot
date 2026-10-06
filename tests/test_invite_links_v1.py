@@ -5,6 +5,7 @@ bounds, plus an abstract candidate-parent transition model. They deliberately do
 not implement MLS, NIP-59 or state convergence.
 """
 import hashlib
+import base64
 import json
 from pathlib import Path
 import re
@@ -113,13 +114,19 @@ def component(b):
     return rows
 
 
-def request(b):
-    r = Reader(b)
-    context = r.take(170)
+def request_context(context):
+    if len(context) != 170:
+        raise ValueError('context length')
     if context[:2] != b'\x00\x01' or not 0 < int.from_bytes(context[-8:], 'big') <= 9007199254740991:
         raise ValueError('context')
     secp_key(context[2:34])
     secp_key(context[98:130])
+    return context
+
+
+def request(b):
+    r = Reader(b)
+    context = request_context(r.take(170))
     rev = r.num(4)
     if rev > 7:
         raise ValueError('revision')
@@ -141,6 +148,30 @@ def refresh(previous, current):
     a, b = request(previous), request(current)
     if b[0] != a[0] or b[1] != a[1]+1 or b[2] != hashlib.sha256(previous).digest() or b[3] != a[3]:
         raise ValueError('continuity')
+
+
+def latest_revision(records):
+    """Select a signed chain; assumes externally validated package/account evidence."""
+    decoded = {record: request(record) for record in records}
+    if len({fields[0] for fields in decoded.values()}) != 1:
+        raise ValueError('different contexts')
+    complete = {record for record, fields in decoded.items() if fields[1] == 0}
+    for rev in range(1, 8):
+        for record, fields in decoded.items():
+            if fields[1] != rev:
+                continue
+            for ancestor in list(complete):
+                if decoded[ancestor][1] != rev-1:
+                    continue
+                try:
+                    refresh(ancestor, record)
+                except ValueError:
+                    continue
+                complete.add(record)
+    for rev in range(8):
+        if sum(decoded[record][1] == rev for record in complete) > 1:
+            raise ValueError('conflicting refresh')
+    return max(complete, key=lambda record: decoded[record][1]) if complete else None
 
 
 def polymod(values):
@@ -213,7 +244,7 @@ def nip44_length(n):
 
 def parse_status(b):
     r = Reader(b)
-    r.take(170)
+    request_context(r.take(170))
     r.take(32)
     outcome = r.num(1)
     hashes = [r.take(32), r.take(32)]
@@ -221,6 +252,80 @@ def parse_status(b):
     if outcome not in [0, 1, 2, 3] or any((h == bytes(32)) != (outcome != 2) for h in hashes):
         raise ValueError('status')
     return outcome
+
+
+def withdrawal(b):
+    r = Reader(b)
+    context = request_context(r.take(170))
+    signature = r.take(64)
+    r.end()
+    ed25519.Ed25519PublicKey.from_public_bytes(context[130:162]).verify(
+        signature, sign_content(b'withdrawal', context))
+    return context
+
+
+def admin_batch(b):
+    outer = Reader(b)
+    r = Reader(outer.vec(1, 262144))
+    outer.end()
+    recipients = []
+    while r.pos < len(r.b):
+        recipient = r.take(32)
+        secp_key(recipient)
+        r.vec(1, 90000)  # Opaque transport bytes; no NIP-59 verification here.
+        recipients.append(recipient)
+    if not 1 <= len(recipients) <= 16 or recipients != sorted(set(recipients)):
+        raise ValueError('recipient count or order')
+    return recipients
+
+
+def preview(b):
+    r = Reader(b)
+    if r.num(2) != 1:
+        raise ValueError('preview version')
+    inbox, link_id, bearer_hash = r.take(32), r.take(32), r.take(32)
+    secp_key(inbox)
+    expires_at, mode = r.num(8), r.num(1)
+    if expires_at > 9007199254740991 or mode > 1:
+        raise ValueError('preview policy')
+    name, description = r.vec(1, 256), r.vec(0, 4096)
+    name.decode('utf-8')
+    description.decode('utf-8')
+    image_type, image = r.num(1), r.vec(0, 49152)
+    r.end()
+    if image_type not in [0, 1, 2] or bool(image) != (image_type != 0):
+        raise ValueError('image type/length')
+    # The image field remains opaque here. Rendering needs a real bounded decoder.
+    return inbox, link_id, bearer_hash, expires_at, mode, name, description, image_type, image
+
+
+def canonical_base64(value, decoded_max):
+    if len(value) > 4*((decoded_max+2)//3):
+        raise ValueError('encoded size')
+    decoded = base64.b64decode(value, validate=True)
+    if len(decoded) > decoded_max or base64.b64encode(decoded) != value:
+        raise ValueError('noncanonical base64')
+    return decoded
+
+
+def request_delivery(b):
+    r = Reader(b)
+    operation = r.num(1)
+    record = r.vec(1, 16384)
+    publication = r.vec(0, 12288)
+    r.end()
+    if operation == 0:
+        request(record)
+        if not publication:
+            raise ValueError('missing package evidence')
+    elif operation == 1:
+        withdrawal(record)
+        if publication:
+            raise ValueError('withdrawal evidence')
+    else:
+        raise ValueError('operation')
+    # Publication bytes are opaque; their NIP-01 authentication is an integration gate.
+    return operation, record, publication
 
 
 def transition(parent, result, actor, parent_admins, result_admins, *,
@@ -280,9 +385,10 @@ def parse_admin(b):
         component(vector(entry))
         scalar = int.from_bytes(body.take(32), 'big')
         pub = ec.derive_private_key(scalar, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
-        bearer = body.take(32)
-        body.take(32)
-        if entry[:32] != link_id or entry[32:64] != pub or hashlib.sha256(bearer).digest() != entry[64:96]:
+        fields, relays = code(body.vec(1, 8192))
+        if (entry[:32] != link_id or entry[32:64] != pub
+                or fields[:2] != [entry[32:64], link_id]
+                or hashlib.sha256(fields[2]).digest() != entry[64:96]):
             raise ValueError('grant binding')
     elif action == 1:
         # Locate the signature after the request's last vector; preserve those exact bytes.
@@ -295,6 +401,14 @@ def parse_admin(b):
         if ctx[34:66] != link_id:
             raise ValueError('forward binding')
         json.loads(body.vec(1, 12288))  # Illustrative evidence, not NIP-01 verification.
+    elif action == 2:
+        ctx = withdrawal(body.take(234))
+        if ctx[34:66] != link_id:
+            raise ValueError('withdrawal binding')
+    elif action in [3, 4]:
+        status = body.take(267)
+        if parse_status(status) != action - 2 or status[34:66] != link_id:
+            raise ValueError('decision binding')
     else:
         raise ValueError('unsupported example action')
     body.end()
@@ -430,9 +544,136 @@ class InviteFixtures(unittest.TestCase):
         self.assertEqual(0, parse_admin(grant))
         forwarded = bytes.fromhex(V['forward_record_hex'])
         self.assertEqual(1, parse_admin(forwarded))
-        for bad in [grant+b'\0', grant[:-1], grant[:-96]+bytes(32)+grant[-64:]]:
+        for bad in [grant+b'\0', grant[:-1]]:
             with self.assertRaises(ValueError):
                 parse_admin(bad)
+
+    def test_grant_carries_complete_code_and_rejects_substitution(self):
+        entry = bytes.fromhex(V['entry_hex'])
+        complete_code = bytes.fromhex(V['code_hex'])
+        prefix = vector(b'synthetic-group')+(7).to_bytes(8, 'big')+entry[:32]+b'\0'
+        def grant(code_bytes, scalar=1):
+            return prefix+vector(entry+scalar.to_bytes(32, 'big')+vector(code_bytes))
+        self.assertEqual(0, parse_admin(grant(complete_code)))
+        self.assertEqual([b'wss://relay.example'], code(complete_code)[1])
+        for offset in [34, 66]:
+            changed = bytearray(complete_code)
+            changed[offset] ^= 1
+            with self.assertRaises(ValueError):
+                parse_admin(grant(bytes(changed)))
+        with self.assertRaises(ValueError):
+            parse_admin(grant(complete_code, scalar=2))
+        with self.assertRaises(ValueError):
+            parse_admin(grant(complete_code[:130]+vector(b'')))
+
+    def test_request_delivery_keeps_ancestor_evidence(self):
+        evidence = b'{"example":"public synthetic publication placeholder"}'
+        for name in ['request_hex', 'refresh_hex']:
+            record = bytes.fromhex(V[name])
+            delivered = b'\0'+vector(record)+vector(evidence)
+            self.assertEqual((0, record, evidence), request_delivery(delivered))
+        withdrawn = bytes.fromhex(V['withdrawal_hex'])
+        valid = b'\1'+vector(withdrawn)+vector(b'')
+        self.assertEqual((1, withdrawn, b''), request_delivery(valid))
+        for invalid in [b'\0'+vector(record)+vector(b''),
+                        b'\0'+vector(record)+vector(bytes(12289)),
+                        b'\1'+vector(withdrawn)+vector(evidence),
+                        b'\2'+vector(withdrawn)+vector(b''), valid+b'\0']:
+            with self.assertRaises(ValueError):
+                request_delivery(invalid)
+
+    def test_highest_complete_revision_and_conflicts(self):
+        r0, r1 = [bytes.fromhex(V[name]) for name in ['request_hex', 'refresh_hex']]
+        self.assertEqual(r1, latest_revision([r1, r0, r1]))
+        self.assertEqual(r1, latest_revision([r0, r1]))
+        self.assertIsNone(latest_revision([r1]))
+        signer = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(V['consent_seed_hex']))
+        # A cryptographically valid second child of revision zero is ambiguous consent.
+        changed = bytearray(r1[:-64])
+        changed[242] ^= 1
+        branch = bytes(changed)+signer.sign(sign_content(b'request', bytes(changed)))
+        with self.assertRaises(ValueError):
+            latest_revision([r0, r1, branch])
+        # A revision two with missing revision one cannot supersede revision zero.
+        tbs = r1[:170]+(2).to_bytes(4, 'big')+hashlib.sha256(r1).digest()+r1[206:-64]
+        r2 = tbs+signer.sign(sign_content(b'request', tbs))
+        self.assertEqual(r0, latest_revision([r2, r0]))
+        self.assertEqual(r2, latest_revision([r2, r0, r1]))
+
+    def test_status_context_rejections(self):
+        valid = bytes.fromhex(V['status_hex'])
+        for offset, replacement in [(0, b'\x00\x02'), (2, b'\xff'*32),
+                                    (98, b'\xff'*32), (162, bytes(8)),
+                                    (162, (9007199254740992).to_bytes(8, 'big'))]:
+            invalid = valid[:offset] + replacement + valid[offset+len(replacement):]
+            with self.subTest(offset=offset), self.assertRaises(ValueError):
+                parse_status(invalid)
+
+    def test_withdrawal_decoder_and_original_binding(self):
+        signed = bytes.fromhex(V['withdrawal_hex'])
+        self.assertEqual(request(bytes.fromhex(V['request_hex']))[0], withdrawal(signed))
+        for invalid in [signed[:-1], signed+b'\0', signed[:66]+b'\xff'+signed[67:]]:
+            with self.assertRaises((ValueError, InvalidSignature)):
+                withdrawal(invalid)
+        # Even a correctly signed withdrawal for another context must not close this one.
+        signer = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(V['consent_seed_hex']))
+        different = signed[:66]+b'\xff'+signed[67:170]
+        other = different + signer.sign(sign_content(b'withdrawal', different))
+        self.assertNotEqual(withdrawal(signed), withdrawal(other))
+
+    def test_all_admin_actions_and_body_bindings(self):
+        ctx = bytes.fromhex(V['request_hex'])[:170]
+        invited = bytes.fromhex(V['status_hex'])
+        declined = invited[:202]+b'\x01'+bytes(64)
+        prefix = vector(b'synthetic-group')+(7).to_bytes(8, 'big')+ctx[34:66]
+        examples = {2: bytes.fromhex(V['withdrawal_hex']), 3: declined, 4: invited}
+        for action, body in examples.items():
+            valid = prefix+bytes([action])+vector(body)
+            with self.subTest(action=action):
+                self.assertEqual(action, parse_admin(valid))
+                for invalid in [valid+b'\0', prefix+bytes([action])+vector(body+b'\0'),
+                                prefix[:-32]+b'\xff'*32+bytes([action])+vector(body)]:
+                    with self.assertRaises(ValueError):
+                        parse_admin(invalid)
+        for action, body in [(3, invited), (4, declined), (5, invited)]:
+            with self.assertRaises(ValueError):
+                parse_admin(prefix+bytes([action])+vector(body))
+
+    def test_admin_batch_count_order_and_size(self):
+        recipients = sorted(ec.derive_private_key(i, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
+                            for i in range(1, 18))
+        # Placeholder envelope bytes exercise only the canonical outer batch structure.
+        envelope = b'{}'
+        rows = [key+vector(envelope) for key in recipients]
+        self.assertEqual(recipients[:16], admin_batch(vector(b''.join(rows[:16]))))
+        for invalid in [vector(b''), vector(b''.join(rows)), vector(rows[0]*2),
+                        vector(rows[1]+rows[0]), vector(rows[0])+b'\0',
+                        vector(recipients[0]+vector(b'')),
+                        vector(recipients[0]+vector(bytes(90001))),
+                        vector(b''.join(k+vector(bytes(90000)) for k in recipients[:3])),
+                        b'\x40\x23'+rows[0]]:
+            with self.assertRaises(ValueError):
+                admin_batch(invalid)
+
+    def test_preview_structure_and_image_discriminants(self):
+        valid = bytes.fromhex(V['preview_hex'])
+        self.assertEqual(0, preview(valid)[7])
+        for image_type in [1, 2]:
+            # Nonempty bytes check the field contract, not actual image decoding.
+            self.assertEqual(image_type, preview(valid[:-2]+bytes([image_type])+vector(b'image'))[7])
+        invalids = [valid+b'\0', b'\0\2'+valid[2:], valid[:-2]+b'\3\0',
+                    valid[:-2]+b'\1\0', valid[:-2]+b'\0'+vector(b'image'),
+                    valid[:-2]+b'\2'+vector(bytes(49153)),
+                    valid[:107]+vector(b'\xff')+vector(b'')+b'\0\0']
+        for invalid in invalids:
+            with self.assertRaises(ValueError):
+                preview(invalid)
+
+    def test_canonical_base64_and_predecode_bound(self):
+        self.assertEqual(b'\x00', canonical_base64(b'AA==', 1))
+        for invalid in [b'AB==', b'AA', b'AA===', b'AA==\n', b'AA-_', b'AAA=']:
+            with self.assertRaises(ValueError):
+                canonical_base64(invalid, 1)
 
     def test_preview_crypto_binding(self):
         key = bytes.fromhex(V['preview_key_hex'])
@@ -458,6 +699,14 @@ class InviteFixtures(unittest.TestCase):
         self.assertLessEqual(wrap_max, 90000)
         max_request = 170+4+96+2+8192+64
         self.assertLessEqual(max_request+2+12288, 24576)
+        request_delivery_max = 1+4+16384+2+12288
+        request_rumor_max = 1024+4*((request_delivery_max+2)//3)
+        request_seal_max = 1024+nip44_length(request_rumor_max)
+        self.assertLessEqual(request_rumor_max, 65535)
+        self.assertLessEqual(request_seal_max, 65535)
+        self.assertLessEqual(1024+nip44_length(request_seal_max), 90000)
+        max_code = 130+2+4096
+        self.assertLessEqual(137+32+2+max_code, 24576)
         max_preview = 2+96+8+1+2+256+2+4096+1+4+49152
         self.assertLessEqual(12+max_preview+16, 54000)
         self.assertLessEqual(7+((130+2+4096)*8+4)//5+6, 7000)

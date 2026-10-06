@@ -16,8 +16,13 @@ The tests cover:
 - complete-code Bech32m encoding, uppercase acceptance, checksum/variant/prefix/version rejection and padding;
 - relay ordering, duplicates and WSS/count limits on the fixture's ASCII URL subset;
 - exact request preimage and hash, signed refresh continuity, protected fields and withdrawal domain separation;
+- selection of the highest complete signed revision, reordered ancestors and conflicting consent branches;
 - deterministic preview AEAD and hash, rejection of changed key, AAD or ciphertext;
-- cross-bindings among code, component, preview and AAD, component signing domains, revision limits, and status/admin record examples;
+- cross-bindings among code, component, preview and AAD, component signing domains and revision limits;
+- withdrawal signatures, context binding, all five admin actions and status context/outcome/hash validation;
+- admin-batch recipient ordering, uniqueness, counts and byte ceilings;
+- preview UTF-8, version, policy, image discriminants and type/length consistency;
+- canonical padded base64 and request-delivery evidence presence, size and operation constraints;
 - worst-case preview, code, forwarded evidence and nested NIP-44 payload sizes;
 - abstract invite-component transitions for its own candidate-parent authorization, immutable generations, self-demotion,
   admin-leaf removal, successor requirements and the disband exception;
@@ -33,5 +38,8 @@ not an MLS Commit processor. Admin-policy changes, Remove authorization and last
 already validated by the adopted core; this model does not test them. The receiver helpers are intentionally partial. They do not implement full relay URL parsing, RFC 8785, NIP-01/NIP-59,
 KeyPackage validation, MLS Commit authentication, Welcome processing or MLS convergence. Implementers must run the
 [required lifecycle scenarios](../features/group-invite-links.md#required-conformance-scenarios) with those stacks.
-Admin action examples cover grant and forwarding only; the status helper tests outcomes and hash shape, not context
-validation. Image examples cover the no-image case only. The workflow checks fixture assertions only; passing it does not mean this draft has been adopted.
+Admin examples validate record structure, device signatures and local bindings; their publication and envelope bytes
+are placeholders, with no transport authentication. Context checks cover version, deadline and secp256k1 keys; they
+do not validate the MLS account proof or the originating consent-key binding. Image examples check field structure,
+not image decoding or rendering. The workflow checks fixture assertions only; passing it does not mean this draft
+has been adopted.

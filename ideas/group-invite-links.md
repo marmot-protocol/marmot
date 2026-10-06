@@ -57,7 +57,9 @@ and deadline. A retry keeps the same request; a fresh request is a fresh user ch
 ask independently, with different contexts and packages.
 
 A package refresh follows a signed chain from the original consent key, even if the new package has another leaf key.
-A missing ancestor is a recovery problem. A competing refresh stops automatic processing. Losing the original consent
+A request carries its exact signed publication evidence, and the device can resend earlier revisions even after their
+publication slots were replaced. The highest fully validated revision governs a new invitation. A missing ancestor
+is a recovery problem. Competing refreshes need fresh consent, rather than an admin choosing a branch. Losing the original consent
 key requires a new request rather than pretending account equality proves device continuity.
 
 ## Scene 3: Any current admin handles it
@@ -84,9 +86,11 @@ A decline or withdrawal does not remove someone already added on the selected br
 After the Add succeeds, Alice sends the ordinary Welcome plus an encrypted status that ties this request revision to
 that exact Commit and Welcome. It names Alice through her account seal, not merely the shared inbox key.
 
-Bob processes the Welcome through Marmot's existing tentative join checks. Request association also checks the exact
-offered package, the status's Welcome hash, the inviter identity and the preview commitment in the resulting group.
-A missing status leaves an ordinary invitation unassociated; it does not invalidate or delay an otherwise valid Welcome.
+Bob processes the Welcome through Marmot's existing tentative join checks. Before storing a group or consuming the
+package, his app checks the preview he approved against the invitation entry in the resulting group, even if no
+status arrived. A mismatch needs a new choice and leaves his package material intact. Request association also
+checks the exact offered package, the status's Welcome hash and the inviter identity. A missing status leaves a
+matching invitation unassociated; it does not delay a valid Welcome, and association can complete later.
 
 The app compares the preview Bob actually approved, not a newly fetched replacement. A mismatch asks for a fresh
 choice. Another Welcome does not close this request. The row becomes Joined only after validation and association.
@@ -105,12 +109,16 @@ Ordinary members can see the admin recipient accounts, but cannot read private k
 The enclosing MLS sender and source-epoch policy authenticate the admin action; the nested seal alone is insufficient.
 
 Carol can recover from retained group traffic or a current admin's fresh copy. A new admin or another device already
-in the group gets a fresh grant. If nobody retains the material, the group creates a new generation. The app does not
+in the group gets a fresh grant, including the complete code and request-relay coordinates. Carol can then fetch
+requests independently while Alice is offline. If nobody retains the material, the group creates a new generation. The app does not
 claim every lost request can be recovered from relays.
 
 Reading or forwarding a request does not delete it. Decisions remain recoverable through restart, with bounded
 retention and capacity. Full capacity pauses new admission rather than evicting records needed to prevent duplicate
 Adds. An uncertain publication keeps its ordinary durability obligation even after the request expires.
+Each open request reserves capacity for its eventual terminal record, so concurrent completion does not force
+eviction. If convergence invalidates a retirement, the restored generation recovers its eligible requests and capacity;
+an independent device withdrawal still applies.
 
 Demoting an admin or removing an admin device retires all active invitation generations in the same policy Commit.
 All old codes stop granting admission, and everyone still waiting needs a new code and fresh consent. Promotion alone
@@ -137,7 +145,7 @@ A delayed Welcome may become unusable after ordinary KeyPackage private-key dele
 and the feature does not prolong private initialization-key retention. The admin reconciles membership before a new
 explicit join attempt, preserving existing removal/rejoin safeguards.
 
-## Privacy and deployment questions
+## Privacy and deployment
 
 The inbox is a random invitation address, separate from account identity and group delivery. Relays still see sizes,
 timing and recipient addresses. Publishing a package near the request can correlate activity. Joining is not anonymous.
@@ -145,6 +153,9 @@ Signed admin seals can be disclosed outside the group. A leaked bearer permits r
 old encrypted requests; leaking both does not authorize an Add or a group-policy change.
 
 The complete draft settles request bytes, consent/refresh, status correlation, private admin delivery, revocation and
-retention. Remaining deployment questions are short-link hosting and enumeration protection, external-signer UX for
-account seals, and clock-skew handling within the draft's explicit local expiry gates. The fixed limits and proposed
-allocations still require adoption and interoperability testing before production use.
+retention. Complete codes and fitting QRs are the preferred sharing path. Uploading a code to a short-link host needs
+consent to disclose its secrets. An external account signer that performs encryption can also see requests and grant
+secrets; the app explains that trust boundary. Signer failure is a local problem, not a successful delivery or rejection.
+Expiry has no hidden grace period, and a detected clock problem pauses new requests and admission until correction.
+Hosting, abuse controls and time synchronization remain deployment choices. The fixed limits and proposed allocations
+still require adoption and interoperability testing before production use.
