@@ -71,17 +71,17 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <text x="16" y="52" class="t" font-size="18" font-weight="700">Share</text>
 <text x="16" y="74" class="m" font-size="12">Same invitation, three ways</text>
 <rect x="16" y="92" width="178" height="44" rx="8" class="ta"/>
-<text x="105" y="112" class="m" font-size="11" text-anchor="middle">Short link</text>
+<text x="105" y="112" class="m" font-size="11" text-anchor="middle">Optional short link</text>
 <text x="105" y="128" class="a mono" font-size="13" font-weight="700" text-anchor="middle">wn.fo/k3m9qx2a</text>
 <rect x="16" y="148" width="178" height="32" rx="16" class="btn"/>
-<text x="105" y="168" font-size="12" font-weight="600" text-anchor="middle" fill="#ffffff">Copy short link</text>
+<text x="105" y="168" font-size="12" font-weight="600" text-anchor="middle" fill="#ffffff">Copy complete code</text>
 <rect x="16" y="190" width="178" height="32" rx="16" class="btn2"/>
 <text x="105" y="210" class="t" font-size="12" font-weight="600" text-anchor="middle">Show QR code</text>
 <rect x="16" y="232" width="178" height="32" rx="16" class="btn2"/>
-<text x="105" y="252" class="t" font-size="12" font-weight="600" text-anchor="middle">Copy long code</text>
-<text x="16" y="292" class="m" font-size="11.5">The long code is the Bech32m.</text>
-<text x="16" y="310" class="m" font-size="11.5">The short link only looks it up.</text>
-<text x="16" y="336" class="m" font-size="11.5">QR can be either one.</text>
+<text x="105" y="252" class="t" font-size="12" font-weight="600" text-anchor="middle">Copy optional short link</text>
+<text x="16" y="292" class="m" font-size="11.5">Complete code or fitting QR first.</text>
+<text x="16" y="310" class="m" font-size="11.5">Short link needs disclosure consent.</text>
+<text x="16" y="336" class="m" font-size="11.5">Host can read invitation secrets.</text>
 
 </g>
 </g>

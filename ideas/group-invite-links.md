@@ -27,7 +27,8 @@ Alice chooses manual approval or automatic admission, then an expiry. Her app cr
 keys and a bearer, and commits the preview and policy to group state before sharing. Changing those choices creates
 a new invitation generation. Nobody can silently change the semantics of a copied code.
 
-The share sheet offers the complete code, a QR if it fits, and optionally a short URL. Large codes stay available as
+The share sheet starts with the complete code or a QR if it fits. A short URL is optional, after Alice consents to
+disclosing the invitation secrets to that host. Large codes stay available as
 text or through a short URL; the app does not truncate them to fit a QR. The proposed code is Bech32m with the
 `marmot` prefix; it carries the encrypted preview's location, its decryption key and the bearer. The bounded picture
 is inside the encrypted preview, so the code needs no separate image key or image URL.
