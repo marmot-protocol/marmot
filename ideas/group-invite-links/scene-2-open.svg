@@ -81,13 +81,13 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <text x="28" y="220" class="y" font-size="11.5">Checked when you're invited.</text>
 <rect x="16" y="256" width="178" height="36" rx="18" class="btn"/>
 <text x="105" y="278" font-size="13" font-weight="600" text-anchor="middle" fill="#ffffff">Join</text>
-<text x="16" y="316" class="m" font-size="12">Nothing is sent until Join.</text>
+<text x="16" y="316" class="m" font-size="12">No request until Join.</text>
 
 </g>
 </g>
 <text x="675" y="542" class="m" font-size="13" font-weight="600" text-anchor="middle">App installed</text>
 <path d="M430,52 V64 H185 V70" class="arr sa" marker-end="url(#ha)"/>
 <path d="M530,52 V64 H675 V70" class="arr sa" marker-end="url(#ha)"/>
-<text x="480" y="584" class="m" font-size="13" text-anchor="middle">With the app, the phone opens Marmot and passes in the Bech32m. Without it, the page only explains how to download.</text>
+<text x="480" y="584" class="m" font-size="13" text-anchor="middle">The code opens a compatible app. Without one, a link page can offer installation instructions.</text>
 
 </svg>

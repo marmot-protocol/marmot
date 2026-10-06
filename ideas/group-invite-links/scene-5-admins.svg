@@ -71,5 +71,6 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <text x="100" y="302" class="m" font-size="13">see that two admin envelopes exist. They already know who the admins are.</text>
 <text x="100" y="322" class="m" font-size="13">They cannot read private inbox keys, bearers, or requester details.</text>
 <text x="480" y="390" class="m" font-size="13" text-anchor="middle">Relays see ordinary group traffic. The envelopes are not published on their own.</text>
+<text x="480" y="424" class="m" font-size="13" text-anchor="middle">Grants include the complete code, so Carol can fetch requests while Alice is offline.</text>
 
 </svg>

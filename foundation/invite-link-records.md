@@ -63,12 +63,17 @@ the immediately preceding `request_hash`, preserves the complete context and bea
 `consent_key`. The refreshed package carries its own valid account identity proof. Its leaf key may differ.
 All ancestors through revision zero MUST be available and validated before a refresh is eligible.
 An account match or a replaceable publication slot match does not prove originating-device continuity.
+For new admission preparation, use the highest fully validated revision in the unambiguous chain. An older revision
+MUST NOT start a new Add after that refresh is validated. A missing ancestor does not supersede a validated revision;
+retain the incomplete refresh as a recoverable prerequisite. Already prepared obligations keep their adopted
+publication and reconciliation rules rather than being silently replaced by new bytes.
 
 Two distinct valid requests at the same revision under one context constitute `conflicting_refresh`. They MUST NOT
-be automatically resolved by arrival time or hash ordering. Automatic processing stops for that context until the
+be resolved by arrival time, hash ordering or a manual choice of one conflicting branch. New admission preparation
+stops for that context until the
 requester withdraws it and starts a fresh request id with renewed consent. `conflicting_refresh` is a feature-local
 request-state annotation, not a new inbound rejection or MLS convergence disposition: the individual signed records
-remain valid. A blocked automatic action maps to `authorization_failed` for ambiguous consent under the
+remain valid. A blocked admission action maps to `authorization_failed` for ambiguous consent under the
 [shared vocabulary](errors.md). Exact byte duplicates are idempotent.
 Missing ancestors are recoverable missing prerequisites, not rejection.
 
@@ -131,7 +136,9 @@ struct {
 `group_id` is the MLS group id and stays inside recipient-encrypted records. `source_epoch` identifies the group
 state in which the enclosing MLS application message was authored. Actions and exact body encodings are:
 
-- `grant=0`: encoded `InviteLinkV1`, then inbox private key `[32]`, bearer `[32]`, preview key `[32]`.
+- `grant=0`: encoded `InviteLinkV1`, then inbox private key `[32]`, then `opaque transport_code<1..8192>` containing
+  the complete code in the transport's canonical binary encoding. It carries the bearer, preview key and request
+  discovery coordinates; a grant MUST NOT depend on group routing or external lookup to reconstruct them.
 - `forward_request=1`: an encoded `InviteRequestV1`, followed by the transport's length-prefixed authenticated
   publication evidence for that offer.
 - `withdrawal=2`: an encoded `InviteWithdrawalV1`.
@@ -139,7 +146,8 @@ state in which the enclosing MLS application message was authored. Actions and e
 - `invited=4`: an encoded `InviteStatusV1` whose outcome is invited.
 
 No trailing bytes are allowed inside a body. A grant's entry id equals the enclosing `link_id`; the private key
-derives its inbox public key and the bearer hashes to its commitment. A grant alone cannot authenticate the preview:
+derives its inbox public key. The transport code's id and inbox match that entry, and its bearer hashes to the
+entry's commitment. A grant alone cannot authenticate the preview:
 the descriptor and plaintext commitment are checked separately. For other actions the context's link id and inbox
 must match the relevant invitation generation. The transport validates the admin sender binding, and the feature
 validates source/current authorization. Forwarded requester records retain their device signatures.

@@ -11,7 +11,7 @@ The associated state and record formats are owned by the
 - Kind `459`: request or withdrawal rumor inside a NIP-59 gift wrap.
 - Kind `460`: status rumor inside a NIP-59 gift wrap.
 - Kind `461`: private admin-control rumor inside recipient gift wraps, carried in an unsigned MLS app event of the
-  same kind. The two layers have distinct schemas below.
+  same kind. The canonical records own the two distinct payload schemas.
 - Kind `30444`: signed parameterized-replaceable encrypted preview descriptor.
 
 These proposed allocations are indexed in [registries.md](../foundation/registries.md#proposed-invite-link-allocations).
@@ -107,8 +107,9 @@ requester approved. The receiver preserves the exact plaintext seen at consent.
 Fetch from the code's relays with kind/author/`d` filters, apply NIP-01 validation, and use NIP-01 parameterized
 replacement order: latest `created_at`, then lowest event id on ties. The timestamp selects a descriptor only; it
 never chooses MLS group state or proves a request preceded expiry.
-After joining, compare all preview policy fields and the hash with the Welcome's invitation entry. A mismatch
-requires a new user choice. A match still has the adopted Welcome-bootstrap trust limitation.
+The [feature's tentative Welcome check](../features/group-invite-links.md#admin-review-and-realization) compares
+all preview policy fields and the hash before durable join or KeyPackage consumption. A mismatch requires a new
+user choice. A match still has the adopted Welcome-bootstrap trust limitation.
 
 ## Request delivery and package evidence
 
@@ -121,6 +122,7 @@ struct {
 struct {
   uint8 operation;
   opaque record<1..16384>;
+  opaque publication<0..12288>;
 } NostrInviteRequestV1;
 ```
 
@@ -133,6 +135,10 @@ publication evidence even after it is superseded or expired; admitting a member 
 offer under the adopted KeyPackage selection and lifetime rules.
 
 Operations are request zero and withdrawal one; their record bytes are exactly InviteRequestV1 and InviteWithdrawalV1.
+For a request, `publication` MUST be nonempty and carry the exact signed kind `30443` event named by its offer, in
+the canonical evidence encoding below. For withdrawal it MUST be empty. The evidence is outside device-signature
+bytes but authenticated by NIP-01 and bound to the signed offer's event id and KeyPackageRef; it cannot substitute
+a different offer. Historical evidence can validate ancestry, but never relax current-offer admission checks.
 The rumor is kind `459`, has no tags or `sig`, and content is padded base64 of NostrInviteRequestV1. Its pubkey and
 the NIP-59 seal author equal the requester account. Gift wraps are addressed to the code's inbox public key.
 Requests are published to every usable code relay with independent endpoint outcomes. A first acknowledged NIP-01
@@ -140,10 +146,17 @@ accept is delivery-to-relay evidence only. All initial fanout attempts remain re
 The requester MUST retain the original record before sending, may rewrap it, and MUST NOT change logical request
 identity on a transport retry. Admins query kind `1059` and recipient `p` matching the inbox, then validate every
 NIP-59 layer before processing the device-signed record. No recipient filter alone authenticates a sender.
+The requester MUST retain each revision's exact authenticated publication evidence with the signed record and
+retransmit missing ancestors with their evidence. Sending a refresh includes sending its ancestry as separately
+bounded request envelopes; receipt on a relay does not prove an admin retained it. Replacement of a publication
+slot or relay deletion therefore does not destroy evidence the requester can resend.
 
-For forwarding evidence, `opaque publication<1..12288>` is a UTF-8 JSON signed kind `30443` event encoded with RFC 8785
+For request and forwarding evidence, `publication` is a UTF-8 JSON signed kind `30443` event encoded with RFC 8785
 JSON canonicalization. Reject duplicate object keys and non-canonical re-encoding; then apply NIP-01 and existing
 KeyPackage publication validation. JSON canonicalization does not replace NIP-01's event-id signing preimage.
+Forwarding uses `opaque publication<1..12288>` after the original signed request; it MUST carry the same exact
+event bound by that request. A producer MUST check that the complete publication fits the evidence ceiling before
+offering that package. A package that cannot fit needs a conforming new offer or a recoverable capacity error.
 
 ## Status delivery
 
@@ -161,6 +174,9 @@ Status transport failure MUST NOT delay valid Welcome delivery or change group m
 ## Admin delivery inside MLS
 
 The inner app event carries the [canonical admin batch](../foundation/invite-link-records.md#admin-app-batches).
+For a grant, `transport_code` is exactly the binary InviteCodeV1, not Bech32m text or a short URL. Its request relay
+vector is retained and forwarded with the grant; verify its id, inbox and bearer against the granted entry and use
+its preview key only after descriptor authentication and commitment validation.
 For this binding, each `transport_envelope` is a NIP-59 gift-wrap event. Producers split using the canonical recipient
 and byte bounds; each logical record is retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
 NIP-59 recipient `p` tag, naming `recipient_account`; validate the signature and each NIP-59 layer before using it.
@@ -169,13 +185,14 @@ Its pubkey and seal author MUST equal the account of the enclosing MLS-authentic
 The inner record's source epoch equals the enclosing MLS application's source epoch. A forwarded nested requester
 record retains its own consent signature and account binding; it is not reauthored by the admin.
 
-The enclosing kind `461` Marmot app event has no tags and content is padded base64 of InviteAdminBatchV1.
-Its shape and sender binding follow the adopted unsigned app payload rules; adding `sig` is invalid.
-It is delivered by normal MLS/Nostr group messaging, not published as a standalone kind `461` relay event.
+The enclosing app event follows the [canonical batch schema](../foundation/invite-link-records.md#admin-app-batches)
+and [adopted sender binding](../foundation/application-messages.md#receiver-authentication).
+Deliver it by normal MLS/Nostr group messaging, not as a standalone kind `461` relay event.
 A parser MUST select the record schema from the authenticated container, not the kind alone: a decrypted rumor
 contains an admin record, while the enclosing MLS app event contains a batch. Swapping those bodies is invalid.
-Each recipient MUST be an active admin in the authenticated source-epoch state. Only that recipient opens its copy;
-ordinary members see recipient accounts but not the records. Secret or request data in plaintext tags is invalid.
+The [feature](../features/group-invite-links.md#processing-private-control-records) owns recipient and source/current
+admin authorization. Only the addressed recipient opens its copy; ordinary members see recipient accounts but not
+the records. Secret or request data in plaintext tags is invalid.
 
 Fetch and catch-up follow normal group delivery. Transport duplicates do not retire requests. Replay and current
 authorization are evaluated by the feature, not by an outer event timestamp. Key grants name one group/generation;
@@ -205,9 +222,13 @@ The admin-record body and publication-evidence limits leave room for JSON, base6
 MUST reject gift-wrap JSON above 90000 bytes and enforce the same two decrypted-layer limits.
 
 Before decoding base64, enforce its encoded-length bound derived from each decoded maximum; reject malformed padding
-or alternative alphabets. Unknown record kinds/versions do not fall back to chat or another invite format.
-Receivers MUST limit unauthenticated envelope processing and retain at most 100 open contexts per link, at most eight
-retained refresh revisions per context, and at most 1000 terminal context tombstones across currently active generations per group.
+or alternative alphabets. Re-encoding the decoded bytes as standard padded base64 MUST reproduce the original string;
+this also rejects whitespace and nonzero unused pad bits. Unknown record kinds/versions do not fall back to chat or
+another invite format.
+Receivers MUST limit unauthenticated envelope processing. Admission permits at most 100 open contexts per link,
+eight retained refresh revisions per context, and 1000 open-context reservations plus terminal context tombstones
+across currently active generations per group. Restoration may exceed admission ceilings only to preserve
+already-required recovery facts, as specified by the feature; it blocks new admission rather than deleting those facts.
 Retired-generation accounting and still-required recovery facts follow the feature; additional local storage safety
 limits MAY refuse new work without deleting required facts. Admission limits do
 not grant senders authority to erase other records. Overflow returns a local capacity outcome without claiming the

@@ -27,6 +27,8 @@ The creator encrypts a grant for each active admin, including itself, and carrie
 A promoted admin or another device of a current admin account already in the group receives a fresh grant from a
 current admin. If no current
 admin can recover the material, issue a new generation; do not derive the inbox from the group or an account.
+Each grant includes the complete code's discovery coordinates as well as its secrets. A recipient MUST retain them
+and be able to fetch the descriptor and requests independently, without guessing the group's routing relays.
 The component is public to group members; only administrators receive its secret material and private requests.
 
 The share sheet offers the complete code, a QR when the complete payload fits, and optionally a short URL. Opening a preview MUST NOT send a join
@@ -76,11 +78,19 @@ under the adopted transport binding. It sends a status binding that Welcome, Com
 encrypted invited record to the admin channel. The logical state is Invited, not Joined. A subsequent convergence
 invalidation MUST update the request projection; an earlier receipt does not pin a losing branch.
 
-The requester handles a valid Welcome through the adopted first-join flow, including tentative processing, inviter
-identity, resulting-state admin authorization and the retained-group check. To associate it with a request, the exact
-offered package, status Welcome hash and status author must match, and the Welcome's link entry must match the
-preserved preview commitment and policy fields. Missing status leaves an ordinary invitation unassociated, not invalid.
-The requester MUST NOT silently swap its preview for a newer descriptor or accept a mismatch without a new choice.
+The requester handles a Welcome through the adopted first-join flow, including tentative processing, inviter
+identity, resulting-state admin authorization and the retained-group check. If the consumed package was offered by
+a retained request, the receiver MUST check the corresponding invitation entry against the preserved preview
+commitment and policy fields during tentative validation, before durable group storage, package rotation or private
+initialization-key deletion. No matching entry or a preview mismatch leaves those mutations unapplied and requires
+a new explicit user choice, including when accepting the Welcome as an ordinary invitation instead. The requester
+MUST NOT silently swap its preview for a newer descriptor. Missing status does not bypass this consent check.
+When multiple retained contexts offered the same package, any preview used for this check MUST belong to a context
+with that exact offer and a matching invitation entry; an unrelated request cannot supply consent.
+
+Association additionally requires the exact offered package, status Welcome hash and status author to match.
+Missing status leaves an otherwise validated invitation unassociated, not invalid, and MUST NOT delay a matching
+Welcome. Association may complete after the join when the authenticated status arrives.
 Only successful Welcome validation and request association produce Joined. Inviter receipts cannot assert that the
 remote device joined. The authenticated inviter remains the first-contact trust root; preview matching is not an
 independent proof of intended-group authenticity.
@@ -89,7 +99,8 @@ independent proof of intended-group authenticity.
 
 Only delivered app payloads from the selected history may affect the request projection. The receiver MUST verify
 that the record's group id and source epoch match the enclosing MLS message, and that its author is an active admin
-at that source epoch. It MUST NOT accept a nested seal detached from that enclosing message as group authority.
+at that source epoch. Every batch recipient MUST be an active admin in that authenticated source state. The receiver
+MUST NOT accept a nested seal detached from that enclosing message as group authority.
 
 - A grant must match the complete source-state entry and the current active generation. Verify all secret commitments
   before using it. A grant for a retired generation provides no current admission authority.
@@ -118,6 +129,8 @@ new request with explicit consent. Same-account package discovery does not autho
 The eight-revision retention limit counts revision zero plus refreshes; revision seven is the last usable revision.
 Further refresh requires a new request and withdrawal of the old context if its consent key is available.
 An authenticated withdrawal suppresses automatic work across the entire old context, including an out-of-order refresh.
+The highest fully validated unambiguous revision governs new preparation. Conflicting refreshes stop new manual
+and automatic admission until renewed consent in a fresh context; they do not discard prepared publication facts.
 
 A refresh received after an Add is realized does not automatically produce another Add. If the exact Welcome cannot
 be recovered or is unusable because the original private key was deleted, show a recoverable invitation problem.
@@ -174,17 +187,46 @@ publication and convergence facts retain their adopted lifetimes even if a reque
 A retired generation's contexts and tombstones no longer count against current admission capacity, because its entry
 is absent. Its requests remain revoked. Retain facts still needed for rollback, uncertain publication and recovery
 under the adopted lifetimes; capacity release is not permission to erase them. If convergence restores a previously
-selected live generation, reconstitute its capacity accounting before admitting work. Do not treat a malicious
+selected live generation, reconstitute its capacity accounting before admitting work. A retirement on an invalidated
+branch no longer counts as selected-history retirement evidence; restore the prior generation's eligible requests
+after revalidating current prerequisites. Independently authenticated requester withdrawals remain effective.
+Do not treat a malicious
 reintroduction as new consent. Retained selected-history retirement evidence keeps it inert for automatic processing.
 This lets an admin retire a spam-filled generation and issue a fresh one without waiting for old request deadlines.
 
-The transport's 100-context per-link and 1000-tombstone per-group ceilings are capacity gates. A client MUST NOT evict
+The transport's 100-context per-link and 1000-reservation/tombstone per-group ceilings are capacity gates. Before
+admitting an open context, reserve one terminal slot: admission MUST keep open reservations plus retained terminal
+contexts across active generations at most 1000. Completing a context converts its reservation to a tombstone without
+increasing this count. Duplicates and refreshes reuse the existing reservation. Retirements release current-capacity
+reservations while preserving required facts; rollback MUST restore them before any new admission, and a recovered
+excess pauses new admission until capacity becomes available. Recovery facts MUST NOT be evicted to force the count
+under the admission ceiling. A client MUST NOT evict
 still-required facts to admit another request. It stops admitting new contexts when the relevant capacity is reached,
 keeps current work recoverable, and exposes capacity separately from declined or joined. Retention release does not
 erase another device's copy or grant an outsider deletion authority. A sender retries only with bounded backoff;
 resubmission after loss preserves the context and deadline.
 
-## Versioning, risks and open deployment questions
+## Deployment profile and user warnings
+
+The default sharing path SHOULD be the complete code or a fitting QR. Short-link hosting is optional. Before
+uploading a code to a short-link service, the app MUST explain that this service can read its secrets and obtain
+explicit consent for that disclosure. Hostnames, abuse controls and service retention are deployment policy; they
+do not change the code, revoke it or provide membership authority.
+
+Clients using an external account signer MUST explain the purpose and intended recipient of account-seal and
+encryption operations. An encryption-capable signer is a trusted plaintext processor, not only a signing oracle:
+[NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) passes plaintext to `nip44_encrypt` and returns it
+from `nip44_decrypt`. For requests that includes bearer and device data; for admin grants it includes invitation
+secrets. The app MUST disclose this trust boundary before enabling that path. Signer denial, unavailability or
+unsupported encryption leaves the operation pending or canceled locally, never reported as relay delivery,
+admission or a decision by another party. Rewrapping after recovery preserves the logical signed record.
+
+V1 uses the stated local clock gates without an implicit grace period. A client that detects an unreliable clock
+MUST pause new request creation and admission, explain the clock problem, and revalidate after correction. Manual
+approval cannot extend the signed deadline or bypass expiry checks that apply to the request. Deployment choices
+for time synchronization do not make relay timestamps evidence of pre-expiry consent or change MLS validity.
+
+## Versioning and adoption checks
 
 The component id, record version and transport kinds jointly identify this draft. Unknown required component versions
 fail normal negotiation; unknown records are ignored with an unsupported outcome and no state effect.
@@ -192,8 +234,8 @@ No migration from ad hoc invitation URLs or alternate account-signature schemes 
 
 The fixed v1 choices are Nostr delivery, immutable generations, original-leaf-key refresh consent, inline bounded
 JPEG/PNG previews, and revocation canceling unfulfilled requests. Changes require versioned owning-surface updates.
-Open deployment questions are short-link hosting/abuse protection, how external signers present account seal requests,
-and deployment clock-skew handling within the specified local expiry gates. Neither an external signer nor a public
+The deployment profile above settles the privacy and failure requirements while leaving hosting and clock sources
+implementation-defined. Neither an external signer nor a public
 key-package publication makes the request inbox confidential after its private key leaks.
 
 ## Required conformance scenarios
@@ -205,6 +247,10 @@ sole-admin succession, self-demotion with replacement links rejected, retired-st
 QR capacity without truncation, Commit publication uncertainty,
 Add success with failed Welcome/status delivery, losing-branch invitation invalidation, and process interruption at
 each adopted publish boundary. Fixtures exercise both correct bytes and negative authorization, not only happy-path UX.
+Also cover preview mismatch with missing status before any irreversible join mutation; an offline grant recipient
+using only its granted code; refresh ancestry after all referenced publication slots were replaced; the highest
+validated revision with reordered delivery; 999 terminal contexts plus concurrent completion; and retirement rollback
+restoring eligibility and capacity while preserving an independent withdrawal.
 
 ## Threat model and adoption checks
 
@@ -217,6 +263,7 @@ each adopted publish boundary. Fixtures exercise both correct bytes and negative
 | Malicious admin changes a preview | Immutable component commitment and preserved preview-at-consent | An authorized inviter can create a different group with the same commitment; first-contact trust remains |
 | Admins race or restart during publication | Adopted candidate-parent authorization, durable exact obligations and convergence | Private decisions are best effort; an unseen withdrawal cannot revoke an already prepared/published Add |
 | Untrusted preview contains an image or URL | Bounded inline rendering, plain text and no external fetch | Recipient and hosting network metadata remain observable |
+| External signer handles NIP-44 operations | Explicit disclosure, recipient/purpose UI and truthful failure outcomes | The signer can read plaintext, including invitation secrets; it must be trusted |
 
 Before adopting or deploying this draft, maintainers must reconcile the proposed ids with the complete registry,
 coordinate the Nostr kind allocations and verify draft-10 component-scoped signing, and run cross-implementation MLS,
