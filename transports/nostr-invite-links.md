@@ -43,7 +43,9 @@ struct {
 
 `version` is one. Keys and identifiers have the meanings in the component. Bearer and preview key are independently
 random 32-byte secrets, distinct from the inbox private key. The list has one through eight unique URLs sorted by
-UTF-8 content bytes. URLs satisfy the Nostr relay URL profile and MUST use `wss://`; decoder normalization is forbidden.
+UTF-8 content bytes. The 4096-byte vector ceiling includes each URL's length prefix; eight maximum-length URLs
+therefore do not fit. The same aggregate bound applies to `welcome_hints` below.
+URLs satisfy the Nostr relay URL profile and MUST use `wss://`; decoder normalization is forbidden.
 Local endpoint safety policy MAY refuse a URL without rewriting the code; a syntactically valid URL is not permission
 to access a protected local network or send credentials to it. These relays locate the descriptor and request inbox, not the group's delivery stream or recipient account inbox.
 
@@ -52,6 +54,9 @@ eight-to-five-bit conversion with zero padding. Decoding rejects excess/nonzero 
 bad checksums, the Bech32 checksum variant, unknown versions, and malformed binary values. Producers emit lowercase;
 decoders accept entirely uppercase forms. This format explicitly permits up to 7000 characters rather than the
 generic Bech32 ninety-character limit. Longer strings are invalid before allocation or decoding.
+This extended length does not retain [BIP-350's short-address error-detection guarantees](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki#appendix-checksum-design--properties).
+The checksum is not authentication. Keep relay coordinates concise and prefer copying complete codes or scanning
+fitting QRs over manually transcribing long codes; authenticated descriptor and consent validation still apply.
 QR capacity is a separate bound, determined by the chosen version, character mode and error correction level
 ([capacity reference](https://www.qrcode.com/en/about/version.html)). A producer MUST verify that the complete code fits the chosen QR version and error
 correction level before offering that QR. It SHOULD use an entirely uppercase code for QR alphanumeric mode; this
@@ -207,6 +212,8 @@ relay event size after JSON, all nested encryption, base64 and MLS overhead. Use
 preview image bytes, and split admin batches within both bounds and endpoint budgets. A single oversized request or
 forwarded package evidence cannot be truncated; report a recoverable size/delivery problem or use another conforming
 relay. A 54000-byte decoded descriptor can exceed a 64 KiB event budget after base64.
+An admin envelope of 90000 bytes expands to roughly 160000 bytes through the app-content and outer-event base64
+layers alone, before MLS and JSON overhead. Splitting a batch cannot make that single envelope fit a smaller relay.
 
 Relay rejection, size-policy refusal or unavailable endpoint is delivery failure, not a request decision or MLS state
 change. Preserve the outstanding exact logical record or prepared MLS obligation, show the actionable delivery error,

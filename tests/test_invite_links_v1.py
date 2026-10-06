@@ -712,8 +712,8 @@ class InviteFixtures(unittest.TestCase):
         self.assertLessEqual(7+((130+2+4096)*8+4)//5+6, 7000)
 
     def test_safe_sign_literal_framing(self):
-        # Independent literal encoding of draft-10 ComponentOperationLabel and
-        # RFC SignContent, not another invocation of the fixture generator.
+        # Source-checked literal for draft-10 sections 4.1/4.3 and RFC SignContent;
+        # not another generator call, nor an independently produced MLS vector.
         tbs = bytes.fromhex(V['request_hex'])[:-64]
         label = b'\x0dMLS Component\x80\x0e\x07request'
         expected = b'\x20MLS 1.0 ' + label + qlen(len(tbs)) + tbs
