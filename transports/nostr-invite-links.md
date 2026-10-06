@@ -176,7 +176,8 @@ Status transport failure MUST NOT delay valid Welcome delivery or change group m
 The inner app event carries the [canonical admin batch](../foundation/invite-link-records.md#admin-app-batches).
 For a grant, `transport_code` is exactly the binary InviteCodeV1, not Bech32m text or a short URL. Its request relay
 vector is retained and forwarded with the grant; verify its id, inbox and bearer against the granted entry and use
-its preview key only after descriptor authentication and commitment validation.
+its preview key for tentative decryption only after descriptor NIP-01 authentication. Validate the decrypted
+plaintext bindings and hash against the granted component entry before displaying or relying on that preview.
 For this binding, each `transport_envelope` is a NIP-59 gift-wrap event. Producers split using the canonical recipient
 and byte bounds; each logical record is retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
 NIP-59 recipient `p` tag, naming `recipient_account`; validate the signature and each NIP-59 layer before using it.
