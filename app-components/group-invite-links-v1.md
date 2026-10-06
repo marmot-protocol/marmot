@@ -73,7 +73,7 @@ Promoting an admin does not require rotating links.
 If the Commit demotes its own committer's account, the resulting invite-links vector MUST be empty. The departing
 committer MUST NOT create replacement generations while stepping down. A remaining admin creates fresh links in a
 later authorized Commit and distributes secrets only to the resulting current admins. The demoted device MUST stop
-using and delete cached invitation secrets after any required handoff; deletion cannot erase ciphertext or copies
+using and delete cached invitation secrets when demotion is selected; deletion cannot erase ciphertext or copies
 already retained elsewhere.
 
 The adopted [member-departure flow](../protocol-core/member-departure.md) is unchanged: an active admin cannot send

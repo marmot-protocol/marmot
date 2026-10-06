@@ -24,7 +24,8 @@ Descriptor publication and per-admin secret distribution are separate delivery o
 The private record and descriptor MUST match the active entry before sharing a code.
 
 The creator encrypts a grant for each active admin, including itself, and carries those copies in normal group traffic.
-A promoted admin or another device already in the group receives a fresh grant from a current admin. If no current
+A promoted admin or another device of a current admin account already in the group receives a fresh grant from a
+current admin. If no current
 admin can recover the material, issue a new generation; do not derive the inbox from the group or an account.
 The component is public to group members; only administrators receive its secret material and private requests.
 

@@ -172,6 +172,8 @@ record retains its own consent signature and account binding; it is not reauthor
 The enclosing kind `461` Marmot app event has no tags and content is padded base64 of InviteAdminBatchV1.
 Its shape and sender binding follow the adopted unsigned app payload rules; adding `sig` is invalid.
 It is delivered by normal MLS/Nostr group messaging, not published as a standalone kind `461` relay event.
+A parser MUST select the record schema from the authenticated container, not the kind alone: a decrypted rumor
+contains an admin record, while the enclosing MLS app event contains a batch. Swapping those bodies is invalid.
 Each recipient MUST be an active admin in the authenticated source-epoch state. Only that recipient opens its copy;
 ordinary members see recipient accounts but not the records. Secret or request data in plaintext tags is invalid.
 
