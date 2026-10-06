@@ -372,11 +372,14 @@ def transition(parent, result, actor, parent_admins, result_admins, *,
             raise ValueError('departing committer knows replacement keys')
 
 
-def parse_admin(b):
+def parse_admin(b, expected_entry=bytes.fromhex(V['entry_hex'])):
+    component(vector(expected_entry))
     r = Reader(b)
     r.vec(1, 255)
     r.take(8)
     link_id = r.take(32)
+    if link_id != expected_entry[:32]:
+        raise ValueError('generation binding')
     action = r.num(1)
     body = Reader(r.vec(1, 24576))
     r.end()
@@ -386,7 +389,7 @@ def parse_admin(b):
         scalar = int.from_bytes(body.take(32), 'big')
         pub = ec.derive_private_key(scalar, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
         fields, relays = code(body.vec(1, 8192))
-        if (entry[:32] != link_id or entry[32:64] != pub
+        if (entry != expected_entry or entry[:32] != link_id or entry[32:64] != pub
                 or fields[:2] != [entry[32:64], link_id]
                 or hashlib.sha256(fields[2]).digest() != entry[64:96]):
             raise ValueError('grant binding')
@@ -398,16 +401,17 @@ def parse_admin(b):
         start.take(64)
         original = body.take(start.pos)
         ctx = request(original)[0]
-        if ctx[34:66] != link_id:
+        if ctx[34:66] != link_id or ctx[2:34] != expected_entry[32:64]:
             raise ValueError('forward binding')
         json.loads(body.vec(1, 12288))  # Illustrative evidence, not NIP-01 verification.
     elif action == 2:
         ctx = withdrawal(body.take(234))
-        if ctx[34:66] != link_id:
+        if ctx[34:66] != link_id or ctx[2:34] != expected_entry[32:64]:
             raise ValueError('withdrawal binding')
     elif action in [3, 4]:
         status = body.take(267)
-        if parse_status(status) != action - 2 or status[34:66] != link_id:
+        if (parse_status(status) != action - 2 or status[34:66] != link_id
+                or status[2:34] != expected_entry[32:64]):
             raise ValueError('decision binding')
     else:
         raise ValueError('unsupported example action')
@@ -644,6 +648,14 @@ class InviteFixtures(unittest.TestCase):
         for action, body in [(3, invited), (4, declined), (5, invited)]:
             with self.assertRaises(ValueError):
                 parse_admin(prefix+bytes([action])+vector(body))
+        # A same-link-id entry with a different inbox cannot authorize these contexts.
+        entry = bytes.fromhex(V['entry_hex'])
+        other_inbox = ec.derive_private_key(3, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')
+        other_entry = entry[:32]+other_inbox+entry[64:]
+        for record in [bytes.fromhex(V['forward_record_hex'])]+[
+                prefix+bytes([action])+vector(body) for action, body in examples.items()]:
+            with self.assertRaises(ValueError):
+                parse_admin(record, other_entry)
 
     def test_admin_batch_count_order_and_size(self):
         recipients = sorted(ec.derive_private_key(i, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')

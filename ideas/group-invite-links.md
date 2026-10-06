@@ -21,7 +21,7 @@ for an admin to invite his device through Marmot's normal Welcome flow. Carol ca
 
 ## Scene 1: Alice shares a link
 
-![Alice chooses approval and expiry, then shares a short URL, QR or complete code.](group-invite-links/scene-1-share.svg)
+![Alice chooses approval and expiry, then shares a complete code or fitting QR. A short URL is optional after disclosure consent.](group-invite-links/scene-1-share.svg)
 
 Alice chooses manual approval or automatic admission, then an expiry. Her app creates independent inbox and preview
 keys and a bearer, and commits the preview and policy to group state before sharing. Changing those choices creates

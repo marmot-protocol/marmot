@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" role="img" aria-labelledby="title desc">
 <title id="title">Scene 1: Alice shares an invite</title>
-<desc id="desc">Alice turns on invite links for Book club, picks approval, and gets a short wn.fo link, a QR code, and the long code.</desc>
+<desc id="desc">Alice enables invite links for Book club and chooses approval. She shares a complete code or a fitting QR. An optional short link is not created until she consents to disclosing the invitation secrets to its host.</desc>
 <style>
 text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
 .bg{fill:#f6f8fa}
@@ -88,6 +88,6 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 <text x="615" y="508" class="m" font-size="13" font-weight="600" text-anchor="middle">Then she shares it</text>
 <path d="M312,250 H488" class="arr sa" marker-end="url(#ha)"/>
 <text x="400" y="238" class="a" font-size="12" font-weight="600" text-anchor="middle">creates</text>
-<text x="480" y="540" class="m" font-size="13" text-anchor="middle">The sample short id k3m9qx2a has eight characters. It locates the complete code at the chosen host.</text>
+<text x="480" y="540" class="m" font-size="13" text-anchor="middle">Share a complete code or fitting QR first. Create a short link only after disclosure consent.</text>
 
 </svg>

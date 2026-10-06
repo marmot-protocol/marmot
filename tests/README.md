@@ -20,7 +20,7 @@ The tests cover:
 - selection of the highest complete signed revision, reordered ancestors and conflicting consent branches;
 - deterministic preview AEAD and hash, rejection of changed key, AAD or ciphertext;
 - cross-bindings among code, component, preview and AAD, component signing domains and revision limits;
-- withdrawal signatures, context binding, all five admin actions and status context/outcome/hash validation;
+- withdrawal signatures, context binding, all five admin actions, expected-generation inbox binding and status context/outcome/hash validation;
 - admin-batch recipient ordering, uniqueness, counts and byte ceilings;
 - preview UTF-8, version, policy, image discriminants and type/length consistency;
 - canonical padded base64 and request-delivery evidence presence, size and operation constraints;
