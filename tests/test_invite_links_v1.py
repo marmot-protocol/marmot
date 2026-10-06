@@ -372,7 +372,8 @@ def transition(parent, result, actor, parent_admins, result_admins, *,
             raise ValueError('departing committer knows replacement keys')
 
 
-def parse_admin(b, expected_entry=bytes.fromhex(V['entry_hex'])):
+def parse_admin(b, expected_entry=bytes.fromhex(V['entry_hex']),
+                expected_request_hash=bytes.fromhex(V['request_hash'])):
     component(vector(expected_entry))
     r = Reader(b)
     r.vec(1, 255)
@@ -400,8 +401,10 @@ def parse_admin(b, expected_entry=bytes.fromhex(V['entry_hex'])):
         start.vec(1, 8192)
         start.take(64)
         original = body.take(start.pos)
-        ctx = request(original)[0]
-        if ctx[34:66] != link_id or ctx[2:34] != expected_entry[32:64]:
+        fields = request(original)
+        ctx = fields[0]
+        if (ctx[34:66] != link_id or ctx[2:34] != expected_entry[32:64]
+                or hashlib.sha256(fields[3]).digest() != expected_entry[64:96]):
             raise ValueError('forward binding')
         json.loads(body.vec(1, 12288))  # Illustrative evidence, not NIP-01 verification.
     elif action == 2:
@@ -411,7 +414,8 @@ def parse_admin(b, expected_entry=bytes.fromhex(V['entry_hex'])):
     elif action in [3, 4]:
         status = body.take(267)
         if (parse_status(status) != action - 2 or status[34:66] != link_id
-                or status[2:34] != expected_entry[32:64]):
+                or status[2:34] != expected_entry[32:64]
+                or status[170:202] != expected_request_hash):
             raise ValueError('decision binding')
     else:
         raise ValueError('unsupported example action')
@@ -645,6 +649,12 @@ class InviteFixtures(unittest.TestCase):
                                 prefix[:-32]+b'\xff'*32+bytes([action])+vector(body)]:
                     with self.assertRaises(ValueError):
                         parse_admin(invalid)
+                if action in [3, 4]:
+                    with self.assertRaises(ValueError):
+                        parse_admin(valid, expected_request_hash=bytes(32))
+                    altered = body[:170]+bytes(32)+body[202:]
+                    with self.assertRaises(ValueError):
+                        parse_admin(prefix+bytes([action])+vector(altered))
         for action, body in [(3, invited), (4, declined), (5, invited)]:
             with self.assertRaises(ValueError):
                 parse_admin(prefix+bytes([action])+vector(body))
@@ -656,6 +666,14 @@ class InviteFixtures(unittest.TestCase):
                 prefix+bytes([action])+vector(body) for action, body in examples.items()]:
             with self.assertRaises(ValueError):
                 parse_admin(record, other_entry)
+        # A valid device signature does not make a different bearer valid for this generation.
+        signer = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(V['consent_seed_hex']))
+        tbs = bytearray(bytes.fromhex(V['request_hex'])[:-64])
+        tbs[206] ^= 1
+        wrong_bearer = bytes(tbs)+signer.sign(sign_content(b'request', bytes(tbs)))
+        request(wrong_bearer)  # Confirm this is an authenticated, structurally valid negative case.
+        with self.assertRaises(ValueError):
+            parse_admin(prefix+b'\x01'+vector(wrong_bearer+vector(b'{}')))
 
     def test_admin_batch_count_order_and_size(self):
         recipients = sorted(ec.derive_private_key(i, ec.SECP256K1()).public_key().public_numbers().x.to_bytes(32, 'big')

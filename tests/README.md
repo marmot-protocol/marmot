@@ -21,6 +21,7 @@ The tests cover:
 - deterministic preview AEAD and hash, rejection of changed key, AAD or ciphertext;
 - cross-bindings among code, component, preview and AAD, component signing domains and revision limits;
 - withdrawal signatures, context binding, all five admin actions, expected-generation inbox binding and status context/outcome/hash validation;
+- forwarded bearer commitments and decline/invited claims matched to a known request hash;
 - admin-batch recipient ordering, uniqueness, counts and byte ceilings;
 - preview UTF-8, version, policy, image discriminants and type/length consistency;
 - canonical padded base64 and request-delivery evidence presence, size and operation constraints;
@@ -49,3 +50,5 @@ are placeholders, with no transport authentication. Context checks cover version
 do not validate the MLS account proof or the originating consent-key binding. Image examples check field structure,
 not image decoding or rendering. The workflow checks fixture assertions only; passing it does not mean this draft
 has been adopted.
+The request-delivery helper checks its transport wrapper, not feature admission against group state; a real receiver
+must perform the feature's bearer, consent, package and current-policy checks before admitting those records.
