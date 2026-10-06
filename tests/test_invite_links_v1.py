@@ -599,6 +599,12 @@ class InviteFixtures(unittest.TestCase):
         r2 = tbs+signer.sign(sign_content(b'request', tbs))
         self.assertEqual(r0, latest_revision([r2, r0]))
         self.assertEqual(r2, latest_revision([r2, r0, r1]))
+        changed = bytearray(tbs)
+        changed[242] ^= 1
+        r2_branch = bytes(changed)+signer.sign(sign_content(b'request', bytes(changed)))
+        self.assertEqual(r0, latest_revision([r2_branch, r2, r0]))
+        with self.assertRaises(ValueError):
+            latest_revision([r2_branch, r2, r1, r0])
 
     def test_status_context_rejections(self):
         valid = bytes.fromhex(V['status_hex'])
