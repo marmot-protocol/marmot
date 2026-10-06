@@ -264,6 +264,11 @@ bytes but is not part of the current profile.
 Every Marmot leaf uses the adopted
 [marmot.member.account-identity-proof.v2](./account-identity-proof-v2.md) LeafNode component.
 
+The proposed optional GroupContext component is:
+
+- [marmot.group.invite-links.v1](./group-invite-links-v1.md) (`0x800e`) - immutable invite generations and policy;
+  not adopted or required for baseline conformance.
+
 ## Resolved Direction
 
 - Marmot component ids stay in the private-use range for the foreseeable future.
