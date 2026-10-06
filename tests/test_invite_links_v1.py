@@ -646,6 +646,12 @@ class InviteFixtures(unittest.TestCase):
         envelope = b'{}'
         rows = [key+vector(envelope) for key in recipients]
         self.assertEqual(recipients[:16], admin_batch(vector(b''.join(rows[:16]))))
+        # Kind 461 has different schemas selected by its authenticated container.
+        # These examples must not be accepted by the opposite structural decoder.
+        with self.assertRaises(ValueError):
+            admin_batch(bytes.fromhex(V['grant_record_hex']))
+        with self.assertRaises(ValueError):
+            parse_admin(vector(rows[0]))
         for invalid in [vector(b''), vector(b''.join(rows)), vector(rows[0]*2),
                         vector(rows[1]+rows[0]), vector(rows[0])+b'\0',
                         vector(recipients[0]+vector(b'')),
