@@ -238,7 +238,8 @@ def transition(parent, result, actor, parent_admins, result_admins, *,
     if result is not None and (not required or not supported):
         raise ValueError('capability')
     if disband:
-        if parent != result or self_remove_accounts:
+        if (parent != result or self_remove_accounts or actor not in parent_admins
+                or set(result_admins) != {actor}):
             raise ValueError('restricted disband shape')
         return
     if not result_admins:
@@ -511,9 +512,13 @@ class InviteFixtures(unittest.TestCase):
         with self.assertRaises(ValueError):
             transition(p, b'\0', 'alice', {'alice'}, set())
         # Adopted disband does not append an unrelated component update.
-        transition(p, p, 'alice', {'alice'}, set(), disband=True)
+        transition(p, p, 'alice', {'alice'}, {'alice'}, disband=True)
         with self.assertRaises(ValueError):
-            transition(p, b'\0', 'alice', {'alice'}, set(), disband=True)
+            transition(p, b'\0', 'alice', {'alice'}, {'alice'}, disband=True)
+
+        for actor, admins in [('bob', {'bob'}), ('alice', set()), ('alice', {'alice', 'bob'})]:
+            with self.assertRaises(ValueError):
+                transition(p, p, actor, {'alice'}, admins, disband=True)
 
     def test_registry_and_surface_sync(self):
         expected = {'0x800e': 'app-components/group-invite-links-v1.md',

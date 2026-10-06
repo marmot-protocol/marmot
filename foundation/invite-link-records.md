@@ -145,6 +145,27 @@ must match the relevant invitation generation. The transport validates the admin
 validates source/current authorization. Forwarded requester records retain their device signatures.
 Unknown actions fail closed for this version; they do not create decisions or change membership.
 
+## Admin app batches
+
+The proposed kind `461` unsigned Marmot app event has empty tags and padded-base64 content of exactly this batch:
+
+```text
+struct {
+  opaque recipient_account[32];
+  opaque transport_envelope<1..90000>;
+} InviteAdminEnvelopeV1;
+
+struct {
+  InviteAdminEnvelopeV1 envelopes<1..262144>;
+} InviteAdminBatchV1;
+```
+
+Each batch contains one through sixteen unique recipients sorted by account bytes. Producers MUST split by both
+recipient count and total encoded byte length; sixteen full-sized envelopes do not fit one batch. Larger sets or
+payloads use multiple batches. The field's opaque envelope bytes and validation are owned by the
+[Nostr binding](../transports/nostr-invite-links.md#admin-delivery-inside-mls). The batch adds no membership or
+current-admin authority beyond the authenticated source/current-state checks in the feature.
+
 ## Versioning
 
 Breaking record or consent-signature changes require a new record version and the corresponding transport/app-event

@@ -97,8 +97,9 @@ rejecting otherwise-valid MLS state. Poll results are authenticated, best-effort
 not anonymous and are not suitable for election-grade voting.
 
 The proposed [private group invite links v1](../features/group-invite-links.md) uses kind `461` for encrypted admin
-batches under this same unsigned shape and sender binding. Its payload and nested Nostr envelopes are defined in the
-[optional Nostr extension](../transports/nostr-invite-links.md#admin-delivery-inside-mls); it is not adopted baseline behavior.
+batches under this same unsigned shape and sender binding. Its payload is the [canonical admin batch](invite-link-records.md#admin-app-batches);
+the nested envelope bytes are defined in the [optional Nostr extension](../transports/nostr-invite-links.md#admin-delivery-inside-mls).
+This is not adopted baseline behavior.
 
 ## Message edits (kind 1009)
 

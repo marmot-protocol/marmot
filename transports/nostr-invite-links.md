@@ -160,20 +160,9 @@ Status transport failure MUST NOT delay valid Welcome delivery or change group m
 
 ## Admin delivery inside MLS
 
-```text
-struct {
-  opaque recipient_account[32];
-  opaque gift_wrap_json<1..90000>;
-} InviteAdminEnvelopeV1;
-
-struct {
-  InviteAdminEnvelopeV1 envelopes<1..262144>;
-} InviteAdminBatchV1;
-```
-
-Each batch contains one through sixteen unique recipients sorted by account bytes. Producers MUST split by both
-recipient count and total encoded byte length; sixteen full-sized envelopes do not fit one batch. Larger sets or
-payloads use multiple batches, with each record retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
+The inner app event carries the [canonical admin batch](../foundation/invite-link-records.md#admin-app-batches).
+For this binding, each `transport_envelope` is a NIP-59 gift-wrap event. Producers split using the canonical recipient
+and byte bounds; each logical record is retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
 NIP-59 recipient `p` tag, naming `recipient_account`; validate the signature and each NIP-59 layer before using it.
 The decrypted kind `461` rumor has no tags or `sig`, and content is padded base64 of InviteAdminRecordV1.
 Its pubkey and seal author MUST equal the account of the enclosing MLS-authenticated app-event sender.
