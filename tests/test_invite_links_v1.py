@@ -229,7 +229,9 @@ def transition(parent, result, actor, parent_admins, result_admins, *,
     """Abstract policy model; caller supplies already MLS-authenticated facts.
 
     None means absent component. Leaves resolve to account identities in the
-    authenticated candidate parent; this model does not authenticate MLS inputs.
+    authenticated candidate parent. Adopted core admin-policy updates, Remove
+    authorization and last-leaf coupling must already pass; this model checks
+    invite-component policy only and does not authenticate MLS inputs.
     """
     old = component(parent) if parent is not None else []
     new = component(result) if result is not None else []
