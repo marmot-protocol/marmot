@@ -19,6 +19,7 @@ foundation/
   README.md
   identity.md
   authorization-proofs.md
+  invite-link-records.md  (proposed)
   account-identity-proof-v1.md
   key-packages.md
   canonical-encoding.md
@@ -52,14 +53,17 @@ app-components/
   group-encrypted-media-v1.md
   group-encrypted-media-v2.md
   group-lifecycle-v1.md
+  group-invite-links-v1.md  (proposed, 0x800e)
   account-identity-proof-v2.md
 transports/
   README.md
   nostr.md
+  nostr-invite-links.md  (proposed)
   quic.md
 features/
   README.md
   content-moderation.md
+  group-invite-links.md  (proposed)
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
@@ -67,6 +71,7 @@ features/
 ideas/
   README.md
   multi-device.md
+  group-invite-links.md
 implementation-model.md
 ```
 

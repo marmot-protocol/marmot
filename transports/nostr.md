@@ -2,6 +2,9 @@
 
 Status: adopted.
 
+The proposed optional [invite-link extension v1](nostr-invite-links.md) owns its additional code, preview and request
+envelopes. It does not alter the adopted envelopes or relay discovery rules below.
+
 This document defines the first Marmot transport binding: MLS bytes carried over Nostr relays.
 
 Nostr also appears in Marmot identity and app payloads. Those are separate foundation rules:

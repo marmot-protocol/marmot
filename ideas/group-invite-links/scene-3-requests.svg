@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="title desc">
+<title id="title">Scene 3: any admin handles Bob's request</title>
+<desc id="desc">Alice and Carol both see Bob waiting on the Book club request list, with Approve and Reject.</desc>
+<style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.bg{fill:#f6f8fa}
+.t{fill:#1f2328} .m{fill:#59636e} .a{fill:#0969da} .d{fill:#cf222e}
+.g{fill:#1a7f37} .y{fill:#9a6700} .r{fill:#8250df} .f{fill:#afb8c1}
+.frame{fill:#2d333b;stroke:#2d333b} .scr{fill:#ffffff}
+.card{fill:#f6f8fa;stroke:#d1d9e0} .cardf{fill:#ffffff;stroke:#d1d9e0}
+.ln{fill:none;stroke:#d1d9e0} .lnf{fill:#d1d9e0}
+.btn{fill:#0969da} .btn2{fill:#ffffff;stroke:#d1d9e0} .btnd{fill:#ffffff;stroke:#cf222e}
+.ta{fill:#ddf4ff} .td{fill:#ffebe9} .tg{fill:#dafbe1} .ty{fill:#fff8c5} .tr{fill:#fbefff}
+.sa{stroke:#0969da} .sd{stroke:#cf222e} .sg{stroke:#1a7f37} .sy{stroke:#9a6700}
+.sr{stroke:#8250df} .sm{stroke:#59636e} .sf{stroke:#afb8c1} .sl{stroke:#d1d9e0}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#ddf4ff;stroke:#0969da;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#afb8c1;stroke-dasharray:6 4}
+@media (prefers-color-scheme: dark){
+.bg{fill:#151b23}
+.t{fill:#e6edf3} .m{fill:#9198a1} .a{fill:#4493f8} .d{fill:#f85149}
+.g{fill:#3fb950} .y{fill:#d29922} .r{fill:#ab7df8} .f{fill:#484f58}
+.frame{fill:#2f3742;stroke:#4a535e} .scr{fill:#0d1117}
+.card{fill:#151b23;stroke:#3d444d} .cardf{fill:#0d1117;stroke:#3d444d}
+.ln{fill:none;stroke:#3d444d} .lnf{fill:#3d444d}
+.btn{fill:#1f6feb} .btn2{fill:#0d1117;stroke:#3d444d} .btnd{fill:#0d1117;stroke:#f85149}
+.ta{fill:#12294a} .td{fill:#3c1618} .tg{fill:#12261e} .ty{fill:#2e2610} .tr{fill:#2a1d45}
+.sa{stroke:#4493f8} .sd{stroke:#f85149} .sg{stroke:#3fb950} .sy{stroke:#d29922}
+.sr{stroke:#ab7df8} .sm{stroke:#9198a1} .sf{stroke:#484f58} .sl{stroke:#3d444d}
+.arr{fill:none;stroke-width:1.75} .dash{stroke-dasharray:5 4}
+.grp{fill:#12294a;stroke:#4493f8;stroke-dasharray:6 4;fill-opacity:.45}
+.grpx{fill:none;stroke:#484f58;stroke-dasharray:6 4}
+}
+</style>
+<defs>
+<marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="a"/></marker>
+<marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+<marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d"/></marker>
+<marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="g"/></marker>
+<marker id="hy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="y"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="960" height="600" rx="16"/>
+<g transform="translate(80,56)">
+<rect x="0" y="0" width="230" height="448" rx="32" class="frame" stroke-width="1.5"/>
+<rect x="10" y="10" width="210" height="428" rx="24" class="scr"/>
+<rect x="85" y="18" width="60" height="14" rx="7" class="frame"/>
+<g transform="translate(10,10)">
+
+<text x="16" y="50" class="t" font-size="18" font-weight="700">Requests</text>
+<text x="16" y="72" class="m" font-size="12">Book club</text>
+<circle cx="32" cy="112" r="16" class="ta"/>
+<text x="32" y="117" class="a" font-size="14" font-weight="700" text-anchor="middle">B</text>
+<text x="56" y="108" class="t" font-size="14" font-weight="700">Bob</text>
+<text x="56" y="126" class="m" font-size="11.5">via Book club link</text>
+<rect x="16" y="146" width="92" height="22" rx="11" class="ty"/>
+<text x="62" y="161" class="y" font-size="11" font-weight="700" text-anchor="middle">Waiting</text>
+<rect x="16" y="184" width="86" height="32" rx="16" class="btn"/>
+<text x="59" y="204" font-size="12" font-weight="600" text-anchor="middle" fill="#ffffff">Approve</text>
+<rect x="108" y="184" width="86" height="32" rx="16" class="btnd"/>
+<text x="151" y="204" class="d" font-size="12" font-weight="600" text-anchor="middle">Reject</text>
+<text x="16" y="244" class="m" font-size="12">KeyPackage looks fine.</text>
+<line x1="16" x2="194" y1="264" y2="264" class="ln"/>
+<text x="16" y="292" class="t" font-size="13" font-weight="700">Automatic links</text>
+<text x="16" y="314" class="m" font-size="12">While the link is open,</text>
+<text x="16" y="332" class="m" font-size="12">eligible invites run</text>
+<text x="16" y="350" class="m" font-size="12">automatically. Late: review.</text>
+
+</g>
+</g>
+<text x="195" y="528" class="m" font-size="13" font-weight="600" text-anchor="middle">Alice</text>
+<g transform="translate(560,56)">
+<rect x="0" y="0" width="230" height="448" rx="32" class="frame" stroke-width="1.5"/>
+<rect x="10" y="10" width="210" height="428" rx="24" class="scr"/>
+<rect x="85" y="18" width="60" height="14" rx="7" class="frame"/>
+<g transform="translate(10,10)">
+
+<text x="16" y="50" class="t" font-size="18" font-weight="700">Requests</text>
+<text x="16" y="72" class="m" font-size="12">Book club</text>
+<circle cx="32" cy="112" r="16" class="ta"/>
+<text x="32" y="117" class="a" font-size="14" font-weight="700" text-anchor="middle">B</text>
+<text x="56" y="108" class="t" font-size="14" font-weight="700">Bob</text>
+<text x="56" y="126" class="m" font-size="11.5">via Book club link</text>
+<rect x="16" y="146" width="92" height="22" rx="11" class="ty"/>
+<text x="62" y="161" class="y" font-size="11" font-weight="700" text-anchor="middle">Waiting</text>
+<rect x="16" y="184" width="86" height="32" rx="16" class="btn"/>
+<text x="59" y="204" font-size="12" font-weight="600" text-anchor="middle" fill="#ffffff">Approve</text>
+<rect x="108" y="184" width="86" height="32" rx="16" class="btnd"/>
+<text x="151" y="204" class="d" font-size="12" font-weight="600" text-anchor="middle">Reject</text>
+<text x="16" y="244" class="m" font-size="12">Same request Alice sees.</text>
+<text x="16" y="266" class="m" font-size="12">Whoever is online can</text>
+<text x="16" y="284" class="m" font-size="12">take it.</text>
+
+</g>
+</g>
+<text x="675" y="528" class="m" font-size="13" font-weight="600" text-anchor="middle">Carol, also an admin</text>
+<text x="480" y="36" class="m" font-size="13" font-weight="600" text-anchor="middle">One request, every active admin</text>
+<text x="480" y="584" class="m" font-size="13" text-anchor="middle">Approving adds Bob through the normal Welcome. Rejecting him does not remove anyone already in the group.</text>
+
+</svg>

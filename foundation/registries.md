@@ -142,6 +142,26 @@ Kind `1009` is reserved for message edits — an in-place replacement of a prior
 single `e` tag referencing the edited event id and `content` is the replacement plaintext. Clients render the latest
 replacement onto the original row's body, never as a separate transcript row.
 
+## Proposed invite-link allocations
+
+These values belong to the proposed [private group invite links v1](../features/group-invite-links.md), not adopted
+baseline Marmot. They claim draft values within this proposal; they are not upstream IANA or Nostr allocations.
+
+| Namespace | Value | Meaning | Owner |
+| --- | --- | --- | --- |
+| Component | `0x800e` | `marmot.group.invite-links.v1`, GroupContext | [component](../app-components/group-invite-links-v1.md) |
+| Nostr kind | `459` | Request/withdrawal rumor | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `460` | Status rumor | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `461` | Private admin rumor and unsigned MLS batch event | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `30444` | Encrypted preview descriptor | [Nostr extension](../transports/nostr-invite-links.md) |
+| Bech32m HRP | `marmot` | Complete invitation code v1 | [Nostr extension](../transports/nostr-invite-links.md) |
+| SafeSignWithLabel operation | `request` under `0x800e` | Device request/refresh consent | [records](invite-link-records.md) |
+| SafeSignWithLabel operation | `withdrawal` under `0x800e` | Device withdrawal consent | [records](invite-link-records.md) |
+
+SafeSignWithLabel uses draft-10's ComponentOperationLabel and RFC 9420's `MLS 1.0 ` prefix. The operations above
+are component-scoped domain separators, not independent MLS signature-label registrations or exporters.
+The code and request context carry format version one; the component id is its state major-version hook.
+
 ## ALPN and protocol identifiers
 
 | Identifier                    | Use                                      | Document                         |
