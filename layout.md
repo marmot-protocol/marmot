@@ -67,6 +67,7 @@ features/
 ideas/
   README.md
   multi-device.md
+  group-permissions.md
 implementation-model.md
 ```
 
