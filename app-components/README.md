@@ -253,6 +253,7 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.avatar-url.v1](./group-avatar-url-v1.md)
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
+- [marmot.group.message-pins.v1](./message-pins-v1.md) - draft shared pin permission and bounded message references.
 
 The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
 
