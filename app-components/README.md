@@ -258,6 +258,10 @@ The following persistent GroupContext component is experimental and is not requi
 
 - [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md)
 
+The following persistent GroupContext component is proposed and has not been adopted:
+
+- [marmot.group.message-pins.v1](./message-pins-v1.md) - draft shared pin permission and bounded message references.
+
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.
 
