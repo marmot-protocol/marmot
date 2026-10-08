@@ -64,13 +64,14 @@ class Parent:
 
 
 def transition(parent, sender, operation, replacement=None, *,
-               required=None, leaves=None, inline=True, unrelated_admin_action=False):
+               required=None, leaves=None, inline=True, unrelated_admin_action=False,
+               next_admins=None):
     """Only the component contract; caller supplies authenticated MLS facts."""
     member = any(x.account == sender for x in parent.leaves)
     admin = member and sender in parent.admins
     if not member:
         raise PermissionError("not a parent member")
-    if unrelated_admin_action and not admin:
+    if (unrelated_admin_action or (next_admins is not None and next_admins != parent.admins)) and not admin:
         raise PermissionError("member exception does not cover another operation")
     if operation != "none" and not inline:
         raise ValueError("standalone or by-reference proposal")
@@ -107,7 +108,8 @@ def transition(parent, sender, operation, replacement=None, *,
         encode(state)
         if not all(x.supports_pins for x in next_leaves):
             raise ValueError("unsupported resulting leaf")
-    return Parent(state, next_required, next_leaves, parent.admins)
+    return Parent(state, next_required, next_leaves,
+                  parent.admins if next_admins is None else next_admins)
 
 
 def prepare_target_action(state, target, pin):
@@ -186,11 +188,19 @@ class AuthorizationFixtures(unittest.TestCase):
     def test_parent_authority_cannot_be_granted_by_resulting_promotion(self):
         prior = Parent(Pins(1), True)
         with self.assertRaises(PermissionError):
-            transition(prior, "member", "replace", Pins(1, (A,)))
+            transition(prior, "member", "replace", Pins(1, (A,)),
+                       next_admins=frozenset({"admin", "member"}))
         # Authority attaches to the supplied authenticated parent, not a later admin list.
         prior_admin = Parent(Pins(1), True, admins=frozenset({"admin", "member"}))
         self.assertEqual(transition(prior_admin, "member", "replace", Pins(1, (A,))).state,
                          Pins(1, (A,)))
+
+    def test_same_commit_demotion_does_not_revoke_parent_authority(self):
+        prior = Parent(Pins(1), True, admins=frozenset({"admin", "member"}))
+        result = transition(prior, "member", "replace", Pins(1, (A,)),
+                            next_admins=frozenset({"admin"}))
+        self.assertEqual(result.state, Pins(1, (A,)))
+        self.assertNotIn("member", result.admins)
 
     def test_member_exception_does_not_authorize_unrelated_actions(self):
         with self.assertRaises(PermissionError):
