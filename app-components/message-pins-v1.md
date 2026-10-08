@@ -55,7 +55,7 @@ offers the normal member-enabled pinning mode, it creates the entry with `member
 admin-policy, and capability checks still apply.
 
 For an existing group, only a candidate-parent active admin MAY enable the component. Enablement MUST atomically add
-an empty state and its required-component listing. Every resulting member must support the feature; activation cannot
+an empty state and its required-component listing. Every resulting nonblank member leaf must support the feature; activation cannot
 silently exclude or remove an unsupported member. Removing a member, when explicitly requested, is a separately
 authorized group operation. A nonempty initial pin set is invalid; pins are added by later updates.
 

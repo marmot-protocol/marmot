@@ -51,7 +51,7 @@ def encode(state: Pins) -> bytes:
 
 @dataclass(frozen=True)
 class Leaf:
-    account: str
+    account: str | None
     supports_pins: bool = True
 
 
@@ -66,7 +66,12 @@ class Parent:
 def transition(parent, sender, operation, replacement=None, *,
                required=None, leaves=None, inline=True, unrelated_admin_action=False,
                next_admins=None):
-    """Only the component contract; caller supplies authenticated MLS facts."""
+    """Component plus admin Add/Remove fixtures, using authenticated MLS facts.
+
+    Leaf-set changes here model only Add/Remove companion operations. Other
+    MLS flows such as Update and SelfRemove are outside this reference model.
+    A None account denotes a blank ratchet-tree leaf.
+    """
     member = any(x.account == sender for x in parent.leaves)
     admin = member and sender in parent.admins
     if not member:
@@ -77,6 +82,8 @@ def transition(parent, sender, operation, replacement=None, *,
         raise ValueError("standalone or by-reference proposal")
     next_required = parent.required if required is None else required
     next_leaves = parent.leaves if leaves is None else leaves
+    if next_leaves != parent.leaves and not admin:
+        raise PermissionError("admin Add/Remove companion operation")
     if next_required != parent.required and not admin:
         raise PermissionError("required-component change")
     if operation == "add":
@@ -106,7 +113,7 @@ def transition(parent, sender, operation, replacement=None, *,
         raise ValueError("presence/requirement mismatch")
     if state is not None:
         encode(state)
-        if not all(x.supports_pins for x in next_leaves):
+        if not all(x.account is None or x.supports_pins for x in next_leaves):
             raise ValueError("unsupported resulting leaf")
     return Parent(state, next_required, next_leaves,
                   parent.admins if next_admins is None else next_admins)
@@ -207,6 +214,13 @@ class AuthorizationFixtures(unittest.TestCase):
             transition(Parent(Pins(0), True), "member", "replace", Pins(0, (A,)),
                        unrelated_admin_action=True)
 
+    def test_member_pin_does_not_authorize_companion_add_or_remove(self):
+        prior = Parent(Pins(0), True)
+        for leaves in [prior.leaves + (Leaf("new-member"),), (Leaf("member"),)]:
+            with self.subTest(leaves=leaves):
+                with self.assertRaises(PermissionError):
+                    transition(prior, "member", "replace", Pins(0, (A,)), leaves=leaves)
+
     def test_standalone_and_by_reference_operations_are_rejected(self):
         with self.assertRaises(ValueError):
             transition(Parent(Pins(0), True), "admin", "replace", Pins(0, (A,)), inline=False)
@@ -235,6 +249,11 @@ class PresenceAndActionFixtures(unittest.TestCase):
             transition(Parent(None, False), "admin", "add", Pins(0), required=True, leaves=leaves)
         with self.assertRaises(ValueError):
             transition(Parent(Pins(0), True), "admin", "none", leaves=leaves)
+
+    def test_blank_ratchet_tree_leaf_needs_no_capability(self):
+        leaves = (Leaf("admin"), Leaf("member"), Leaf(None, False))
+        self.assertEqual(transition(Parent(None, False), "admin", "add", Pins(0),
+                                    required=True, leaves=leaves).state, Pins(0))
 
     def test_requirement_cannot_be_dropped_with_entry_present(self):
         with self.assertRaises(ValueError):
