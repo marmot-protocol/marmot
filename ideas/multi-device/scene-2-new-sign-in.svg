@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 516" width="960" height="516" role="img" aria-labelledby="title desc">
 <title id="title">Scene 2: signing in on a new laptop</title>
-<desc id="desc">The new laptop publishes its KeyPackage, sees another device on the account, and asks whether Alice still has it. On Yes it sends a pairing request and waits for the other device to answer; the eight emojis appear once it does.</desc>
+<desc id="desc">The new laptop publishes its KeyPackage, sees another device on the account, and asks whether Alice still has it. On Yes it sends a pairing request and waits for the other device to answer; the five emojis appear once it does.</desc>
 <style>
 text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
 .bg{fill:#f6f8fa}
@@ -49,7 +49,7 @@ text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial
 </g><text x="210.0" y="425" class="m" font-size="13" font-weight="600" text-anchor="middle">Alice’s new laptop</text><g transform="translate(580,166)">
 <rect x="0" y="0" width="340" height="220" rx="12" class="frame" stroke-width="1.5"/><rect x="10" y="10" width="320" height="200" rx="5" class="scr"/><g transform="translate(10,10)">
 <text x="20" y="34" class="t" font-size="15" font-weight="700">Approve on your other device</text><text x="20" y="60" class="m" font-size="12">Open Marmot on a device you’re already</text>
-<text x="20" y="77" class="m" font-size="12">signed in on. When it answers, both show:</text><rect x="20" y="96" width="280" height="40" rx="8" class="ta"/><text x="160.0" y="120.4" class="m" font-size="12.5" text-anchor="middle">eight new emojis appear here</text><circle cx="28" cy="166" r="6" class="sl" fill="none" stroke-width="2"/><path d="M28,160 a6,6 0 0 1 6,6" class="sa" fill="none" stroke-width="2" stroke-linecap="round"/><text x="42" y="170" class="m" font-size="12">Waiting for your other device…</text>
+<text x="20" y="77" class="m" font-size="12">signed in on. When it answers, both show:</text><rect x="20" y="96" width="280" height="40" rx="8" class="ta"/><text x="160.0" y="120.4" class="m" font-size="12.5" text-anchor="middle">five new emojis appear here</text><circle cx="28" cy="166" r="6" class="sl" fill="none" stroke-width="2"/><path d="M28,160 a6,6 0 0 1 6,6" class="sa" fill="none" stroke-width="2" stroke-linecap="round"/><text x="42" y="170" class="m" font-size="12">Waiting for your other device…</text>
 </g><path d="M-24,220 H364 l-10,13 H-14 z" class="frame" stroke-width="1.5"/><rect x="142.0" y="220" width="56" height="5" rx="2" class="lnf"/>
 </g><text x="750.0" y="425" class="m" font-size="13" font-weight="600" text-anchor="middle">Same laptop, after “Yes”</text><rect x="430" y="24" width="100" height="22" rx="6" class="tr" stroke-width="1.2"/><rect x="430" y="24" width="100" height="22" rx="6" class="sr" fill="none"/>
 <circle cx="442" cy="35" r="3" class="r"/><circle cx="452" cy="35" r="3" class="r" fill-opacity=".5"/>

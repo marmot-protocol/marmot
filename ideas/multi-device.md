@@ -21,7 +21,7 @@ have, without a server that controls the device list.
   KeyPackage it put in its public slot, and hands them private single-use KeyPackages. Siblings add each other to chats
   with those, never with whatever relays show for the slot.
 - **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that the same eight emojis appear on both screens, and confirming
+  devices ask "Was this you?" You approve by checking that the same five emojis appear on both screens, and confirming
   on each.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
@@ -100,7 +100,7 @@ coordinate. It also keeps "two device groups for one account" rare (Scene 3).
 ## Scene 2: Signing in on a new device
 
 ![The new laptop publishes its KeyPackage, sees another device whose KeyPackage was refreshed two hours ago, and asks
-whether Alice still has it. On Yes it sends a pairing request and waits; eight emojis appear once the other device
+whether Alice still has it. On Yes it sends a pairing request and waits; five emojis appear once the other device
 answers.](multi-device/scene-2-new-sign-in.svg)
 
 **What Alice sees:**
@@ -108,12 +108,12 @@ answers.](multi-device/scene-2-new-sign-in.svg)
 1. She signs in on her laptop with her nsec or a signer.
 2. The laptop says she's already signed in on another device (last seen 2 hours ago) and asks whether she still has it.
 3. **Yes:** the laptop asks her to open Marmot on a device she's already signed in on. When that device answers, both
-   screens show the same eight emojis (Scene 4).
+   screens show the same five emojis (Scene 4).
 4. **No, start fresh:** Scene 3.
 
 **Underneath:** the laptop publishes its KeyPackage right away. That is what lets the iPhone notice it. The laptop
 learns there is another device from the account's other fresh slots. On **Yes**, it also sends a pairing request that
-names its KeyPackage and starts the exchange that produces the eight emojis.
+names its KeyPackage and starts the exchange that produces the five emojis.
 
 **What "last seen" means here:** the only public sign of another device is when it last republished its KeyPackage.
 Group messages are signed with throwaway keys, so they can't be tied to Alice or to a device. "Last seen 2 hours ago"
@@ -123,15 +123,17 @@ the installation still exists, not that Alice is using it. Once a device is link
 its siblings better liveness (the "last active" on the Devices screen in Scene 7), but a new sign-in outside the device
 group only ever sees KeyPackage refreshes.
 
-**The code:** eight emojis from a fixed, ordered set of 64 (48 bits), new for every session. Alice compares the
-pictures in order, without reading or translating a word list. For example: 🐢 🍎 🚲 🌙 🔑 🌳 🎁 🐟.
+**The code:** five emojis from a fixed, ordered set of 512 (45 bits), new for every session. Alice compares the
+pictures in order, without reading or translating a word list. For example: 🐢 🍎 🚲 🌙 🔑. The
+[candidate alphabet](multi-device/emoji-candidates.md) keeps Matrix's 64 verification emojis and adds 448 distinct
+subjects from Unicode. Its recognition testing is still open; it is a proposal, not an approved verification set.
 They come from a short exchange between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
 3. The laptop reveals its key, and the other device checks it is the one the laptop locked in.
-4. Both devices turn the two keys into the same eight emojis, mixed with the session, the account, the laptop's exact
-   KeyPackage, and the other device's identity.
+4. Both devices derive the same five emojis from the exchange, bound to the session, the account, the laptop's
+   exact KeyPackage, the other device's identity and the agreed alphabet and display format.
 
 Each side commits to its key before it sees the other's, so nobody can steer the result, including someone sitting
 in the middle. This is the same idea as [Matrix's emoji verification](https://spec.matrix.org/latest/client-server-api/#short-authentication-string-sas-verification).
@@ -141,24 +143,43 @@ We would reuse a reviewed exchange and review the Marmot bindings and display fo
 [Telegram calls](https://core.telegram.org/api/end-to-end/video-calls#key-verification). The pictures need no translated
 word list for visual comparison. Instructions, screen-reader labels and warnings still need localization.
 
+**Start with Matrix, then extend it.** Matrix's [SAS table](https://spec.matrix.org/latest/client-server-api/#sas-method-emoji)
+has 64 symbols and uses seven of them for a 42-bit comparison. Its
+[source table](https://github.com/matrix-org/matrix-spec/blob/main/data-definitions/sas-emoji.json) supplies the
+characters, descriptions and translated labels. Five of those symbols alone would carry only 30 bits. Reusing that
+set therefore means adding symbols, rather than shortening Matrix's display unchanged.
+
+The candidate list starts with all 64 Matrix symbols, in their original order, then adds animals, food, places,
+activities, objects and a few body parts. It excludes skin-tone and gender variants, national flags, color-only
+variants such as red versus green apples, clock faces and many close alternatives. This reduces obvious confusion; it does not prove that
+all 512 pictures are distinguishable. For example, animal silhouettes and similar tools still need testing at phone
+size. The [candidate appendix](multi-device/emoji-candidates.md) records sources, attribution and the remaining checks.
+
+Clients use a fixed copy agreed through the eventual linking spec, never a list fetched during pairing. Translated
+labels do not change the mapping. They use consistent artwork rather than relying on every platform's emoji font.
+Reusing Matrix's characters does not copy an artwork pack or make Marmot's exchange Matrix-compatible.
+
 **Keeping the comparison reliable:**
 
-- **Keep the security margin.** The previous four words from a 2,048-word list carried 44 bits. Eight independently
-  distributed symbols from 64 carry 48 bits; four emojis from that set would carry only 24. Matrix's seven-emoji
-  format carries 42 bits, so copying its length would lower this proposal's margin. The exact derivation and binding
-  remain work for the reviewed linking exchange, owned by the device-group spec.
+- **Keep the security margin.** The previous four words from a 2,048-word list carried 44 bits. Five independently
+  distributed symbols from 512 carry 45 bits, with repeats allowed. Five symbols need at least 446 choices to reach
+  44 bits; using 512 gives an exact nine bits per symbol. The derivation and binding remain work for the reviewed
+  linking exchange, owned by the device-group spec. Alphabet agreement is part of that exchange, so a client cannot
+  silently downgrade to the smaller Matrix set. If recognition testing cannot support 512 choices, eight symbols
+  from Matrix's original 64-symbol set remain an alternative with 48 bits.
 - **One shared set and order.** Both clients use the same fixed set and mapping. Pick recognizable symbols without
   lookalikes or distinctions that depend only on color, skin tone or gender. Use consistent artwork and positions
   across clients and writing directions, so platform fonts or right-to-left layout cannot change the comparison.
   Alice checks every position, including repeats. A mismatch cancels the link; retrying starts a fresh session.
 - **An accessible alternative.** Offer screen-reader labels with each symbol's position, and a numeric representation
-  of the same full 48-bit value on both devices for people who cannot compare pictures. Changing presentation keeps
+  of the same full 45-bit value on both devices for people who cannot compare pictures. Changing presentation keeps
   the same session and confirmation rules. If a client cannot display a symbol reliably, it offers that alternative
   rather than silently dropping or replacing the symbol.
 
-Before fixing the set in the spec, test mismatches, repeats and recognition on phones and desktops, in light and dark
-themes, with screen readers and different writing directions. Emojis still need careful comparison; they do not make
-approval automatic.
+Before adopting the set in the spec, test single-symbol mismatches, repeats and recognition on phones and desktops,
+in light and dark themes, with screen readers and different writing directions. Check the full alphabet for missing
+or confusable artwork; replace a confusable candidate before fixing the mapping. Emojis still need careful comparison;
+they do not make approval automatic.
 
 **How the messages travel:** as gift wraps addressed to Alice's own account, because the laptop isn't in the device
 group yet. Anyone with her nsec can read them too. That is fine: the exchange assumes someone can read and replace
@@ -224,12 +245,12 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same eight-emoji code as the laptop, a field
+![Alice's iPhone shows a New sign-in prompt with the client name, the same five-emoji code as the laptop, a field
 to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same emojis and a
 They match button.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
-the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same eight emojis
+the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same five emojis
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
 - **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default:
@@ -274,8 +295,8 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Nothing to search for ahead of time.** The emojis depend on a key the iPhone picks during the session.
 - **Sitting in the middle shows.** Someone who swaps in their own one-time keys has to lock them in before seeing the
   real ones, so the two halves produce different emojis and the screens don't match.
-- **One guess per session.** With a uniform 48-bit sequence and the exchange's commitment rules, a single
-  guess succeeds about once in 281 trillion attempts. Sessions expire 10 minutes after the other device answers, and
+- **One guess per session.** With a uniform 45-bit sequence and the exchange's commitment rules, a single
+  guess succeeds about once in 35 trillion attempts. Sessions expire 10 minutes after the other device answers, and
   the number of attempts is limited.
 - **Two requests at once.** If two pairing requests arrive together, Alice's devices treat that as an anomaly and don't
   offer Link for either.
@@ -547,14 +568,16 @@ device treats a group as its device group only if it created it or joined it thr
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 8 emojis from a fixed, ordered set of 64 (48 bits), new for every session |
+| Link code | 5 emojis from a fixed, ordered set of 512 (45 bits), new for every session; candidate set needs recognition testing |
 | Link session | expires 10 minutes after the existing device answers |
 
 ## Open questions
 
 1. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
    markers, pins, notification state), and backups that are never encrypted to the nsec alone.
-2. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
+2. **Emoji recognition.** Can the 512-symbol candidate set support reliable comparison at phone size, including
+   grayscale and assistive use? The alphabet and artwork need review before this format enters the spec.
+3. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
    early so that it doesn't force changes to this design later.
 
 **Left for later:** picking which old chats a device joins, one by one. Nothing here blocks it. A "keep this device off
@@ -579,7 +602,7 @@ Parts of this can become spec text before others are settled:
 Details to pick while writing the spec, rather than product questions:
 
 - which reviewed short-code exchange to reuse, the exact pairing messages, how many attempts are allowed, and which
-  emoji set, mapping, rendering and accessible numeric representation to use;
+  reviewed derivation, alphabet agreement, rendering and accessible numeric representation to use;
 - the chat readiness component's exact contents;
 - the roster and device group message encodings;
 - listing the `client` tag as allowed on KeyPackage events in the Nostr transport.
