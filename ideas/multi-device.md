@@ -183,6 +183,10 @@ The agreed alphabet covers the artwork identity as well as the symbol order.
   the same session and confirmation rules. If a client cannot display a symbol reliably, it offers that alternative
   rather than silently dropping or replacing the symbol.
 
+Show each glyph at least 32 logical pixels across, with enough spacing to compare every position and an option to
+enlarge it. The [small-size visual review](multi-device/emoji-visual-review.md) replaced 24 weak candidates; it does
+not establish a human recognition success rate.
+
 Before adopting the set in the spec, test single-symbol mismatches, repeats and recognition on phones and desktops,
 in light and dark themes, with screen readers and different writing directions. Check the full alphabet for missing
 or confusable artwork; replace a confusable candidate before fixing the mapping. Emojis still need careful comparison;

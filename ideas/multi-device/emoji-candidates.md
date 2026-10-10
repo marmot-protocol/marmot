@@ -12,13 +12,18 @@ The eventual device-group spec owns the reviewed derivation, fixed mapping and a
 
 - The first 64 symbols and labels come from [Matrix's SAS source table](https://github.com/matrix-org/matrix-spec/blob/main/data-definitions/sas-emoji.json), under Apache-2.0. Its existing translations can be reused for those symbols; the extensions still need localized labels.
 - The 447 Unicode extensions use [Unicode's emoji test data](https://unicode.org/Public/emoji/latest/emoji-test.txt), Emoji 18.0. They are fully qualified, single base characters with an optional emoji presentation selector, introduced in Emoji 13.0 or earlier. Source age helps compatibility; it does not guarantee font support.
-- Selection favors animals, food, places, activities, objects and a few body parts. It excludes new skin-tone or gender variants, national flags, color-only variants, clock faces, and many close alternatives. The original Matrix selection is retained.
+- Selection includes animals, food, places, activities, objects, body parts and distinct pictographic symbols. It excludes new skin-tone or gender variants, national flags, color-only variants, clock faces, and many close alternatives. The original Matrix selection is retained.
 - The [Marmot artwork](marmot.png) is copied unchanged from [White Noise Android](https://github.com/marmot-protocol/whitenoise-android/blob/bda4aa956d8cd26ea0f1f88fb308f166e1113f2d/app/src/main/res/drawable-nodpi/builtin_emoji_marmot.png), where chat displays it as `:marmot:`. Its [source license](marmot-artwork-license.txt) is included. The shortcode is a display label here, not a defined protocol encoding.
 - Other entries supply characters and names, not an artwork pack. Use consistent, separately licensed artwork for comparisons. Source license copies and attribution are in [emoji-source-licenses.txt](emoji-source-licenses.txt).
 
 ## Review before adoption
 
-Review every symbol at the actual phone and desktop display sizes, in both themes and grayscale. Test all single-symbol
+The [first small-size visual review](emoji-visual-review.md) inspected all 512 candidates and replaced 24 weak
+choices. This is a visual source review, not a participant recognition study.
+
+Display each glyph at least 32 logical pixels across, with clear spacing between positions and an enlargement
+option. Preserve image proportions and contrast against the chosen tile background. Review every symbol at the
+actual phone and desktop display sizes, in both themes and grayscale. Test all single-symbol
 mismatches, repeated symbols, different writing directions and screen-reader labels. Pay particular attention to animal
 silhouettes, food bowls, buildings, tools and media equipment. Distinct names and Unicode characters do not guarantee
 distinct pictures. Automated uniqueness checks do not substitute for recognition testing.
@@ -114,8 +119,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | --- | --- |
 | 🐵 | monkey face |
 | 🦍 | gorilla |
-| 🦧 | orangutan |
-| 🐺 | wolf |
 | 🦊 | fox |
 | 🦝 | raccoon |
 | 🐅 | tiger |
@@ -130,7 +133,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🦒 | giraffe |
 | 🦏 | rhinoceros |
 | 🦛 | hippopotamus |
-| 🐭 | mouse face |
 | 🐿️ | chipmunk |
 | ![Marmot](marmot.png) | Marmot (`:marmot:`) |
 | 🦔 | hedgehog |
@@ -195,17 +197,45 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🍀 | four leaf clover |
 | 🍁 | maple leaf |
 
+### Body parts
+
+| Emoji | Label |
+| --- | --- |
+| 🫀 | anatomical heart |
+| 👁️ | eye |
+| 🦴 | bone |
+| ✌️ | victory hand |
+| ✋ | raised hand |
+| 🫁 | lungs |
+| 💪 | flexed biceps |
+| 🦶 | foot |
+| 👂 | ear |
+| 🧠 | brain |
+| 🦷 | tooth |
+
+### Symbols
+
+| Emoji | Label |
+| --- | --- |
+| 🚫 | prohibited |
+| ☸️ | wheel of dharma |
+| ⚠️ | warning |
+| ☯️ | yin yang |
+| ✔️ | check mark |
+| 🔱 | trident emblem |
+| ♻️ | recycling symbol |
+| ❓ | red question mark |
+| ☢️ | radioactive |
+
 ### Food & Drink
 
 | Emoji | Label |
 | --- | --- |
 | 🍇 | grapes |
 | 🍉 | watermelon |
-| 🍊 | tangerine |
 | 🍋 | lemon |
 | 🍍 | pineapple |
 | 🥭 | mango |
-| 🍐 | pear |
 | 🍑 | peach |
 | 🍒 | cherries |
 | 🥝 | kiwi fruit |
@@ -225,9 +255,7 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🌰 | chestnut |
 | 🍞 | bread |
 | 🥐 | croissant |
-| 🥖 | baguette bread |
 | 🥨 | pretzel |
-| 🥯 | bagel |
 | 🥞 | pancakes |
 | 🧇 | waffle |
 | 🧀 | cheese wedge |
@@ -246,12 +274,9 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🥗 | green salad |
 | 🍿 | popcorn |
 | 🧈 | butter |
-| 🧂 | salt |
-| 🥫 | canned food |
 | 🍱 | bento box |
 | 🍙 | rice ball |
 | 🍚 | cooked rice |
-| 🍜 | steaming bowl |
 | 🍝 | spaghetti |
 | 🍣 | sushi |
 | 🍡 | dango |
@@ -261,14 +286,12 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🍨 | ice cream |
 | 🍩 | doughnut |
 | 🍪 | cookie |
-| 🧁 | cupcake |
 | 🥧 | pie |
 | 🍫 | chocolate bar |
 | 🍬 | candy |
 | 🍭 | lollipop |
 | 🍯 | honey pot |
 | 🍼 | baby bottle |
-| 🥛 | glass of milk |
 | ☕ | hot beverage |
 | 🫖 | teapot |
 | 🍾 | bottle with popping cork |
@@ -288,6 +311,7 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 
 | Emoji | Label |
 | --- | --- |
+| 🌂 | closed umbrella |
 | 🌐 | globe with meridians |
 | 🗺️ | world map |
 | 🧭 | compass |
@@ -334,7 +358,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🚏 | bus stop |
 | 🛣️ | motorway |
 | 🛤️ | railway track |
-| 🛢️ | oil drum |
 | ⛽ | fuel pump |
 | 🚦 | vertical traffic light |
 | 🛑 | stop sign |
@@ -357,7 +380,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🪐 | ringed planet |
 | ⭐ | star |
 | 🌠 | shooting star |
-| ⛅ | sun behind cloud |
 | 🌪️ | tornado |
 | 🌀 | cyclone |
 | 🌈 | rainbow |
@@ -367,12 +389,22 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 💧 | droplet |
 | 🌊 | water wave |
 
+### Smileys & Emotion
+
+| Emoji | Label |
+| --- | --- |
+| 💢 | anger symbol |
+| 💀 | skull |
+| 💥 | collision |
+| 👻 | ghost |
+| 💬 | speech balloon |
+| 👾 | alien monster |
+
 ### Activities
 
 | Emoji | Label |
 | --- | --- |
 | 🎃 | jack-o-lantern |
-| 🎄 | Christmas tree |
 | 🎆 | fireworks |
 | 🧨 | firecracker |
 | ✨ | sparkles |
@@ -391,7 +423,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🎳 | bowling |
 | 🏏 | cricket game |
 | 🏓 | ping pong |
-| 🏸 | badminton |
 | 🥊 | boxing glove |
 | 🥋 | martial arts uniform |
 | 🥅 | goal net |
@@ -474,7 +505,7 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 📱 | mobile phone |
 | 📟 | pager |
 | 📠 | fax machine |
-| 🔋 | battery |
+| 🛠️ | hammer and wrench |
 | 🔌 | electric plug |
 | 💻 | laptop |
 | 🖥️ | desktop computer |
@@ -508,7 +539,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 📤 | outbox tray |
 | 📦 | package |
 | 📮 | postbox |
-| 🗳️ | ballot box with ballot |
 | 🖌️ | paintbrush |
 | 💼 | briefcase |
 | 📅 | calendar |
@@ -519,7 +549,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🗄️ | file cabinet |
 | 🗑️ | wastebasket |
 | 🪓 | axe |
-| ⛏️ | pick |
 | 🗡️ | dagger |
 | 💣 | bomb |
 | 🪃 | boomerang |
@@ -534,22 +563,18 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🦯 | white cane |
 | 🔗 | link |
 | ⛓️ | chains |
-| 🧰 | toolbox |
 | 🧲 | magnet |
 | 🪜 | ladder |
 | ⚗️ | alembic |
-| 🧪 | test tube |
 | 🧫 | petri dish |
 | 🧬 | dna |
 | 🔬 | microscope |
 | 🔭 | telescope |
 | 📡 | satellite antenna |
 | 💉 | syringe |
-| 🩸 | drop of blood |
 | 💊 | pill |
 | 🩹 | adhesive bandage |
 | 🩺 | stethoscope |
-| 🚪 | door |
 | 🛗 | elevator |
 | 🪞 | mirror |
 | 🛏️ | bed |
@@ -573,16 +598,6 @@ needs fresh agreement; an external image URL is source attribution, not a runtim
 | 🚬 | cigarette |
 | ⚰️ | coffin |
 | 🪦 | headstone |
-| ⚱️ | funeral urn |
 | 🗿 | moai |
 | 🪧 | placard |
-
-### Body parts
-
-| Emoji | Label |
-| --- | --- |
-| 🦶 | foot |
-| 👂 | ear |
-| 🧠 | brain |
-| 🦷 | tooth |
 
