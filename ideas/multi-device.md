@@ -125,8 +125,9 @@ group only ever sees KeyPackage refreshes.
 
 **The code:** five emojis from a fixed, ordered set of 512 (45 bits), new for every session. Alice compares the
 pictures in order, without reading or translating a word list. For example: 🐢 🍎 🚲 🌙 🔑. The
-[candidate alphabet](multi-device/emoji-candidates.md) keeps Matrix's 64 verification emojis and adds 448 distinct
-subjects from Unicode. Its recognition testing is still open; it is a proposal, not an approved verification set.
+[candidate alphabet](multi-device/emoji-candidates.md) keeps Matrix's 64 verification emojis, adds 447 Unicode
+candidates and includes the custom Marmot artwork already bundled in White Noise. Its recognition testing is still
+open; it is a proposal, not an approved verification set.
 They come from a short exchange between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
@@ -158,6 +159,12 @@ size. The [candidate appendix](multi-device/emoji-candidates.md) records sources
 Clients use a fixed copy agreed through the eventual linking spec, never a list fetched during pairing. Translated
 labels do not change the mapping. They use consistent artwork rather than relying on every platform's emoji font.
 Reusing Matrix's characters does not copy an artwork pack or make Marmot's exchange Matrix-compatible.
+
+**The Marmot is a fixed picture, not a chat override.** The alphabet includes
+[White Noise's Marmot emoji](multi-device/marmot.png), replacing the beaver candidate to keep 512 entries. Clients
+bundle the agreed artwork and ignore user emoji files, received emoji tags and remote image substitutions when
+drawing verification symbols. An unsupported entry prevents linking; it never silently becomes a beaver or a blank.
+The agreed alphabet covers the artwork identity as well as the symbol order.
 
 **Keeping the comparison reliable:**
 

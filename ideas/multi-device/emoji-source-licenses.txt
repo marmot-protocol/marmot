@@ -10,6 +10,10 @@ Copyright 2026 Unicode, Inc. Extracted and curated from Emoji 18.0 data; the lis
 
 The SVG illustrations in this proposal are original artwork, not copied from Matrix or Unicode image charts.
 
+Marmot PNG artwork is copied unchanged from White Noise Android:
+https://github.com/marmot-protocol/whitenoise-android/blob/bda4aa956d8cd26ea0f1f88fb308f166e1113f2d/app/src/main/res/drawable-nodpi/builtin_emoji_marmot.png
+The artwork source repository distributes under GNU AGPLv3; its license copy is included separately as marmot-artwork-license.txt. This notice applies to the copied PNG. The source is unmodified.
+
 --- Apache License 2.0 (Matrix source) ---
 
 
