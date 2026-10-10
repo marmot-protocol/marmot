@@ -1,0 +1,603 @@
+# Candidate emojis for five-symbol device linking
+
+Status: non-normative candidates for review. This is not an interoperability table, an approved verification alphabet,
+or a claim that every pair is visually distinguishable. See [the linking proposal](../multi-device.md).
+
+The list contains 512 symbols: Matrix's 64 SAS emojis first, in their original order, then 447 Unicode extensions
+and White Noise's custom Marmot artwork. The Marmot replaces the beaver candidate; it does not add a 513th entry.
+A five-symbol sequence from 512 uniformly distributed choices carries 45 bits.
+The eventual device-group spec owns the reviewed derivation, fixed mapping and alphabet agreement.
+
+## Sources and selection
+
+- The first 64 symbols and labels come from [Matrix's SAS source table](https://github.com/matrix-org/matrix-spec/blob/main/data-definitions/sas-emoji.json), under Apache-2.0. Its existing translations can be reused for those symbols; the extensions still need localized labels.
+- The 447 Unicode extensions use [Unicode's emoji test data](https://unicode.org/Public/emoji/latest/emoji-test.txt), Emoji 18.0. They are fully qualified, single base characters with an optional emoji presentation selector, introduced in Emoji 13.0 or earlier. Source age helps compatibility; it does not guarantee font support.
+- Selection includes animals, food, places, activities, objects, body parts and distinct pictographic symbols. It excludes new skin-tone or gender variants, national flags, color-only variants, clock faces, and many close alternatives. The original Matrix selection is retained.
+- The [Marmot artwork](marmot.png) is copied unchanged from [White Noise Android](https://github.com/marmot-protocol/whitenoise-android/blob/bda4aa956d8cd26ea0f1f88fb308f166e1113f2d/app/src/main/res/drawable-nodpi/builtin_emoji_marmot.png), where chat displays it as `:marmot:`. Its [source license](marmot-artwork-license.txt) is included. The shortcode is a display label here, not a defined protocol encoding.
+- Other entries supply characters and names, not an artwork pack. Use consistent, separately licensed artwork for comparisons. Source license copies and attribution are in [emoji-source-licenses.txt](emoji-source-licenses.txt).
+
+## Review before adoption
+
+The [first small-size visual review](emoji-visual-review.md) inspected all 512 candidates and replaced 24 weak
+choices. This is a visual source review, not a participant recognition study.
+
+Display each glyph at least 32 logical pixels across, with clear spacing between positions and an enlargement
+option. Preserve image proportions and contrast against the chosen tile background. Review every symbol at the
+actual phone and desktop display sizes, in both themes and grayscale. Test all single-symbol
+mismatches, repeated symbols, different writing directions and screen-reader labels. Pay particular attention to animal
+silhouettes, food bowls, buildings, tools and media equipment. Distinct names and Unicode characters do not guarantee
+distinct pictures. Automated uniqueness checks do not substitute for recognition testing.
+
+Replace confusable entries before fixing a mapping. If 512 symbols cannot meet the comparison criteria, keep the
+reviewed smaller set and a longer sequence instead of claiming 45 bits from five symbols in a smaller set. Once the
+alphabet is fixed in the spec, clients cannot substitute or reorder symbols from later Unicode or Matrix releases.
+
+## Fixed Marmot artwork
+
+Every client bundles the same agreed Marmot image for verification. Chat shortcode resolution is unsuitable here:
+user-provided artwork and received custom-emoji tags can override chat names. The verification display ignores those
+overrides and resolves only the agreed alphabet and its fixed artwork. If a client cannot render this entry, it treats
+the alphabet as unsupported before linking, rather than skipping it or substituting a beaver.
+
+Include the artwork identity in alphabet agreement when writing the linking spec. A changed image or symbol mapping
+needs fresh agreement; an external image URL is source attribution, not a runtime lookup.
+
+## Candidate list
+
+### Matrix SAS set
+
+| Emoji | Label |
+| --- | --- |
+| 🐶 | Dog |
+| 🐱 | Cat |
+| 🦁 | Lion |
+| 🐎 | Horse |
+| 🦄 | Unicorn |
+| 🐷 | Pig |
+| 🐘 | Elephant |
+| 🐰 | Rabbit |
+| 🐼 | Panda |
+| 🐓 | Rooster |
+| 🐧 | Penguin |
+| 🐢 | Turtle |
+| 🐟 | Fish |
+| 🐙 | Octopus |
+| 🦋 | Butterfly |
+| 🌷 | Flower |
+| 🌳 | Tree |
+| 🌵 | Cactus |
+| 🍄 | Mushroom |
+| 🌏 | Globe |
+| 🌙 | Moon |
+| ☁️ | Cloud |
+| 🔥 | Fire |
+| 🍌 | Banana |
+| 🍎 | Apple |
+| 🍓 | Strawberry |
+| 🌽 | Corn |
+| 🍕 | Pizza |
+| 🎂 | Cake |
+| ❤️ | Heart |
+| 😀 | Smiley |
+| 🤖 | Robot |
+| 🎩 | Hat |
+| 👓 | Glasses |
+| 🔧 | Spanner |
+| 🎅 | Santa |
+| 👍 | Thumbs Up |
+| ☂️ | Umbrella |
+| ⌛ | Hourglass |
+| ⏰ | Clock |
+| 🎁 | Gift |
+| 💡 | Light Bulb |
+| 📕 | Book |
+| ✏️ | Pencil |
+| 📎 | Paperclip |
+| ✂️ | Scissors |
+| 🔒 | Lock |
+| 🔑 | Key |
+| 🔨 | Hammer |
+| ☎️ | Telephone |
+| 🏁 | Flag |
+| 🚂 | Train |
+| 🚲 | Bicycle |
+| ✈️ | Aeroplane |
+| 🚀 | Rocket |
+| 🏆 | Trophy |
+| ⚽ | Ball |
+| 🎸 | Guitar |
+| 🎺 | Trumpet |
+| 🔔 | Bell |
+| ⚓ | Anchor |
+| 🎧 | Headphones |
+| 📁 | Folder |
+| 📌 | Pin |
+
+### Animals & Nature
+
+| Emoji | Label |
+| --- | --- |
+| 🐵 | monkey face |
+| 🦍 | gorilla |
+| 🦊 | fox |
+| 🦝 | raccoon |
+| 🐅 | tiger |
+| 🦓 | zebra |
+| 🦌 | deer |
+| 🦬 | bison |
+| 🐮 | cow face |
+| 🐗 | boar |
+| 🐐 | goat |
+| 🐪 | camel |
+| 🦙 | llama |
+| 🦒 | giraffe |
+| 🦏 | rhinoceros |
+| 🦛 | hippopotamus |
+| 🐿️ | chipmunk |
+| ![Marmot](marmot.png) | Marmot (`:marmot:`) |
+| 🦔 | hedgehog |
+| 🦇 | bat |
+| 🐻 | bear |
+| 🐨 | koala |
+| 🦥 | sloth |
+| 🦨 | skunk |
+| 🦘 | kangaroo |
+| 🐾 | paw prints |
+| 🦃 | turkey |
+| 🐣 | hatching chick |
+| 🕊️ | dove |
+| 🦅 | eagle |
+| 🦆 | duck |
+| 🦢 | swan |
+| 🦉 | owl |
+| 🪶 | feather |
+| 🦩 | flamingo |
+| 🦚 | peacock |
+| 🦜 | parrot |
+| 🐸 | frog |
+| 🐊 | crocodile |
+| 🦎 | lizard |
+| 🐍 | snake |
+| 🐉 | dragon |
+| 🦕 | sauropod |
+| 🦖 | T-Rex |
+| 🐳 | spouting whale |
+| 🐬 | dolphin |
+| 🦭 | seal |
+| 🐡 | blowfish |
+| 🦈 | shark |
+| 🐚 | spiral shell |
+| 🦀 | crab |
+| 🦞 | lobster |
+| 🦐 | shrimp |
+| 🦑 | squid |
+| 🦪 | oyster |
+| 🐌 | snail |
+| 🐜 | ant |
+| 🐝 | honeybee |
+| 🐞 | lady beetle |
+| 🦗 | cricket |
+| 🪳 | cockroach |
+| 🕷️ | spider |
+| 🕸️ | spider web |
+| 🦂 | scorpion |
+| 🦟 | mosquito |
+| 🪰 | fly |
+| 🪱 | worm |
+| 🦠 | microbe |
+| 💐 | bouquet |
+| 🌸 | cherry blossom |
+| 🌹 | rose |
+| 🌻 | sunflower |
+| 🌱 | seedling |
+| 🪴 | potted plant |
+| 🌲 | evergreen tree |
+| 🌴 | palm tree |
+| 🌾 | sheaf of rice |
+| 🍀 | four leaf clover |
+| 🍁 | maple leaf |
+
+### Body parts
+
+| Emoji | Label |
+| --- | --- |
+| 🫀 | anatomical heart |
+| 👁️ | eye |
+| 🦴 | bone |
+| ✌️ | victory hand |
+| ✋ | raised hand |
+| 🫁 | lungs |
+| 💪 | flexed biceps |
+| 🦶 | foot |
+| 👂 | ear |
+| 🧠 | brain |
+| 🦷 | tooth |
+
+### Symbols
+
+| Emoji | Label |
+| --- | --- |
+| 🚫 | prohibited |
+| ☸️ | wheel of dharma |
+| ⚠️ | warning |
+| ☯️ | yin yang |
+| ✔️ | check mark |
+| 🔱 | trident emblem |
+| ♻️ | recycling symbol |
+| ❓ | red question mark |
+| ☢️ | radioactive |
+
+### Food & Drink
+
+| Emoji | Label |
+| --- | --- |
+| 🍇 | grapes |
+| 🍉 | watermelon |
+| 🍋 | lemon |
+| 🍍 | pineapple |
+| 🥭 | mango |
+| 🍑 | peach |
+| 🍒 | cherries |
+| 🥝 | kiwi fruit |
+| 🫒 | olive |
+| 🥥 | coconut |
+| 🥑 | avocado |
+| 🍆 | eggplant |
+| 🥔 | potato |
+| 🥕 | carrot |
+| 🌶️ | hot pepper |
+| 🥒 | cucumber |
+| 🥬 | leafy green |
+| 🥦 | broccoli |
+| 🧄 | garlic |
+| 🧅 | onion |
+| 🥜 | peanuts |
+| 🌰 | chestnut |
+| 🍞 | bread |
+| 🥐 | croissant |
+| 🥨 | pretzel |
+| 🥞 | pancakes |
+| 🧇 | waffle |
+| 🧀 | cheese wedge |
+| 🍖 | meat on bone |
+| 🍗 | poultry leg |
+| 🥩 | cut of meat |
+| 🥓 | bacon |
+| 🍔 | hamburger |
+| 🍟 | french fries |
+| 🌭 | hot dog |
+| 🥪 | sandwich |
+| 🌮 | taco |
+| 🌯 | burrito |
+| 🥚 | egg |
+| 🍳 | cooking |
+| 🥗 | green salad |
+| 🍿 | popcorn |
+| 🧈 | butter |
+| 🍱 | bento box |
+| 🍙 | rice ball |
+| 🍚 | cooked rice |
+| 🍝 | spaghetti |
+| 🍣 | sushi |
+| 🍡 | dango |
+| 🥟 | dumpling |
+| 🥠 | fortune cookie |
+| 🥡 | takeout box |
+| 🍨 | ice cream |
+| 🍩 | doughnut |
+| 🍪 | cookie |
+| 🥧 | pie |
+| 🍫 | chocolate bar |
+| 🍬 | candy |
+| 🍭 | lollipop |
+| 🍯 | honey pot |
+| 🍼 | baby bottle |
+| ☕ | hot beverage |
+| 🫖 | teapot |
+| 🍾 | bottle with popping cork |
+| 🍷 | wine glass |
+| 🍸 | cocktail glass |
+| 🍺 | beer mug |
+| 🥤 | cup with straw |
+| 🧃 | beverage box |
+| 🧊 | ice |
+| 🥢 | chopsticks |
+| 🍴 | fork and knife |
+| 🥄 | spoon |
+| 🔪 | kitchen knife |
+| 🏺 | amphora |
+
+### Travel & Places
+
+| Emoji | Label |
+| --- | --- |
+| 🌂 | closed umbrella |
+| 🌐 | globe with meridians |
+| 🗺️ | world map |
+| 🧭 | compass |
+| ⛰️ | mountain |
+| 🌋 | volcano |
+| 🏕️ | camping |
+| 🏖️ | beach with umbrella |
+| 🏜️ | desert |
+| 🏝️ | desert island |
+| 🏟️ | stadium |
+| 🧱 | brick |
+| 🪨 | rock |
+| 🪵 | wood |
+| 🏠 | house |
+| 🏭 | factory |
+| 🏯 | Japanese castle |
+| 🏰 | castle |
+| 🗼 | Tokyo tower |
+| 🗽 | Statue of Liberty |
+| 🕌 | mosque |
+| ⛩️ | shinto shrine |
+| 🕋 | kaaba |
+| ⛲ | fountain |
+| ⛺ | tent |
+| 🌅 | sunrise |
+| ♨️ | hot springs |
+| 🎠 | carousel horse |
+| 🎡 | ferris wheel |
+| 🎢 | roller coaster |
+| 💈 | barber pole |
+| 🎪 | circus tent |
+| 🚌 | bus |
+| 🚑 | ambulance |
+| 🚒 | fire engine |
+| 🚗 | automobile |
+| 🚚 | delivery truck |
+| 🚜 | tractor |
+| 🏍️ | motorcycle |
+| 🦽 | manual wheelchair |
+| 🛺 | auto rickshaw |
+| 🛴 | kick scooter |
+| 🛹 | skateboard |
+| 🛼 | roller skate |
+| 🚏 | bus stop |
+| 🛣️ | motorway |
+| 🛤️ | railway track |
+| ⛽ | fuel pump |
+| 🚦 | vertical traffic light |
+| 🛑 | stop sign |
+| 🚧 | construction |
+| ⛵ | sailboat |
+| 🛶 | canoe |
+| 🚢 | ship |
+| 🪂 | parachute |
+| 💺 | seat |
+| 🚁 | helicopter |
+| 🚟 | suspension railway |
+| 🛰️ | satellite |
+| 🛸 | flying saucer |
+| 🛎️ | bellhop bell |
+| 🧳 | luggage |
+| ⌚ | watch |
+| ⏱️ | stopwatch |
+| 🌡️ | thermometer |
+| ☀️ | sun |
+| 🪐 | ringed planet |
+| ⭐ | star |
+| 🌠 | shooting star |
+| 🌪️ | tornado |
+| 🌀 | cyclone |
+| 🌈 | rainbow |
+| ⚡ | high voltage |
+| ❄️ | snowflake |
+| ☃️ | snowman |
+| 💧 | droplet |
+| 🌊 | water wave |
+
+### Smileys & Emotion
+
+| Emoji | Label |
+| --- | --- |
+| 💢 | anger symbol |
+| 💀 | skull |
+| 💥 | collision |
+| 👻 | ghost |
+| 💬 | speech balloon |
+| 👾 | alien monster |
+
+### Activities
+
+| Emoji | Label |
+| --- | --- |
+| 🎃 | jack-o-lantern |
+| 🎆 | fireworks |
+| 🧨 | firecracker |
+| ✨ | sparkles |
+| 🎈 | balloon |
+| 🎉 | party popper |
+| 🎎 | Japanese dolls |
+| 🎏 | carp streamer |
+| 🎐 | wind chime |
+| 🎀 | ribbon |
+| 🎫 | ticket |
+| 🏅 | sports medal |
+| 🏀 | basketball |
+| 🏈 | american football |
+| 🎾 | tennis |
+| 🥏 | flying disc |
+| 🎳 | bowling |
+| 🏏 | cricket game |
+| 🏓 | ping pong |
+| 🥊 | boxing glove |
+| 🥋 | martial arts uniform |
+| 🥅 | goal net |
+| ⛳ | flag in hole |
+| ⛸️ | ice skate |
+| 🎣 | fishing pole |
+| 🤿 | diving mask |
+| 🎿 | skis |
+| 🛷 | sled |
+| 🥌 | curling stone |
+| 🎯 | bullseye |
+| 🪀 | yo-yo |
+| 🪁 | kite |
+| 🔫 | water pistol |
+| 🎱 | pool 8 ball |
+| 🔮 | crystal ball |
+| 🪄 | magic wand |
+| 🎮 | video game |
+| 🕹️ | joystick |
+| 🎰 | slot machine |
+| 🎲 | game die |
+| 🧩 | puzzle piece |
+| 🧸 | teddy bear |
+| 🪅 | piñata |
+| 🪆 | nesting dolls |
+| ♠️ | spade suit |
+| ♦️ | diamond suit |
+| ♣️ | club suit |
+| ♟️ | chess pawn |
+| 🃏 | joker |
+| 🀄 | mahjong red dragon |
+| 🎴 | flower playing cards |
+| 🎭 | performing arts |
+| 🖼️ | framed picture |
+| 🎨 | artist palette |
+| 🧵 | thread |
+| 🪡 | sewing needle |
+| 🧶 | yarn |
+| 🪢 | knot |
+
+### Objects
+
+| Emoji | Label |
+| --- | --- |
+| 🥽 | goggles |
+| 🥼 | lab coat |
+| 👔 | necktie |
+| 👕 | t-shirt |
+| 👖 | jeans |
+| 🧣 | scarf |
+| 🧤 | gloves |
+| 🧦 | socks |
+| 👗 | dress |
+| 👘 | kimono |
+| 🩳 | shorts |
+| 👙 | bikini |
+| 👛 | purse |
+| 🛍️ | shopping bags |
+| 🎒 | backpack |
+| 👟 | running shoe |
+| 👠 | high-heeled shoe |
+| 👑 | crown |
+| 🎓 | graduation cap |
+| 🪖 | military helmet |
+| 📿 | prayer beads |
+| 💄 | lipstick |
+| 💍 | ring |
+| 💎 | gem stone |
+| 📣 | megaphone |
+| 🎼 | musical score |
+| 🎶 | musical notes |
+| 🎤 | microphone |
+| 📻 | radio |
+| 🎷 | saxophone |
+| 🪗 | accordion |
+| 🎹 | musical keyboard |
+| 🎻 | violin |
+| 🪕 | banjo |
+| 🥁 | drum |
+| 📱 | mobile phone |
+| 📟 | pager |
+| 📠 | fax machine |
+| 🛠️ | hammer and wrench |
+| 🔌 | electric plug |
+| 💻 | laptop |
+| 🖥️ | desktop computer |
+| 🖨️ | printer |
+| ⌨️ | keyboard |
+| 🖱️ | computer mouse |
+| 💾 | floppy disk |
+| 💿 | optical disk |
+| 🧮 | abacus |
+| 🎥 | movie camera |
+| 🎞️ | film frames |
+| 📽️ | film projector |
+| 🎬 | clapper board |
+| 📺 | television |
+| 📷 | camera |
+| 📼 | videocassette |
+| 🔍 | magnifying glass tilted left |
+| 🕯️ | candle |
+| 🔦 | flashlight |
+| 🏮 | red paper lantern |
+| 📖 | open book |
+| 📜 | scroll |
+| 📰 | newspaper |
+| 🔖 | bookmark |
+| 🪙 | coin |
+| 💰 | money bag |
+| 💵 | dollar banknote |
+| 💳 | credit card |
+| 🧾 | receipt |
+| ✉️ | envelope |
+| 📤 | outbox tray |
+| 📦 | package |
+| 📮 | postbox |
+| 🖌️ | paintbrush |
+| 💼 | briefcase |
+| 📅 | calendar |
+| 📈 | chart increasing |
+| 📋 | clipboard |
+| 📏 | straight ruler |
+| 📐 | triangular ruler |
+| 🗄️ | file cabinet |
+| 🗑️ | wastebasket |
+| 🪓 | axe |
+| 🗡️ | dagger |
+| 💣 | bomb |
+| 🪃 | boomerang |
+| 🏹 | bow and arrow |
+| 🛡️ | shield |
+| 🪚 | carpentry saw |
+| 🪛 | screwdriver |
+| 🔩 | nut and bolt |
+| ⚙️ | gear |
+| 🗜️ | clamp |
+| ⚖️ | balance scale |
+| 🦯 | white cane |
+| 🔗 | link |
+| ⛓️ | chains |
+| 🧲 | magnet |
+| 🪜 | ladder |
+| ⚗️ | alembic |
+| 🧫 | petri dish |
+| 🧬 | dna |
+| 🔬 | microscope |
+| 🔭 | telescope |
+| 📡 | satellite antenna |
+| 💉 | syringe |
+| 💊 | pill |
+| 🩹 | adhesive bandage |
+| 🩺 | stethoscope |
+| 🛗 | elevator |
+| 🪞 | mirror |
+| 🛏️ | bed |
+| 🛋️ | couch and lamp |
+| 🪑 | chair |
+| 🚽 | toilet |
+| 🪠 | plunger |
+| 🚿 | shower |
+| 🛁 | bathtub |
+| 🪤 | mouse trap |
+| 🪒 | razor |
+| 🧹 | broom |
+| 🧺 | basket |
+| 🧻 | roll of paper |
+| 🪣 | bucket |
+| 🧼 | soap |
+| 🪥 | toothbrush |
+| 🧽 | sponge |
+| 🧯 | fire extinguisher |
+| 🛒 | shopping cart |
+| 🚬 | cigarette |
+| ⚰️ | coffin |
+| 🪦 | headstone |
+| 🗿 | moai |
+| 🪧 | placard |
+
