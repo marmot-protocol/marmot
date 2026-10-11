@@ -36,11 +36,10 @@ alphabet is fixed in the spec, clients cannot substitute or reorder symbols from
 
 Every client bundles the same agreed Marmot image for verification. Chat shortcode resolution is unsuitable here:
 user-provided artwork and received custom-emoji tags can override chat names. The verification display ignores those
-overrides and resolves only the agreed alphabet and its fixed artwork. If a client cannot render this entry, it treats
-the alphabet as unsupported before linking, rather than skipping it or substituting a beaver.
+overrides and resolves only the agreed alphabet and its fixed artwork.
 
-Include the artwork identity in alphabet agreement when writing the linking spec. A changed image or symbol mapping
-needs fresh agreement; an external image URL is source attribution, not a runtime lookup.
+The device-group spec will define handling for unsupported alphabets and how artwork identity and mapping changes
+affect alphabet agreement. Those details remain open here. An external image URL is source attribution, not a runtime lookup.
 
 ## Candidate list
 

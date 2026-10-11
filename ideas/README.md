@@ -17,6 +17,8 @@ Implementations MUST NOT treat an idea document as an interop surface.
 ## Current ideas
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
+- [multi-device/emoji-candidates.md](./multi-device/emoji-candidates.md) - candidate emoji alphabet for device linking.
+- [multi-device/emoji-visual-review.md](./multi-device/emoji-visual-review.md) - first small-size review and candidate replacements.
 
 ## From idea to spec
 

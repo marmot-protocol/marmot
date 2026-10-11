@@ -163,8 +163,8 @@ Reusing Matrix's characters does not copy an artwork pack or make Marmot's excha
 **The Marmot is a fixed picture, not a chat override.** The alphabet includes
 [White Noise's Marmot emoji](multi-device/marmot.png), replacing the beaver candidate to keep 512 entries. Clients
 bundle the agreed artwork and ignore user emoji files, received emoji tags and remote image substitutions when
-drawing verification symbols. An unsupported entry prevents linking; it never silently becomes a beaver or a blank.
-The agreed alphabet covers the artwork identity as well as the symbol order.
+drawing verification symbols. The device-group spec will define handling for unsupported artwork or alphabets,
+and how artwork identity and symbol order affect agreement. Those details remain open here.
 
 **Keeping the comparison reliable:**
 

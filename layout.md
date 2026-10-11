@@ -67,6 +67,9 @@ features/
 ideas/
   README.md
   multi-device.md
+  multi-device/
+    emoji-candidates.md
+    emoji-visual-review.md
 implementation-model.md
 ```
 
