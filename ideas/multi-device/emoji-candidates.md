@@ -3,18 +3,17 @@
 Status: non-normative candidates for review. This is not an interoperability table, an approved verification alphabet,
 or a claim that every pair is visually distinguishable. See [the linking proposal](../multi-device.md).
 
-The list contains 512 symbols: Matrix's 64 SAS emojis first, in their original order, then 447 Unicode extensions
-and White Noise's custom Marmot artwork. The Marmot replaces the beaver candidate; it does not add a 513th entry.
+The list contains 512 standard Unicode emojis: Matrix's 64 SAS symbols first, in their original order, then 448
+extensions, including the beaver 🦫.
 A five-symbol sequence from 512 uniformly distributed choices carries 45 bits.
 The eventual device-group spec owns the reviewed derivation, fixed mapping and alphabet agreement.
 
 ## Sources and selection
 
 - The first 64 symbols and labels come from [Matrix's SAS source table](https://github.com/matrix-org/matrix-spec/blob/main/data-definitions/sas-emoji.json), under Apache-2.0. Its existing translations can be reused for those symbols; the extensions still need localized labels.
-- The 447 Unicode extensions use [Unicode's emoji test data](https://unicode.org/Public/emoji/latest/emoji-test.txt), Emoji 18.0. They are fully qualified, single base characters with an optional emoji presentation selector, introduced in Emoji 13.0 or earlier. Source age helps compatibility; it does not guarantee font support.
+- The 448 Unicode extensions use [Unicode's emoji test data](https://unicode.org/Public/emoji/latest/emoji-test.txt), Emoji 18.0. They are fully qualified, single base characters with an optional emoji presentation selector, introduced in Emoji 13.0 or earlier. Source age helps compatibility; it does not guarantee font support.
 - Selection includes animals, food, places, activities, objects, body parts and distinct pictographic symbols. It excludes new skin-tone or gender variants, national flags, color-only variants, clock faces, and many close alternatives. The original Matrix selection is retained.
-- The [Marmot artwork](marmot.png) is copied unchanged from [White Noise Android](https://github.com/marmot-protocol/whitenoise-android/blob/bda4aa956d8cd26ea0f1f88fb308f166e1113f2d/app/src/main/res/drawable-nodpi/builtin_emoji_marmot.png), where chat displays it as `:marmot:`. Its [source license](marmot-artwork-license.txt) is included. The shortcode is a display label here, not a defined protocol encoding.
-- Other entries supply characters and names, not an artwork pack. Use consistent, separately licensed artwork for comparisons. Source license copies and attribution are in [emoji-source-licenses.txt](emoji-source-licenses.txt).
+- These entries supply characters and names, not an artwork pack. Use consistent, separately licensed artwork for comparisons. Source license copies and attribution are in [emoji-source-licenses.txt](emoji-source-licenses.txt).
 
 ## Review before adoption
 
@@ -31,15 +30,6 @@ distinct pictures. Automated uniqueness checks do not substitute for recognition
 Replace confusable entries before fixing a mapping. If 512 symbols cannot meet the comparison criteria, keep the
 reviewed smaller set and a longer sequence instead of claiming 45 bits from five symbols in a smaller set. Once the
 alphabet is fixed in the spec, clients cannot substitute or reorder symbols from later Unicode or Matrix releases.
-
-## Fixed Marmot artwork
-
-Every client bundles the same agreed Marmot image for verification. Chat shortcode resolution is unsuitable here:
-user-provided artwork and received custom-emoji tags can override chat names. The verification display ignores those
-overrides and resolves only the agreed alphabet and its fixed artwork.
-
-The device-group spec will define handling for unsupported alphabets and how artwork identity and mapping changes
-affect alphabet agreement. Those details remain open here. An external image URL is source attribution, not a runtime lookup.
 
 ## Candidate list
 
@@ -133,7 +123,7 @@ affect alphabet agreement. Those details remain open here. An external image URL
 | 🦏 | rhinoceros |
 | 🦛 | hippopotamus |
 | 🐿️ | chipmunk |
-| ![Marmot](marmot.png) | Marmot (`:marmot:`) |
+| 🦫 | beaver |
 | 🦔 | hedgehog |
 | 🦇 | bat |
 | 🐻 | bear |

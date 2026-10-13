@@ -6,12 +6,14 @@ repairs. It does not certify a human recognition rate or approve the alphabet fo
 ## Method and result
 
 All 512 entries were rendered in 24- and 32-raster-pixel tiles, with maximum glyph bounds of 20 and 28 pixels,
-using Noto Color Emoji and White Noise's fixed Marmot PNG. Every entry was inspected in grayscale. Both raw and contrast-normalized grayscale distances were
+using Noto Color Emoji and one temporary custom image. That image has since been replaced by the standard beaver
+🦫, checked separately in the same font at these sizes. The other 511 entries are unchanged by this substitution. Every entry in the
+initial set was inspected in grayscale. Both raw and contrast-normalized grayscale distances were
 used to rank all 130,816 unordered pairs. The 96 closest pairs in each initial ranking were inspected. After the
 repairs, the normalized ranking was repeated and its 96 closest pairs inspected. Rankings help find candidates to
 inspect; their scores are not security or recognition thresholds.
 
-The review replaced 24 candidates, preserving the original Matrix 64 and the fixed Marmot artwork. The count remains
+The review replaced 24 candidates, preserving the original Matrix 64. The count remains
 512 and the ideal uniform five-symbol sequence remains 45 bits. The edits remove identified weak pairs; different
 Unicode values and different raster images alone are insufficient evidence of usable verification symbols.
 
