@@ -123,8 +123,8 @@ the installation still exists, not that Alice is using it. Once a device is link
 its siblings better liveness (the "last active" on the Devices screen in Scene 7), but a new sign-in outside the device
 group only ever sees KeyPackage refreshes.
 
-**The code:** four words from a fixed 2,048-word list (about 44 bits). They come from a short exchange between the two
-devices, not from anything published:
+**The code:** four words from the BIP-39 English word list (2,048 words, about 44 bits). They come from a short exchange
+between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
@@ -192,7 +192,8 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 **Trade-offs:**
 
-- Starting fresh never recovers old chats by itself. That needs backups or disaster recovery, which is separate work.
+- Starting fresh never recovers old chats by itself. A backup can restore their content read-only
+  ([account-sync.md](./account-sync.md)), but getting back into them needs a fresh add from someone still there.
 - The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
   same way as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
@@ -302,7 +303,7 @@ that toggle on.
    KeyPackages require.
 7. Chats the approving device isn't in are covered by **gap filling**: a sibling that is in the chat adds the missing
    device, using its own allocation of the laptop's private KeyPackages (Scene 6).
-8. History transfer runs afterwards and is a separate document (see Open questions). The history setting applies to
+8. History transfer runs afterwards; [account-sync.md](./account-sync.md) covers it. The history setting applies to
    every sibling, so a sibling that fills a chat also sends that chat's history if the setting is on. History is
    encrypted for the laptop alone, even though it travels through the device group, because not every sibling is in
    every chat.
@@ -486,7 +487,9 @@ devices, and publish more KeyPackages. The warning must not promise more protect
 These pieces sit behind the scenes above. They are settled in direction; their exact encodings come with the spec.
 
 **The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
-details, settings, status, current public KeyPackage and leaf map, plus the account's rejected slots and KeyPackages.
+details, settings, status, current public KeyPackage, leaf map and history key, plus the account's rejected slots and
+KeyPackages and its backup details: the backup writer, the archive key, and where the latest backup is
+([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
@@ -522,15 +525,13 @@ device treats a group as its device group only if it created it or joined it thr
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 4 words from a 2,048-word list, new for every session |
+| Link code | 4 words from the BIP-39 English word list, new for every session |
 | Link session | expires 10 minutes after the existing device answers |
 
 ## Open questions
 
-1. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
-   markers, pins, notification state), and backups that are never encrypted to the nsec alone.
-2. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
-   early so that it doesn't force changes to this design later.
+Nothing in this walkthrough is open right now. History, small-state sync, backups and the direction for recovering
+when every device is lost are in [account-sync.md](./account-sync.md).
 
 **Left for later:** picking which old chats a device joins, one by one. Nothing here blocks it. A "keep this device off
 new chats" setting is not planned, because other people's inviters add every fresh device before Alice accepts, so a
@@ -549,12 +550,11 @@ Parts of this can become spec text before others are settled:
    signing out while a sibling remains), and the 10-leaf cap.
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
    delivery, gap filling, anomaly signals, and merging.
-4. **Account sync.** History, small-state sync, and backups.
+4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
 
 Details to pick while writing the spec, rather than product questions:
 
-- which reviewed short-code exchange to reuse, the exact pairing messages, how many attempts are allowed, and which
-  word list to use;
+- which reviewed short-code exchange to reuse, the exact pairing messages, and how many attempts are allowed;
 - the chat readiness component's exact contents;
 - the roster and device group message encodings;
 - listing the `client` tag as allowed on KeyPackage events in the Nostr transport.
