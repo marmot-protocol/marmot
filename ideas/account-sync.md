@@ -192,7 +192,10 @@ linked with **Add to all my chats** off isn't in her older chats.
   chooses, and never contain MLS state.
 - **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes,
   encrypted to herself, saying where the latest two backups are. A new device can find it with nothing but her nsec,
-  which is what restoring needs.
+  which is what restoring needs. It is an addressable event signed by her account, not a gift wrap: each new pointer
+  replaces the last, and a new device finds it with one query to her relays. Its address is derived from the account
+  key, so it doesn't label itself as a backup pointer to anyone else. NIP-78's app-data event is the likely home; the
+  Nostr transport spec fixes the exact kind and derivation.
 - **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, the Devices screen says so, for
   example "Backup covers 14 of 15 chats."
 
