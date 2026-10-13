@@ -40,9 +40,11 @@ boundaries").
 
 ## Convergence policy
 
-The convergence policy tells clients how to run convergence. The v1 convergence policy is a set of protocol constants:
-every client MUST use exactly the values below. The policy is not carried in group state and is not a local preference;
-every convergence pass, and every branch scored within it, uses the same values.
+The convergence policy tells clients how to run convergence. Marmot defines two policies, v1 and v2. Both use the
+protocol constants below, and every client MUST use exactly those values. The policies differ only in how app-payload
+witnesses are counted and in the order branches are compared ("App-payload witnesses" and "Branch selection"). The
+policy is not a local preference: authenticated group state chooses the policy each convergence pass uses ("Active
+policy"), and every branch scored within one pass uses that policy.
 
 The convergence policy contains:
 
@@ -58,7 +60,7 @@ The convergence policy contains:
 - `witness_quorum_epochs`: the number of branch epochs that MUST meet sender quorum.
 - `max_witness_override_depth`: the maximum commit-depth boost a branch MAY receive from witness quorum.
 
-The Marmot convergence policy, version 1, is:
+The Marmot convergence policy values, shared by v1 and v2, are:
 
 | Field                               | Value   |
 | ----------------------------------- | ------- |
@@ -70,22 +72,41 @@ The Marmot convergence policy, version 1, is:
 | `witness_quorum_epochs`             | `1`     |
 | `max_witness_override_depth`        | `1`     |
 
-The table above is convergence policy v1. It does not define or encode a policy-version wire field.
+These values do not define or encode a policy-version wire field. A group selects policy v2 by requiring
+[`marmot.group.convergence-policy.v2`](../app-components/convergence-policy-v2.md) (`0x8010`).
 
 `max_witness_override_depth` MUST NOT exceed `max_rewind_commits`. The witness-quorum boost is bounded so it can never
 push a branch past the rollback horizon; allowing it to would let app-payload traffic beat an arbitrarily longer valid
-commit branch, violating the invariant below. The version-1 values satisfy this bound, and any future policy component
+commit branch, violating the invariant below. The shared values satisfy this bound, and any future policy component
 MUST satisfy it.
+
+### Active policy
+
+Each convergence pass uses exactly one policy. A pass uses policy v2 when the GroupContext of the state at the pass's
+policy epoch lists `0x8010` in its required `app_components` list. Otherwise the pass uses policy v1.
+
+The policy epoch is the lowest `fork_epoch` among the pass's eligible candidate branches, which is the latest state that
+every eligible candidate extends. A branch's own `fork_epoch` can depend on which branch a client has applied when forks
+are nested, but the state every eligible candidate shares does not. Every client that resolves the same frozen batch
+therefore reads the same GroupContext and uses the same policy, whichever branch it currently has applied. A pass with
+no eligible candidate selects nothing and does not need a policy. Eligibility does not depend on the policy, because
+both policies use the same `max_rewind_commits`.
+
+The GroupContext of a candidate branch never chooses the policy. A Commit that activates policy v2 therefore affects
+only passes whose policy epoch is at or after that Commit's resulting epoch. Branches that diverged before the
+activating Commit are compared under policy v1, even when one of them contains it.
+
+A client MUST NOT infer the active policy from its own software version or from the versions other members run.
 
 `settlement_quiescence_ms` and `max_convergence_pass_ms` bound one convergence input-collection window. A pass starts
 when the convergence scheduler admits eligible retained input into a new collection batch; receipt or durable retention
 alone does not start a pass. Both intervals are measured with the client's local monotonic clock.
 
 Selection-relevant input is newly retained or reclassified input that can still change deterministic resolution of the
-current batch, for example by adding or invalidating an eligible candidate edge, changing a bounded witness score,
-supplying a missing parent, or making deferred input processable. Selection-relevant input restarts quiescence. Ordinary
-app-payload delivery that cannot change branch selection does not restart it. Neither do duplicate, invalid, stale,
-already-dominated, or already-fully-counted witness inputs.
+current batch, for example by adding or invalidating an eligible candidate edge, changing a witness score the active
+policy compares, supplying a missing parent, or making deferred input processable. Selection-relevant input restarts
+quiescence. Ordinary app-payload delivery that cannot change branch selection does not restart it. Neither do duplicate,
+invalid, stale, already-dominated, or already-fully-counted witness inputs.
 
 While the lifecycle is `PendingPublish` or `Merging`, inbound input is retained but the scheduler MUST NOT admit it into
 a new pass. After the lifecycle returns to `Stable`, the fair scheduling rule below runs before queued inbound input
@@ -148,11 +169,12 @@ The preparation opportunity is bounded anti-starvation behavior, not an uncondit
 guarantee. Marmot does not guarantee that a privileged transition becomes canonical while valid selection-relevant
 input, including ordinary self-updates, continues without bound.
 
-Convergence parameters are deliberately not group-tunable: a bad policy choice can fork a group. A future protocol
-version that changes convergence behavior MUST ship the new policy as a new app component behind a required capability.
-This includes changes to eligibility, retention horizons, comparison order, witness scoring, admissible input, or any
-other rule that can change the selected branch. Clients MUST NOT infer the active policy from software version. Until
-such a component exists, there is no mechanism to change the active policy.
+Convergence parameters are deliberately not group-tunable: a bad policy choice can fork a group. A protocol version
+that changes convergence behavior MUST ship the new policy as a new app component behind a required capability. This
+includes changes to eligibility, retention horizons, comparison order, witness scoring, admissible input, or any other
+rule that can change the selected branch. Clients MUST NOT infer the active policy from software version.
+[`marmot.group.convergence-policy.v2`](../app-components/convergence-policy-v2.md) is the first policy shipped this
+way, and the "Active policy" rule above is how its required status takes effect.
 
 ## Fork detection
 
@@ -285,11 +307,24 @@ author, relay, local device id, or transient leaf index.
 One sender identity cannot increase a branch score by sending many messages in the same epoch. In a multi-device group,
 multiple MLS leaves for the same Marmot account count as one sender identity for witness quorum.
 
+The active policy decides which sender identities count:
+
+- Under policy v1, every sender identity with a witness on the branch counts.
+- Under policy v2, a sender identity counts only if it is a pass member: the Marmot account identity of at least one
+  leaf in the state at the pass's policy epoch ("Active policy"). Witnesses from any other sender are not counted for
+  any branch in any formula below.
+
+The policy v2 rule stops a member added on one branch from counting towards that branch, and stops a committer from
+adding accounts to out-witness the rest of the group. Membership is read from the policy-epoch state rather than from
+each branch's `fork_epoch`, because every client agrees on that state; a member added on shared history after the policy
+epoch does not count in that pass. A message whose sender does not count is still a valid
+application message, and it is delivered as usual if its branch is selected.
+
 For each branch epoch:
 
 ```text
 epoch_witness_score =
-  min(distinct_valid_app_senders_at_epoch,
+  min(distinct_counted_senders_at_epoch,
       witness_quorum_senders_per_epoch)
 ```
 
@@ -301,9 +336,9 @@ app_witness_score =
 ```
 
 `witness_quorum_met` is the boolean used below. It is true when at least `witness_quorum_senders_per_epoch` distinct
-senders witnessed each of at least `witness_quorum_epochs` branch epochs, and false otherwise. Each epoch is evaluated
-independently; the qualifying sender set MAY differ from epoch to epoch, and no single cohort is required to span all
-quorum-counted epochs.
+counted senders witnessed each of at least `witness_quorum_epochs` branch epochs, and false otherwise. Each epoch is
+evaluated independently; the qualifying sender set MAY differ from epoch to epoch, and no single cohort is required to
+span all quorum-counted epochs.
 
 When `witness_quorum_met` is true, the branch receives a bounded depth boost:
 
@@ -313,12 +348,29 @@ effective_commit_depth =
   + (witness_quorum_met ? max_witness_override_depth : 0)
 ```
 
-The boost is capped by the pinned policy. App payload traffic MUST NOT let a branch beat an arbitrarily longer valid
-commit branch.
+Policy v2 also counts the distinct counted senders across the whole branch, with no per-epoch cap, and uses that count
+only for branches that meet quorum:
+
+```text
+branch_witness_senders =
+  number of distinct counted senders over all branch epochs
+
+protected_senders =
+  witness_quorum_met ? branch_witness_senders : 0
+```
+
+A branch with `protected_senders` greater than zero is witness-protected. Policy v1 does not use these values.
+
+The depth boost is capped by the pinned values. Under policy v2, `protected_senders` is compared before depth, so
+witnesses can decide between branches of different depths. Under both policies, app-payload traffic only chooses among
+eligible branches, so it can never override more than `max_rewind_commits` valid Commits. App payload traffic MUST NOT
+let a branch beat an arbitrarily longer valid commit branch.
 
 ## Branch selection
 
-Eligible branches are compared in this order:
+Eligible branches are compared in the order of the active policy. The first criterion that differs decides.
+
+Policy v1:
 
 1. Higher `effective_commit_depth`.
 2. Witness quorum beats no quorum.
@@ -327,14 +379,31 @@ Eligible branches are compared in this order:
 5. Lower `tip_committer`.
 6. Lower `tip_digest`.
 
-`raw_commit_depth` has no separate comparison step. It is already part of `effective_commit_depth`; if effective depth
-and witness-quorum status are both tied, a further raw-depth comparison is necessarily tied as well.
+Policy v2:
+
+1. Higher `protected_senders`.
+2. Higher `effective_commit_depth`.
+3. Witness quorum beats no quorum.
+4. Higher `app_witness_score`.
+5. Lower `tip_priority` (`privileged` before `ordinary`).
+6. Lower `tip_committer`.
+7. Lower `tip_digest`.
+
+Under policy v1, depth decides first and witnesses add at most `max_witness_override_depth`. A branch that one
+out-of-date member extends by one more Commit, and that two members then use, can rewind a branch the rest of the group
+has used for days, withdrawing every app payload on it. Policy v2 puts witness evidence first. A witness-protected
+branch beats every branch that is not witness-protected, whatever their depths, and only a branch with more counted
+senders can replace it. Commit depth still decides between branches that are not witness-protected, and between
+witness-protected branches with the same number of counted senders.
+
+`raw_commit_depth` has no separate comparison step under either policy. It is already part of `effective_commit_depth`;
+if effective depth and witness-quorum status are both tied, a further raw-depth comparison is necessarily tied as well.
 
 Lower `tip_committer` means lexicographic order over the authenticated account identity's raw 32-byte x-only
 secp256k1 public key, as defined in [../foundation/identity.md](../foundation/identity.md). Lower digest means
 lexicographic order over the 32 digest bytes. Digest ordering is a same-committer fallback, not the primary fork winner.
 
-Every value in this comparison MUST come from MLS-valid bytes, retained state, decrypted app payloads, or the pinned
+Every value in this comparison MUST come from MLS-valid bytes, retained state, decrypted app payloads, or the active
 convergence policy.
 
 Transport arrival order, transport timestamps, outer transport event ids, and local receive order MUST NOT participate
@@ -345,8 +414,8 @@ in branch selection.
 Two commits that advance the same candidate parent create competing one-commit branches. They use the branch-selection
 algorithm above; same-epoch ordering is not a second algorithm that bypasses depth or witness criteria.
 
-Only after `effective_commit_depth`, `witness_quorum_met`, and `app_witness_score` are tied does branch selection compare
-the authenticated tip metadata:
+Only after every criterion the active policy compares before `tip_priority` is tied does branch selection compare the
+authenticated tip metadata:
 
 ```text
 CommitOrderingSuffix {

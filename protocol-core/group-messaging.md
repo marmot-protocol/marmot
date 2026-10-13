@@ -67,8 +67,9 @@ If the Commit adds members, the associated Welcomes are sent only after the Comm
 
 ## Race handling
 
-Convergence uses authenticated commit ordering, retained MLS states, and the pinned convergence policy. Transport
-evidence MUST NOT choose the winning branch, and digest ordering is only the final same-committer fallback.
+Convergence uses authenticated commit ordering, retained MLS states, and the convergence policy that group state
+selects. Transport evidence MUST NOT choose the winning branch, and digest ordering is only the final same-committer
+fallback.
 
 ## Message retention
 

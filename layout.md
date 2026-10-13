@@ -52,6 +52,7 @@ app-components/
   group-encrypted-media-v1.md
   group-encrypted-media-v2.md
   group-lifecycle-v1.md
+  convergence-policy-v2.md
   account-identity-proof-v2.md
 transports/
   README.md

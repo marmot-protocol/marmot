@@ -122,6 +122,59 @@ state. Existing groups that predate that component remain valid without it and
 use the explicit enablement flow in
 [group-lifecycle-v1.md](./group-lifecycle-v1.md).
 
+## Enabling a Component in an Existing Group
+
+A group that predates a component can start requiring it once every member supports it. Members learn about support from
+authenticated group state, so the process has three steps: members advertise support, the group becomes eligible, and
+one Commit activates the component.
+
+### Advertising support
+
+A client advertises the component ids it supports in its KeyPackages
+([../foundation/key-packages.md](../foundation/key-packages.md), "Capability advertising") and in its own leaf in each
+group. A LeafNode's `app_components` support list changes only when the member creates a replacement LeafNode, through
+an Update proposal or the UpdatePath of its own Commit.
+
+When a client creates a replacement LeafNode for its own leaf, it SHOULD advertise every component id it currently
+supports. The replacement MUST still advertise every component id the group requires.
+
+A client whose own leaf in a group advertises fewer component ids than it supports SHOULD replace that leaf, for example
+with a self-update Commit. It SHOULD first wait for a delay chosen uniformly at random over a window of at least several
+hours, so that installing a new release does not make every member of a group commit at once. Any replacement LeafNode
+the client creates for that group in the meantime, for example in an UpdatePath, makes the delayed replacement
+unnecessary. The window length is implementation-defined.
+
+### Eligibility
+
+A group is eligible to require a component when every leaf in the current canonical state advertises that component id.
+Eligibility is read from authenticated leaves, so every member computes the same answer.
+
+### Activation
+
+An activation Commit adds the component's initial GroupContext state, if the component has any, and adds its id to the
+required `app_components` list in the same Commit. It is valid only when every leaf in the resulting state advertises
+the id. Its authorization is the component's commit authorization: an active admin unless the component document says
+otherwise.
+
+After activation, a member whose KeyPackage does not advertise the id cannot be added ("Negotiation" above). A client
+SHOULD tell an inviter when an invitee's KeyPackages are refused for this reason, so the invitee can update.
+
+Each component that supports activation in existing groups MUST say in its own document which activation mode it uses:
+
+- Admin-initiated: an active admin decides when to activate. Use this when activation changes what members see or can
+  do.
+- Automatic: once the group is eligible, an active admin's client SHOULD commit the activation without user action. It
+  SHOULD wait for a delay chosen uniformly at random first, and SHOULD commit only while the group's lifecycle is
+  `Stable`. Activations by different admins from the same epoch are an ordinary same-epoch race and produce the same
+  required component whichever branch is selected. Use this when activation changes only how clients process protocol
+  state.
+
+A component whose required status changes how clients validate or select group state MUST forbid removing it, and MUST
+say which state's GroupContext decides its effect, so that branches that diverged across the activating Commit are
+resolved the same way by every client. [group-lifecycle-v1.md](./group-lifecycle-v1.md) and
+[convergence-policy-v2.md](./convergence-policy-v2.md) follow this process, with admin-initiated and automatic
+activation respectively.
+
 ## Common Rules
 
 All state and update payloads use the Marmot binary profile unless a component says otherwise.
@@ -190,8 +243,8 @@ component change, if a feature defines one, is carried as a Marmot app payload o
 as an MLS AppDataUpdate proposal.
 
 For a Commit, a Marmot client evaluates the single AppDataUpdate operation, if any, for each component. The component
-validates the proposal sender, the committer, the prior state, and the operation. It returns the new state bytes, removes
-the component, or returns an invalid result. If any component operation is invalid, the Commit is invalid.
+validates the proposal sender, the committer, the prior state, and the operation. It returns the new state bytes,
+removes the component, or returns an invalid result. If any component operation is invalid, the Commit is invalid.
 
 ## Authorization Evaluation
 
@@ -253,6 +306,7 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.avatar-url.v1](./group-avatar-url-v1.md)
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
+- [marmot.group.convergence-policy.v2](./convergence-policy-v2.md)
 
 The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
 

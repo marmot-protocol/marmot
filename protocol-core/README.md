@@ -76,7 +76,7 @@ find compatible KeyPackage
 
 ## Core rule
 
-Marmot clients choose group state from MLS-valid protocol bytes and the pinned convergence policy.
+Marmot clients choose group state from MLS-valid protocol bytes and the convergence policy that group state selects.
 
 They MUST NOT choose group state from transport arrival order, transport envelope timestamps, outer event ids, local
 receive order, or which transport source delivered a message first.
