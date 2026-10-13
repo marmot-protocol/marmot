@@ -15,8 +15,9 @@ state such as read positions and mutes, and backups for when every device is gon
 - **It is meant for one device.** Each history bundle is sealed to the receiving device, even though it travels
   through the device group.
 - **Small state follows Alice.** Read positions, pins, mutes, and archived chats match across her devices.
-- **Backups are for losing everything.** With two or more devices, the others already have her history. A backup is
-  protected by a recovery key, not her nsec, and restores content, not chat membership.
+- **Backups cover what siblings can't.** Most of the time her other devices already have her history. A backup covers
+  losing every device, or losing the only device in some chat. It is protected by a recovery key, not her nsec, and
+  restores content, not chat membership.
 
 ## Words used here
 
@@ -29,8 +30,9 @@ state such as read positions and mutes, and backups for when every device is gon
 | Small state | Per-chat settings and positions that follow Alice: read position, pins, mutes, archived chats. |
 | Backup | An encrypted archive of history and small state, written by one of Alice's devices. |
 | Backup writer | The one device the roster names to write backups. |
-| Archive key | The random key backups are encrypted with. Every linked device has it. |
-| Recovery key | 12 words that unlock the archive key when no linked device is left. Separate from the nsec. |
+| Recovery key | 12 words that derive the key pair backups are sealed to. Devices keep only its public half. Separate from the nsec. |
+| Archive key | A fresh random key for one backup, sealed to the recovery key's public half. |
+| Backup pointer | A small record, encrypted to Alice's own account, saying where her latest backups are. |
 
 Device, sibling, device group, and roster mean what they mean in [multi-device.md](./multi-device.md#words-used-here).
 
@@ -44,8 +46,13 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 - **History already sent can't be recalled.** Removing a device later doesn't take back what it received.
 - **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
   As with retention today, this relies on Alice's own devices behaving, not on any enforcement.
-- **A stolen nsec doesn't open a backup.** The recovery key does. A stolen linked device holds the archive key, but it
-  can already read everything that key protects.
+- **A stolen nsec doesn't open a backup.** It can find the backup pointer and download the backups, but only the 12
+  words open them. It can also hide or overwrite the pointer, so Alice can keep her own note of where backups go.
+- **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
+  can't open the writer's backup to read chats it was never sent, and a removed device can't read backups written
+  after it left.
+- **Replacing the words doesn't take back old copies.** Someone who already has an old backup and the old words can
+  still read that old backup. New backups are sealed to the new words only.
 - **Lose the recovery key and every device, and the backup is gone.** Nobody can read it, Alice included.
 - **A backup never restores membership.** Getting back into a chat needs a fresh add from someone still in it, so a
   stolen backup is never a way in.
@@ -74,18 +81,22 @@ of the past. History is read-only content.
 **The device that adds the laptop to a chat also sends that chat's history.** At link time that is the approving
 iPhone. Later it is whichever sibling fills a gap. There is exactly one adder per chat, so nothing needs coordinating.
 
-**Filling in older history.** Say Alice got her iPhone last month, but her iPad has two years of Book club. The iPhone
-can only give a month, so the laptop shows "History from March". Then:
+**Filling in what's missing.** Say Alice got her iPhone last month, but her iPad has two years of Book club. The
+iPhone can only give a month, so the laptop shows "History from March". A device's history can also have holes in the
+middle: a device that was offline too long can miss messages for good
+([../protocol-core/retained-history.md](../protocol-core/retained-history.md)), while a sibling has them. So:
 
-1. The laptop records in the device group which date its history for Book club starts from.
-2. Any sibling with older messages for that chat replies with a short offer saying how far back it goes.
-3. The laptop accepts the offer that reaches furthest back. Only that sibling sends the missing range.
-4. The laptop updates its start date. Any offer that still reaches further back can be accepted the same way, though
-   one round is usually enough.
+1. The laptop records in the device group which stretches of Book club it has, marked by the messages at each end in
+   chat order, not by calendar dates. "History from March" is only what Alice sees.
+2. Any sibling with messages outside those stretches, earlier ones or ones in a gap, replies with a short offer naming
+   the stretch it can fill.
+3. For each missing stretch, the laptop accepts the offer that covers the most of it. Only that sibling sends it.
+4. The laptop updates its stretches. Any offer that still covers something missing can be accepted the same way,
+   though one round is usually enough.
 
-Offers are tiny, and only the accepted one moves data, so two siblings never send overlapping history. Nothing waits
-on the device with the most history, so a sleeping iPad never blocks the link. This works because a device's history
-for a chat runs unbroken from when it joined, apart from deleted or expired messages that nobody sends anyway.
+Offers are tiny, and only accepted ones move data, so two siblings never send the same messages. Nothing waits on the
+device with the most history, so a sleeping iPad never blocks the link. If no device has a missing stretch, the laptop
+marks it as a gap in the chat rather than claiming the history is complete.
 
 ## Scene 3: How much
 
@@ -154,8 +165,9 @@ A newly linked device gets a snapshot of the current small state along with its 
 
 ## Scene 7: Backups
 
-With two or more devices, Alice rarely needs a backup: losing one leaves the others with everything. Backups are for
-losing all of them.
+With two or more devices, Alice rarely needs a backup for most chats: losing one leaves the others with everything.
+Backups matter when she loses all of them, and for any chat only one device was in. That can happen, since a device
+linked with **Add to all my chats** off isn't in her older chats.
 
 **Turning backups on:**
 
@@ -163,8 +175,8 @@ losing all of them.
    it. A chosen password would be too weak to protect a file anyone can download and attack offline.
 2. The app says plainly that if she loses these words and every device, nobody can open the backup. She confirms she
    has saved them by typing two of them back.
-3. Backups are encrypted with a random **archive key**, and the recovery key only wraps that archive key. The archive
-   key sits in the roster, so every linked device has it.
+3. The words derive a key pair. The device records only its **public half** in the roster, then forgets the words and
+   the private half. No device can open a backup; only the words can.
 
 **Writing a backup:**
 
@@ -173,19 +185,26 @@ losing all of them.
 - **Takeover.** If the writer's latest backup is more than 7 days old, any other device takes over with one roster
   commit. Convergence settles it if two try at once.
 - **Daily**, when the device finds it convenient, for example on Wi-Fi and charging for a phone.
-- **Two generations.** Each new full backup replaces the previous one only after it is confirmed uploaded, so there is
-  never a moment without a usable backup. It goes to a Blossom server or to storage Alice chooses, and the roster
-  records where the latest one is. It never contains MLS state.
+- **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
+  public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
+- **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
+  previous backups is deleted, so the latest two are always kept. Backups go to a Blossom server or to storage Alice
+  chooses, and never contain MLS state.
+- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes,
+  encrypted to herself, saying where the latest two backups are. A new device can find it with nothing but her nsec,
+  which is what restoring needs.
 - **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, the Devices screen says so, for
   example "Backup covers 14 of 15 chats."
 
-**Replacing the recovery key:** from any linked device, Alice gets new words. Only the wrapping of the archive key
-changes, and the next backup uses it. Her old words stop working once the old backups are replaced. If she has lost
-her words but still has a device, this is all she needs to do.
+**Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes, the
+next backup is sealed to the new words, and older backups are deleted once it is confirmed. If she has lost her words
+but still has a device, this is all she needs to do. Anyone who already copied an old backup and also has the old words
+can still read that old copy; nothing can take it back.
 
-**Restoring:** on a new device, she signs in with her nsec, chooses **No, start fresh** (multi-device Scene 3), then
-**Restore from backup**, and enters her 12 words. Her old chats appear **read-only**, each with "Ask someone in this
-chat to add you back."
+**Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
+**Restore from backup**. The app finds the backup pointer with her nsec, fetches the latest backup, and asks for her 12
+words to open it. If the pointer is missing, she can point the app at where her backups are. Her old chats appear
+**read-only**, each with "Ask someone in this chat to add you back."
 
 **Why read-only:** a backup can't put her back into chats. Membership needs a fresh add from someone still in each
 chat. That boundary is what keeps a stolen backup from becoming a way in.
@@ -217,7 +236,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Blossom chunk size for larger bundles | about 8 MiB |
 | Backup frequency | daily |
 | Backup writer takeover | when the latest backup is more than 7 days old |
-| Backups kept | 2; a new one replaces the old only once confirmed |
+| Backups kept | the latest 2; the oldest is deleted once a new one is confirmed |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 
 ## Left for later
@@ -230,11 +249,12 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 
 ## Path into the spec
 
-1. **Roster additions.** Each device's history key, the backup writer, the archive key, and the latest-backup record
-   join the roster component defined with the multi-device device group.
+1. **Roster additions.** Each device's history key, the backup writer, and the recovery key's public half join the
+   roster component defined with the multi-device device group.
 2. **History transfer.** A feature document for account sync, with device-group message kinds for transfer offers,
    older-history offers, sealed bundle keys, manifests, and confirmations, plus the bundle format. Large bundles reuse
    encrypted-media locators and Blossom storage.
 3. **Small-state sync.** The device-group message kinds, their versions, and their merge rules.
-4. **Backups.** The archive format, how the recovery key wraps the archive key, and the restore flow.
+4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
+   the backup pointer event in the Nostr transport, and the restore flow.
 5. **Re-add requests**, when they are picked up.

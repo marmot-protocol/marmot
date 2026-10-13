@@ -488,7 +488,7 @@ These pieces sit behind the scenes above. They are settled in direction; their e
 
 **The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
 details, settings, status, current public KeyPackage, leaf map and history key, plus the account's rejected slots and
-KeyPackages and its backup details: the backup writer, the archive key, and where the latest backup is
+KeyPackages and its backup details: the backup writer and the recovery key's public half
 ([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
