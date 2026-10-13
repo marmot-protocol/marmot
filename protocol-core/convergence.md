@@ -314,10 +314,13 @@ The active policy decides which sender identities count:
   leaf in the state at the pass's policy epoch ("Active policy"). Witnesses from any other sender are not counted for
   any branch in any formula below.
 
-The policy v2 rule stops a member added on one branch from counting towards that branch, and stops a committer from
-adding accounts to out-witness the rest of the group. Membership is read from the policy-epoch state rather than from
-each branch's `fork_epoch`, because every client agrees on that state; a member added on shared history after the policy
-epoch does not count in that pass. A message whose sender does not count is still a valid
+Under policy v2, the epochs counted for every candidate are the epochs after the pass's policy epoch, up to the
+candidate's `tip_epoch`. Witnesses at the policy epoch or earlier do not count.
+
+The policy v2 rules stop a member added on one branch from counting towards that branch, and stop a committer from
+adding accounts to out-witness the rest of the group. Membership and counted epochs are measured from the policy-epoch
+state rather than from each branch's `fork_epoch`, because every client agrees on that state. A member added on shared
+history after the policy epoch does not count in that pass. A message whose sender does not count is still a valid
 application message, and it is delivered as usual if its branch is selected.
 
 For each branch epoch:
