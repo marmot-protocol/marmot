@@ -210,9 +210,13 @@ linked with **Add to all my chats** off isn't in her older chats.
     devices and the words can produce. Anyone else, including someone with only her nsec, can't tell where it is.
     This is a deliberate exception to KeyPackage slots, whose address is random: the pointer has to be findable again
     from the words alone.
-  - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. The kind
-    is a dedicated Marmot kind, since every Marmot client has to read it, so it does say "Marmot backup pointer".
-    The Nostr transport spec fixes the kind and how the address is derived.
+  - **It is ordinary private app data.** It uses NIP-78's general app-data event, and what the record is, a Marmot
+    backup pointer, is stated only inside the encryption. Any Marmot client can read it, because the Nostr transport
+    spec defines how the address is derived and what the encrypted content looks like.
+  - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. That is
+    the same as any app saving its settings, so it says nothing about Marmot or backups. A relay that follows NIP-78's
+    advice to serve these events only to their author adds to that; a restoring device can authenticate as Alice,
+    because it has her nsec or signer.
 - **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, the Devices screen says so, for
   example "Backup covers 14 of 15 chats."
 
@@ -288,5 +292,5 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
    encrypted-media locators and Blossom storage.
 3. **Small-state sync.** The device-group message kinds, their versions, and their merge rules.
 4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
-   the backup pointer's dedicated kind and address derivation in the Nostr transport, and the restore flow.
+   the backup pointer's address derivation and encrypted content in the Nostr transport, and the restore flow.
 5. **Re-add requests**, when they are picked up.
