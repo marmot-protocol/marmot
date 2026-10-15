@@ -508,6 +508,18 @@ small state, which has its own versions and snapshots ([account-sync.md](./accou
 sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
 roster versus message: anything a device linked later needs to know goes in the roster.
 
+**When a message is lost.** A device that is offline longer than the retention window can lose device-group messages
+for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)). There are no receipts for
+this. Instead, every message that matters has a visible effect on the receiving side, and a sender that doesn't see
+that effect once the receiver is back online sends again:
+
+- **A Welcome for a sibling add.** A device that joins a chat adds it to its leaf map. If the laptop's leaf map still
+  doesn't list Book club, the device that added it sends the Welcome again. If that private KeyPackage has expired
+  meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
+- **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
+  does. That request is the repair.
+- **History and small state** recover the same way ([account-sync.md](./account-sync.md)).
+
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
 account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
 records in the roster which chats it has joined, identifying its leaf in each by the leaf's signature key rather than

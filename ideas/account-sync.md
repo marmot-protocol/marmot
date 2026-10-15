@@ -133,6 +133,10 @@ them.
 **Interruptions:** the laptop resumes by fetching only the chunks it hasn't confirmed. If the iPhone is the one
 interrupted, it re-uploads only the missing chunks, or builds a fresh bundle if its copy is gone.
 
+**If the sealed key or manifest is lost** on the way, the laptop's recorded stretches for that chat don't change, so
+the iPhone's offer is still open and it sends again. This is the same "no visible effect, send again" rule multi-device
+uses for lost device-group messages, so no receipts are needed.
+
 **Where history stops and live chat starts.** A bundle covers everything up to the point the laptop joined. Anything
 after that reaches the laptop live, as a member. An edit, reaction, or deletion can arrive live before the history it
 refers to has finished importing. The laptop keeps such updates until that chat's import is done and then applies them,
@@ -291,13 +295,6 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Backup writer takeover | when the latest backup is more than 7 days old |
 | Backups kept | the latest 2; the oldest is deleted once a new one is confirmed |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
-
-## Open questions
-
-1. **Device-group messages that must not be lost.** A device offline longer than the retention window can lose
-   device-group messages for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)).
-   Small state recovers through snapshots, but a lost Welcome for a sibling add, private KeyPackage hand-off, or sealed
-   history key has no repair path yet. A lost Welcome leaves a leaf in the chat that its device can't use.
 
 ## Left for later
 
