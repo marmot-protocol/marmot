@@ -47,8 +47,10 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 - **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
   As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
   because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
-- **A stolen nsec doesn't open a backup, or even find one.** The backup pointer's address comes from the 12 words, so
-  someone with only the nsec doesn't know where to look, and only the words open a backup.
+- **A stolen nsec can find and replace the backup pointer, but can't open a backup.** The pointer is signed by and
+  encrypted to the account, so the nsec can list it, read it, and publish a new one. Only the 12 words open a backup.
+  A replaced pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the
+  recovery key's public half: a current or former linked device, the same circle as a stolen device.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
   can't open the writer's backup to read chats it was never sent, and a removed device can't read backups written
   after it left.
@@ -163,9 +165,10 @@ What matches across her devices:
 - **Pins.**
 - **Mute and notification settings per chat.**
 - **Archived or hidden chats.**
-- **Invite decisions.** Accepting or declining an invite is an account-wide decision (multi-device Scene 6). If one
-  device accepts while another declines, decline wins: an accepted device can still be removed later, but a decline
-  can't be partly undone.
+- **Invite decisions.** Accepting or declining an invite is an account-wide decision (multi-device Scene 6). They use
+  versions like pins and mutes, with one extra rule ahead of the tie-break: at an equal version, a decline beats an
+  accept. An accepted device can still be removed later, but a decline can't be partly undone. A decline is final for
+  that invite: every device leaves, so a later accept has nothing to act on, and joining again needs a new invite.
 
 **Not drafts.** A draft belongs to the device it was typed on.
 
@@ -211,38 +214,47 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
   public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
 - **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
-  previous backups is deleted, so the latest two are always kept. Backups go to a Blossom server or to storage Alice
-  chooses, and never contain MLS state or attachment files.
+  previous backups is deleted, so the latest two are always kept, plus any kept so no history is lost (below). Backups
+  go to a Blossom server or to storage Alice chooses, and never contain MLS state or attachment files.
 - **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
   and a restore drops any that have expired since.
-- **Never quietly losing a chat.** If a new backup covers fewer chats than the one before, for example after a
-  takeover by a device that isn't in Book club, the last backup that has Book club is kept, and the pointer keeps
-  listing it. The Devices screen says "Book club is only in an older backup from June 3." It is deleted only if Alice
-  chooses to, or once a newer backup covers that chat again.
+- **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just
+  by which chats they include. If a new backup lacks messages an older one has, the last backup holding them is kept
+  and the pointer keeps listing it. That covers a whole missing chat, after a takeover by a device that isn't in Book
+  club, and older messages in a chat, after a takeover by a device that joined Book club with history off. The Devices
+  screen says "Older Book club messages are only in a backup from June 3." It is deleted only if Alice chooses to, or
+  once newer backups hold those messages again. Expired messages don't count.
 - **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes,
   encrypted to herself, saying where the latest backups are. It is an addressable event signed by her account, not a
   gift wrap: each new pointer replaces the last, and a device finds it with one query to her relays.
-  - **Its address comes from the 12 words.** It is derived from the recovery key's public half, which only her linked
-    devices and the words can produce. Anyone else, including someone with only her nsec, can't tell where it is.
-    This is a deliberate exception to KeyPackage slots, whose address is random: the pointer has to be findable again
-    from the words alone.
+  - **Its address comes from the recovery key's public half**, so a restoring device that has the words finds it with
+    one query, and it never collides with another app's data. This is a deliberate exception to KeyPackage slots,
+    whose address is random: the pointer has to be found again from the words. The address doesn't hide it from
+    someone with the nsec, who can list the account's app-data events and decrypt them.
   - **It is ordinary private app data.** It uses NIP-78's general app-data event, and what the record is, a Marmot
-    backup pointer, is stated only inside the encryption. Any Marmot client can read it, because the Nostr transport
-    spec defines how the address is derived and what the encrypted content looks like.
+    backup pointer, is stated only inside the encryption. NIP-78 describes that kind as one app's own storage and
+    points shared formats to dedicated kinds. We use it anyway, as cover: a dedicated kind would tell every relay that
+    this account has Marmot backups. Any Marmot client can still read it, because the Nostr transport spec defines how
+    the address is derived and what the encrypted content looks like. Neither choice hides the pointer from someone
+    with the nsec.
   - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. That is
     the same as any app saving its settings, so it says nothing about Marmot or backups. A relay that follows NIP-78's
     advice to serve these events only to their author adds to that; a restoring device can authenticate as Alice,
     because it has her nsec or signer.
-- **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, the Devices screen says so, for
-  example "Backup covers 14 of 15 chats."
+- **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, or lacks some of its history,
+  the Devices screen says so, for example "Backup covers 14 of 15 chats."
 - **When two device groups merge** (multi-device Scene 3), the surviving group's backup settings and recovery words
-  stay in use, and Alice is told the other group's words no longer are. The absorbed group's backups are kept, like
-  any backup that is the last one holding a chat, until the surviving group's backups cover those chats.
+  are used for new backups. The absorbed group's backups are kept under the rule above, and they stay sealed to that
+  group's words: no device can re-seal them. So Alice is told to keep those words until the surviving group's backups
+  hold the same messages. The pointer lists those backups with a note that they need the other words, and a restore
+  asks for whichever words each backup needs.
 
-**Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes, the
-next backup is sealed to the new words, and older backups are deleted once it is confirmed. If she has lost her words
-but still has a device, this is all she needs to do. Anyone who already copied an old backup and also has the old words
-can still read that old copy; nothing can take it back.
+**Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes and the
+next backup is sealed to the new words. Older backups stay sealed to the old words, and no device can re-seal them. So
+before they are deleted, Alice sees which chats or older messages exist only in them, and confirms. If she still has
+her old words, she can keep those backups instead, and the pointer lists them as needing the old words. If she has lost
+her words but still has a device, replacing them is all she needs to do. Anyone who already copied an old backup and
+also has the old words can still read that old copy; nothing can take it back.
 
 **Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
 **Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
@@ -293,7 +305,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Blossom chunk size for larger bundles | about 8 MiB |
 | Backup frequency | daily |
 | Backup writer takeover | when the latest backup is more than 7 days old |
-| Backups kept | the latest 2; the oldest is deleted once a new one is confirmed |
+| Backups kept | the latest 2, plus any that are the last to hold some messages; replacing the words deletes old ones only after Alice confirms |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 
 ## Left for later

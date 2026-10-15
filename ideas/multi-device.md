@@ -180,9 +180,10 @@ approval decides which group survives.
    The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
 4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
    rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words stay
-   in use, and Alice is told the other words no longer are. The absorbed group's backups are kept until the surviving
-   group's backups cover those chats ([account-sync.md](./account-sync.md)). If the two groups together would have more
+   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words are
+   used from then on. The absorbed group's backups are kept until the surviving group's backups hold the same
+   messages, and they still need the absorbed group's words, so Alice is told to keep those too
+   ([account-sync.md](./account-sync.md)). If the two groups together would have more
    than 10 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
@@ -346,7 +347,8 @@ devices.](multi-device/scene-6-invites.svg)
 - **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow. The
   decision is small state ([account-sync.md](./account-sync.md)), so it carries a version and still reaches a device
   that was offline. If one device accepts while another declines, decline wins: an accepted device can still be
-  removed later, but a decline can't be partly undone.
+  removed later, but a decline can't be partly undone. A decline is final for that invite; joining again needs a new
+  invite.
 - **Declining works the same way**, except every device leaves the chat. Each device already has a leaf in the chat
   once its Welcome arrives, so a decline that only applied to one device would leave ghost members behind.
 - **Chats she creates** include her other devices from the start.
