@@ -66,6 +66,7 @@ features/
   push-notifications.md
 ideas/
   README.md
+  accumulation-relays.md
   multi-device.md
 implementation-model.md
 ```
