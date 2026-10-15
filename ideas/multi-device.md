@@ -42,7 +42,7 @@ have, without a server that controls the device list.
 | Allocation | The private KeyPackages one device has handed to one particular sibling. |
 | Slot announcement | A roster update in which a device records which KeyPackage it put in its slot. |
 | Device group | The hidden MLS group containing only the account's linked devices. |
-| Roster | The device group's record of linked devices, their settings and current KeyPackages, and rejected sign-ins. It is group state, changed only by commits. |
+| Roster | The device group's record of linked devices (their settings, current KeyPackages, leaf maps and history keys), rejected sign-ins, and backup details. It is group state, changed only by commits. |
 | Sibling | Another device on the same account. |
 | Label | The name Alice gives a device when she links it, such as "Laptop". Kept only in the roster, never in KeyPackages or chats. |
 
@@ -156,7 +156,9 @@ every message, and comparing the two screens is what catches it.
 approves on the iPad, group 1 absorbs the laptop and desktop and group 2 is deleted.](multi-device/scene-3-start-fresh.svg)
 
 **What Alice sees:** after choosing **No, start fresh**, the laptop works on its own. It is only in chats she is invited
-to from now on, and it says so: her old chats aren't available here, and people can re-invite her.
+to from now on, and it says so: her old chats aren't available here, and people can re-invite her. If she has a backup,
+she can also choose **Restore from backup** to bring back her old chats' content, read-only until she is added back
+([account-sync.md](./account-sync.md)).
 
 **Underneath:** the laptop has no device group. If one of her old devices is still alive, say an iPad in a drawer, it
 sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links it there, the laptop joins the old
@@ -178,7 +180,10 @@ approval decides which group survives.
    The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
 4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
    rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why.
+   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words stay
+   in use, and Alice is told the other words no longer are. The absorbed group's backups are kept until the surviving
+   group's backups cover those chats ([account-sync.md](./account-sync.md)). If the two groups together would have more
+   than 10 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
    are offline until they come back.
@@ -209,7 +214,8 @@ They match button.](multi-device/scene-4-approve.svg)
 the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same four words
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
-- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default:
+- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default. An
+  account can have at most 10 linked devices; linking an 11th asks her to remove one first.
   - **Add to all my chats** covers the chats her devices are already in. Chats she joins after linking reach every
     device either way, because inviters add all of her fresh devices (Scene 6).
   - **Bring chat history** covers the history of those chats.
@@ -337,7 +343,10 @@ devices.](multi-device/scene-6-invites.svg)
 
 **What Alice sees:**
 
-- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow.
+- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow. The
+  decision is small state ([account-sync.md](./account-sync.md)), so it carries a version and still reaches a device
+  that was offline. If one device accepts while another declines, decline wins: an accepted device can still be
+  removed later, but a decline can't be partly undone.
 - **Declining works the same way**, except every device leaves the chat. Each device already has a leaf in the chat
   once its Welcome arrives, so a decline that only applied to one device would leave ghost members behind.
 - **Chats she creates** include her other devices from the start.
@@ -493,8 +502,9 @@ KeyPackages and its backup details: the backup writer and the recovery key's pub
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
-**Device group messages** are app event kinds for things only needed in the moment: heartbeats, invite accept and
-decline, gap-fill claims, private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. The
+**Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
+private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. Invite decisions travel as
+small state, which has its own versions and snapshots ([account-sync.md](./account-sync.md)). The
 sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
 roster versus message: anything a device linked later needs to know goes in the roster.
 
@@ -516,6 +526,7 @@ device treats a group as its device group only if it created it or joined it thr
 
 | Number | Value |
 | --- | --- |
+| Linked devices per account | at most 10 |
 | Leaves per account in one chat | at most 10 |
 | KeyPackages an inviter adds per account | at most 10 |
 | Freshness window for inviters | 30 days |

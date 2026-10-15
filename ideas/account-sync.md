@@ -45,7 +45,8 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
   history. That falls under the stolen-linked-device limit in multi-device.
 - **History already sent can't be recalled.** Removing a device later doesn't take back what it received.
 - **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
-  As with retention today, this relies on Alice's own devices behaving, not on any enforcement.
+  As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
+  because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
 - **A stolen nsec doesn't open a backup, or even find one.** The backup pointer's address comes from the 12 words, so
   someone with only the nsec doesn't know where to look, and only the words open a backup.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
@@ -98,6 +99,12 @@ middle: a device that was offline too long can miss messages for good
 Offers are tiny, and only accepted ones move data, so two siblings never send the same messages. Nothing waits on the
 device with the most history, so a sleeping iPad never blocks the link. If no device has a missing stretch, the laptop
 marks it as a gap in the chat rather than claiming the history is complete.
+
+**Keeping history whole later.** The same offers run whenever any device knows it has lost messages in a chat it is
+already in, for example after being offline longer than the retention window allows. It records its stretches for
+that chat, and siblings offer what it is missing. This is triggered by a known loss, not by continuous comparison, so
+it costs nothing while devices are keeping up. **Bring chat history** doesn't block it: that setting is about history
+from before a device was linked, and these are messages from while it was a member.
 
 ## Scene 3: How much
 
@@ -152,6 +159,9 @@ What matches across her devices:
 - **Pins.**
 - **Mute and notification settings per chat.**
 - **Archived or hidden chats.**
+- **Invite decisions.** Accepting or declining an invite is an account-wide decision (multi-device Scene 6). If one
+  device accepts while another declines, decline wins: an accepted device can still be removed later, but a decline
+  can't be partly undone.
 
 **Not drafts.** A draft belongs to the device it was typed on.
 
@@ -163,8 +173,7 @@ makes arrival order irrelevant:
   version one higher than the highest the sending device has seen for that item. If two devices that couldn't see each
   other pick the same version, the change whose authenticating leaf signature key sorts first wins. That is the key
   that signed the change itself, not the device's current key, which may have rotated since. Every device picks the
-  same winner,
-  and no device's clock matters.
+  same winner, and no device's clock matters.
 
 A newly linked device gets a snapshot of the current small state along with its history. So does a device coming back
 after a long gap: device-group messages it was offline for can be lost for good
@@ -184,8 +193,9 @@ linked with **Add to all my chats** off isn't in her older chats.
    it. A chosen password would be too weak to protect a file anyone can download and attack offline.
 2. The app says plainly that if she loses these words and every device, nobody can open the backup. She confirms she
    has saved them by typing two of them back.
-3. The words derive a key pair. The device records only its **public half** in the roster, then forgets the words and
-   the private half. No device can open a backup; only the words can.
+3. The words derive a key pair. The device keeps only its **public half**, then forgets the words and the private
+   half. No device can open a backup; only the words can. The public half lives in the roster. With only one device
+   there is no device group yet, so that device keeps it locally and copies it into the roster when a group starts.
 
 **Writing a backup:**
 
@@ -198,7 +208,9 @@ linked with **Add to all my chats** off isn't in her older chats.
   public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
 - **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
   previous backups is deleted, so the latest two are always kept. Backups go to a Blossom server or to storage Alice
-  chooses, and never contain MLS state.
+  chooses, and never contain MLS state or attachment files.
+- **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
+  and a restore drops any that have expired since.
 - **Never quietly losing a chat.** If a new backup covers fewer chats than the one before, for example after a
   takeover by a device that isn't in Book club, the last backup that has Book club is kept, and the pointer keeps
   listing it. The Devices screen says "Book club is only in an older backup from June 3." It is deleted only if Alice
@@ -219,6 +231,9 @@ linked with **Add to all my chats** off isn't in her older chats.
     because it has her nsec or signer.
 - **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, the Devices screen says so, for
   example "Backup covers 14 of 15 chats."
+- **When two device groups merge** (multi-device Scene 3), the surviving group's backup settings and recovery words
+  stay in use, and Alice is told the other group's words no longer are. The absorbed group's backups are kept, like
+  any backup that is the last one holding a chat, until the surviving group's backups cover those chats.
 
 **Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes, the
 next backup is sealed to the new words, and older backups are deleted once it is confirmed. If she has lost her words
@@ -236,10 +251,12 @@ A restore is a copy of the last backup. Messages sent after it are only recovera
 When it later links another device and a device group starts, it puts that public half in the roster, so the next
 backup is sealed to the same words.
 
+**When she is added back:** whoever adds her, the restored transcript and the new membership become the same chat. The
+restored messages stay and the chat becomes writable.
+
 **If one of her devices is still alive after all:** Scene 3 of multi-device has two endings, and this is the other one.
-A surviving iPad links the restored phone and adds it to the old chats. Each restored transcript and the new membership
-become the same chat: the restored messages stay, the chat becomes writable, and the iPad sends only the stretches the
-backup doesn't have, including everything after the last backup.
+A surviving iPad links the restored phone and adds it to the old chats. On top of the above, the iPad sends only the
+stretches the backup doesn't have, including everything after the last backup.
 
 **Why read-only:** a backup can't put her back into chats. Membership needs a fresh add from someone still in each
 chat. That boundary is what keeps a stolen backup from becoming a way in.
@@ -275,6 +292,13 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Backups kept | the latest 2; the oldest is deleted once a new one is confirmed |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 
+## Open questions
+
+1. **Device-group messages that must not be lost.** A device offline longer than the retention window can lose
+   device-group messages for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)).
+   Small state recovers through snapshots, but a lost Welcome for a sibling add, private KeyPackage hand-off, or sealed
+   history key has no repair path yet. A lost Welcome leaves a leaf in the chat that its device can't use.
+
 ## Left for later
 
 - **Asking to be added back** (Scene 8), as a planned feature.
@@ -282,6 +306,10 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 - **Backups that cover every device's chats**, by combining contributions from several devices instead of only the
   writer's.
 - **A "recent only" history option**, if transfer size turns out to matter.
+- **Attachment files in backups**, as separate work. Backups carry attachment keys only, so old media depends on its
+  Blossom servers keeping the files.
+- **Account-wide settings that aren't per chat**, such as who may invite her. Most account data, such as contacts and
+  mute lists, is already Nostr events that sync through relays.
 
 ## Path into the spec
 
