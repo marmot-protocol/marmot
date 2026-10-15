@@ -66,6 +66,7 @@ features/
   push-notifications.md
 ideas/
   README.md
+  account-sync.md
   multi-device.md
 implementation-model.md
 ```

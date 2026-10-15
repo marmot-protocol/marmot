@@ -21,7 +21,7 @@ have, without a server that controls the device list.
   KeyPackage it put in its public slot, and hands them private single-use KeyPackages. Siblings add each other to chats
   with those, never with whatever relays show for the slot.
 - **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that the same four words appear on both screens, and confirming
+  devices ask "Was this you?" You approve by checking that the same seven emoji appear on both screens, and confirming
   on each.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
@@ -42,7 +42,7 @@ have, without a server that controls the device list.
 | Allocation | The private KeyPackages one device has handed to one particular sibling. |
 | Slot announcement | A roster update in which a device records which KeyPackage it put in its slot. |
 | Device group | The hidden MLS group containing only the account's linked devices. |
-| Roster | The device group's record of linked devices, their settings and current KeyPackages, and rejected sign-ins. It is group state, changed only by commits. |
+| Roster | The device group's record of linked devices (their settings, current KeyPackages, leaf maps and history keys), rejected sign-ins, and backup details. It is group state, changed only by commits. |
 | Sibling | Another device on the same account. |
 | Label | The name Alice gives a device when she links it, such as "Laptop". Kept only in the roster, never in KeyPackages or chats. |
 
@@ -100,7 +100,7 @@ coordinate. It also keeps "two device groups for one account" rare (Scene 3).
 ## Scene 2: Signing in on a new device
 
 ![The new laptop publishes its KeyPackage, sees another device whose KeyPackage was refreshed two hours ago, and asks
-whether Alice still has it. On Yes it sends a pairing request and waits; four words appear once the other device
+whether Alice still has it. On Yes it sends a pairing request and waits; seven emoji appear once the other device
 answers.](multi-device/scene-2-new-sign-in.svg)
 
 **What Alice sees:**
@@ -108,12 +108,12 @@ answers.](multi-device/scene-2-new-sign-in.svg)
 1. She signs in on her laptop with her nsec or a signer.
 2. The laptop says she's already signed in on another device (last seen 2 hours ago) and asks whether she still has it.
 3. **Yes:** the laptop asks her to open Marmot on a device she's already signed in on. When that device answers, both
-   screens show the same four words (Scene 4).
+   screens show the same seven emoji (Scene 4).
 4. **No, start fresh:** Scene 3.
 
 **Underneath:** the laptop publishes its KeyPackage right away. That is what lets the iPhone notice it. The laptop
 learns there is another device from the account's other fresh slots. On **Yes**, it also sends a pairing request that
-names its KeyPackage and starts the exchange that produces the four words.
+names its KeyPackage and starts the exchange that produces the seven emoji.
 
 **What "last seen" means here:** the only public sign of another device is when it last republished its KeyPackage.
 Group messages are signed with throwaway keys, so they can't be tied to Alice or to a device. "Last seen 2 hours ago"
@@ -123,18 +123,28 @@ the installation still exists, not that Alice is using it. Once a device is link
 its siblings better liveness (the "last active" on the Devices screen in Scene 7), but a new sign-in outside the device
 group only ever sees KeyPackage refreshes.
 
-**The code:** four words from a fixed 2,048-word list (about 44 bits). They come from a short exchange between the two
-devices, not from anything published:
+**The code:** seven emoji from Matrix's 64-symbol verification set, about 42 bits, for example 🐢 🍎 🚲 🌙 🔑 🎸 🐙.
+Pictures need no translation. A word list would not work across languages: a phone set to Spanish and a laptop set to
+English would show different words for the same code. Alice compares the pictures themselves. Each emoji also has a
+short label in the device's language, for screen readers, but labels differ between languages, so they aren't what she
+compares. For anyone who can't compare pictures, both devices switch to Matrix's decimal method instead: three numbers
+from 1000 to 9191, about 39 bits. It is a separate, shorter code taken from the same exchange, not the emoji written as
+numbers. The code comes from a short exchange between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
 3. The laptop reveals its key, and the other device checks it is the one the laptop locked in.
-4. Both devices turn the two keys into the same four words, mixed with the session, the account, the laptop's exact
-   KeyPackage, and the other device's identity.
+4. Both devices turn the two keys into the same seven emoji (or the same three numbers), mixed with the session, the
+   account, the laptop's exact KeyPackage, and the other device's identity.
 
 Each side commits to its key before it sees the other's, so nobody can steer the result, including someone sitting
-in the middle. This is the same idea as Matrix's emoji verification. We would reuse a reviewed design rather than
-invent one.
+in the middle. This is the same idea as Matrix's emoji verification. We reuse Matrix's display as it is: its emoji
+table, its translated labels for screen readers, and its decimal method. We don't adopt Matrix's protocol, and the
+exchange itself will be a reviewed design chosen with the spec rather than one we invent.
+
+**Why seven emoji is enough:** an attacker gets one guess per session, and a wrong guess shows up as a mismatch on
+screen. 42 bits makes that guess about a 1 in 4 trillion chance, and the decimal method's 39 bits about 1 in 550
+billion. Either is plenty for a check that can't be retried silently.
 
 **How the messages travel:** as gift wraps addressed to Alice's own account, because the laptop isn't in the device
 group yet. Anyone with her nsec can read them too. That is fine: the exchange assumes someone can read and replace
@@ -156,7 +166,9 @@ every message, and comparing the two screens is what catches it.
 approves on the iPad, group 1 absorbs the laptop and desktop and group 2 is deleted.](multi-device/scene-3-start-fresh.svg)
 
 **What Alice sees:** after choosing **No, start fresh**, the laptop works on its own. It is only in chats she is invited
-to from now on, and it says so: her old chats aren't available here, and people can re-invite her.
+to from now on, and it says so: her old chats aren't available here, and people can re-invite her. If she has a backup,
+she can also choose **Restore from backup** to bring back her old chats' content, read-only until she is added back
+([account-sync.md](./account-sync.md)).
 
 **Underneath:** the laptop has no device group. If one of her old devices is still alive, say an iPad in a drawer, it
 sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links it there, the laptop joins the old
@@ -178,7 +190,11 @@ approval decides which group survives.
    The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
 4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
    rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why.
+   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words are
+   used from then on. The absorbed group's backups are kept until the surviving group's backups hold the same
+   messages, and they still need the absorbed group's words, so Alice is told to keep those too
+   ([account-sync.md](./account-sync.md)). If the two groups together would have more
+   than 10 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
    are offline until they come back.
@@ -192,7 +208,8 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 **Trade-offs:**
 
-- Starting fresh never recovers old chats by itself. That needs backups or disaster recovery, which is separate work.
+- Starting fresh never recovers old chats by itself. A backup can restore their content read-only
+  ([account-sync.md](./account-sync.md)), but getting back into them needs a fresh add from someone still there.
 - The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
   same way as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
@@ -200,15 +217,16 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
-to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same words and a
+![Alice's iPhone shows a New sign-in prompt with the client name, the same seven emoji as the laptop, a field
+to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same emoji and a
 They match button.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
-the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same four words
+the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same seven emoji
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
-- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default:
+- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default. An
+  account can have at most 10 linked devices; linking an 11th asks her to remove one first.
   - **Add to all my chats** covers the chats her devices are already in. Chats she joins after linking reach every
     device either way, because inviters add all of her fresh devices (Scene 6).
   - **Bring chat history** covers the history of those chats.
@@ -217,7 +235,7 @@ and confirms on both devices: **They match** on the laptop, and one of these on 
   device can share its model and platform privately in the device group once it is linked.
 - **This wasn't me:** Scene 8.
 - **Not now:** the sign-in stays listed under Unrecognized sign-ins on the Devices screen (Scene 7). Linking it later
-  starts a fresh exchange from either device, with new words. No code stays valid while a sign-in waits.
+  starts a fresh exchange from either device, with new emoji. No code stays valid while a sign-in waits.
 
 **Underneath:** the iPhone noticed a KeyPackage in a slot that isn't in its roster, and the laptop's pairing request
 naming it. Once Alice confirms on both screens, each device sends a short confirmation tied to the exchange:
@@ -247,10 +265,11 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 
 **Why the code can't be faked:**
 
-- **Nothing to search for ahead of time.** The words depend on a key the iPhone picks during the session.
+- **Nothing to search for ahead of time.** The emoji depend on a key the iPhone picks during the session.
 - **Sitting in the middle shows.** Someone who swaps in their own one-time keys has to lock them in before seeing the
-  real ones, so the two halves produce different words and the screens don't match.
-- **One guess per session.** Each session gives an attacker about a 1 in 17 trillion chance. Sessions expire 10 minutes
+  real ones, so the two halves produce different emoji and the screens don't match.
+- **One guess per session.** Each session gives an attacker about a 1 in 4 trillion chance with emoji, or 1 in 550
+  billion with the decimal numbers. Sessions expire 10 minutes
   after the other device answers, and the number of attempts is limited.
 - **Two requests at once.** If two pairing requests arrive together, Alice's devices treat that as an anomaly and don't
   offer Link for either.
@@ -268,7 +287,7 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 - **Careless approval:** if Alice taps Link without comparing, nothing catches it. The prompt makes the comparison the
-  main thing on screen, and the app never asks her to type the words or read them to anyone.
+  main thing on screen, and the app never asks her to type the emoji or read them to anyone.
 
 ## Scene 5: The new device joins Alice's chats
 
@@ -302,7 +321,7 @@ that toggle on.
    KeyPackages require.
 7. Chats the approving device isn't in are covered by **gap filling**: a sibling that is in the chat adds the missing
    device, using its own allocation of the laptop's private KeyPackages (Scene 6).
-8. History transfer runs afterwards and is a separate document (see Open questions). The history setting applies to
+8. History transfer runs afterwards; [account-sync.md](./account-sync.md) covers it. The history setting applies to
    every sibling, so a sibling that fills a chat also sends that chat's history if the setting is on. History is
    encrypted for the laptop alone, even though it travels through the device group, because not every sibling is in
    every chat.
@@ -336,7 +355,11 @@ devices.](multi-device/scene-6-invites.svg)
 
 **What Alice sees:**
 
-- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow.
+- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow. The
+  decision is small state ([account-sync.md](./account-sync.md)), so it carries a version and still reaches a device
+  that was offline. If one device accepts while another declines, decline wins: an accepted device can still be
+  removed later, but a decline can't be partly undone. A decline is final for that invite; joining again needs a new
+  invite.
 - **Declining works the same way**, except every device leaves the chat. Each device already has a leaf in the chat
   once its Welcome arrives, so a decline that only applied to one device would leave ghost members behind.
 - **Chats she creates** include her other devices from the start.
@@ -486,14 +509,29 @@ devices, and publish more KeyPackages. The warning must not promise more protect
 These pieces sit behind the scenes above. They are settled in direction; their exact encodings come with the spec.
 
 **The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
-details, settings, status, current public KeyPackage and leaf map, plus the account's rejected slots and KeyPackages.
+details, settings, status, current public KeyPackage, leaf map and history key, plus the account's rejected slots and
+KeyPackages and its backup details: the backup writer and the recovery key's public half
+([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
-**Device group messages** are app event kinds for things only needed in the moment: heartbeats, invite accept and
-decline, gap-fill claims, private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. The
+**Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
+private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. Invite decisions travel as
+small state, which has its own versions and snapshots ([account-sync.md](./account-sync.md)). The
 sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
 roster versus message: anything a device linked later needs to know goes in the roster.
+
+**When a message is lost.** A device that is offline longer than the retention window can lose device-group messages
+for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)). There are no receipts for
+this. Instead, every message that matters has a visible effect on the receiving side, and a sender that doesn't see
+that effect once the receiver is back online sends again:
+
+- **A Welcome for a sibling add.** A device that joins a chat adds it to its leaf map. If the laptop's leaf map still
+  doesn't list Book club, the device that added it sends the Welcome again. If that private KeyPackage has expired
+  meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
+- **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
+  does. That request is the repair.
+- **History and small state** recover the same way ([account-sync.md](./account-sync.md)).
 
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
 account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
@@ -513,6 +551,7 @@ device treats a group as its device group only if it created it or joined it thr
 
 | Number | Value |
 | --- | --- |
+| Linked devices per account | at most 10 |
 | Leaves per account in one chat | at most 10 |
 | KeyPackages an inviter adds per account | at most 10 |
 | Freshness window for inviters | 30 days |
@@ -522,15 +561,14 @@ device treats a group as its device group only if it created it or joined it thr
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 4 words from a 2,048-word list, new for every session |
+| Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits); new for every session |
+| Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
 
 ## Open questions
 
-1. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
-   markers, pins, notification state), and backups that are never encrypted to the nsec alone.
-2. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
-   early so that it doesn't force changes to this design later.
+Nothing in this walkthrough is open right now. History, small-state sync, backups and the direction for recovering
+when every device is lost are in [account-sync.md](./account-sync.md).
 
 **Left for later:** picking which old chats a device joins, one by one. Nothing here blocks it. A "keep this device off
 new chats" setting is not planned, because other people's inviters add every fresh device before Alice accepts, so a
@@ -549,12 +587,11 @@ Parts of this can become spec text before others are settled:
    signing out while a sibling remains), and the 10-leaf cap.
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
    delivery, gap filling, anomaly signals, and merging.
-4. **Account sync.** History, small-state sync, and backups.
+4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
 
 Details to pick while writing the spec, rather than product questions:
 
-- which reviewed short-code exchange to reuse, the exact pairing messages, how many attempts are allowed, and which
-  word list to use;
+- which reviewed short-code exchange to reuse, the exact pairing messages, and how many attempts are allowed;
 - the chat readiness component's exact contents;
 - the roster and device group message encodings;
 - listing the `client` tag as allowed on KeyPackage events in the Nostr transport.

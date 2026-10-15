@@ -17,6 +17,7 @@ Implementations MUST NOT treat an idea document as an interop surface.
 ## Current ideas
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
+- [account-sync.md](./account-sync.md) - history for a newly linked device, small-state sync, backups, and recovering when every device is lost.
 
 ## From idea to spec
 
