@@ -33,6 +33,9 @@ conversation uses a newly created MLS group.
 
 ## Enablement for existing groups
 
+Enablement follows the admin-initiated activation mode in [README.md](./README.md) ("Enabling a Component in an
+Existing Group").
+
 A group that predates this component MAY omit it and MAY omit `0x800c` from its
 required `app_components` list. Such a group remains valid but cannot be
 disbanded.

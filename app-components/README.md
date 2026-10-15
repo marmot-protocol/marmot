@@ -122,6 +122,62 @@ state. Existing groups that predate that component remain valid without it and
 use the explicit enablement flow in
 [group-lifecycle-v1.md](./group-lifecycle-v1.md).
 
+## Enabling a Component in an Existing Group
+
+A group that predates a component can start requiring it once every member supports it. Members learn about support from
+authenticated group state, so the process has three steps: members advertise support, the group becomes eligible, and
+one Commit activates the component.
+
+### Advertising support
+
+A client advertises the component ids it supports in its KeyPackages
+([../foundation/key-packages.md](../foundation/key-packages.md), "Capability advertising") and in its own leaf in each
+group. A LeafNode's `app_components` support list changes only when the member creates a replacement LeafNode, through
+an Update proposal or the UpdatePath of its own Commit.
+
+When a client creates a replacement LeafNode for its own leaf, it SHOULD advertise every component id it currently
+supports. The replacement MUST still advertise every component id the group requires.
+
+A client MUST NOT advertise a component id it does not support. A client that drops support for a component id stops
+advertising it in new KeyPackages, and SHOULD stop advertising it in its next replacement LeafNode in each group that
+does not require it. A client MUST NOT drop support for a component id that a group it belongs to requires: it keeps
+supporting that component while it remains a member, or leaves the group first
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md)). There is no way for a member to
+withdraw support for a required component and stay in the group.
+
+A client whose own leaf in a group advertises fewer component ids than it supports SHOULD replace that leaf, for example
+with a self-update Commit. It SHOULD first wait for a delay chosen uniformly at random from a window that starts when
+the client notices the stale leaf, so that installing a new release does not make every member of a group commit at
+once. The window's length is implementation-defined and SHOULD be at least several hours. When the delay ends, the
+client replaces the leaf only if it still advertises fewer component ids than the client supports. Any replacement
+LeafNode the client created for that group in the meantime, for example in an UpdatePath, already makes the delayed
+replacement unnecessary. The delayed replacement is an ordinary Commit and follows the normal publication rules.
+
+### Eligibility
+
+A group is eligible to require a component when every leaf in the current canonical state advertises that component id.
+Eligibility is read from authenticated leaves, so every member computes the same answer.
+
+### Activation
+
+An activation Commit adds the component's initial GroupContext state, if the component has any, and adds its id to the
+required `app_components` list in the same Commit. It is valid only when every leaf in the resulting state advertises
+the id. Its authorization is the component's commit authorization: an active admin unless the component document says
+otherwise.
+
+Activation is an explicit decision by an authorized member. A client MUST NOT activate a component unless its user, or
+the component's own document, asks it to. Before committing, the client checks again that the component is not already
+required and that every leaf still advertises it, so it does not repeat an activation another admin already committed.
+
+After activation, a member whose KeyPackage does not advertise the id cannot be added ("Negotiation" above). A client
+SHOULD tell an inviter when an invitee's KeyPackages are refused for this reason, so the invitee can update.
+
+A component that supports activation in an existing group MUST say so in its own document and define the initial state
+its activation Commit installs. A component whose required status changes how clients validate or select group state
+MUST forbid removing it, and MUST say which state's GroupContext decides its effect, so that branches that diverged
+across the activating Commit are resolved the same way by every client. [group-lifecycle-v1.md](./group-lifecycle-v1.md)
+follows this process.
+
 ## Common Rules
 
 All state and update payloads use the Marmot binary profile unless a component says otherwise.

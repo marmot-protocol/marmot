@@ -52,6 +52,12 @@ current-profile capabilities are listed by namespace in [registries.md](./regist
 `app_data_dictionary` extension and the relevant proposal types in MLS capabilities, including `app_data_update`
 (`0x0008`), and its `app_components` entry advertises the Marmot component ids the client supports.
 
+When the set of component ids a client supports changes, the client SHOULD replace its published KeyPackages with
+KeyPackages that advertise the new set. A replacement keeps advertising every component id the client still supports,
+so the client can still be added to groups that do not yet require a newly added id. Leaves in groups the client has
+already joined change separately (see [../app-components/README.md](../app-components/README.md), "Enabling a Component
+in an Existing Group").
+
 Last-resort status is not an MLS capability or extension type. A last-resort KeyPackage carries an
 `app_data_dictionary` in its KeyPackage extensions, separate from the dictionary in its embedded LeafNode, with an
 empty-data `last_resort_key_package` component entry. A KeyPackage that is not last-resort MUST NOT contain that entry.
