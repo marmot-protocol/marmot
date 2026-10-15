@@ -21,7 +21,7 @@ have, without a server that controls the device list.
   KeyPackage it put in its public slot, and hands them private single-use KeyPackages. Siblings add each other to chats
   with those, never with whatever relays show for the slot.
 - **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that the same four words appear on both screens, and confirming
+  devices ask "Was this you?" You approve by checking that the same seven emoji appear on both screens, and confirming
   on each.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
@@ -100,7 +100,7 @@ coordinate. It also keeps "two device groups for one account" rare (Scene 3).
 ## Scene 2: Signing in on a new device
 
 ![The new laptop publishes its KeyPackage, sees another device whose KeyPackage was refreshed two hours ago, and asks
-whether Alice still has it. On Yes it sends a pairing request and waits; four words appear once the other device
+whether Alice still has it. On Yes it sends a pairing request and waits; seven emoji appear once the other device
 answers.](multi-device/scene-2-new-sign-in.svg)
 
 **What Alice sees:**
@@ -108,12 +108,12 @@ answers.](multi-device/scene-2-new-sign-in.svg)
 1. She signs in on her laptop with her nsec or a signer.
 2. The laptop says she's already signed in on another device (last seen 2 hours ago) and asks whether she still has it.
 3. **Yes:** the laptop asks her to open Marmot on a device she's already signed in on. When that device answers, both
-   screens show the same four words (Scene 4).
+   screens show the same seven emoji (Scene 4).
 4. **No, start fresh:** Scene 3.
 
 **Underneath:** the laptop publishes its KeyPackage right away. That is what lets the iPhone notice it. The laptop
 learns there is another device from the account's other fresh slots. On **Yes**, it also sends a pairing request that
-names its KeyPackage and starts the exchange that produces the four words.
+names its KeyPackage and starts the exchange that produces the seven emoji.
 
 **What "last seen" means here:** the only public sign of another device is when it last republished its KeyPackage.
 Group messages are signed with throwaway keys, so they can't be tied to Alice or to a device. "Last seen 2 hours ago"
@@ -123,18 +123,26 @@ the installation still exists, not that Alice is using it. Once a device is link
 its siblings better liveness (the "last active" on the Devices screen in Scene 7), but a new sign-in outside the device
 group only ever sees KeyPackage refreshes.
 
-**The code:** four words from the BIP-39 English word list (2,048 words, about 44 bits). They come from a short exchange
-between the two devices, not from anything published:
+**The code:** seven emoji from Matrix's 64-symbol verification set, about 42 bits, for example 🐢 🍎 🚲 🌙 🔑 🎸 🐙.
+Pictures need no translation. A word list would not work across languages: a phone set to Spanish and a laptop set to
+English would show different words for the same code. For anyone who can't compare pictures, both screens can show the
+same code as Matrix's numeric form instead, three four-digit numbers. The emoji come from a short exchange between the
+two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
 3. The laptop reveals its key, and the other device checks it is the one the laptop locked in.
-4. Both devices turn the two keys into the same four words, mixed with the session, the account, the laptop's exact
+4. Both devices turn the two keys into the same seven emoji, mixed with the session, the account, the laptop's exact
    KeyPackage, and the other device's identity.
 
 Each side commits to its key before it sees the other's, so nobody can steer the result, including someone sitting
-in the middle. This is the same idea as Matrix's emoji verification. We would reuse a reviewed design rather than
-invent one.
+in the middle. This is the same idea as Matrix's emoji verification. We reuse Matrix's display as it is: its emoji
+table, its translated labels for screen readers, and its numeric form. We don't adopt Matrix's protocol, and the
+exchange itself will be a reviewed design chosen with the spec rather than one we invent.
+
+**Why seven emoji is enough:** an attacker gets one guess per session, and a wrong guess shows up as a mismatch on
+screen. 42 bits makes that guess about a 1 in 4 trillion chance, which is plenty for a check that can't be retried
+silently.
 
 **How the messages travel:** as gift wraps addressed to Alice's own account, because the laptop isn't in the device
 group yet. Anyone with her nsec can read them too. That is fine: the exchange assumes someone can read and replace
@@ -207,12 +215,12 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
-to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same words and a
+![Alice's iPhone shows a New sign-in prompt with the client name, the same seven emoji as the laptop, a field
+to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same emoji and a
 They match button.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
-the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same four words
+the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same seven emoji
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
 - **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default. An
@@ -225,7 +233,7 @@ and confirms on both devices: **They match** on the laptop, and one of these on 
   device can share its model and platform privately in the device group once it is linked.
 - **This wasn't me:** Scene 8.
 - **Not now:** the sign-in stays listed under Unrecognized sign-ins on the Devices screen (Scene 7). Linking it later
-  starts a fresh exchange from either device, with new words. No code stays valid while a sign-in waits.
+  starts a fresh exchange from either device, with new emoji. No code stays valid while a sign-in waits.
 
 **Underneath:** the iPhone noticed a KeyPackage in a slot that isn't in its roster, and the laptop's pairing request
 naming it. Once Alice confirms on both screens, each device sends a short confirmation tied to the exchange:
@@ -255,10 +263,10 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 
 **Why the code can't be faked:**
 
-- **Nothing to search for ahead of time.** The words depend on a key the iPhone picks during the session.
+- **Nothing to search for ahead of time.** The emoji depend on a key the iPhone picks during the session.
 - **Sitting in the middle shows.** Someone who swaps in their own one-time keys has to lock them in before seeing the
-  real ones, so the two halves produce different words and the screens don't match.
-- **One guess per session.** Each session gives an attacker about a 1 in 17 trillion chance. Sessions expire 10 minutes
+  real ones, so the two halves produce different emoji and the screens don't match.
+- **One guess per session.** Each session gives an attacker about a 1 in 4 trillion chance. Sessions expire 10 minutes
   after the other device answers, and the number of attempts is limited.
 - **Two requests at once.** If two pairing requests arrive together, Alice's devices treat that as an anomaly and don't
   offer Link for either.
@@ -276,7 +284,7 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 - **Careless approval:** if Alice taps Link without comparing, nothing catches it. The prompt makes the comparison the
-  main thing on screen, and the app never asks her to type the words or read them to anyone.
+  main thing on screen, and the app never asks her to type the emoji or read them to anyone.
 
 ## Scene 5: The new device joins Alice's chats
 
@@ -550,7 +558,7 @@ device treats a group as its device group only if it created it or joined it thr
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 4 words from the BIP-39 English word list, new for every session |
+| Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits), or its numeric form; new for every session |
 | Link session | expires 10 minutes after the existing device answers |
 
 ## Open questions
