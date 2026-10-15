@@ -138,6 +138,13 @@ an Update proposal or the UpdatePath of its own Commit.
 When a client creates a replacement LeafNode for its own leaf, it SHOULD advertise every component id it currently
 supports. The replacement MUST still advertise every component id the group requires.
 
+A client MUST NOT advertise a component id it does not support. A client that drops support for a component id stops
+advertising it in new KeyPackages, and SHOULD stop advertising it in its next replacement LeafNode in each group that
+does not require it. A client MUST NOT drop support for a component id that a group it belongs to requires: it keeps
+supporting that component while it remains a member, or leaves the group first
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md)). There is no way for a member to
+withdraw support for a required component and stay in the group.
+
 A client whose own leaf in a group advertises fewer component ids than it supports SHOULD replace that leaf, for example
 with a self-update Commit. It SHOULD first wait for a delay chosen uniformly at random from a window that starts when
 the client notices the stale leaf, so that installing a new release does not make every member of a group commit at
