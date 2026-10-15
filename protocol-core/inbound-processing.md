@@ -21,7 +21,7 @@ transport message
         -> emit application-visible output when canonical state or delivered payloads change
 ```
 
-The exact local API is implementation-defined. The protocol-visible outcome is either a rejection category or a
+The concrete invocation is implementation-defined. The protocol-visible outcome is either a rejection category or a
 convergence disposition. The category and disposition vocabularies, including the four dispositions (`accepted`,
 `deferred`, `stale`, `invalidated`), are pinned in [../foundation/errors.md](../foundation/errors.md).
 
@@ -57,6 +57,15 @@ validation — instead runs while replaying the input against retained source-ep
 membership tag, the input remains deferred while its parent may still arrive. Once MLS authentication identifies the
 candidate parent, a failed sender-signature or authorization check is terminal for that input. The candidate-edge and
 terminal-rejection rules are defined in [convergence.md](./convergence.md), "Candidate branches."
+
+When the candidate parent has an open [history-purge request](../app-components/history-purge-v1.md), an external join
+or resync Commit is invalid until the request closes canonically. Such external Commits cannot carry its required
+terminal proposal set. Capable cohort clients automatically attempt expiry for elapsed or unusably future-dated
+windows under the component's proof rules, so closure does not require an online admin. Opening requires an admin,
+local admission and a group-wide cooldown, with known recovery taking priority. Progress still requires a capable
+surviving member and eventual delivery/convergence; malicious admins and all-offline groups have no liveness guarantee.
+Recovery constructs fresh external Commit bytes against the closed parent. Member-driven binding changes require atomic
+supersession with the normal authority for that change. A disband Commit requires closure in a prior canonical Commit.
 
 Input naming a group for which the client has no processable group state receives the `unknown_group` category before
 convergence and no convergence disposition. The client cannot authenticate or classify a branch without that state.

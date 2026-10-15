@@ -47,6 +47,7 @@ app-components/
   admin-policy-v1.md
   nostr-routing-v1.md
   message-retention-v1.md
+  history-purge-v1.md
   agent-text-stream-quic-v1.md
   group-avatar-url-v1.md
   group-encrypted-media-v1.md
@@ -64,6 +65,7 @@ features/
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+  consensual-history-purge.md
 ideas/
   README.md
   multi-device.md
