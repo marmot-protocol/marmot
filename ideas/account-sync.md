@@ -32,7 +32,7 @@ state such as read positions and mutes, and backups for when every device is gon
 | Backup writer | The one device the roster names to write backups. |
 | Recovery key | 12 words that derive the key pair backups are sealed to. Devices keep only its public half. Separate from the nsec. |
 | Archive key | A fresh random key for one backup, sealed to the recovery key's public half. |
-| Backup pointer | A small record, encrypted to Alice's own account, saying where her latest backups are. |
+| Backup pointer | A small record, encrypted to Alice's own account, listing her kept backups: where each is, which words it needs, and which stretches of each chat it holds. |
 
 Device, sibling, device group, and roster mean what they mean in [multi-device.md](./multi-device.md#words-used-here).
 
@@ -48,9 +48,10 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
   As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
   because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
 - **A stolen nsec can find and replace the backup pointer, but can't open a backup.** The pointer is signed by and
-  encrypted to the account, so the nsec can list it, read it, and publish a new one. Only the 12 words open a backup.
-  A replaced pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the
-  recovery key's public half: a current or former linked device, the same circle as a stolen device.
+  encrypted to the account, so the nsec can list it, read it, and publish a new one. Reading it shows where the backups
+  are and which chats and stretches each holds, but not their content. Only the 12 words open a backup. A replaced
+  pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the recovery key's
+  public half: a current or former linked device, the same circle as a stolen device.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
   can't open the writer's backup to read chats it was never sent, and a removed device can't read backups written
   after it left.
@@ -218,15 +219,18 @@ linked with **Add to all my chats** off isn't in her older chats.
   go to a Blossom server or to storage Alice chooses, and never contain MLS state or attachment files.
 - **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
   and a restore drops any that have expired since.
-- **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just
-  by which chats they include. If a new backup lacks messages an older one has, the last backup holding them is kept
-  and the pointer keeps listing it. That covers a whole missing chat, after a takeover by a device that isn't in Book
-  club, and older messages in a chat, after a takeover by a device that joined Book club with history off. The Devices
-  screen says "Older Book club messages are only in a backup from June 3." It is deleted only if Alice chooses to, or
-  once newer backups hold those messages again. Expired messages don't count.
-- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes,
-  encrypted to herself, saying where the latest backups are. It is an addressable event signed by her account, not a
-  gift wrap: each new pointer replaces the last, and a device finds it with one query to her relays.
+- **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
+  which chats they include. No device can open an old backup to see what is in it, so the writer records each backup's
+  stretches in the backup pointer when it writes the backup, and later writers compare against that. If a new backup
+  lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it. That covers a
+  whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat, after a
+  takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages are
+  only in a backup from June 3." It is deleted only if Alice chooses to, or once newer backups hold those messages
+  again. Expired messages don't count.
+- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, encrypted
+  to herself, listing every backup still kept: where it is, which recovery words it needs, and which stretches of each
+  chat it holds. It is an addressable event signed by her account, not a gift wrap: each new pointer replaces the last,
+  and a device finds it with one query to her relays.
   - **Its address comes from the recovery key's public half**, so a restoring device that has the words finds it with
     one query, and it never collides with another app's data. This is a deliberate exception to KeyPackage slots,
     whose address is random: the pointer has to be found again from the words. The address doesn't hide it from
@@ -258,10 +262,13 @@ also has the old words can still read that old copy; nothing can take it back.
 
 **Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
 **Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
-fetches the latest backup, and opens it. If the pointer is missing, she can point the app at where her backups are. Her
+and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If a
+listed backup needs other words, the app asks for them. If the pointer is missing, she can point the app at where her
+backups are. Her
 old chats appear **read-only**, each with "Ask someone in this chat to add you back."
 
-A restore is a copy of the last backup. Messages sent after it are only recoverable from a device that has them.
+A restore is a copy of what her kept backups held. Messages sent after the latest one are only recoverable from a
+device that has them.
 
 **Keeping the same words:** the restoring device keeps the recovery key's public half before it forgets the words.
 When it later links another device and a device group starts, it puts that public half in the roster, so the next
@@ -282,9 +289,9 @@ the same as any lost device in multi-device.
 
 ## Scene 8: When every device is lost
 
-**Disaster recovery is backups plus re-invites.** A backup restores a copy of what Alice had at the last backup. Other
-people add her back to the chats she wants to rejoin. Their add starts her membership at that moment: messages between
-the last backup and the add stay missing, because history only comes from her own devices.
+**Disaster recovery is backups plus re-invites.** Her kept backups restore a copy of what she had when they were
+written. Other people add her back to the chats she wants to rejoin. Their add starts her membership at that moment:
+messages between the latest backup and the add stay missing, because history only comes from her own devices.
 
 **Planned later: asking to be added back.** A restored device sends a gift-wrapped "please add me back" to the admins of
 each chat in its backup. It names the chat and points to Alice's current KeyPackages. The admins see an ordinary

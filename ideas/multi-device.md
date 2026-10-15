@@ -125,24 +125,26 @@ group only ever sees KeyPackage refreshes.
 
 **The code:** seven emoji from Matrix's 64-symbol verification set, about 42 bits, for example 🐢 🍎 🚲 🌙 🔑 🎸 🐙.
 Pictures need no translation. A word list would not work across languages: a phone set to Spanish and a laptop set to
-English would show different words for the same code. For anyone who can't compare pictures, both screens can show the
-same code as Matrix's numeric form instead, three four-digit numbers. The emoji come from a short exchange between the
-two devices, not from anything published:
+English would show different words for the same code. Alice compares the pictures themselves. Each emoji also has a
+short label in the device's language, for screen readers, but labels differ between languages, so they aren't what she
+compares. For anyone who can't compare pictures, both devices switch to Matrix's decimal method instead: three numbers
+from 1000 to 9191, about 39 bits. It is a separate, shorter code taken from the same exchange, not the emoji written as
+numbers. The code comes from a short exchange between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
 3. The laptop reveals its key, and the other device checks it is the one the laptop locked in.
-4. Both devices turn the two keys into the same seven emoji, mixed with the session, the account, the laptop's exact
-   KeyPackage, and the other device's identity.
+4. Both devices turn the two keys into the same seven emoji (or the same three numbers), mixed with the session, the
+   account, the laptop's exact KeyPackage, and the other device's identity.
 
 Each side commits to its key before it sees the other's, so nobody can steer the result, including someone sitting
 in the middle. This is the same idea as Matrix's emoji verification. We reuse Matrix's display as it is: its emoji
-table, its translated labels for screen readers, and its numeric form. We don't adopt Matrix's protocol, and the
+table, its translated labels for screen readers, and its decimal method. We don't adopt Matrix's protocol, and the
 exchange itself will be a reviewed design chosen with the spec rather than one we invent.
 
 **Why seven emoji is enough:** an attacker gets one guess per session, and a wrong guess shows up as a mismatch on
-screen. 42 bits makes that guess about a 1 in 4 trillion chance, which is plenty for a check that can't be retried
-silently.
+screen. 42 bits makes that guess about a 1 in 4 trillion chance, and the decimal method's 39 bits about 1 in 550
+billion. Either is plenty for a check that can't be retried silently.
 
 **How the messages travel:** as gift wraps addressed to Alice's own account, because the laptop isn't in the device
 group yet. Anyone with her nsec can read them too. That is fine: the exchange assumes someone can read and replace
@@ -266,7 +268,8 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Nothing to search for ahead of time.** The emoji depend on a key the iPhone picks during the session.
 - **Sitting in the middle shows.** Someone who swaps in their own one-time keys has to lock them in before seeing the
   real ones, so the two halves produce different emoji and the screens don't match.
-- **One guess per session.** Each session gives an attacker about a 1 in 4 trillion chance. Sessions expire 10 minutes
+- **One guess per session.** Each session gives an attacker about a 1 in 4 trillion chance with emoji, or 1 in 550
+  billion with the decimal numbers. Sessions expire 10 minutes
   after the other device answers, and the number of attempts is limited.
 - **Two requests at once.** If two pairing requests arrive together, Alice's devices treat that as an anomaly and don't
   offer Link for either.
@@ -558,7 +561,8 @@ device treats a group as its device group only if it created it or joined it thr
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits), or its numeric form; new for every session |
+| Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits); new for every session |
+| Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
 
 ## Open questions
