@@ -15,6 +15,7 @@ README.md
 layout.md
 principles.md
 mip-coverage.md
+changes.md
 foundation/
   README.md
   identity.md
