@@ -17,6 +17,20 @@ identity when the account has multiple devices in the group.
 Group policy MAY talk about accounts or leaves. A rule that targets an account applies to every current leaf whose
 credential identity is that account. A rule that targets a leaf applies only to that leaf.
 
+## Devices
+
+A device is one installation of a Marmot client signed in to an account. The word means the client installation, not
+the hardware: two different Marmot clients signed in to the same account on one phone are two devices, and reinstalling
+a client creates a new device even on the same hardware.
+
+Each device holds its own MLS state: its own leaves, its own KeyPackages, and their private key material. A client
+MUST NOT copy MLS group state, leaf secrets, or KeyPackage private key material to another device. Two devices acting
+from one leaf's state would reuse that leaf's secrets.
+
+No device has protocol authority over another device of the same account. Rules that target the account, such as admin
+rights, apply equally to the leaves of every device. KeyPackage publication per device is defined in
+[key-packages.md](./key-packages.md) ("Devices and publication slots").
+
 ## MLS credential identity
 
 Marmot uses the MLS credential identity to carry the Marmot account identity.
