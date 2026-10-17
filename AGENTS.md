@@ -54,8 +54,9 @@ top-level file stays cross-surface only.
 - AppDataUpdate proposal forms and their default request path are defined in
   [`app-components/README.md`](app-components/README.md) ("GroupContext Update Processing").
 - When a change alters what an implementation must, should, or may do, add an entry at the top of
-  [`changes.md`](changes.md) in the same pull request: the date, what changed, the documents it touches, what
-  implementers have to do differently, and the pull request. Idea documents, editorial fixes, and repository
+  [`changes.md`](changes.md) in the same pull request: the date, what changed, every document whose rules it
+  changed (index-only `README.md` and `layout.md` edits excepted), what implementers have to do differently, and the
+  pull request. Idea documents, editorial fixes, and repository
   housekeeping need no entry.
 
 ## Verification

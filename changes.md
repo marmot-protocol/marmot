@@ -3,8 +3,9 @@
 Status: adopted.
 
 This log lists changes to the specification that implementers need to know about, newest first. Each entry says what
-changed, which documents it touches, what an implementation has to do differently, and which pull request made the
-change. Idea documents, editorial fixes, and repository housekeeping are not listed.
+changed, every document whose rules it changed, what an implementation has to do differently, and which pull request
+made the change. Index-only edits to surface `README.md` files and `layout.md` are not named; the pull request has the
+full file list. Idea documents, editorial fixes, and repository housekeeping are not listed.
 
 The specification has no version number, and this log does not version the protocol. An interop-visible breaking change
 still needs an explicit versioning hook, as [layout.md](./layout.md#features) requires.
@@ -49,7 +50,9 @@ optional, and polls are neither anonymous nor fit for elections.
 ## 2026-09-16: Group reports, dismissal labels, and admin deletion
 
 [#423](https://github.com/marmot-protocol/marmot/pull/423) adds
-[features/content-moderation.md](./features/content-moderation.md) and registers three app-event kinds: `1984` for
+[features/content-moderation.md](./features/content-moderation.md) and changes
+[foundation/application-messages.md](./foundation/application-messages.md) and
+[foundation/registries.md](./foundation/registries.md). It registers three app-event kinds: `1984` for
 NIP-56 reports of messages in the same group, `1985` for NIP-32 `marmot.report-review.v1` / `dismissed` labels on
 reports, and `4891` for an admin's deletion of any member's chat message with its edits and attachments. Admin
 authority is checked against the event's authenticated source-epoch state, and a dismissal does not override a deletion.
@@ -57,27 +60,44 @@ authority is checked against the event's authenticated source-epoch state, and a
 ## 2026-08-13: Durability and restart contract
 
 [#416](https://github.com/marmot-protocol/marmot/pull/416) adds [protocol-core/durability.md](./protocol-core/durability.md)
-and cross-links it from the convergence, publish-lifecycle, group-state, and retained-history documents. A restart must
+and changes [protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md),
+[protocol-core/retained-history.md](./protocol-core/retained-history.md),
+[foundation/conformance.md](./foundation/conformance.md), and [foundation/errors.md](./foundation/errors.md). A restart must
 not change canonical branch selection, input dispositions, unresolved outbound gates, or the application-visible
 projection. Possible external acceptance without a recoverable acknowledgement remains `PendingPublish`. There are no
 wire, component, or registry changes.
 
 ## 2026-07-30: Convergence assurance and deferred input
 
-[#410](https://github.com/marmot-protocol/marmot/pull/410) changes
-[protocol-core/convergence.md](./protocol-core/convergence.md),
+[#410](https://github.com/marmot-protocol/marmot/pull/410) adds [foundation/conformance.md](./foundation/conformance.md)
+and changes [protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
 [protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md),
-[foundation/errors.md](./foundation/errors.md), and [transports/nostr.md](./transports/nostr.md), and adds
-[foundation/conformance.md](./foundation/conformance.md). Transport-deferred and resource-refused input is now distinct
+[protocol-core/retained-history.md](./protocol-core/retained-history.md),
+[foundation/errors.md](./foundation/errors.md), [foundation/registries.md](./foundation/registries.md), and
+[transports/nostr.md](./transports/nostr.md). Transport-deferred and resource-refused input is now distinct
 from stale, invalid, or deduplicated input. It must stay refetch-eligible instead of being discarded when a local retry
 or storage limit is reached, and the affected range must not be reported as synchronized. A change to state-selecting
 convergence policy needs an explicit capability or component. The conformance projection is test-only.
 
 ## 2026-07-28: Group disbanding
 
-[#409](https://github.com/marmot-protocol/marmot/pull/409) registers required app component `0x800c`,
-`marmot.group.lifecycle.v1` ([app-components/group-lifecycle-v1.md](./app-components/group-lifecycle-v1.md)), with an
-irreversible `Active` to `Disbanded` transition made by an authenticated admin Commit. `Disbanded` becomes the sixth
+[#409](https://github.com/marmot-protocol/marmot/pull/409) adds
+[app-components/group-lifecycle-v1.md](./app-components/group-lifecycle-v1.md) and changes
+[app-components/README.md](./app-components/README.md),
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[foundation/registries.md](./foundation/registries.md),
+[protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md), and
+[protocol-core/member-departure.md](./protocol-core/member-departure.md). It registers required app component `0x800c`,
+`marmot.group.lifecycle.v1`, with an irreversible `Active` to `Disbanded` transition made by an authenticated admin
+Commit. `Disbanded` becomes the sixth
 canonical group lifecycle state. New groups require the component and start `Active`. An existing group can disband only
 after an admin enables the component in one Commit and every current leaf advertises support.
 
@@ -85,14 +105,15 @@ after an admin enables the component in one Commit and every current leaf advert
 
 Commit [`dedeaf4`](https://github.com/marmot-protocol/marmot/commit/dedeaf4) changes
 [features/push-notifications.md](./features/push-notifications.md) and
-[foundation/registries.md](./foundation/registries.md). A push token or removal entry's `owner_sig` is now a BIP-340
+[foundation/registries.md](./foundation/registries.md), plus two multi-device documents that
+[#427](https://github.com/marmot-protocol/marmot/pull/427) later replaced with an idea document. A push token or removal entry's `owner_sig` is now a BIP-340
 signature over the id of an exact, unpublished kind `451` Nostr event. `SHA-256(SignedRecord)` remains only the ordering
 tie-breaker, and the legacy signature preimage is not reinterpreted.
 
 ## 2026-07-23: Specification issue sweep
 
-[#408](https://github.com/marmot-protocol/marmot/pull/408) resolves 200 specification issues, one commit each. The
-changes implementers most often need:
+[#408](https://github.com/marmot-protocol/marmot/pull/408) resolves 200 specification issues, one commit each, across
+[53 files](https://github.com/marmot-protocol/marmot/pull/408/files). The changes implementers most often need:
 
 - Membership and admin authority is checked against candidate parent state. A group has a non-empty admin policy from
   creation, and losing every admin freezes governance.
@@ -110,7 +131,9 @@ changes implementers most often need:
 ## 2026-07-05: Adopted baseline
 
 The oldest commit on `master` contains the adopted specification as it stood after
-[#236](https://github.com/marmot-protocol/marmot/pull/236) tightened its wire-boundary validation rules. That
+[#236](https://github.com/marmot-protocol/marmot/pull/236) tightened the wire-boundary validation rules in
+[foundation/canonical-encoding.md](./foundation/canonical-encoding.md),
+[foundation/key-packages.md](./foundation/key-packages.md), and [transports/nostr.md](./transports/nostr.md). That
 specification was imported in [#71](https://github.com/marmot-protocol/marmot/pull/71), marked adopted in
 [#170](https://github.com/marmot-protocol/marmot/pull/170), and had its admin-policy, membership, and role-change rules
 aligned in [#171](https://github.com/marmot-protocol/marmot/pull/171). Later entries are relative to this baseline.
