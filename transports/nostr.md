@@ -351,6 +351,13 @@ NOT select a candidate covered by a deletion request it holds.
 Deletion is cleanup, not revocation. A relay can ignore the request and keep serving the event, and an inviter that has
 not seen the request can still select the KeyPackage until its `Lifetime` ends.
 
+A deletion request, like a KeyPackage event, is authenticated only to the account. Nothing in it shows which device
+sent it, so a receiver cannot check the rule that a device deletes only its own slot; that rule binds senders. A
+device-bound proof on deletion requests would not close the gap: anyone who can sign as the account can already publish
+a newer event into any of its slots, which replaces that slot's KeyPackage just as completely. Telling a device's own
+publications apart from other publications under the same account is left to features that track the account's
+devices.
+
 ### Migration from kind 10051
 
 Kind `10051` was the former dedicated KeyPackage relay-list scheme. It is not part of this binding. The account's kind
