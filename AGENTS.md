@@ -27,6 +27,7 @@ top-level file stays cross-surface only.
 | Where new text belongs (canonical tree + ownership) | `layout.md` |
 | How to write the spec (placement + detail rules) | `principles.md` |
 | Map from deprecated MIPs to this spec's surfaces | `mip-coverage.md` |
+| Implementer-facing change log | `changes.md` |
 | Non-normative mapping to this repo's code | `implementation-model.md` |
 
 ## Read Order
@@ -52,6 +53,11 @@ top-level file stays cross-surface only.
 - Feature docs own optional or user-visible flows and cross-reference the surfaces that implement them.
 - AppDataUpdate proposal forms and their default request path are defined in
   [`app-components/README.md`](app-components/README.md) ("GroupContext Update Processing").
+- When a change alters what an implementation must, should, or may do, add an entry at the top of
+  [`changes.md`](changes.md) in the same pull request: the date, what changed, every document whose rules it
+  changed (index-only `README.md` and `layout.md` edits excepted), what implementers have to do differently, and the
+  pull request. Idea documents, editorial fixes, and repository
+  housekeeping need no entry.
 
 ## Verification
 
