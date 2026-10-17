@@ -9,7 +9,8 @@ change. Idea documents, editorial fixes, and repository housekeeping are not lis
 The specification has no version number, and this log does not version the protocol. An interop-visible breaking change
 still needs an explicit versioning hook, as [layout.md](./layout.md#features) requires.
 
-The log starts from the adopted specification imported on 2026-07-05.
+The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
+[mip-coverage.md](./mip-coverage.md).
 
 ## 2026-10-16: Replaced KeyPackage init keys outlive replacement by 24 hours
 
@@ -108,5 +109,8 @@ changes implementers most often need:
 
 ## 2026-07-05: Adopted baseline
 
-[#236](https://github.com/marmot-protocol/marmot/pull/236) imports the adopted specification and tightens its
-wire-boundary validation rules. Later entries are relative to this baseline.
+The oldest commit on `master` contains the adopted specification as it stood after
+[#236](https://github.com/marmot-protocol/marmot/pull/236) tightened its wire-boundary validation rules. That
+specification was imported in [#71](https://github.com/marmot-protocol/marmot/pull/71), marked adopted in
+[#170](https://github.com/marmot-protocol/marmot/pull/170), and had its admin-policy, membership, and role-change rules
+aligned in [#171](https://github.com/marmot-protocol/marmot/pull/171). Later entries are relative to this baseline.
