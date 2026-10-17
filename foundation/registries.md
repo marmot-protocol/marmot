@@ -23,6 +23,9 @@ Marmot app components use MLS private-use component ids.
 | `0x8009`     | `marmot.member.account-identity-proof.v2`       | [doc](../app-components/account-identity-proof-v2.md)               |
 | `0x800b`     | `marmot.group.encrypted-media.v2`               | [doc](../app-components/group-encrypted-media-v2.md)                |
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
+| `0x800f`     | `marmot.group.message-pins.v1` (draft)          | [doc](../app-components/message-pins-v1.md)                         |
+
+`0x800f` is a draft allocation for optional shared message pinning. The owning document remains a proposal until adopted.
 
 ## Upstream MLS extension draft ids
 

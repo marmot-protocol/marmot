@@ -92,8 +92,10 @@ if at least one other active admin remains.
 ## Admin-Gated Actions
 
 Every v1 group-level Marmot component update requires an active admin to commit unless the owning component document
-explicitly defines a looser rule. No v1 group-level component currently defines one. This rule follows the component
-class rather than an enumerated list, so adding a registered component does not silently make its updates ungoverned.
+explicitly defines a looser rule. The optional draft [message-pins component](./message-pins-v1.md) defines a member
+exception for pin-list replacements in its member-enabled mode; permission changes, enablement, and removal remain
+admin-gated. This rule follows the component class rather than an enumerated list, so adding a registered component
+does not silently make its updates ungoverned.
 
 The following non-component operations also require an active admin to commit:
 
