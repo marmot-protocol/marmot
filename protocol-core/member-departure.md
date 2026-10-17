@@ -19,6 +19,24 @@ proposal from the MLS extensions work and does not define a Marmot custom propos
 - App component: `marmot.group.admin-policy.v1` for admin leave constraints.
 - Transport: whichever transport carries the proposal and commit.
 
+## Accounts with several devices
+
+An account can have several leaves in one group, one for each of its devices
+([../foundation/identity.md](../foundation/identity.md), "Devices"). Departure is leaf-scoped, and removing an account
+means removing all of its leaves:
+
+- A client that removes an account from a group MUST include a Remove for every current leaf with that account identity
+  in one Commit, so the account is never left partly removed. If the account is an admin, the same Commit removes it
+  from the admin list under the coupling rule in
+  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins").
+- A Remove that targets one leaf removes only that device. The account stays a member while it has another current
+  leaf.
+- A SelfRemove removes only its sender's leaf. Other devices of the same account stay members.
+- Admin status belongs to the account. A device whose account is an active admin cannot use SelfRemove, even when
+  another device of that account stays in the group.
+- A device whose own leaf is removed realizes its removal even when another device of the same account stays in the
+  group ("Realizing removal" below).
+
 ## Behavior
 
 A current member MAY create a SelfRemove proposal for itself.

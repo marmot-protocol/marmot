@@ -78,6 +78,7 @@ first matching tag and ignore later duplicates.
 | kind `30443` KeyPackage | `mls_extensions` | exactly one id-list tag |
 | kind `30443` KeyPackage | `mls_proposals` | exactly one id-list tag |
 | kind `30443` KeyPackage | `app_components` | exactly one id-list tag |
+| kind `30443` KeyPackage | `client` | optional display tag; a malformed or repeated tag is ignored, not rejected ("KeyPackage publication") |
 
 The kind `444` `e` tag sits on the trust boundary: it is a claim about which KeyPackage event was consumed. It is not
 proof that the event exists, was authored by the invitee account, or carried the decoded KeyPackage. A client that needs
@@ -284,6 +285,16 @@ emits exactly this form. A consumer MUST reject a KeyPackage event that carries 
 name (so the producer's "exactly one tag" rule is enforced, not assumed); it MUST NOT read only the first occurrence
 and ignore the rest.
 
+A KeyPackage event MAY also carry one [NIP-89](https://github.com/nostr-protocol/nips/blob/master/89.md) `client` tag
+naming the client software that published it, for example `["client", "whitenoise"]`. Its first value is the client
+name: valid UTF-8, 1 to 64 bytes. It MAY carry NIP-89's optional handler address and relay hint as its second and third
+values, and no further values. The tag is self-reported display metadata. It MUST NOT affect KeyPackage validity,
+candidate selection, or group state. A receiver that finds more than one `client` tag, or a `client` tag that does not
+follow this shape, treats the event as having no `client` tag.
+
+A KeyPackage event MUST NOT carry any other tag or content that describes the device that published it, such as a
+label, model, or platform.
+
 The `i` tag is the KeyPackageRef, not the account identity. Receivers MUST verify it against the decoded KeyPackage.
 
 The `app_components` tag MUST include the value `0x8009` for `marmot.member.account-identity-proof.v2`. Receivers MUST
@@ -305,17 +316,40 @@ Kind `30443` is a Nostr addressable event. Two events occupy the same slot when 
 value are all equal, comparing the `d` value as exact bytes. For one `(author, kind, d)` slot, clients SHOULD keep the
 newest valid event by `created_at`, with lower event id as the deterministic tie-breaker when timestamps are equal.
 Across different `d` slots, each valid event is a separate candidate KeyPackage. Candidate ranking then follows
-[../foundation/key-packages.md](../foundation/key-packages.md).
+[../foundation/key-packages.md](../foundation/key-packages.md). A candidate's publication time, which that document
+uses for freshness and ranking, is the `created_at` of its current event.
 
-A publishing MLS client creates a logical KeyPackage publication slot by generating its `d` value once from 32 random
-bytes and retaining that value locally. Replacing the KeyPackage in that logical slot MUST reuse the same `d`; a routine
-replacement MUST NOT generate a fresh slot id. A client generates a different random `d` only when it intentionally adds
-another concurrently discoverable KeyPackage slot. The slot id MUST NOT be derived from an account key, MLS leaf key,
-KeyPackageRef, device label, or other identity material.
+An `(author, kind, d)` slot is the KeyPackage publication slot defined in
+[../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and publication slots"). A device creates its
+slot by generating its `d` value once from 32 random bytes and retaining that value locally for the device's lifetime.
+Every KeyPackage the device publishes, including each replacement, MUST reuse that `d`. A device MUST NOT generate a
+second `d` for its account. The `d` value MUST NOT be derived from an account key, MLS leaf key, KeyPackageRef, device
+label, or other identity material, and it is never carried over to another device.
+
+Earlier text in this binding allowed a client to add further concurrently discoverable slots. This version clarifies
+that a device uses one slot. A client that still publishes into more than one slot keeps publishing into one of them
+and SHOULD delete the others ("Slot deletion" below).
 
 When candidates from different `(author, kind, d)` slots are otherwise equivalent after foundation ranking, clients
 SHOULD select the candidate with the lexicographically lower decoded KeyPackageRef from the `i` tag. The `i` tag is
 hex-decoded before comparison.
+
+### Slot deletion
+
+A device deletes its own slot ([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication")
+with a [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md) deletion request: a kind `5` event authored by
+the account, carrying exactly one `a` tag and exactly one `k` tag. The `a` value is the slot's address,
+`30443:<author>:<d>`, where `<author>` is the lowercase hex account identity and `<d>` is the slot's `d` value. The `k`
+value is `30443`. The request is published to the same write-capable relay set as the account's KeyPackages.
+
+A deletion request applies to a slot when it is a valid signed kind `5` event, its author equals the slot's author, and
+one of its `a` tags is exactly that slot's address. It covers every event in that slot whose `created_at` is at or
+before the request's `created_at`, as NIP-09 defines for `a` tags; a later event in the same slot is not covered. An
+inviter SHOULD fetch the account's kind `5` deletion requests for kind `30443` together with its KeyPackages, and MUST
+NOT select a candidate covered by a deletion request it holds.
+
+Deletion is cleanup, not revocation. A relay can ignore the request and keep serving the event, and an inviter that has
+not seen the request can still select the KeyPackage until its `Lifetime` ends.
 
 ### Migration from kind 10051
 
@@ -376,7 +410,9 @@ A Nostr transport client subscribes to:
 - NIP-65 relay lists: kind `10002`, author equal to the account being queried, to discover where that account
   publishes its KeyPackages;
 - KeyPackage events: kind `30443`, using the account lookup rules defined by
-  [../foundation/key-packages.md](../foundation/key-packages.md).
+  [../foundation/key-packages.md](../foundation/key-packages.md);
+- KeyPackage slot deletion requests: kind `5`, author equal to the account being queried, with a `#k` filter equal to
+  `30443`, fetched from the same write-capable relay set as that account's KeyPackages ("Slot deletion" above).
 
 Clients SHOULD use a `since` value when resubscribing if they have a retained transport timestamp. The timestamp is a
 fetch hint only.
@@ -399,7 +435,8 @@ attempt is transport or local policy.
 
 Welcome messages are published to the recipient's inbox relay set ("Account inbox relays" above).
 
-KeyPackage events are published to the account's NIP-65 (kind `10002`) write-capable relay set defined above.
+KeyPackage events and KeyPackage slot deletion requests are published to the account's NIP-65 (kind `10002`)
+write-capable relay set defined above.
 
 Push-notification gift wraps carrying a kind `446` rumor are published to the `relay_hint` values in the selected
 token records for that notification server. If none of those records carries a relay hint, they are published to the
@@ -458,7 +495,13 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
   account-addressing exception ([../foundation/identity.md](../foundation/identity.md)). The gift wrap and seal hide the
   sender and the inner `kind 444` rumor.
 - kind `30443` KeyPackage events are authored by the account identity, because their purpose is to let others find that
-  account's packages.
+  account's packages. Because each device has one slot, the number of current slots shows roughly how many devices the
+  account has. An optional `client` tag also shows which client software a device runs.
+- kind `5` slot deletion requests are authored by the account identity and show that one of its devices stopped
+  publishing.
+
+The `client` tag is permitted only on kind `30443` KeyPackage events. A client MUST NOT add it to any other event shape
+in this binding, including gift wraps, seals, and rumors.
 
 A client MUST NOT add tags, content, or `encoding` markers that expose account ids, group ids, message ids, payloads,
 or key material beyond what each event shape above already requires. Refusing a relay URL follows the local-policy rule

@@ -94,6 +94,10 @@ Slots are not deterministic. Nothing ties a slot id to the hardware, the account
 deletes the app and installs it again on the same iPhone, the new installation picks a new slot and has no link to the
 old one. To her other devices it is a new device, and the old slot is simply a device that stopped republishing.
 
+The slot, refresh, and `client` tag rules in this scene are now spec text:
+[../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and publication slots") and
+[../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion").
+
 **Decision:** the device group is created only when a second device is linked. With one device there is nothing to
 coordinate. It also keeps "two device groups for one account" rare (Scene 3).
 
@@ -371,7 +375,8 @@ There is no "Alice added a device" notice.
 **Underneath:**
 
 - **Inviters add every valid, fresh, compatible KeyPackage for the account, up to a cap.** This is an ordinary admin
-  commit with several adds and needs no new authorization rule.
+  commit with several adds and needs no new authorization rule. The selection rules are now spec text in
+  [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle").
   - **Valid** includes supporting what the chat requires, which keeps non-chat clients on the same account out of chat
     groups.
   - **Fresh** means republished recently, which keeps uninstalled or dead devices out of new chats.
@@ -553,10 +558,6 @@ device treats a group as its device group only if it created it or joined it thr
 | --- | --- |
 | Linked devices per account | at most 10 |
 | Leaves per account in one chat | at most 10 |
-| KeyPackages an inviter adds per account | at most 10 |
-| Freshness window for inviters | 30 days |
-| KeyPackage lifetime | 30 days |
-| KeyPackage republish | after it is used, when what it advertises changes, and weekly while the app runs |
 | Inactive device prompt | 30 days |
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
@@ -564,6 +565,9 @@ device treats a group as its device group only if it created it or joined it thr
 | Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits); new for every session |
 | Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
+
+KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 10 KeyPackages per account are
+now spec text in [../foundation/key-packages.md](../foundation/key-packages.md).
 
 ## Open questions
 
@@ -578,11 +582,11 @@ private setting couldn't stop it.
 
 Parts of this can become spec text before others are settled:
 
-1. **Several leaves per account.** Rules that are already valid today but need writing down: removing a person removes
-   all of their leaves, your own leaf being removed means this device was removed even when a sibling stays, each
-   installation uses exactly one random slot for its lifetime, KeyPackage events carry the standard `client` tag and
-   nothing more about the device, signing out deletes only your own slot, and inviters add up to 10 fresh KeyPackages
-   per account. None of this needs new commit types.
+1. **Several leaves per account.** Done. These rules are now in
+   [../foundation/identity.md](../foundation/identity.md) ("Devices"),
+   [../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and publication slots", "Selection and
+   lifecycle"), [../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion"), and
+   [../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Accounts with several devices").
 2. **Same-account operations.** The chat readiness app component, sibling adds, sibling removal (including a device
    signing out while a sibling remains), and the 10-leaf cap.
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
@@ -593,8 +597,7 @@ Details to pick while writing the spec, rather than product questions:
 
 - which reviewed short-code exchange to reuse, the exact pairing messages, and how many attempts are allowed;
 - the chat readiness component's exact contents;
-- the roster and device group message encodings;
-- listing the `client` tag as allowed on KeyPackage events in the Nostr transport.
+- the roster and device group message encodings.
 
 ## What this replaces
 
