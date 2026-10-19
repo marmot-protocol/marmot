@@ -17,15 +17,16 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 [#442](https://github.com/marmot-protocol/marmot/pull/442) changes [foundation/identity.md](./foundation/identity.md),
 [foundation/key-packages.md](./foundation/key-packages.md), [foundation/registries.md](./foundation/registries.md),
-[protocol-core/member-departure.md](./protocol-core/member-departure.md), and
-[transports/nostr.md](./transports/nostr.md). A device is one client installation, and it must not copy MLS state or
-KeyPackage private keys to another device. Each device must publish into exactly one KeyPackage slot for its lifetime;
-a client that used several keeps one and SHOULD delete the rest. Devices SHOULD use 30-day KeyPackage lifetimes,
-refresh their slot at least every 7 days, and delete it with a NIP-09 kind `5` request when they sign out. Inviters
-SHOULD add every KeyPackage an account published in the last 30 days, must not add more than 10 for one account in one
-Commit, and must not select one covered by a deletion request they hold. Removing an account means removing all of its
-leaves in one Commit. KeyPackage events MAY carry a one-value `client` tag, which no other Nostr event shape in the
-binding may carry.
+[protocol-core/member-departure.md](./protocol-core/member-departure.md),
+[transports/nostr.md](./transports/nostr.md), and [transports/quic.md](./transports/quic.md). A device is one client
+installation, and it must not copy MLS state or KeyPackage private keys to another device. Each device must publish
+into exactly one KeyPackage slot for its lifetime; a client that used several keeps one and SHOULD delete the rest.
+Devices SHOULD use 30-day KeyPackage lifetimes, refresh their slot at least every 7 days, and delete it with a NIP-09
+kind `5` request when they sign out. Inviters SHOULD add every KeyPackage an account published in the last 30 days,
+must not add more than 10 for one account in one Commit, and must not select one covered by a deletion request they
+hold. Removing an account means removing all of its leaves in one Commit. KeyPackage events MAY carry a one-value
+`client` tag, which no other Nostr event shape in the binding may carry. The QUIC binding states that it carries no
+KeyPackages or Welcomes.
 
 ## 2026-10-16: Replaced KeyPackage init keys outlive replacement by 24 hours
 
