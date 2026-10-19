@@ -28,7 +28,10 @@ means removing all of its leaves:
 - A client that removes an account from a group MUST include a Remove for every current leaf with that account identity
   in one Commit, so the account is never left partly removed. If the account is an admin, the same Commit removes it
   from the admin list under the coupling rule in
-  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins").
+  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins"). This rule binds the
+  committer. A Remove does not say whether the committer meant to remove an account or one device, so a receiver cannot
+  check it and MUST NOT reject a Commit for removing only some of an account's leaves; such a Commit is a device
+  removal under the next point.
 - A Remove that targets one leaf removes only that device. The account stays a member while it has another current
   leaf.
 - A SelfRemove removes only its sender's leaf. Other devices of the same account stay members.

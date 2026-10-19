@@ -78,7 +78,8 @@ first matching tag and ignore later duplicates.
 | kind `30443` KeyPackage | `mls_extensions` | exactly one id-list tag |
 | kind `30443` KeyPackage | `mls_proposals` | exactly one id-list tag |
 | kind `30443` KeyPackage | `app_components` | exactly one id-list tag |
-| kind `30443` KeyPackage | `client` | optional display tag; a malformed or repeated tag is ignored, not rejected ("KeyPackage publication") |
+| kind `30443` KeyPackage | `client` | optional; sender: at most one tag, exactly one value; receiver: ignores a repeated or malformed tag, never rejects the event ("KeyPackage publication") |
+| kind `5` slot deletion | `a`, `k` | sender: exactly one of each, one value each; receiver: applies the request when any `a` tag matches the slot and does not check `k` ("Slot deletion") |
 
 The kind `444` `e` tag sits on the trust boundary: it is a claim about which KeyPackage event was consumed. It is not
 proof that the event exists, was authored by the invitee account, or carried the decoded KeyPackage. A client that needs
@@ -286,11 +287,14 @@ name (so the producer's "exactly one tag" rule is enforced, not assumed); it MUS
 and ignore the rest.
 
 A KeyPackage event MAY also carry one [NIP-89](https://github.com/nostr-protocol/nips/blob/master/89.md) `client` tag
-naming the client software that published it, for example `["client", "whitenoise"]`. Its first value is the client
-name: valid UTF-8, 1 to 64 bytes. It MAY carry NIP-89's optional handler address and relay hint as its second and third
-values, and no further values. The tag is self-reported display metadata. It MUST NOT affect KeyPackage validity,
-candidate selection, or group state. A receiver that finds more than one `client` tag, or a `client` tag that does not
-follow this shape, treats the event as having no `client` tag.
+naming the client software that published it, for example `["client", "whitenoise"]`. The sender includes the client
+name as the tag's only value: valid UTF-8, 1 to 64 bytes. It does not include NIP-89's optional handler address or
+relay hint. The tag is self-reported display metadata. It MUST NOT affect KeyPackage validity, candidate selection, or
+group state.
+
+A receiver reads the client name from the tag's first value and ignores any further values without validating them. A
+receiver that finds more than one `client` tag, or a `client` tag whose first value is missing or outside the name
+bounds, treats the event as having no `client` tag.
 
 A KeyPackage event MUST NOT carry any other tag or content that describes the device that published it, such as a
 label, model, or platform.
@@ -338,15 +342,22 @@ hex-decoded before comparison.
 
 A device deletes its own slot ([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication")
 with a [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md) deletion request: a kind `5` event authored by
-the account, carrying exactly one `a` tag and exactly one `k` tag. The `a` value is the slot's address,
-`30443:<author>:<d>`, where `<author>` is the lowercase hex account identity and `<d>` is the slot's `d` value. The `k`
-value is `30443`. The request is published to the same write-capable relay set as the account's KeyPackages.
+the account, carrying exactly one `a` tag and exactly one `k` tag, each with exactly one value. The `a` value is the
+slot's address, `30443:<author>:<d>`, where `<author>` is the lowercase hex account identity and `<d>` is the slot's `d`
+value. The `a` tag carries no relay hint. The `k` value is `30443`. A device that deletes several of its own slots, for
+example under the one-slot migration above, sends one request per slot. Each request is published to the same
+write-capable relay set as the account's KeyPackages.
 
-A deletion request applies to a slot when it is a valid signed kind `5` event, its author equals the slot's author, and
-one of its `a` tags is exactly that slot's address. It covers every event in that slot whose `created_at` is at or
-before the request's `created_at`, as NIP-09 defines for `a` tags; a later event in the same slot is not covered. An
-inviter SHOULD fetch the account's kind `5` deletion requests for kind `30443` together with its KeyPackages, and MUST
-NOT select a candidate covered by a deletion request it holds.
+That shape binds senders. A receiver accepts deletion requests the way NIP-09 does, because relays delete events on the
+same terms whatever shape the request has. A deletion request applies to a slot when it is a valid signed kind `5`
+event, its author equals the slot's author, and the first value of any of its `a` tags is exactly that slot's address.
+The receiver ignores further `a` values such as a relay hint, the request's other `a` and `e` tags, its `k` tags, and
+its content; `k` serves only as a fetch filter. A request that applies covers every event in that slot whose
+`created_at` is at or before the request's `created_at`, as NIP-09 defines for `a` tags; a later event in the same slot
+is not covered.
+
+An inviter SHOULD fetch the account's kind `5` deletion requests for kind `30443` together with its KeyPackages, and
+MUST NOT select a candidate covered by a deletion request it holds.
 
 Deletion is cleanup, not revocation. A relay can ignore the request and keep serving the event, and an inviter that has
 not seen the request can still select the KeyPackage until its `Lifetime` ends.
@@ -375,8 +386,10 @@ The existing publisher rules give the following preparation sequence:
 The corresponding inviter sequence is:
 
 1. retrieve and verify the invitee's kind `10002` metadata, then resolve its write-capable set;
-2. fetch one or more of that account's kind `30443` events from that set and validate candidates under
-   [KeyPackages](../foundation/key-packages.md) and "KeyPackage publication" above; and
+2. fetch that account's kind `30443` events and its kind `5` deletion requests for kind `30443` from that set, validate
+   candidates under [KeyPackages](../foundation/key-packages.md) and "KeyPackage publication" above, drop candidates
+   covered by "Slot deletion" above, and select the KeyPackages to add under
+   [KeyPackages](../foundation/key-packages.md) ("Selection and lifecycle"); and
 3. separately retrieve and verify the invitee's kind `10050` metadata, resolve its inbox set, and publish the Welcome
    under "Account inbox relays" and "Welcome delivery" above.
 

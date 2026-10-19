@@ -80,23 +80,17 @@ yet.](multi-device/scene-1-first-device.svg)
 
 **What Alice sees:** nothing about devices. She signs in and uses Marmot.
 
-**Underneath:** the iPhone picks a random slot id and publishes its KeyPackage there. It republishes into that same slot
-after its KeyPackage is used for a Welcome, when something it advertises changes, and weekly while the app runs, so
-the slot's age shows the installation still exists. It also watches the account's other slots, so it
-notices when a new one appears, and its own slot. A KeyPackage in its own slot that it didn't publish means someone
-else is signing as Alice. With no siblings yet, that self-check is the only protection a single device has.
+**Underneath:** the iPhone publishes its KeyPackage into a slot of its own and keeps it fresh. How slots, refreshing,
+and the `client` tag work is spec text: [../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and
+publication slots") and [../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion").
 
-The KeyPackage event carries the standard Nostr `client` tag (for example `["client", "whitenoise"]`) and nothing else
-about the device: no model, platform, or label. The tag goes on KeyPackage events only, never on gift wraps or group
-messages.
+The iPhone also watches the account's other slots, so it notices when a new one appears, and its own slot. A
+KeyPackage in its own slot that it didn't publish means someone else is signing as Alice. With no siblings yet, that
+self-check is the only protection a single device has.
 
-Slots are not deterministic. Nothing ties a slot id to the hardware, the account key, or an earlier install. If Alice
-deletes the app and installs it again on the same iPhone, the new installation picks a new slot and has no link to the
-old one. To her other devices it is a new device, and the old slot is simply a device that stopped republishing.
-
-The slot, refresh, and `client` tag rules in this scene are now spec text:
-[../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and publication slots") and
-[../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion").
+If Alice deletes the app and installs it again on the same iPhone, the new installation gets a new slot with no link
+to the old one. To her other devices it is a new device, and the old slot is simply a device that stopped
+republishing.
 
 **Decision:** the device group is created only when a second device is linked. With one device there is nothing to
 coordinate. It also keeps "two device groups for one account" rare (Scene 3).
@@ -374,14 +368,10 @@ There is no "Alice added a device" notice.
 
 **Underneath:**
 
-- **Inviters add every valid, fresh, compatible KeyPackage for the account, up to a cap.** This is an ordinary admin
-  commit with several adds and needs no new authorization rule. The selection rules are now spec text in
-  [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle").
-  - **Valid** includes supporting what the chat requires, which keeps non-chat clients on the same account out of chat
-    groups.
-  - **Fresh** means republished recently, which keeps uninstalled or dead devices out of new chats.
-  - **Capped at 10 per account**, because a broken or malicious client can publish hundreds of KeyPackages under one
-    account. A chat also allows at most 10 leaves per account.
+- **Inviters add every fresh KeyPackage for the account, up to a cap.** This is an ordinary admin commit with several
+  adds and needs no new authorization rule. Which KeyPackages qualify, and the cap, are spec text in
+  [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle"). A chat also allows at
+  most 10 leaves per account.
 - An inviter that still picks a single KeyPackage keeps working. Alice's other devices join through gap filling.
 - **Alice's own devices never use these public KeyPackages for each other.** Gap filling and chats Alice creates use
   private KeyPackages, with the Welcome sent through the device group:
