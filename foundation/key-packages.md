@@ -158,7 +158,8 @@ The private `init_key` material for a consumed non-last-resort KeyPackage MUST b
 processing. A last-resort KeyPackage MAY keep its `init_key` after a successful Welcome so that the published package
 remains usable, but it MUST delete that material at the earlier of:
 
-- confirmed publication of a replacement under the active transport binding;
+- the end of the replacement grace period, 24 hours (86,400 seconds) after confirmed publication of a replacement under
+  the active transport binding;
 - the KeyPackage `Lifetime.not_after` time.
 
 A confirmed replacement is any successfully published KeyPackage that supersedes the old publication under the active
@@ -166,16 +167,19 @@ transport's authenticated slot or replacement rule. The replacement does not its
 `last_resort_key_package` component.
 
 An asynchronous transport cannot prove that every Welcome already encrypted to the superseded last-resort KeyPackage
-has arrived. Deletion after confirmed replacement publication can therefore make such a delayed Welcome undecryptable.
-This is the deliberate confidentiality-versus-availability trade-off of the deletion bound, not a reason to retain the
-old `init_key` for an unprovable drain period. The inviter can retry with a currently published KeyPackage.
+has arrived. An inviter can fetch the old publication just before the replacement reaches it, so a Welcome built from
+the old KeyPackage can arrive after the replacement is confirmed. A client SHOULD keep the old `init_key` until the
+replacement grace period ends so that such a Welcome can still be processed. A Welcome that arrives after the material
+is deleted is undecryptable; this is the deliberate confidentiality-versus-availability trade-off of the deletion bound.
+The inviter can retry with a currently published KeyPackage.
 
-A client MAY delete the material earlier after it stops publishing or accepting that KeyPackage. Local retention policy
-MUST NOT extend either bound.
+A client MAY delete the material earlier after it stops accepting that KeyPackage. Local retention policy MUST NOT
+extend either bound.
 
 Welcome confidentiality depends on the referenced KeyPackage's private `init_key` remaining secret. Compromise of that
 key before deletion lets an attacker decrypt every recorded Welcome encrypted to that KeyPackage and recover the join
-secrets carried by those Welcomes. Reuse makes this exposure apply to multiple joins for a last-resort KeyPackage.
+secrets carried by those Welcomes. Reuse makes this exposure apply to multiple joins for a last-resort KeyPackage, and
+the replacement grace period extends the exposure by at most 24 hours after the replacement is confirmed.
 Possession of the `init_key` alone does not let the attacker advance through later commits after the joined leaf's other
 private state has changed or been erased.
 

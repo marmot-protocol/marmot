@@ -43,6 +43,7 @@ The canonical directory tree and per-surface ownership rules live in [layout.md]
 where new protocol text belongs. The writing rules behind that split live in [principles.md](./principles.md). Use
 [mip-coverage.md](./mip-coverage.md) only as a historical map from the deprecated MIPs to this spec's surfaces, and
 [implementation-model.md](./implementation-model.md) for the non-normative mapping to this repository's code.
+[changes.md](./changes.md) lists the changes implementers need to know about, newest first.
 
 The surfaces, each with its own section README (human orientation) and `AGENTS.md` (agent operating rules):
 
