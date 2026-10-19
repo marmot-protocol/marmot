@@ -60,6 +60,13 @@ A SelfRemove-only Commit MAY reference one or more valid retained SelfRemove pro
 proposal type. Each referenced SelfRemove proposal is validated independently, and one invalid proposal makes the whole
 Commit invalid.
 
+For a group requiring the draft [history-purge component](../app-components/history-purge-v1.md) with an open request,
+this proposal-set rule has one conditional exception: the removing Commit MUST also carry exactly the component's
+atomic `superseded` terminal, request removal and required-list removal. It remains a SelfRemove batch for departure
+scheduling; no unrelated proposal is permitted. The remaining committer has only the purge component's scoped removal
+authority, and the SelfRemove source-epoch authorization, admin-leave constraints and prohibition on self-commit remain
+unchanged. Ordinary admin-initiated Remove commits likewise supersede the open request with their normal authority.
+
 Any remaining member whose authenticated account is authorized in the candidate-parent state MAY commit the retained
 SelfRemove proposals, provided the complete resulting state satisfies every Marmot invariant. Marmot does not elect one
 deterministic SelfRemove committer.

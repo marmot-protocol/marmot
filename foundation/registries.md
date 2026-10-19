@@ -23,6 +23,7 @@ Marmot app components use MLS private-use component ids.
 | `0x8009`     | `marmot.member.account-identity-proof.v2`       | [doc](../app-components/account-identity-proof-v2.md)               |
 | `0x800b`     | `marmot.group.encrypted-media.v2`               | [doc](../app-components/group-encrypted-media-v2.md)                |
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
+| `0x800d`     | `marmot.group.history-purge.v1`                 | [doc](../app-components/history-purge-v1.md)                        |
 
 ## Upstream MLS extension draft ids
 
@@ -99,6 +100,11 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
+| `453`   | History-purge control event         | Marmot app payload                  | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `454`   | History-purge member decision       | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `455`   | History-purge request proof         | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `456`   | History-purge cancellation proof    | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `457`   | History-purge terminal proof        | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -128,7 +134,7 @@ Kind `451` is the local signing event for current push token-record and removal 
 distinct `d` tags and are defined by [push-notifications.md](../features/push-notifications.md). Its signature-only
 carrier is feature-specific and does not use `MarmotAuthorizationProof`.
 
-Kinds `450` and `451` are local signing templates, not transport objects. Clients MUST NOT publish them to
+Kinds `450`, `451`, `454`, `455`, `456`, and `457` are local signing templates, not transport objects. Clients MUST NOT publish them to
 relays. Legacy-group verification of push signatures created with kind `450` does not change the current allocation:
 clients MUST NOT produce a new push owner proof with kind `450`.
 
