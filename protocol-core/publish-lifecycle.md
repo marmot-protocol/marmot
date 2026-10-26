@@ -67,9 +67,9 @@ treat that empty obligation as immediately satisfied and make epoch 0 canonical 
 
 When founding creation includes initial invitees, the creator next prepares and locally merges one founding Add Commit
 from epoch 0 to epoch 1. That Commit also has an empty group-message publication obligation: the creator is the only
-pre-existing member, so no peer can be forked by failure to publish it. Each resulting epoch-1 Welcome is a separate
-retryable per-invitee delivery obligation after the Add Commit becomes canonical. A Welcome delivery succeeds or fails
-independently and does not affect canonical group state.
+pre-existing member, so no peer can be forked by failure to publish it. Each resulting epoch-1 Welcome delivery, one for
+each added KeyPackage ([joining.md](./joining.md), "Delivery"), is a separate retryable obligation after the Add Commit
+becomes canonical. A Welcome delivery succeeds or fails independently and does not affect canonical group state.
 Consumed KeyPackage material for founding invitees cannot be restored on Welcome delivery failure; if a Welcome
 cannot be delivered, the founding creator MAY re-invite the unreachable member using a new Add commit against
 the now-canonical group with a fresh KeyPackage.

@@ -27,6 +27,11 @@ This binding owns:
 This binding does NOT own record encryption, the `AgentTextStreamRecordV1` field layout, the transcript hash, or which
 payload is authoritative. Those belong to the feature document.
 
+This binding carries no KeyPackages and no Welcomes. It does not provide the KeyPackage publication, slot, deletion,
+publication-time, or Welcome-delivery rules that [../foundation/key-packages.md](../foundation/key-packages.md) and
+[../protocol-core/joining.md](../protocol-core/joining.md) delegate to the active transport binding. Members join a
+group through the group's durable transport, today [nostr.md](./nostr.md).
+
 ## Stream identity
 
 A preview stream is identified by the pair `(stream_id, start_event_id)`:

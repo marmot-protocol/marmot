@@ -13,6 +13,27 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-19: Several devices per account
+
+[#442](https://github.com/marmot-protocol/marmot/pull/442) changes [foundation/identity.md](./foundation/identity.md),
+[foundation/key-packages.md](./foundation/key-packages.md), [foundation/registries.md](./foundation/registries.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[protocol-core/member-departure.md](./protocol-core/member-departure.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md),
+[transports/nostr.md](./transports/nostr.md), and [transports/quic.md](./transports/quic.md). A device is one client
+installation, and it must not copy MLS state or KeyPackage private keys to another device. Each device must publish
+into exactly one KeyPackage slot for its lifetime; a client that used several keeps one and SHOULD delete the rest.
+Devices SHOULD use 30-day KeyPackage lifetimes, refresh their slot at least every 7 days, keep a superseded
+KeyPackage's `init_key` through the 24-hour replacement grace period, and delete their slot with a NIP-09 kind `5`
+request when they sign out. Inviters SHOULD add every KeyPackage an account published in the last 30 days, must not
+add more than 20 for one account in one Commit, must not select one covered by a deletion request they hold, and must
+not select one that lacks any capability the resulting group requires. The Nostr KeyPackageRef tie-break now only
+orders equal candidates and drops one only when selection has to cut. An inviter makes one Welcome delivery for each
+KeyPackage it adds; a device that receives a delivery naming a sibling's KeyPackage does not treat it as a failed join.
+Removing an account means removing all of its leaves in one Commit. KeyPackage events MAY carry a one-value `client`
+tag, which no other Nostr event shape in the binding may carry. The QUIC binding states that it carries no KeyPackages
+or Welcomes.
+
 ## 2026-10-16: Replaced KeyPackage init keys outlive replacement by 24 hours
 
 [#440](https://github.com/marmot-protocol/marmot/pull/440) changes
