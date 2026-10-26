@@ -43,6 +43,10 @@ new direction is tracked in [ideas/](./ideas/README.md) because it affects this 
     [foundation/key-packages.md](./foundation/key-packages.md)
   - Nostr slots, `client` tag, and slot deletion: [transports/nostr.md](./transports/nostr.md)
   - Removing an account with several devices: [protocol-core/member-departure.md](./protocol-core/member-departure.md)
+  - Same-account adds and removes, and the per-account leaf limit:
+    [app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+    [protocol-core/joining.md](./protocol-core/joining.md), and
+    [protocol-core/member-departure.md](./protocol-core/member-departure.md)
   - Commit authorization boundary: [protocol-core/group-messaging.md](./protocol-core/group-messaging.md)
   - Convergence: [protocol-core/convergence.md](./protocol-core/convergence.md)
 

@@ -39,6 +39,13 @@ Newly created groups MUST also require component id `0x800c` and contain
 component remain valid without it and cannot disband until an active admin
 completes its explicit negotiated enablement.
 
+A creator whose client supports `marmot.group.account-devices.v1` (`0x800d`) MUST require it in a new group when the
+creator's own leaf, and every KeyPackage in the founding Add Commit if there is one, advertise it. Each member's devices
+can then add and remove leaves of their own account from the start, and the founding Add Commit has to respect the
+component's leaf limit. This rule binds the creator. A group that does not require the component is valid, so a joiner
+MUST NOT reject a Welcome because the group omits it. A group created without it can activate it later
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)).
+
 The account-proof and admin-policy requirements are lifetime invariants, not creation defaults. Every resulting epoch
 MUST require component ids `0x8009` and `0x8003` in the GroupContext `app_components` list, every member leaf MUST
 advertise and carry a valid `0x8009` proof, and the GroupContext MUST retain the `marmot.group.admin-policy.v1` entry.
@@ -89,8 +96,9 @@ and applies the pending state only after the publish obligation succeeds.
 
 Settings updates are admin-gated by default. A component MAY define a looser rule, but it MUST say so explicitly.
 
-Self-update Commits and dedicated SelfRemove-only Commits do not change group settings and do not require admin
-authorization.
+Self-update Commits, dedicated SelfRemove-only Commits, and same-account Commits in a group that requires
+`marmot.group.account-devices.v1` do not change group settings and do not require admin authorization
+([group-messaging.md](./group-messaging.md), "Commit authorization").
 
 ## Required capability changes
 

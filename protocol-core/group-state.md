@@ -199,5 +199,5 @@ outbound work.
 Queued group-state changes are regenerated after convergence status reaches `Settled` and the lifecycle state allows
 outbound work. A staged commit created before branch selection MUST NOT be reused after convergence changes the
 canonical state. After a bounded pass, the fair scheduling rule in [convergence.md](./convergence.md) gives one
-already-queued admin-authorized group-state intent a preparation opportunity before queued inbound input alone starts
+already-queued authorized group-state intent a preparation opportunity before queued inbound input alone starts
 another pass.

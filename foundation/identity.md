@@ -27,9 +27,11 @@ Each device holds its own MLS state: its own leaves, its own KeyPackages, and th
 MUST NOT copy MLS group state, leaf secrets, or KeyPackage private key material to another device. Two devices acting
 from one leaf's state would reuse that leaf's secrets.
 
-No device has protocol authority over another device of the same account. Rules that target the account, such as admin
-rights, apply equally to the leaves of every device. KeyPackage publication per device is defined in
-[key-packages.md](./key-packages.md) ("Devices and publication slots").
+No device has protocol authority over another device of the same account, with one exception: in a group that requires
+[`marmot.group.account-devices.v1`](../app-components/account-devices-v1.md), any device may add leaves of its own
+account and remove its other leaves. Rules that target the account, such as admin rights, apply equally to the leaves of
+every device. KeyPackage publication per device is defined in [key-packages.md](./key-packages.md) ("Devices and
+publication slots").
 
 ## MLS credential identity
 
