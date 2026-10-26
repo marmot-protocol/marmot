@@ -13,7 +13,8 @@ This rule applies to:
 
 - group creation (see "Group creation" below — the obligation shape differs from all other operations)
 - invite
-- member removal by an admin
+- member removal by an admin, or by another device of the same account
+  ([member-departure.md](./member-departure.md), "Removal by another device of the same account")
 - group profile update
 - required-capability change
 - admin policy update

@@ -85,6 +85,10 @@ Persistent Marmot group state uses GroupContext components. Per-member applicati
 proof about a leaf normally uses a LeafNode component. A component document MUST state every valid location and define
 the bytes and validation rules for each location.
 
+A component MAY have no valid location. It then carries no data: it exists only as an id in `app_components` support
+and required lists, and its document defines what requiring it changes and how an unexpected entry under its id is
+handled. [account-devices-v1.md](./account-devices-v1.md) is such a component.
+
 Location also determines how the bytes change:
 
 - GroupContext component entries change through `AppDataUpdate`.
@@ -176,7 +180,7 @@ A component that supports activation in an existing group MUST say so in its own
 its activation Commit installs. A component whose required status changes how clients validate or select group state
 MUST forbid removing it, and MUST say which state's GroupContext decides its effect, so that branches that diverged
 across the activating Commit are resolved the same way by every client. [group-lifecycle-v1.md](./group-lifecycle-v1.md)
-follows this process.
+and [account-devices-v1.md](./account-devices-v1.md) follow this process.
 
 ## Common Rules
 
@@ -309,6 +313,11 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.avatar-url.v1](./group-avatar-url-v1.md)
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
+
+The following draft component carries no data. A group lists it among its required components to let members add and
+remove leaves of their own account:
+
+- [marmot.group.account-devices.v1](./account-devices-v1.md)
 
 The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
 

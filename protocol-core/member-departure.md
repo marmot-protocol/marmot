@@ -2,11 +2,13 @@
 
 Status: adopted.
 
-Member departure covers two paths: a member leaving on its own through SelfRemove, and an admin removing another
-member. This document specifies the SelfRemove path in full. Ordinary admin-initiated removal is an admin-gated
+Member departure covers three paths: a member leaving on its own through SelfRemove, an admin removing another
+member, and, in a group that requires `marmot.group.account-devices.v1`, another device of the same account removing a
+device's leaf. This document specifies the SelfRemove path in full. Ordinary admin-initiated removal is an admin-gated
 group-state change whose authorization is owned by
 [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("remove another member"); it otherwise
-follows the normal commit, publish-lifecycle, and convergence rules. Both paths end with the removed member realizing
+follows the normal commit, publish-lifecycle, and convergence rules. Removal by another device of the same account is
+described in "Removal by another device of the same account" below. Every path ends with the removed member realizing
 its own removal; that flow is "Realizing removal" below.
 
 SelfRemove lets a current member leave a group without asking an admin to remove them. It uses the MLS SelfRemove
@@ -16,7 +18,8 @@ proposal from the MLS extensions work and does not define a Marmot custom propos
 
 - MLS proposal: SelfRemove.
 - Protocol core: proposal ingest, opportunistic SelfRemove commits, convergence, retained history.
-- App component: `marmot.group.admin-policy.v1` for admin leave constraints.
+- App components: `marmot.group.admin-policy.v1` for admin leave constraints, and `marmot.group.account-devices.v1`
+  for removal by another device of the same account.
 - Transport: whichever transport carries the proposal and commit.
 
 ## Behavior
@@ -96,17 +99,40 @@ the source epoch is outside the rollback horizon and no staged or retained Commi
 another ordinary MLS proposal-release rule applies. Local arrival order MUST NOT choose the proposal used for local
 Commit preparation.
 
+## Removal by another device of the same account
+
+In a group whose candidate parent state requires `marmot.group.account-devices.v1`, any current leaf MAY commit a
+Remove of another current leaf of its own account, whether or not the account is an active admin. That component owns
+the authorization, the allowed Commit shape, and the sender rules
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)). Such a Remove is how a device
+leaves a group while another device of its account stays, for example when it signs out:
+
+- The departing device does not commit its own removal. Another device of the same account commits an ordinary Remove
+  of the departing leaf. How the departing device asks for this is outside this document; receivers see only the
+  Remove.
+- The departing device MAY instead use SelfRemove where the rules above allow it. Both paths end in the same removed
+  condition.
+- The Remove counts as removing another member, not as a self-leave, because the committer is a different leaf. The
+  restriction on SelfRemove by an active admin therefore does not apply to it and does not relax.
+- The account stays a member through its remaining leaves, including the committer's, so the Remove never triggers the
+  admin coupling rule in [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins").
+  An admin account keeps its `admins` entry.
+- The removed device realizes its removal as described in "Realizing removal" below.
+
+A device whose account has no other leaf in the group cannot be removed this way. It leaves through SelfRemove, after
+first leaving the admin list if its account is an active admin ("Behavior" above).
+
 ## Realizing removal
 
-Both departure paths end the same way for the removed member: its client realizes that its membership ended, tells the
-application, and stops treating the group as active.
+Every departure path ends the same way for the removed member: its client realizes that its membership ended, tells
+the application, and stops treating the group as active.
 
 The authenticated evidence of removal is always the same bytes: an accepted commit on the selected canonical branch
-that removes this local client's own MLS leaf — an admin-initiated Remove or a committed SelfRemove — recorded in
-retained canonical state. This evidence is leaf-scoped: other current leaves with the same Marmot account identity do
-not prevent this local leaf from realizing its removal. When the client applies such a commit, it MUST emit a
-self-removed state notification (see [inbound-processing.md](./inbound-processing.md), "Application-visible output")
-and mark the local group copy removed.
+that removes this local client's own MLS leaf — a Remove committed by an admin or by another device of the same
+account, or a committed SelfRemove — recorded in retained canonical state. This evidence is leaf-scoped: other current
+leaves with the same Marmot account identity do not prevent this local leaf from realizing its removal. When the client
+applies such a commit, it MUST emit a self-removed state notification (see
+[inbound-processing.md](./inbound-processing.md), "Application-visible output") and mark the local group copy removed.
 
 `SelfEvicted` names this state-derived realization, not an input disposition. Whenever retained canonical group state
 records the local member's removal and the local group copy is not yet marked removed, the client MUST perform the

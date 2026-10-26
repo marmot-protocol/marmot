@@ -1,6 +1,7 @@
 # Multi-device
 
-Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. See [README.md](./README.md).
+Status: idea (non-normative). Nothing here is part of the Marmot protocol; parts that have moved into the spec link to
+it. See [README.md](./README.md).
 
 This idea covers using one Marmot account on several devices: signing in on a new device, linking it to the devices you
 already have, getting invites on every device, and managing or removing devices later. It describes the experience and
@@ -243,7 +244,7 @@ naming it. Once Alice confirms on both screens, each device sends a short confir
 - **The laptop's covers its exact KeyPackage.** Link applies to that KeyPackage, not to whatever the slot holds later.
 - **The iPhone's covers the device group** it is about to add the laptop to. The laptop accepts a Welcome only for that
   group. A group that merely carries the hidden device-group marker can't pull the laptop in. Exactly what the laptop
-  checks belongs to the device group's spec (Path into the spec, item 3).
+  checks belongs to the device group's spec (Path into the spec, item 2).
 
 The tap on the laptop is not a formality. Someone with the nsec could pose as Alice's existing device and try to pull
 the laptop into a device group they control. Without the laptop's own confirmation, nothing would stop that.
@@ -336,16 +337,20 @@ that toggle on.
   for it can no longer be opened. Keeping the key longer instead means one stolen key opens every one of those
   Welcomes.
 
+The first point is already spec text: in a chat that has turned on sibling adds, a device never adds a KeyPackage of its
+own account just because it is published under the account. See "Sender rules" in
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md).
+
 **Trade-offs:**
 
-- A device that isn't an admin adding a sibling is a new kind of commit. Every member of a chat has to understand it,
-  so a chat turns it on with a group app component that every member must support. Chats without it wait, and the UI
-  says why.
+- A device that isn't an admin adding a sibling is a new kind of commit. Every member of a chat has to understand it, so
+  a chat turns it on with an app component that every member must support
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)). Chats without it wait, and the
+  UI says why.
 - Each device holds the private keys for KeyPackages it has handed out until they are used or replaced. This is a
   small amount of state, and it is the price of never sharing one key across Welcomes.
 - Two siblings can both try to fill the same gap. A short claim in the device group makes that rare. If both adds land
-  anyway, the extra leaf is removed. The 10-leaf limit is counted on each chat's actual membership after each commit,
-  never across competing branches added together.
+  anyway, the extra leaf is removed. The limit on leaves per account in a chat is spec text in the same component.
 
 ## Scene 6: Everyday life with several devices
 
@@ -376,7 +381,7 @@ There is no "Alice added a device" notice.
     groups.
   - **Fresh** means republished recently, which keeps uninstalled or dead devices out of new chats.
   - **Capped at 10 per account**, because a broken or malicious client can publish hundreds of KeyPackages under one
-    account. A chat also allows at most 10 leaves per account.
+    account.
 - An inviter that still picks a single KeyPackage keeps working. Alice's other devices join through gap filling.
 - **Alice's own devices never use these public KeyPackages for each other.** Gap filling and chats Alice creates use
   private KeyPackages, with the Welcome sent through the device group:
@@ -475,10 +480,11 @@ Locking the app with a PIN, face, or fingerprint is not signing out. It protects
 the network.
 
 **Admin chats:** if Alice is a chat admin, every one of her devices is an admin there, because admin rights belong to
-the account. Today an admin can't leave a chat by itself, but signing out doesn't need it to: a sibling removes the
-departing device, and a sibling of an admin is an admin. So the self-leave rule doesn't have to relax. In chats with
-the readiness component, an admin removing another leaf of their own account counts as removing another member. The
-last device of an admin account still has to give up admin first, as today.
+the account. An admin can't leave a chat by itself, but signing out doesn't need it to: a sibling removes the
+departing device, so the admin self-leave rule stays as it is. The last device of an admin account still has to give
+up admin first. The rules are in
+[../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Removal by another device of the same
+account").
 
 ## Scene 8: "This wasn't me"
 
@@ -552,7 +558,6 @@ device treats a group as its device group only if it created it or joined it thr
 | Number | Value |
 | --- | --- |
 | Linked devices per account | at most 10 |
-| Leaves per account in one chat | at most 10 |
 | KeyPackages an inviter adds per account | at most 10 |
 | Freshness window for inviters | 30 days |
 | KeyPackage lifetime | 30 days |
@@ -564,6 +569,9 @@ device treats a group as its device group only if it created it or joined it thr
 | Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits); new for every session |
 | Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
+
+The limit on leaves per account in one chat is spec text in
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md).
 
 ## Open questions
 
@@ -583,16 +591,19 @@ Parts of this can become spec text before others are settled:
    installation uses exactly one random slot for its lifetime, KeyPackage events carry the standard `client` tag and
    nothing more about the device, signing out deletes only your own slot, and inviters add up to 10 fresh KeyPackages
    per account. None of this needs new commit types.
-2. **Same-account operations.** The chat readiness app component, sibling adds, sibling removal (including a device
-   signing out while a sibling remains), and the 10-leaf cap.
-3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
+2. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
    delivery, gap filling, anomaly signals, and merging.
-4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
+3. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
+
+Same-account operations are already spec text: the app component a chat requires before devices can add and remove their
+own account's leaves, sibling adds and removal, and the per-account leaf limit are in
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), with the join and departure rules in
+[../protocol-core/joining.md](../protocol-core/joining.md) and
+[../protocol-core/member-departure.md](../protocol-core/member-departure.md).
 
 Details to pick while writing the spec, rather than product questions:
 
 - which reviewed short-code exchange to reuse, the exact pairing messages, and how many attempts are allowed;
-- the chat readiness component's exact contents;
 - the roster and device group message encodings;
 - listing the `client` tag as allowed on KeyPackage events in the Nostr transport.
 

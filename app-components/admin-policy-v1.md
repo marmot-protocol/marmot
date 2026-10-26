@@ -94,6 +94,8 @@ if at least one other active admin remains.
 Every v1 group-level Marmot component update requires an active admin to commit unless the owning component document
 explicitly defines a looser rule. No v1 group-level component currently defines one. This rule follows the component
 class rather than an enumerated list, so adding a registered component does not silently make its updates ungoverned.
+[account-devices-v1.md](./account-devices-v1.md) has no component state to update; its exception below covers membership
+changes only.
 
 The following non-component operations also require an active admin to commit:
 
@@ -102,13 +104,22 @@ The following non-component operations also require an active admin to commit:
 - change the GroupContext `app_components` list of required Marmot components; and
 - change the GroupContext `required_capabilities` extension through an MLS `GroupContextExtensions` proposal.
 
-Existing members authorize an Add Commit against its candidate parent state. A Welcome receiver cannot perform that
-same parent-state check; it instead applies the distinct join-time resulting-state check defined in
+The first two items have one exception. When the candidate parent state requires
+[`marmot.group.account-devices.v1`](./account-devices-v1.md), any member, admin or not, MAY commit an Add of a
+KeyPackage whose credential identity is its own account and a Remove of another current leaf of its own account, as
+that component defines. The exception applies only while a required component explicitly grants it, and this is the
+only component that does. It is compatible with clients that predate it: a client that does not support that component
+cannot be a member of a group that requires it. Adding or removing another account still requires an active admin.
+
+Existing members authorize an Add Commit against its candidate parent state. A Welcome receiver cannot perform that same
+parent-state check; it instead applies the distinct join-time resulting-state check defined in
 [../protocol-core/joining.md](../protocol-core/joining.md). The receiver identifies the inviter from the MLS GroupInfo
 signer leaf and rejects the Welcome unless that leaf's MLS-authenticated Marmot account identity is an active admin in
-the joined group state. This component is the sole membership-add authority for v1 groups: if it is absent, no member is
-authorized to add, so the receiver rejects the Welcome. The resulting-state check's trust model and limits are described
-in [../protocol-core/joining.md](../protocol-core/joining.md), "Welcome-bootstrap trust."
+the joined group state, or is the receiver's own account identity in a joined state that requires
+`marmot.group.account-devices.v1`. This component is the membership-add authority for v1 groups, apart from that
+same-account exception: if it is absent, no member is authorized to add, so the receiver rejects the Welcome. The
+resulting-state check's trust model and limits are described in
+[../protocol-core/joining.md](../protocol-core/joining.md), "Welcome-bootstrap trust."
 
 SelfRemove is special:
 
@@ -120,6 +131,13 @@ SelfRemove is special:
 - the committer of a SelfRemove proposal MUST NOT be the leaving member
 
 [../protocol-core/member-departure.md](../protocol-core/member-departure.md) owns the full SelfRemove flow.
+
+These rules do not relax for an admin account with several devices. In a group that requires
+`marmot.group.account-devices.v1`, one of its devices can still leave while another stays: the staying device commits a
+Remove of the departing leaf. That Remove is not a SelfRemove, so the rules above do not apply to it, and the account
+keeps its `admins` entry through its remaining leaves
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Removal by another device of the same
+account").
 
 ## Removal
 

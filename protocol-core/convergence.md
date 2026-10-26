@@ -137,12 +137,14 @@ passes MUST NOT change the eventual canonical result. Input excluded by one cuto
 until the protocol assigns it a terminal disposition. Implementations MUST NOT use timer tuning or pass partitioning to
 resolve a difference that the deterministic selection rules leave open.
 
-After a bounded pass settles in `Stable`, the client MUST give one already-queued, admin-authorized local group-state
-intent one preparation attempt against the selected canonical state before it begins another convergence pass solely
-because more inbound input is queued. Inbound input remains durably retained during that attempt. If the attempt cannot
-proceed with currently available authorization, prerequisites, or signing capability, the scheduler proceeds rather
-than waiting indefinitely. A prepared Commit then follows the normal publication and convergence rules; this scheduling
-guarantee does not make it valid, accepted, or canonical.
+After a bounded pass settles in `Stable`, the client MUST give one already-queued, authorized local group-state intent
+one preparation attempt against the selected canonical state before it begins another convergence pass solely because
+more inbound input is queued. An intent is authorized when the local member may commit it in that state, whether
+through admin authority or through a narrower rule such as the same-account authority in
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md). Inbound input remains durably
+retained during that attempt. If the attempt cannot proceed with currently available authorization, prerequisites, or
+signing capability, the scheduler proceeds rather than waiting indefinitely. A prepared Commit then follows the normal
+publication and convergence rules; this scheduling guarantee does not make it valid, accepted, or canonical.
 
 The preparation opportunity is bounded anti-starvation behavior, not an unconditional administrative-progress
 guarantee. Marmot does not guarantee that a privileged transition becomes canonical while valid selection-relevant
@@ -227,11 +229,15 @@ Each candidate branch has:
 
 - `fork_epoch`: the epoch where the branch diverged from retained canonical state;
 - `tip_epoch`: the epoch reached after replaying the branch's valid commits;
-- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `privileged` exactly when
-  its applicable Marmot authorization rule requires its committer to be an active admin in the candidate parent state.
-  A Commit is `ordinary` when its authorization rule permits the authenticated committer without admin authority. A
+- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `privileged` exactly when its
+  applicable Marmot authorization rule requires its committer to be an active admin in the candidate parent state. A
+  Commit is `ordinary` when its authorization rule permits the authenticated committer without admin authority. A
   component change whose owning document explicitly permits a non-admin committer is therefore `ordinary`, not
-  `privileged`; the operation's category does not override its actual authorization rule.
+  `privileged`; the operation's category does not override its actual authorization rule. The class depends only on the
+  Commit and its candidate parent state, not on whether its committer is also an admin: a Commit is `ordinary` when one
+  rule that permits a non-admin committer covers the whole Commit, such as a self-update, a SelfRemove-only Commit, or a
+  same-account Commit under [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), and
+  `privileged` otherwise. A Commit that combines shapes no single such rule covers is therefore `privileged`.
 - `tip_committer`: the authenticated Marmot account identity of the branch's tip commit sender, derived from the MLS
   credential/leaf that authenticated the commit, not from transport metadata.
 - `tip_digest`: `SHA-256` of the serialized MLS message bytes of the branch's tip commit (the same Commit

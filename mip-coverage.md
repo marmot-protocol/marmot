@@ -36,9 +36,13 @@ new direction is tracked in [ideas/](./ideas/README.md) because it affects this 
     [app-components/group-encrypted-media-v1.md](./app-components/group-encrypted-media-v1.md)
 - MIP-05, Push Notifications: Draft and optional.
   - Feature flow: [features/push-notifications.md](./features/push-notifications.md)
-- MIP-06, Multi-Device Support: Being redesigned; not specified.
+- MIP-06, Multi-Device Support: Being redesigned; partly specified.
   - Direction (non-normative): [ideas/multi-device.md](./ideas/multi-device.md)
   - Existing account-versus-leaf rules: [foundation/identity.md](./foundation/identity.md)
+  - Same-account adds and removes, and the per-account leaf limit:
+    [app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+    [protocol-core/joining.md](./protocol-core/joining.md), and
+    [protocol-core/member-departure.md](./protocol-core/member-departure.md)
   - Commit authorization boundary: [protocol-core/group-messaging.md](./protocol-core/group-messaging.md)
   - Convergence: [protocol-core/convergence.md](./protocol-core/convergence.md)
 
