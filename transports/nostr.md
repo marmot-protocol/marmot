@@ -441,8 +441,11 @@ A Nostr transport client subscribes to:
   publishes its KeyPackages;
 - KeyPackage events: kind `30443`, using the account lookup rules defined by
   [../foundation/key-packages.md](../foundation/key-packages.md);
-- KeyPackage slot deletion requests: kind `5`, author equal to the account being queried, with a `#k` filter equal to
-  `30443`, fetched from the same write-capable relay set as that account's KeyPackages ("Slot deletion" above).
+- KeyPackage slot deletion requests: kind `5`, author equal to the account being queried, fetched from the same
+  write-capable relay set as that account's KeyPackages ("Slot deletion" above). A client MAY narrow the fetch with a
+  `#k` filter equal to `30443`, which conforming senders always include, or with `#a` filters naming the slots it
+  found. Either filter is a fetch convenience only: a request the client holds applies under "Slot deletion" however it
+  was fetched.
 
 Clients SHOULD use a `since` value when resubscribing if they have a retained transport timestamp. The timestamp is a
 fetch hint only.
