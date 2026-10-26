@@ -578,11 +578,16 @@ yet; it shares its record in that group as a new record, in a plain self-update 
 A device SHOULD send an announce, a kind `447` carrying `have` (see "Request, update, and announce (kind 447)"), in a
 group:
 
-- when it shares a new or changed record of its own there, instead of a plain self-update;
+- when it shares a new or changed record of its own there after its join window has ended, instead of a plain
+  self-update;
 - once when its join window in the group ends, whether or not snapshot events arrived; and
-- with the next group message it sends there, when it has not announced there within the announce interval. A device
-  that has never announced in a group has not announced within the interval, so it announces with the first group
-  message it sends there.
+- with the next group message it sends there after its join window has ended, when it has not announced there within
+  the announce interval. A device that has never announced in a group has not announced within the interval, so it
+  announces with the first group message it sends there after the window.
+
+Inside its join window, a device that joined follows the window rules below instead: a record it shares goes in a plain
+self-update, with no `have`. A group's creator has no join window there, so the first and third rules apply to it at
+once.
 
 A device's join completes when all of these hold:
 
