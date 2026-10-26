@@ -7,8 +7,8 @@ authority. A device can then add another device of the same account to a group i
 when that device signs out. A group turns this on by requiring the component.
 
 An account can have several leaves in one group, one for each of its devices there
-([../foundation/identity.md](../foundation/identity.md), "Accounts and members"). The non-normative direction this
-component serves is described in [../ideas/multi-device.md](../ideas/multi-device.md).
+([../foundation/identity.md](../foundation/identity.md), "Devices"). The non-normative direction this component serves
+is described in [../ideas/multi-device.md](../ideas/multi-device.md).
 
 ## Registry
 

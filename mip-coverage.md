@@ -38,7 +38,11 @@ new direction is tracked in [ideas/](./ideas/README.md) because it affects this 
   - Feature flow: [features/push-notifications.md](./features/push-notifications.md)
 - MIP-06, Multi-Device Support: Being redesigned; partly specified.
   - Direction (non-normative): [ideas/multi-device.md](./ideas/multi-device.md)
-  - Existing account-versus-leaf rules: [foundation/identity.md](./foundation/identity.md)
+  - Account-versus-leaf rules and devices: [foundation/identity.md](./foundation/identity.md)
+  - One KeyPackage slot per device and per-account selection:
+    [foundation/key-packages.md](./foundation/key-packages.md)
+  - Nostr slots, `client` tag, and slot deletion: [transports/nostr.md](./transports/nostr.md)
+  - Removing an account with several devices: [protocol-core/member-departure.md](./protocol-core/member-departure.md)
   - Same-account adds and removes, and the per-account leaf limit:
     [app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
     [protocol-core/joining.md](./protocol-core/joining.md), and

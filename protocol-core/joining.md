@@ -36,6 +36,15 @@ The active transport binding owns the Welcome delivery envelope, recipient addre
 Protocol core requires that the receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and
 can identify which local KeyPackage was consumed.
 
+Each delivery names exactly one consumed KeyPackage. An inviter whose Commit added several KeyPackages, including
+several of one account's ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"),
+MUST make one delivery for each of them, so that every added device receives a delivery naming its own KeyPackage.
+
+An account's devices can share delivery addressing, so a device can receive a delivery that names another device's
+KeyPackage. That delivery fails step 2 of the receiving flow below for this device, but it is not a failed join: the
+device leaves its own KeyPackage state unchanged and does not report a failed invite. It MUST NOT let such a delivery
+prevent processing of a delivery that names its own KeyPackage.
+
 The Welcome delivery envelope MUST NOT by itself choose group state. It supplies bytes and delivery evidence. MLS and
 Marmot validation decide whether the receiver joins.
 
