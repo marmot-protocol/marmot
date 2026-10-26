@@ -30,18 +30,25 @@ A client MUST NOT create an `app_data_dictionary` entry with component id `0x800
 LeafNode, KeyPackage, or GroupInfo), and MUST NOT create AppEphemeral or SafeAAD bytes for it. The component defines
 none of them.
 
-Receivers check this only in groups that require the component. Every leaf in such a state advertises the component, so
-every member that continues in it applies the same check:
+Receivers check this at every location, but only in groups that require the component. Every leaf in such a state
+advertises the component, so every member that continues in it applies the same check:
 
-- A Commit whose resulting state requires `0x800d` is invalid if that state carries an entry with id `0x800d` in its
-  GroupContext or in any member LeafNode.
-- A Commit whose candidate parent state requires `0x800d` is invalid if it contains an AppDataUpdate targeting
-  `0x800d`.
+- GroupContext and LeafNode: a Commit whose resulting state requires `0x800d` is invalid if that state carries an entry
+  with id `0x800d` in its GroupContext or in any member LeafNode.
+- KeyPackage: such a Commit is also invalid if it adds a KeyPackage whose KeyPackage-level `app_data_dictionary`
+  carries an entry with id `0x800d`. An entry in the KeyPackage's embedded LeafNode is covered by the previous rule.
+- GroupInfo: a joiner rejects a Welcome whose GroupInfo carries an entry with id `0x800d` when the resulting state
+  requires `0x800d`, as part of validating required components
+  ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 7). Only the joiner sees the
+  GroupInfo, so this check cannot split existing members.
+- AppDataUpdate: a Commit whose candidate parent state requires `0x800d` is invalid if it contains an AppDataUpdate
+  targeting `0x800d`.
 
-Before a group requires the component, a client that supports it treats such an entry, and an AppDataUpdate for it,
-as it treats those of any unknown component ([README.md](./README.md), "Unknown Data"), so that its validity decisions
-match those of members that do not support the component. If the GroupContext carries such an entry, the activation
-Commit removes it with an AppDataUpdate `remove`; a leaf that carries one has to be replaced before activation.
+Before a group requires the component, a client that supports it treats such an entry at any location, and an
+AppDataUpdate for it, as it treats those of any unknown component ([README.md](./README.md), "Unknown Data"), so that
+its validity decisions match those of members that do not support the component. If the GroupContext carries such an
+entry, the activation Commit removes it with an AppDataUpdate `remove`; a leaf that carries one has to be replaced
+before activation.
 
 ## Same-account operations
 
