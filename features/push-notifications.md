@@ -618,8 +618,9 @@ member's announce lacks the device's record, the members that reply relay it.
 
 ### Repair
 
-A device answers a request, a kind `447` with no `have` and an empty `tokens` array, as an announce whose `have` is
-empty. Every rule in this section applies to that answer, the rate limit included.
+A device treats a request, a kind `447` with no `have` and an empty `tokens` array, as an announce from the requester
+whose `have` is empty. The requester is the announcer, the replies are ordinary repair replies to it, and no device
+sends a new kind `447` in response. Every rule in this section applies to those replies, the rate limit included.
 
 A device that receives an announce works out what the announcer lacks: the active records and tombstones the device
 holds in the group, after applying the announce's own entries, whose digests are not in `have`. Only a record or
@@ -649,7 +650,8 @@ listing the missing records and kind `449` events relaying the missing tombstone
   epoch or a later epoch, passes "Owner authentication", names a current member, has the item's record key, and has an
   ordering stamp equal to or greater than the item's. An entry from an earlier epoch never covers an item, even when
   the device processes it after the announce, because a leaf that joined later cannot decrypt it. If no item is left,
-  the device cancels its reply.
+  the device cancels its reply. Cancelling depends on what the responding device has seen, not on what the announcer
+  received: if the announcer missed the covering message, its next announce repairs the gap.
 - **Catching up.** A device that receives an announce while processing a batch of earlier group messages decides
   whether to reply only after processing the whole batch, so replies that others already sent can cancel its own. It
   counts its wait from that point.
