@@ -60,9 +60,10 @@ parent state:
 - a **same-account Remove** is a Remove proposal, carried by value, that targets a current leaf other than the
   committer's own leaf whose credential identity equals the committer's account identity.
 
-A same-account Add is an Add like any other in every other respect. Its KeyPackage MUST be compatible with the group
-once the Commit is applied, as [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and
-lifecycle") defines for inviters, and receivers check the group's requirements on it as on any Add.
+A same-account Add is an Add like any other in every other respect. Its KeyPackage MUST advertise support for every MLS
+primitive, app component, and component-owned role capability that the Commit's resulting state requires
+([../foundation/key-packages.md](../foundation/key-packages.md), "Capability advertising"). For this component itself,
+receivers enforce that through the support invariant below.
 
 Both are leaf operations. A same-account Remove never removes the account's last leaf, because the committer's own leaf
 stays, so it never triggers the admin coupling rule in [admin-policy-v1.md](./admin-policy-v1.md) ("Active admins") and
@@ -101,6 +102,14 @@ resulting-state failure, not an authorization failure.
 A same-account Commit is `ordinary` in branch selection, even when its committer is also an active admin, because the
 same-account rule authorizes it without admin authority. A Commit that also contains anything else, including another
 non-admin shape such as a referenced SelfRemove, is `privileged`, because only an active admin may commit it
+([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
+
+## Support invariant
+
+While the resulting state requires `0x800d`, every current leaf in it MUST advertise `0x800d` in its `app_components`
+support list. Like the leaf limit below, this is checked against the complete resulting state of every Commit, whoever
+commits it and whatever it contains, so neither an Add nor a replacement LeafNode can bring in a leaf that does not
+support the component. A Commit whose resulting state breaks it is invalid and creates no candidate edge
 ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
 
 ## Leaf limit
@@ -174,8 +183,8 @@ Component in an Existing Group"):
   installs no `app_data_dictionary` entry.
 - Only an active admin MAY commit the activation, because it changes the required-component list
   ([admin-policy-v1.md](./admin-policy-v1.md), "Admin-Gated Actions").
-- The activation Commit is valid only when every leaf in its resulting state advertises `0x800d` and the resulting state
-  satisfies the leaf limit.
+- The activation Commit is valid only when its resulting state satisfies the support invariant and the leaf limit, so
+  every leaf in it already advertises `0x800d`.
 - Same-account authority starts with the Commit after activation, because authorization reads the candidate parent
   state. The activation Commit can still add the admin's own devices under the admin's ordinary authority.
 

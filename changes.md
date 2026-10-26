@@ -28,16 +28,19 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [protocol-core/group-state.md](./protocol-core/group-state.md). It registers draft component `0x800d`,
 `marmot.group.account-devices.v1`, which has no data. In a group that requires it, any member may commit a same-account
 Commit without admin authority: Add proposals for KeyPackages of its own account and Remove proposals for its account's
-other leaves, by value and with no other proposal. An added KeyPackage must be compatible with the resulting group, as
-for any inviter, and no requirement may be dropped so that a device fits. Such a Commit is `ordinary` in branch
-selection even from an admin, and `tip_priority` now depends only on the Commit and its candidate parent. No account may
-have more than `max_leaves_per_account` leaves, and a group can never stop requiring the component. A joiner accepts a
-Welcome from its own account when the joined state requires the component. A creator whose client supports it must
-require it when every founding leaf advertises it; existing groups activate it by an admin Commit. In such a group a
-client must not add a KeyPackage of its own account only because it is published under the account's key, except in the
-founding Add Commit. A device of an admin account can leave through a Remove by its sibling, so the SelfRemove rule for
-admins is unchanged. A component may now have no data location. The fair scheduling rule now covers every authorized
-queued intent, not only admin ones. Apart from that rule, groups that do not require the component are unaffected.
+other leaves, by value and with no other proposal. An added KeyPackage must advertise everything the resulting group
+requires, and no requirement may be dropped so that a device fits; while a group requires the component, every leaf must
+advertise it. `tip_priority` is now one test: a Commit is `ordinary` when one rule that permits a non-admin committer
+covers all of it, whoever commits it, and `privileged` otherwise. A same-account Commit is therefore `ordinary` even
+from an admin. Self-update and SelfRemove-only Commits were already `ordinary` under the earlier wording, an admin's
+included, so their scoring does not change. No account may have more than `max_leaves_per_account` leaves, and a group
+can never stop requiring the component. A joiner accepts a Welcome from its own account when the joined state requires
+the component. A creator whose client supports it must require it when every founding leaf advertises it; existing
+groups activate it by an admin Commit. In such a group a client must not add a KeyPackage of its own account only
+because it is published under the account's key, except in the founding Add Commit. A device of an admin account can
+leave through a Remove by its sibling, so the SelfRemove rule for admins is unchanged. A component may now have no data
+location. The fair scheduling rule now covers every authorized queued intent, not only admin ones. Apart from that rule,
+groups that do not require the component are unaffected.
 
 ## 2026-10-16: Replaced KeyPackage init keys outlive replacement by 24 hours
 

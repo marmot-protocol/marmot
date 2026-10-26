@@ -229,15 +229,14 @@ Each candidate branch has:
 
 - `fork_epoch`: the epoch where the branch diverged from retained canonical state;
 - `tip_epoch`: the epoch reached after replaying the branch's valid commits;
-- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `privileged` exactly when its
-  applicable Marmot authorization rule requires its committer to be an active admin in the candidate parent state. A
-  Commit is `ordinary` when its authorization rule permits the authenticated committer without admin authority. A
-  component change whose owning document explicitly permits a non-admin committer is therefore `ordinary`, not
-  `privileged`; the operation's category does not override its actual authorization rule. The class depends only on the
-  Commit and its candidate parent state, not on whether its committer is also an admin: a Commit is `ordinary` when one
-  rule that permits a non-admin committer covers the whole Commit, such as a self-update, a SelfRemove-only Commit, or a
-  same-account Commit under [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), and
-  `privileged` otherwise. A Commit that combines shapes no single such rule covers is therefore `privileged`.
+- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `ordinary` when one Marmot
+  authorization rule that permits a committer without admin authority covers the whole Commit in its candidate parent
+  state, and `privileged` otherwise. The ordinary cases are a self-update Commit, a SelfRemove-only Commit, a
+  same-account Commit under [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), and a
+  component change whose owning document explicitly permits a non-admin committer. The class depends only on the Commit
+  and its candidate parent state: a Commit that one such rule covers is `ordinary` even when its committer is also an
+  active admin, and a Commit that combines shapes no single such rule covers is `privileged`. The operation's category
+  does not override its actual authorization rule.
 - `tip_committer`: the authenticated Marmot account identity of the branch's tip commit sender, derived from the MLS
   credential/leaf that authenticated the commit, not from transport metadata.
 - `tip_digest`: `SHA-256` of the serialized MLS message bytes of the branch's tip commit (the same Commit
