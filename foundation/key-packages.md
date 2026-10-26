@@ -133,14 +133,22 @@ account to a group, including at founding creation, it adds one leaf for each Ke
 Before ranking candidates, an inviter MUST perform the validation listed below and any additional checks required by the
 active transport binding. It MUST reject malformed or incompatible candidates before selecting any.
 
+A candidate is compatible only when it advertises support for every MLS primitive, app component, and component-owned
+role capability that the group requires once the Commit is applied ("Capability advertising" above). At founding
+creation, that is the set the creator will require. Freshness never overrides this: an inviter MUST NOT select an
+incompatible candidate, even when it is the account's only one. The group's requirements come from what the group
+needs, not from the candidates found, so an inviter SHOULD NOT leave a requirement out of a new group only so that more
+of an account's devices qualify.
+
 The active transport binding keeps at most one current publication per slot and defines a candidate's publication
 time. A candidate is fresh when its publication time is no more than 2,592,000 seconds (30 days) before the selection
 time.
 
 When an inviter adds an account to a group, it SHOULD select every valid, fresh candidate for that account. It MUST NOT
-select more than 10 KeyPackages for one account in one Commit; when more than 10 fresh candidates remain, it selects the
-10 highest-ranked. When the account has no fresh candidate, the inviter MAY select the single highest-ranked valid
-candidate, so that an account whose devices are rarely opened can still be invited.
+select more than 20 KeyPackages for one account in one Commit; when more than 20 fresh candidates remain, it selects the
+20 highest-ranked. This limit binds the inviter, and a receiver does not check it. When the account has no fresh
+candidate, the inviter MAY select the single highest-ranked valid candidate, so that an account whose devices are
+rarely opened can still be invited.
 
 The ranking carried forward from the MIP-era documents (the prior Marmot Improvement Proposals; see
 [../mip-coverage.md](../mip-coverage.md)) prefers valid non-last-resort candidates, then the most recently published

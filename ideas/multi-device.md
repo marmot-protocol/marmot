@@ -192,7 +192,7 @@ approval decides which group survives.
    used from then on. The absorbed group's backups are kept until the surviving group's backups hold the same
    messages, and they still need the absorbed group's words, so Alice is told to keep those too
    ([account-sync.md](./account-sync.md)). If the two groups together would have more
-   than 10 devices, Alice unchecks some before linking.
+   than 20 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
    are offline until they come back.
@@ -224,7 +224,7 @@ the iPhone can know, because KeyPackages carry only a client tag. She checks tha
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
 - **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default. An
-  account can have at most 10 linked devices; linking an 11th asks her to remove one first.
+  account can have at most 20 linked devices; linking a 21st asks her to remove one first.
   - **Add to all my chats** covers the chats her devices are already in. Chats she joins after linking reach every
     device either way, because inviters add all of her fresh devices (Scene 6).
   - **Bring chat history** covers the history of those chats.
@@ -274,6 +274,11 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 
 **Rules of thumb:**
 
+- **Linking checks capabilities, not just the code.** A device can be linked only if its KeyPackage supports everything
+  the device group requires; otherwise the prompt says the client can't be linked, and why, instead of offering Link.
+  Linking never loosens what Alice's chats require: **Add to all my chats** adds the laptop only to chats whose
+  requirements its KeyPackages meet. The Devices screen lists the chats it couldn't join and the feature each one
+  needs.
 - **Approval from any one device is enough.** Alice's other devices change their prompt to "Laptop was added by iPhone"
   rather than silently dropping it. A device linked later doesn't prompt about devices already in the roster.
 - **Every decision is a commit.** Linking, rejecting, changing a device's settings and removing a device each change the
@@ -342,8 +347,8 @@ that toggle on.
 - Each device holds the private keys for KeyPackages it has handed out until they are used or replaced. This is a
   small amount of state, and it is the price of never sharing one key across Welcomes.
 - Two siblings can both try to fill the same gap. A short claim in the device group makes that rare. If both adds land
-  anyway, the extra leaf is removed. The 10-leaf limit is counted on each chat's actual membership after each commit,
-  never across competing branches added together.
+  anyway, the extra leaf is removed. The per-account leaf limit is counted on each chat's actual membership after each
+  commit, never across competing branches added together.
 
 ## Scene 6: Everyday life with several devices
 
@@ -372,6 +377,10 @@ There is no "Alice added a device" notice.
   with several adds and needs no new authorization rule. Which KeyPackages qualify, and the per-Commit limit, are spec
   text in [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle"). A cap on how many
   leaves one account can hold in a chat is still open (item 2 of "Path into the spec").
+- **Only KeyPackages that fit the chat qualify.** "Every fresh KeyPackage" means every one that supports everything the
+  chat requires. A device whose client lacks a required feature isn't added, and an inviter creating a chat doesn't drop
+  a requirement so that more of Alice's devices fit. Which features a group requires is the app's choice; Marmot has no
+  notion of app types.
 - An inviter that still picks a single KeyPackage keeps working. Alice's other devices join through gap filling.
 - **Alice's own devices never use these public KeyPackages for each other.** Gap filling and chats Alice creates use
   private KeyPackages, with the Welcome sent through the device group:
@@ -380,6 +389,9 @@ There is no "Alice added a device" notice.
   - **When an allocation runs out, the sibling waits** until the device comes online and tops it up. It doesn't fall
     back to the public KeyPackage. A sibling that needs more than it holds, for example to fill 30 chats at once, asks
     for a burst the same way the approving device does at link time.
+- **Gap filling checks capabilities too.** A device adds a sibling to a chat only with a KeyPackage that supports
+  everything the chat requires. A chat the sibling can't join is skipped and shown on the Devices screen, never loosened
+  to fit.
 - **Gap filling follows the roster.** Before adding a sibling to a chat, a device checks that sibling's settings. If
   **Add to all my chats** is off, it leaves alone the chats Alice's devices were already in when that sibling was
   linked. A device that was offline during the link reads the same settings when it comes back, so it doesn't undo
@@ -546,8 +558,8 @@ device treats a group as its device group only if it created it or joined it thr
 
 | Number | Value |
 | --- | --- |
-| Linked devices per account | at most 10 |
-| Leaves per account in one chat | at most 10 |
+| Linked devices per account | at most 20 |
+| Leaves per account in one chat | at most 20 (open; Path into the spec, item 2) |
 | Inactive device prompt | 30 days |
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
@@ -556,7 +568,7 @@ device treats a group as its device group only if it created it or joined it thr
 | Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
 
-KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 10 KeyPackages per account in one
+KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 20 KeyPackages per account in one
 Commit are now spec text in [../foundation/key-packages.md](../foundation/key-packages.md).
 
 ## Open questions
@@ -578,7 +590,7 @@ Parts of this can become spec text before others are settled:
    lifecycle"), [../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion"), and
    [../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Accounts with several devices").
 2. **Same-account operations.** The chat readiness app component, sibling adds, sibling removal (including a device
-   signing out while a sibling remains), and the 10-leaf cap.
+   signing out while a sibling remains), and the per-account leaf cap.
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
    delivery, gap filling, anomaly signals, and merging.
 4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).

@@ -26,7 +26,8 @@ into exactly one KeyPackage slot for its lifetime; a client that used several ke
 Devices SHOULD use 30-day KeyPackage lifetimes, refresh their slot at least every 7 days, keep a superseded
 KeyPackage's `init_key` through the 24-hour replacement grace period, and delete their slot with a NIP-09 kind `5`
 request when they sign out. Inviters SHOULD add every KeyPackage an account published in the last 30 days, must not
-add more than 10 for one account in one Commit, and must not select one covered by a deletion request they hold. An
+add more than 20 for one account in one Commit, must not select one covered by a deletion request they hold, and must
+not select one that lacks any capability the resulting group requires. An
 inviter makes one Welcome delivery for each KeyPackage it adds; a device that receives a delivery naming a sibling's
 KeyPackage does not treat it as a failed join. Removing an account means removing all of its leaves in one Commit.
 KeyPackage events MAY carry a one-value `client` tag, which no other Nostr event shape in the binding may carry. The
