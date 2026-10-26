@@ -13,6 +13,25 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-26: Push token snapshots, announces, and repair
+
+[#447](https://github.com/marmot-protocol/marmot/pull/447) changes
+[features/push-notifications.md](./features/push-notifications.md) and says when members send push-token gossip. A
+member that commits a Commit adding leaves, including a same-account device add, SHOULD send a snapshot after merging
+it: kind `448` lists of every active record it holds and kind `449`s relaying every tombstone it holds, with an empty
+`448` when it holds no records. Kind `447` gains an optional `have` member, the first 8 bytes of `SHA-256(SignedRecord)`
+in standard base64 for every record and tombstone the sender holds, at most 4,096 of them; a `447` that carries it is an
+announce. A device SHOULD announce when its record changes, when it has seen no snapshot within T (at least one minute)
+of its join completing, and with its first message in a group after an implementation-defined interval without
+announcing there. A device sends no `have` until its join's snapshot has arrived or T has passed. Members rank every
+leaf except the announcer's by `SHA-256(announce id || leaf_index)`; only the top three reply, after staggered waits,
+with only the missing records and tombstones, and a reply is cancelled once other replies cover it. A member SHOULD NOT
+answer one leaf more than once per 24 hours, and answers an empty `447` without `have` as an announce holding nothing. A
+device whose record is missing from a snapshot SHOULD re-share it. Lists are split by a byte budget, 65,536 bytes per
+published message by default, and the 32-entry maximum per array is unchanged. Removal entries can be relayed by any
+member, and a winning removal writes its tombstone even when no record for the key is stored. Clients that do not
+implement these rules apply what they receive as before, and read an announce as a plain self-update.
+
 ## 2026-10-26: Senders pad every push trigger
 
 [#445](https://github.com/marmot-protocol/marmot/pull/445) changes
