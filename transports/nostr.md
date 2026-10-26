@@ -344,9 +344,18 @@ Earlier text in this binding allowed a client to add further concurrently discov
 that a device uses one slot. A client that still publishes into more than one slot keeps publishing into one of them
 and SHOULD delete the others ("Slot deletion" below).
 
+Until it does, an inviter sees one fresh candidate in each of that client's slots and adds a leaf for each. The device
+can join through only one of those Welcomes: once it holds the group, it rejects a later Welcome for the same group
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow", step 9). The other leaves stay in the
+group, unused, until a member removes them. Deleting the extra slots stops later invites from adding more; it does not
+remove leaves an inviter has already committed.
+
 When candidates from different `(author, kind, d)` slots are otherwise equivalent after foundation ranking, clients
-SHOULD select the candidate with the lexicographically lower decoded KeyPackageRef from the `i` tag. The `i` tag is
-hex-decoded before comparison.
+SHOULD order them by the lexicographically lower decoded KeyPackageRef from the `i` tag. The `i` tag is hex-decoded
+before comparison. This order decides between equivalent candidates only when selection has to leave some out: when
+cutting to the highest-ranked candidates under the per-account limit, or when picking the single stale fallback
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"). It never removes a fresh
+candidate that selection would otherwise add.
 
 ### Slot deletion
 
