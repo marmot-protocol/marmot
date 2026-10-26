@@ -535,13 +535,16 @@ decrypts to dispatch the native push.
 A sender MUST append at least one padding chunk to every kind `446` trigger it builds, and MAY append further padding
 chunks to obscure the real chunk count from relays or other observers of the encrypted gift-wrap length. Each padding
 chunk is exactly 1084 bytes, sampled independently and uniformly with a cryptographically secure random generator, and
-fresh for every trigger. Padding is allowed to fail notification-server parsing or decryption and is distinguishable to
-that server.
+fresh for every trigger. Padding is allowed to fail notification-server parsing or decryption, and the server discards
+it through the same per-chunk path as a token chunk that fails to decrypt ("Validation"). Padding therefore hides the
+real chunk count from relays and other observers but not from the notification server, which can tell padding from a
+token it decrypts.
 
 The required padding chunk is what keeps distinct triggers distinct. A sender carries each `EncryptedToken` exactly as
-its owner published it in a token record ("Token entries"), so without fresh padding every trigger a sender builds for
-the same recipients would have the same content, and a server deduplicating by content hash ("Replay and freshness")
-would discard all but the first as replays. A notification server does not check for padding (see "Validation").
+its owner published it in a token record ("Token entries"). Without fresh padding, every trigger a sender builds from
+the same token records in the same order would have the same content, and a server deduplicating by content hash
+("Replay and freshness") would ignore all but the first as replays. A notification server does not check for padding
+(see "Validation").
 
 A sender MAY batch notifications for a short period.
 
@@ -591,8 +594,9 @@ continues with the remaining chunks. Random padding is discarded through this sa
 
 A server cannot tell a padding chunk from a token chunk it fails to decrypt. It MUST NOT ignore a structurally valid
 trigger because the trigger appears to carry no padding, for example because every chunk decrypted. A trigger from a
-sender that does not pad is processed like any other; it shares its content hash with that sender's other unpadded
-triggers to the same recipients, so dedup can discard it.
+sender that does not pad is processed like any other. A later unpadded trigger whose `EncryptedToken` chunks match an
+earlier one byte for byte still shares that content hash, so the dedup rule in "Replay and freshness" can ignore the
+later trigger.
 
 ## Status and interop surface
 

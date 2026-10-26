@@ -20,9 +20,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 every kind `446` trigger: 1084 bytes from a cryptographically secure random generator, fresh for each trigger. A
 trigger therefore carries at most 31 `EncryptedToken`s, and padding counts toward any smaller per-trigger chunk limit a
 sender applies; a sender that splits its tokens across several triggers pads each one. Without padding, a sender's
-triggers to the same recipients have identical content, and a server deduplicating by content hash discards real
+triggers that carry the same tokens have identical content, and a server deduplicating by content hash discards real
 triggers as replays. Notification servers do not change: the dedup hash covers every chunk, padding included, and a
-server must not ignore a trigger because it appears to carry no padding.
+server must not ignore a structurally valid trigger because it appears to carry no padding.
 
 ## 2026-10-26: Devices can add and remove their own account's leaves
 
