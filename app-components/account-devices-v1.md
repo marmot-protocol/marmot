@@ -53,6 +53,10 @@ parent state:
 - a **same-account Remove** is a Remove proposal, carried by value, that targets a current leaf other than the
   committer's own leaf whose credential identity equals the committer's account identity.
 
+A same-account Add is an Add like any other in every other respect. Its KeyPackage MUST be compatible with the group
+once the Commit is applied, as [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and
+lifecycle") defines for inviters, and receivers check the group's requirements on it as on any Add.
+
 Both are leaf operations. A same-account Remove never removes the account's last leaf, because the committer's own leaf
 stays, so it never triggers the admin coupling rule in [admin-policy-v1.md](./admin-policy-v1.md) ("Active admins") and
 never changes the account's admin status. A leaf added by a same-account Add has the account's standing: if the account
@@ -98,7 +102,7 @@ This component defines one constant. Other documents refer to it by name.
 
 | Constant                 | Value |
 | ------------------------ | ----- |
-| `max_leaves_per_account` | `10`  |
+| `max_leaves_per_account` | `20`  |
 
 While the resulting state requires `0x800d`, no account may have more than `max_leaves_per_account` current leaves in
 the group. This is a resulting-state invariant: it is checked against the complete resulting state of every Commit,
@@ -109,6 +113,10 @@ whose resulting state breaks it is invalid and creates no candidate edge
 A client that wants to add a device to an account that already has `max_leaves_per_account` leaves removes one of that
 account's leaves in the same Commit or an earlier one. Leaves on competing branches are never counted together: each
 candidate branch is checked on its own states, and convergence selects one branch.
+
+The value can be raised in a later version. Every member enforces it, so a client that still enforces the old value
+would reject a Commit that only the higher value allows; a higher value therefore needs a new component id, not an
+in-place edit of this document.
 
 ## Welcome acceptance
 
@@ -127,8 +135,8 @@ was never published.
 ## Sender rules
 
 The rules in this section bind the committer of a same-account Add or Remove in a group that requires the component,
-including a committer whose account is an active admin. A receiver cannot check where a KeyPackage came from or why a
-leaf was removed, so a receiver MUST NOT reject a Commit or a Welcome for breaking them. The validation rules above are
+including a committer whose account is an active admin. A receiver cannot check where a KeyPackage came from, why a
+leaf was removed, or why a requirement changed, so a receiver MUST NOT reject a Commit or a Welcome for breaking them. The validation rules above are
 the only receiver checks this component adds.
 
 - A client MUST NOT commit a same-account Add unless it has authenticated the KeyPackage as belonging to a device of its
@@ -136,7 +144,9 @@ the only receiver checks this component adds.
   a device, and neither does publication under the account's key: anyone who holds the account's signing key can
   produce both. This document does not define how a client authenticates a device's KeyPackage. A client that has no
   such authentication does not commit same-account Adds.
-- The founding Add Commit of a new group is exempt from the previous rule. Its creator MAY add KeyPackages of its own
+- A committer MUST NOT drop or leave out a group requirement so that a device's KeyPackage qualifies for a
+  same-account Add. A device that does not support what the group requires is not added until it does.
+- The founding Add Commit of a new group is exempt from the first rule above. Its creator MAY add KeyPackages of its own
   account under the ordinary selection rules ([../foundation/key-packages.md](../foundation/key-packages.md)), as any
   inviter adds another account's. A KeyPackage published by someone holding the account's key can then join the new
   group, which is the risk every inviter of a new group already accepts; the rule above protects groups that already
