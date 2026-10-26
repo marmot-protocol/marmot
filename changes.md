@@ -18,22 +18,24 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [#447](https://github.com/marmot-protocol/marmot/pull/447) changes
 [features/push-notifications.md](./features/push-notifications.md) and says when members send push-token gossip. A
 member that commits a Commit adding leaves, including a same-account device add, SHOULD send a snapshot after merging
-it: kind `448` lists of every active record it holds and kind `449`s relaying every tombstone it holds, with an empty
-`448` when it holds no records. Kind `447` gains an optional `have` member, the first 8 bytes of `SHA-256(SignedRecord)`
-in standard base64 for every record and tombstone the sender holds, at most 4,096 of them; a `447` that carries it is an
-announce. A device SHOULD announce when its record changes; when T (at least one minute) has passed since its join
-completed, which includes fetching the group's messages from its join epoch on, without a snapshot; and with its next
-message in a group when it has not announced there within an implementation-defined interval, which a device that has
-never announced there has not. A device sends no `have` until its join's snapshot has arrived or T has passed. Members
-rank every non-blank leaf except the announcer's sender leaf by `SHA-256(announce id bytes || leaf_index)`; only the top
-three reply, after staggered waits, with only the missing records and tombstones, and a reply is cancelled once other
-replies cover it. A member SHOULD NOT send more than one repair reply per announcer's leaf per group in 24 hours, and
-answers an empty `447` without `have` as an announce holding nothing. A device whose record is missing from a snapshot
-SHOULD re-share it, and while a group may contain clients without these rules, SHOULD re-share it after any Commit that
-adds leaves. Lists are split by a byte budget, 65,536 bytes per published message by default; the 32-entry maximums on
-`tokens` in kinds `447` and `448` and on `removals` in kind `449` are unchanged. Removal entries can be relayed by any
-member, and a winning removal writes its tombstone even when no record for the key is stored. Clients that do not
-implement these rules apply what they receive as before, and read an announce as a plain self-update.
+it: kind `448` lists of every active record it holds and kind `449`s relaying every tombstone it holds. A member that
+holds neither sends nothing. Kind `447` gains an optional `have` member, the first 8 bytes of `SHA-256(SignedRecord)` in
+standard base64 for every record and tombstone the sender holds, at most 4,096 of them; a `447` that carries it is an
+announce. A joined device has a join window lasting T (at least one minute) after its join completes, which includes
+fetching the group's messages from its join epoch on; offline time does not count. It sends no `have` inside the window,
+and SHOULD announce once when the window ends, whether or not snapshot events arrived. A device SHOULD also announce
+when its record changes, and with its next message in a group when it has not announced there within an
+implementation-defined interval, which a device that has never announced there has not. Members rank every non-blank
+leaf except the announcer's sender leaf by `SHA-256(announce id bytes || leaf_index)`. Only the devices at the top three
+leaves reply, after staggered waits, with only the missing records and tombstones. A reply is cancelled once entries
+carried in the announce's epoch or later cover it. A device SHOULD NOT send more than one repair reply per announcer's
+leaf per group in 24 hours, and answers an empty `447` without `have` as an announce holding nothing. A device whose
+record is missing from a snapshot SHOULD re-share it, and while a group may contain clients without these rules, SHOULD
+re-share it after any Commit that adds leaves. Lists are split by a byte budget, 65,536 bytes per published message by
+default; the 32-entry maximums on `tokens` in kinds `447` and `448` and on `removals` in kind `449` are unchanged.
+Removal entries can be relayed by any member, and a winning removal writes its tombstone even when no record for the key
+is stored. Clients that do not implement these rules apply what they receive as before, and read an announce as a plain
+self-update.
 
 ## 2026-10-26: Senders pad every push trigger
 
