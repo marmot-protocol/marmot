@@ -118,7 +118,7 @@ padding chunk, because the server hashes each trigger on its own.
 
 [features/push-notifications.md](./features/push-notifications.md) ("Token distribution") leaves T, the reply slot, and
 the announce interval to implementations. To follow it, a client usually keeps, for each group, when its join completed,
-whether it has seen a snapshot since, and when it last announced there. It also keeps the complete removal entry behind
+whether it has seen a snapshot since, and when it last announced there, if it ever has. It also keeps the complete removal entry behind
 each tombstone, `owner_sig` included, so that it can relay the tombstone in a snapshot or repair reply. A tombstone kept
 only as its stamp still suppresses stale records, but it cannot be relayed.
 

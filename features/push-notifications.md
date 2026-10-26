@@ -561,6 +561,9 @@ succession MAY send one snapshot after the last of them instead of one after eac
 Members recognize a snapshot by its sender: after a Commit that adds leaves, the kind `448` events that the committer's
 leaf sends in the epoch that Commit creates or a later one. A leaf that joined through the Commit learns the committer's
 leaf from the Welcome author ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow", step 6).
+Recognition can be wrong. A snapshot has no end marker, so a leaf that received only part of one cannot tell, and a
+repair reply from the committer's leaf looks like a snapshot. A new leaf therefore also announces with the first group
+message it sends (see "Announce"), so a missing piece reaches it before it first needs other members' records.
 
 A device whose own current record is missing from a snapshot SHOULD re-share it in a kind `447` self-update. The record
 is missing when no entry in the snapshot's kind `448` events has its record key and an ordering stamp equal to or
@@ -568,7 +571,8 @@ greater than its own. A snapshot can span several events and has no end marker, 
 processing every snapshot event it has received, and re-shares at most once per Commit that added leaves. A device that
 judges too early, or takes a repair reply from the committer for a snapshot, sends one redundant self-update. A device
 does not judge the snapshot that follows the Commit adding its own leaf, because no other member can hold its record
-yet; it shares its record in that group as a new one ("Announce").
+yet; it shares its record in that group as a new record, in a plain self-update while its join window lasts (see
+"Announce").
 
 ### Announce
 
@@ -576,15 +580,27 @@ A device SHOULD send an announce, a kind `447` carrying `have` (see "Request, up
 group:
 
 - when it shares a new or changed record of its own there, instead of a plain self-update;
-- after it joins the group, when it has seen no snapshot within T of its join completing; and
-- with the next group message it sends there, when its last announce in that group is older than the announce
-  interval. A device that has not announced in a group since joining or creating it measures the interval from then.
+- after it joins the group, when T has passed since its join completed and it has seen no snapshot; and
+- with the next group message it sends there, when it has not announced there within the announce interval. A device
+  that has never announced in a group has not announced within the interval, so it announces with the first group
+  message it sends there.
 
-A device's join completes when the receiving flow in [../protocol-core/joining.md](../protocol-core/joining.md) has
-stored the group state and the device's convergence status in the group has then reached `Settled`
-([../protocol-core/group-state.md](../protocol-core/group-state.md)). Until the device has seen a snapshot or T has
-passed since its join completed, it sends no `have` in that group, and a record it shares there goes in a plain
-self-update. An announce sent before the snapshot arrived would ask for records the snapshot is about to bring.
+A device's join completes when all of these hold:
+
+- the receiving flow in [../protocol-core/joining.md](../protocol-core/joining.md) has stored the group state;
+- the device's convergence status in the group has reached `Settled`
+  ([../protocol-core/group-state.md](../protocol-core/group-state.md)); and
+- the device has fetched the group messages that the group's delivery endpoints hold from its join epoch onward, and
+  has processed them. `Settled` alone does not imply this, because it covers only input the device already holds.
+
+Time during which the device cannot fetch the group's messages, for example while it is offline, does not count toward
+T.
+
+A device's join window in a group lasts from its join until it has seen a snapshot or T has passed since its join
+completed. Inside the window the device sends no `have` in that group: a record it shares there goes in a plain
+self-update, and an announce that the third rule above calls for waits for the first group message it sends after the
+window ends. An announce sent before the snapshot arrived would ask for records the snapshot is about to bring. A device
+that created the group has no join window there.
 
 Tying the periodic announce to sending spreads announces over time, rather than sending one to every group when an
 application opens, and the device learns what it lacks just before its own notification triggers need it. A device
@@ -594,27 +610,29 @@ device's record, the members that reply relay it.
 ### Repair
 
 A member answers a request, a kind `447` with no `have` and an empty `tokens` array, as an announce whose `have` is
-empty.
+empty. Every rule in this section applies to that answer, the rate limit included.
 
 A member that receives an announce works out what the announcer lacks: the active records and tombstones the member
 holds in the group, after applying the announce's own entries, whose digests are not in `have`. Only a record or
 removal entry the member holds in full, with its `owner_sig`, counts, because only those can be relayed. If the
 announcer lacks nothing, the member sends nothing, so a group whose members hold the same set sends no repair.
 
-Otherwise the member ranks every leaf in the group at the epoch in which the announce was sent, except the announcer's
-own leaf. Each leaf's rank key is:
+Otherwise the member ranks every non-blank leaf of the group's ratchet tree at the epoch in which the announce was
+sent, except the announcer's leaf. The announcer's leaf is the MLS-authenticated sender leaf of the message that
+carries the announce, not a leaf named in its entries; an announce with `tokens: []` names none. Each leaf's rank key
+is:
 
 ```text
 rank_key = SHA-256(announce_id[32] || leaf_index[4])
 ```
 
-`announce_id` is the 32 bytes that the announce's app event `id` encodes
-([../foundation/application-messages.md](../foundation/application-messages.md), "Shape"). `leaf_index` is the ranked
-leaf's MLS leaf index as a big-endian `u32`. Leaves are sorted by `rank_key` in ascending byte order, and the first has
-rank 0. A member at rank 0, 1, or 2 SHOULD send a repair reply after waiting `r` × the reply slot from when it
-processed the announce, where `r` is its rank. A member at any other rank MUST NOT send a repair reply to that
-announce. A repair reply is kind `448` events listing the missing records and kind `449` events relaying the missing
-tombstones, and nothing else.
+`announce_id` is the 32 bytes decoded from the announce's app event `id`, which is 64 lowercase hex characters
+([../foundation/application-messages.md](../foundation/application-messages.md), "Shape"); the hash input is those
+bytes, not the hex text. `leaf_index` is the ranked leaf's MLS leaf index as a big-endian `u32`. Leaves are sorted by
+`rank_key` in ascending byte order, and the first has rank 0. A member at rank 0, 1, or 2 SHOULD send a repair reply
+after waiting `r` × the reply slot from when it processed the announce, where `r` is its rank. A member at any other
+rank MUST NOT send a repair reply to that announce. A repair reply is kind `448` events listing the missing records and
+kind `449` events relaying the missing tombstones, and nothing else.
 
 - **Cancelling.** Before sending, a member drops every item that an entry in a kind `448` or `449` it has processed
   since the announce already covers. An entry covers an item when it passes "Owner authentication", names a current
@@ -623,8 +641,9 @@ tombstones, and nothing else.
 - **Catching up.** A member that receives an announce while processing a batch of earlier group messages decides
   whether to reply only after processing the whole batch, so replies that others already sent can cancel its own. It
   counts its wait from that point.
-- **Rate limit.** A member SHOULD NOT send more than one repair reply per announcing leaf in a group in any 24 hours.
-  It still applies the entries in every kind `447` it receives, so the limit never delays a token change.
+- **Rate limit.** A member SHOULD NOT send more than one repair reply per announcer's leaf, as defined above, in a
+  group in any 24 hours. It still applies the entries in every kind `447` it receives, so the limit never delays a
+  token change.
 
 If none of the three members replies, for example because all of them are offline, the announcer's next announce has
 a new app event id and so a new ranking.
@@ -658,9 +677,9 @@ triggers ("Notification trigger") is separate and unchanged.
 ### Mixed versions
 
 A client that predates these rules applies the snapshots, announces, and repair replies it receives, but sends none of
-them. Groups converge more fully as their clients upgrade. While a group may contain such clients, a device MAY also
-re-share its own record after any Commit that adds leaves, whether or not a snapshot follows, so that a new leaf whose
-adder sends no snapshot still gets it.
+them. Groups converge more fully as their clients upgrade. While a group may contain such clients, a device SHOULD
+also re-share its own record after any Commit that adds leaves, whether or not a snapshot follows, so that a new leaf
+whose adder sends no snapshot still gets it.
 
 ## Notification trigger
 
