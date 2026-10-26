@@ -1,6 +1,6 @@
 # marmot.group.account-devices.v1
 
-Status: draft.
+Status: adopted.
 
 `marmot.group.account-devices.v1` lets a member add and remove leaves of its own account in a group without admin
 authority. A device can then add another device of the same account to a group it is in, or remove one, for example
@@ -130,9 +130,9 @@ A client that wants to add a device to an account that already has `max_leaves_p
 account's leaves in the same Commit or an earlier one. Leaves on competing branches are never counted together: each
 candidate branch is checked on its own states, and convergence selects one branch.
 
-The value can be raised in a later version. Every member enforces it, so a client that still enforces the old value
-would reject a Commit that only the higher value allows; a higher value therefore needs a new component id, not an
-in-place edit of this document.
+The value is fixed for this component id, and a different cap needs a new component id. Every member enforces it, so
+clients that enforced different values would disagree on which Commits are valid and fork; the value is never changed by
+an in-place edit of this document.
 
 ## Welcome acceptance
 

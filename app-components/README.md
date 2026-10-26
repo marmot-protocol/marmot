@@ -314,7 +314,7 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
 
-The following draft component carries no data. A group lists it among its required components to let members add and
+The following adopted component carries no data. A group lists it among its required components to let members add and
 remove leaves of their own account:
 
 - [marmot.group.account-devices.v1](./account-devices-v1.md)
