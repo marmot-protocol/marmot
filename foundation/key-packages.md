@@ -4,8 +4,9 @@ Status: adopted.
 
 This document defines KeyPackage meaning, discovery requirements, and lifecycle.
 
-KeyPackages are how Marmot supports asynchronous invites. A user can publish one or more usable KeyPackages before an
-inviter is online. Later, an inviter fetches one, adds that user to a group, and sends a Welcome.
+KeyPackages are how Marmot supports asynchronous invites. Each of a user's devices publishes a usable KeyPackage before
+an inviter is online. Later, an inviter fetches them, adds a leaf for each KeyPackage it selects ("Selection and
+lifecycle" below), and sends each selected device a Welcome.
 
 ## Surfaces
 
@@ -104,6 +105,12 @@ A device SHOULD publish a new KeyPackage into its slot:
 
 Each of these publications carries a newly generated KeyPackage and is a replacement under the deletion bound in
 "Selection and lifecycle" below.
+
+An inviter can fetch the superseded KeyPackage just before the replacement reaches it. A device SHOULD therefore keep
+the `init_key` of a superseded KeyPackage that no Welcome has consumed until the replacement grace period in
+"Selection and lifecycle" ends, or until that KeyPackage's `Lifetime.not_after` when that is earlier. Publishing a
+replacement is not, by itself, a reason to stop accepting the superseded KeyPackage. A consumed KeyPackage follows the
+deletion bound instead, and a device that signs out MAY delete at once ("Stopping publication" below).
 
 The weekly refresh keeps the slot's publication time recent, which is how an inviter tells a device that still exists
 from one that has been uninstalled. A client can refresh only while it runs, so a device that is rarely opened looks

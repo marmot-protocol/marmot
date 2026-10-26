@@ -227,6 +227,12 @@ Marmot welcome rumor.
 
 The gift-wrap recipient is the invitee's Nostr public key.
 
+An inviter sends one gift-wrapped kind `444` rumor for each KeyPackage its Commit added, with that KeyPackage's event id
+in the `e` tag ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"). When it added several
+KeyPackages of one account, each of those rumors is gift-wrapped to that account, so every device of the account
+receives all of them. A rumor's content MAY be a Welcome that also covers other new members (RFC 9420 §12.4.3.1); its
+`e` tag still names exactly one KeyPackage event.
+
 The inner kind `444` rumor MUST include:
 
 - `content`: serialized MLSMessage bytes whose wire format is `mls_welcome`, encoded as base64;
@@ -237,6 +243,10 @@ The inner kind `444` rumor MUST NOT have a `sig` field. The kind `13` seal and k
 NIP-59.
 
 A receiver MUST reject a Welcome that is not addressed to its own account identity.
+
+A rumor whose `e` tag names a KeyPackage event this device did not publish is not addressed to this device; it may be
+addressed to another device of the same account. The receiving device does not join through it and handles it under
+[../protocol-core/joining.md](../protocol-core/joining.md) ("Delivery"), not as a failed join.
 
 A receiver MUST reject a kind `444` rumor that does not satisfy its `e` and `relays` rows in "Event identity and tag
 cardinality" or whose content is not valid base64-encoded `MLSMessage` bytes with the `mls_welcome` wire format.
@@ -480,6 +490,8 @@ set:
   rule in "Welcome delivery" as each NIP-59 layer is unwrapped;
 - kind `30443` KeyPackage events MUST satisfy every outer envelope, tag, content-encoding, and signature rule in
   "KeyPackage publication";
+- kind `5` deletion requests carry no MLS bytes and are not peeler input. A client that fetched them for KeyPackage
+  selection applies them under "Slot deletion" and does not drop them as an unsupported kind;
 - fields that claim to be hex or base64 MUST decode successfully;
 - unsupported Nostr kinds are ignored or reported as malformed transport input.
 

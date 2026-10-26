@@ -368,10 +368,10 @@ There is no "Alice added a device" notice.
 
 **Underneath:**
 
-- **Inviters add every fresh KeyPackage for the account, up to a cap.** This is an ordinary admin commit with several
-  adds and needs no new authorization rule. Which KeyPackages qualify, and the cap, are spec text in
-  [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle"). A chat also allows at
-  most 10 leaves per account.
+- **Inviters add every fresh KeyPackage for the account, up to a limit per Commit.** This is an ordinary admin commit
+  with several adds and needs no new authorization rule. Which KeyPackages qualify, and the per-Commit limit, are spec
+  text in [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle"). A cap on how many
+  leaves one account can hold in a chat is still open (item 2 of "Path into the spec").
 - An inviter that still picks a single KeyPackage keeps working. Alice's other devices join through gap filling.
 - **Alice's own devices never use these public KeyPackages for each other.** Gap filling and chats Alice creates use
   private KeyPackages, with the Welcome sent through the device group:
@@ -556,8 +556,8 @@ device treats a group as its device group only if it created it or joined it thr
 | Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
 
-KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 10 KeyPackages per account are
-now spec text in [../foundation/key-packages.md](../foundation/key-packages.md).
+KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 10 KeyPackages per account in one
+Commit are now spec text in [../foundation/key-packages.md](../foundation/key-packages.md).
 
 ## Open questions
 
