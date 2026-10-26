@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-26: Senders pad every push trigger
+
+[#445](https://github.com/marmot-protocol/marmot/pull/445) changes
+[features/push-notifications.md](./features/push-notifications.md). A sender must append at least one padding chunk to
+every kind `446` trigger: 1084 bytes from a cryptographically secure random generator, fresh for each trigger. A
+trigger therefore carries at most 31 `EncryptedToken`s, and padding counts toward any smaller per-trigger chunk limit a
+sender applies; a sender that splits its tokens across several triggers pads each one. Without padding, a sender's
+triggers to the same recipients have identical content, and a server deduplicating by content hash discards real
+triggers as replays. Notification servers do not change: the dedup hash covers every chunk, padding included, and a
+server must not ignore a trigger because it appears to carry no padding.
+
 ## 2026-10-26: Devices can add and remove their own account's leaves
 
 [#443](https://github.com/marmot-protocol/marmot/pull/443) adds

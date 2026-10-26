@@ -486,7 +486,9 @@ or group-state validity.
 The kind `446` rumor contains:
 
 - `content`: one standard-base64 string with 1 to 32 concatenated 1084-byte chunks, each either an `EncryptedToken` or
-  optional random padding as defined below;
+  random padding as defined under "Padding and batching". A sender puts at least one padding chunk in every trigger, so
+  a trigger it builds carries at most 31 `EncryptedToken`s. Padding chunks count toward the 32-chunk maximum and toward
+  any smaller per-trigger chunk limit a sender applies;
 - a `["v", "marmot-push-v1"]` tag, and no other tag;
 - `pubkey`: a fresh ephemeral key.
 
@@ -501,10 +503,14 @@ A kind `446` trigger is a delivery hint, not group data. Replaying, dropping, du
 NOT affect group state and MUST NOT make any valid group message invalid. All handling below is local push hygiene.
 
 A notification server SHOULD deduplicate incoming triggers. The dedup key is the kind `446` rumor's content hash —
-`SHA-256` over the decoded trigger content (the concatenated `EncryptedToken` bytes), not the outer gift-wrap event id,
-which a replayer can change freely by re-wrapping. A server that has already acted on a content hash within its
+`SHA-256` over the decoded trigger content (every concatenated chunk, padding included), not the outer gift-wrap event
+id, which a replayer can change freely by re-wrapping. A server that has already acted on a content hash within its
 retention window SHOULD ignore a later trigger with the same hash rather than wake the recipient again. Because the
 outer wrap uses a fresh ephemeral key per publish, the server MUST NOT rely on the outer event id for dedup.
+
+This dedup depends on the fresh padding chunk every sender adds ("Padding and batching"): a sender's `EncryptedToken`
+chunks repeat byte for byte across triggers to the same recipients, so a replayed or re-wrapped copy of one trigger
+keeps its hash, while two triggers a sender builds separately do not.
 
 A server attempts to decrypt each well-formed token chunk and MAY dispatch a native wake for each successful result. It
 ignores a chunk that does not decrypt or whose plaintext is invalid. The server is neither required nor able to match a
@@ -526,10 +532,18 @@ decrypts to dispatch the native push.
 
 ## Padding and batching
 
-Clients MAY batch notifications for a short period and MAY append padding to obscure the real chunk count from relays
-or other observers of the encrypted gift-wrap length. Each padding chunk is exactly 1084 bytes sampled independently
-and uniformly with a cryptographically secure random generator. Padding is allowed to fail notification-server parsing
-or decryption and is distinguishable to that server.
+A sender MUST append at least one padding chunk to every kind `446` trigger it builds, and MAY append further padding
+chunks to obscure the real chunk count from relays or other observers of the encrypted gift-wrap length. Each padding
+chunk is exactly 1084 bytes, sampled independently and uniformly with a cryptographically secure random generator, and
+fresh for every trigger. Padding is allowed to fail notification-server parsing or decryption and is distinguishable to
+that server.
+
+The required padding chunk is what keeps distinct triggers distinct. A sender carries each `EncryptedToken` exactly as
+its owner published it in a token record ("Token entries"), so without fresh padding every trigger a sender builds for
+the same recipients would have the same content, and a server deduplicating by content hash ("Replay and freshness")
+would discard all but the first as replays. A notification server does not check for padding (see "Validation").
+
+A sender MAY batch notifications for a short period.
 
 A sender MUST NOT use any real device token as padding. A decryptable token would cause a real mutable notification and
 can produce a visible notification with no corresponding content. The 32-chunk trigger maximum includes padding, so
@@ -574,6 +588,11 @@ including:
 Within a structurally valid trigger, the server processes each 1084-byte chunk independently. It skips a chunk with an
 invalid ephemeral key, failed ECDH/HKDF, failed AEAD authentication, invalid platform bytes, or invalid token length and
 continues with the remaining chunks. Random padding is discarded through this same per-chunk path.
+
+A server cannot tell a padding chunk from a token chunk it fails to decrypt. It MUST NOT ignore a structurally valid
+trigger because the trigger appears to carry no padding, for example because every chunk decrypted. A trigger from a
+sender that does not pad is processed like any other; it shares its content hash with that sender's other unpadded
+triggers to the same recipients, so dedup can discard it.
 
 ## Status and interop surface
 

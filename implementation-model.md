@@ -105,6 +105,15 @@ convergence. The
 [OWASP SSRF prevention guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
 are useful operational references, not fixed Marmot protocol data.
 
+## Push trigger chunk budget
+
+[features/push-notifications.md](./features/push-notifications.md) ("Padding and batching") requires a fresh padding
+chunk in every kind `446` trigger, and that chunk counts toward any per-trigger chunk limit a sender applies. A sender
+that caps chunks below 32, for example so the gift-wrapped event stays under the event size relays accept, gives up one
+token slot per trigger. A sender whose gift wraps fit 19 chunks under a 64 KiB event limit sends at most 18 tokens and
+one padding chunk per trigger. When it splits a larger token set across several triggers, each trigger gets its own
+padding chunk, because the server hashes each trigger on its own.
+
 ## Diagnostics
 
 Logs, errors, metrics, and traces should avoid account ids, group ids, message ids, relay URLs, pubkeys, payloads,
