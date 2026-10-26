@@ -31,13 +31,13 @@ message in a group when it has not announced there within an implementation-defi
 never announced there has not. Members rank every non-blank leaf except the announcer's sender leaf by `SHA-256(announce
 id bytes || leaf_index)`. Only the devices at the top three leaves reply, after staggered waits, with only the missing
 records and tombstones. A reply is cancelled once entries carried in the announce's epoch or later cover it. A device
-SHOULD NOT send more than one repair reply per announcer's leaf per group in 24 hours, and answers an empty `447`
-without `have` as an announce holding nothing. A device whose record is missing from a snapshot SHOULD re-share it, and
-while a group may contain clients without these rules, SHOULD re-share it after any Commit that adds leaves. Lists are
-split by a byte budget, 65,536 bytes per published message by default; the 32-entry maximums on `tokens` in kinds `447`
-and `448` and on `removals` in kind `449` are unchanged. Removal entries can be relayed by any member, and a winning
-removal writes its tombstone even when no record for the key is stored. Clients that do not implement these rules apply
-what they receive as before, and read an announce as a plain self-update.
+SHOULD NOT send more than one repair reply per announcer's leaf per group in 24 hours, and treats an empty `447` without
+`have` as its sender's announce holding nothing. A device whose record is missing from a snapshot SHOULD re-share it,
+and while a group may contain clients without these rules, SHOULD re-share it after any Commit that adds leaves. Lists
+are split by a byte budget, 65,536 bytes per published message by default; the 32-entry maximums on `tokens` in kinds
+`447` and `448` and on `removals` in kind `449` are unchanged. Removal entries can be relayed by any member, and a
+winning removal writes its tombstone even when no record for the key is stored. Clients that do not implement these
+rules apply what they receive as before, and read an announce as a plain self-update.
 
 ## 2026-10-26: Senders pad every push trigger
 
