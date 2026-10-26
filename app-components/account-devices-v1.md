@@ -135,9 +135,9 @@ was never published.
 ## Sender rules
 
 The rules in this section bind the committer of a same-account Add or Remove in a group that requires the component,
-including a committer whose account is an active admin. A receiver cannot check where a KeyPackage came from, why a
-leaf was removed, or why a requirement changed, so a receiver MUST NOT reject a Commit or a Welcome for breaking them. The validation rules above are
-the only receiver checks this component adds.
+including a committer whose account is an active admin. A receiver cannot check where a KeyPackage came from, why a leaf
+was removed, or why a requirement changed, so a receiver MUST NOT reject a Commit or a Welcome for breaking them. The
+validation rules above are the only receiver checks this component adds.
 
 - A client MUST NOT commit a same-account Add unless it has authenticated the KeyPackage as belonging to a device of its
   account that its user approved. A valid credential and account identity proof naming the account do not authenticate
