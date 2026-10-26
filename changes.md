@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-26: Devices can add and remove their own account's leaves
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds
+[#443](https://github.com/marmot-protocol/marmot/pull/443) adds
 [app-components/account-devices-v1.md](./app-components/account-devices-v1.md) and changes
 [app-components/README.md](./app-components/README.md),
 [app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
