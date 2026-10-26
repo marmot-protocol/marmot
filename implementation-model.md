@@ -114,6 +114,20 @@ token slot per trigger. A sender whose gift wraps fit 19 chunks under a 64 KiB e
 one padding chunk per trigger. When it splits a larger token set across several triggers, each trigger gets its own
 padding chunk, because the server hashes each trigger on its own.
 
+## Push token distribution
+
+[features/push-notifications.md](./features/push-notifications.md) ("Token distribution") leaves T, the reply slot, and
+the announce interval to implementations. To follow it, a client usually keeps, for each group, when its join completed,
+how much of its join window has run, and when it last announced there, if it ever has. It also keeps the complete removal entry behind
+each tombstone, `owner_sig` included, so that it can relay the tombstone in a snapshot or repair reply. A tombstone kept
+only as its stamp still suppresses stale records, but it cannot be relayed.
+
+The repair timers and the per-leaf rate-limit state can live in memory. A reply lost to a restart waits for the
+announcer's next announce, and a reset rate limit costs at most one extra reply.
+
+The size budget applies to the group message as the transport publishes it, after encryption and encoding, not to the
+JSON content alone. A sender that measures only the content can exceed the limit it meant to respect.
+
 ## Diagnostics
 
 Logs, errors, metrics, and traces should avoid account ids, group ids, message ids, relay URLs, pubkeys, payloads,

@@ -9,7 +9,7 @@ Push notification support is optional. A group MUST still work when no client su
 ## Surfaces
 
 - App payload: token gossip event kinds `447`, `448`, and `449`, carried inside ordinary encrypted group messages (see
-  "Token gossip event shapes").
+  "Token gossip event shapes") and sent at the times "Token distribution" defines.
 - Owner authentication: local-only Nostr signing event kind `451`, whose signature is carried as `owner_sig` inside a
   token or removal entry (see "Owner authentication"). The signing event is never published.
 - Transport: Nostr push notification rumor kind `446` for the current Nostr binding. Unlike the kinds above, `446` is
@@ -90,8 +90,8 @@ Native platform tokens are required; iOS clients use APNs directly and MUST NOT 
 
 Token distribution uses Marmot app events carried inside ordinary group messages:
 
-- kind `447`: token request and self-token update;
-- kind `448`: token list response;
+- kind `447`: token request, self-token update, and announce;
+- kind `448`: token list;
 - kind `449`: token removal.
 
 These are unsigned Marmot app payloads like all inner app events; the envelope shape is owned by
@@ -126,9 +126,9 @@ Kinds `447` and `448` share one content shape:
 
 - `tokens` MUST be an array of at most 32 token entries. A missing `tokens` member is read as an empty array. A present
   non-array `tokens` member is advisory-invalid and contributes no entries. A sender with more records splits them
-  across multiple app events. If the decoded array contains more than 32 entries, the recipient treats the entire
-  array as advisory-invalid before performing any entry signature verification; the carrying group message remains
-  valid.
+  across multiple app events (see "Event size"). If the decoded array contains more than 32 entries, the recipient
+  treats the entire array as advisory-invalid before performing any entry signature verification; the carrying group
+  message remains valid.
 - `member_id_hex` is the owning member's account public key as 32-byte lowercase hex.
 - `leaf_index` is the owning device's MLS leaf index as an unsigned-integer JSON number.
 - `platform` is the string `apns` or `fcm`.
@@ -158,9 +158,9 @@ from becoming a permanent high-water mark.
 ### Owner authentication
 
 Each token entry and each removal entry is self-authenticated by the member that owns it, independent of the member
-that carries it. This lets one member relay another member's records (see "List response") so a group converges on the
-full token set without requiring every owner to be online, while preventing a relaying member from forging, repointing,
-or rolling back another member's routing.
+that carries it. This lets one member relay another member's records and removals (see "List response" and "Token
+distribution") so a group converges on the full token set without requiring every owner to be online, while preventing
+a relaying member from forging, repointing, or rolling back another member's routing.
 
 #### Canonical record bytes
 
@@ -328,25 +328,58 @@ A record's authority comes only from `owner_sig` and current group membership, n
 recipient applies a verified entry regardless of whether `message.sender` equals `member_id_hex`, but MUST still drop
 any entry — verified or not — whose `member_id_hex` is not a current group member.
 
-### Request and update (kind 447)
+### Request, update, and announce (kind 447)
 
-A kind `447` event with a non-empty `tokens` array is a self-update: the sender announces its own current token
-record, normally as exactly one entry. A kind `447` event whose `tokens` array is empty is a token request: it carries
-no records and asks other members to share theirs.
+A kind `447` event with a non-empty `tokens` array is a self-update: the sender shares its own current token record,
+normally as exactly one entry. A kind `447` event whose `tokens` array is empty and that has no `have` member is a token
+request: it carries no records and asks other members to share theirs.
+
+A kind `447` event MAY also carry a `have` member, which makes it an announce. An announce tells other members which
+records and tombstones the sender holds, so they can send what it lacks (see "Token distribution"):
+
+```json
+{
+  "v": "marmot-push-v1",
+  "tokens": [],
+  "have": ["<standard base64 of an 8-byte record digest>"]
+}
+```
+
+- `have` lists every active token record and every tombstone the sender holds in the group. Each element is the first
+  8 bytes of `SHA-256(SignedRecord)` for the entry that wrote that record or tombstone, which is the record digest the
+  ordering primitive uses, as standard base64 with padding (12 characters). A tombstone's digest uses the removal form
+  of `SignedRecord`.
+- Order is not significant, and a repeated element counts once. An element that is not a string decoding to exactly 8
+  bytes names no record and is ignored.
+- `have` MUST NOT contain more than 4,096 elements. A sender that holds more records and tombstones than fit, under
+  this limit or the size budget in "Event size", lists a subset; members may then send it entries it already holds,
+  which costs bandwidth but changes no state.
+- If `have` is present but is not an array, or the decoded array contains more than 4,096 elements, the recipient
+  ignores the whole member before it decodes any element or does any other work on it. It sends no repair reply for
+  that event, and still applies the event's `tokens` entries.
+
+An announce carries the sender's own current records in `tokens`. A device with no record of its own sends `tokens: []`
+with `have`.
 
 A recipient applies each listed entry that passes "Owner authentication" and names a current member, and ignores the
-rest, so an empty request changes no state. A self-update normally signs over `message.sender`'s own `member_id_hex`,
-but the apply decision is the signature check, not a sender-equality check.
+rest, so a request changes no state. A self-update normally signs over `message.sender`'s own `member_id_hex`, but the
+apply decision is the signature check, not a sender-equality check. `have` never changes a stored record or tombstone;
+it only decides which entries a member sends in reply.
+
+Recipients ignore unknown content members ("Token gossip event shapes"). A client that does not know `have` therefore
+applies an announce as a plain self-update, or as a request when `tokens` is empty, and the announce changes nothing
+else for it.
 
 ### List response (kind 448)
 
-A kind `448` event is a response listing the responder's current view of the group's active token records, one entry
-per record, including records the responder learned from other members. Each entry carries the original owner's
-`owner_sig` and `owner_ts`, so a recipient applies it under the same "Owner authentication" rule as kind `447`: any
-entry whose owner signature verifies and whose `member_id_hex` is a current member is applied, even when the responder
-is not its owner. Entries that fail verification or name a non-member are dropped. To relay another member's record, a
-responder MUST reproduce that member's `owner_sig` and `owner_ts` unchanged; it cannot mint records for members whose
-signatures it does not hold.
+A kind `448` event lists active token records the sender holds, one entry per record, including records the sender
+learned from other members. A member sends lists in a snapshot, with every record it holds, and in a repair reply, with
+only the records an announcer lacks (see "Token distribution"). Each entry carries the original owner's `owner_sig` and
+`owner_ts`, so a recipient applies it under the same "Owner authentication" rule as kind `447`: any entry whose owner
+signature verifies and whose `member_id_hex` is a current member is applied, even when the sender is not its owner.
+Entries that fail verification or name a non-member are dropped. To relay another member's record, a sender MUST
+reproduce that member's `owner_sig` and `owner_ts` unchanged; it cannot mint records for members whose signatures it
+does not hold.
 
 ### Removal (kind 449)
 
@@ -369,9 +402,9 @@ signatures it does not hold.
 
 - `removals` MUST be an array of at most 32 removal entries. A missing `removals` member is read as an empty array. A
   present non-array `removals` member is advisory-invalid and contributes no removals. A sender with more removals
-  splits them across multiple app events. If the decoded array contains more than 32 entries, the recipient treats the
-  entire array as advisory-invalid before performing any entry signature verification; the carrying group message
-  remains valid.
+  splits them across multiple app events (see "Event size"). If the decoded array contains more than 32 entries, the
+  recipient treats the entire array as advisory-invalid before performing any entry signature verification; the
+  carrying group message remains valid.
 - The first five members identify the token record being removed and use the encodings defined for token entries. A
   removal entry MUST carry `leaf_index` so it targets exactly one device's record and cannot revoke a sibling leaf's
   active token for the same account, platform, and server.
@@ -383,6 +416,13 @@ A recipient deletes the stored token record for the removal's record key (`membe
 `server_pubkey_hex`) only when the removal passes "Owner authentication", `member_id_hex` is a current member, and the
 removal wins the record key's ordering primitive (see "Record key and ordering primitive"). A removal that fails
 verification, names a non-member, or loses the ordering race is dropped as advisory-invalid.
+
+A removal entry is owner-signed like a token entry, so any member can relay it. To relay another member's removal, a
+sender re-sends the entry in a kind `449` with every field, `owner_ts`, and `owner_sig` unchanged, and a recipient
+applies it under the rules above whoever sends it. Members relay removals in snapshots and repair replies (see "Token
+distribution"). Relaying a tombstone means re-sending the removal entry that wrote it, so a member can relay only
+tombstones whose complete removal entry it kept. A tombstone kept only as its stamp still suppresses stale records
+locally.
 
 The `token_fingerprint` is bound by the owner-proof event and is part of `SignedRecord`, so it is authenticated and
 states which token instance the owner intends to revoke, but it is **not** part of the record key and does not gate the
@@ -439,6 +479,10 @@ the removal entry's `(owner_ts, record digest)`. A tombstone suppresses any late
 subsequent kind `447`/`448` entry whose stamp is strictly greater than the tombstone re-establishes an active record
 for the key and clears the tombstone.
 
+A removal that wins writes its tombstone whether or not a record for the key is stored. A removal that arrives before
+the record it revokes, or that a member relays to a leaf that never held the record, therefore still suppresses that
+record when it arrives.
+
 A tombstone is durable: it persists until a strictly-greater-stamped kind `447`/`448` entry clears it (as above) or
 the owning member leaf is removed from the group, as defined in the final paragraph of this section. It MUST NOT be
 garbage-collected on any wall-clock, `owner_ts`, or MLS-epoch basis. Owner authentication makes records relay-portable:
@@ -480,6 +524,174 @@ platform token stops working or is replaced outside this protocol. Marmot push v
 revocation guarantee after disclosure to a group member. Server-side abuse controls, rate limits, platform-token
 rotation, and notification-server key rotation are application and operator concerns; they MUST NOT affect MLS message
 or group-state validity.
+
+## Token distribution
+
+Token gossip travels in ordinary group messages, so every current member receives each one, and a member that was
+offline can fetch it later. A member therefore already sees every record and removal shared after it joined. What it
+cannot see is anything shared before it joined, or anything the transport lost. The rules below close those gaps: the
+member that adds a leaf sends it a snapshot, the new leaf announces what it holds at the end of its join window, devices
+announce again when their own record changes and from time to time, and a few members reply to an announce with what
+it lacks.
+
+These rules only decide when members send token gossip. They change no group state, and a member that never sends
+token gossip remains a valid member.
+
+### Snapshot on add
+
+A member that commits a Commit adding one or more leaves SHOULD send a snapshot promptly after it merges the Commit.
+This includes a same-account Commit that adds the committer's own devices
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)) and a founding Add Commit
+([../protocol-core/joining.md](../protocol-core/joining.md)). A snapshot is:
+
+- kind `448` events listing every active token record the member holds in the group, including records it learned from
+  other members; and
+- kind `449` events relaying every tombstone the member holds in the group, each as the removal entry that wrote it (see
+  "Removal (kind 449)").
+
+A member that holds no records sends no kind `448`, and a member that holds no tombstones sends no kind `449`, so a
+member that holds neither sends nothing. The new leaf does not rely on the snapshot being complete: the announce at the
+end of its join window finds whatever the snapshot missed (see "Announce").
+
+Tombstones are part of the snapshot because a new leaf has none. Without them, a stale record relayed later by a member
+that is behind could revive a revoked token on the new leaf (see "Removal and tombstones").
+
+One snapshot covers every leaf the Commit added. A member that commits several Commits adding leaves in quick
+succession MAY send one snapshot after the last of them instead of one after each.
+
+Existing members recognize a snapshot by its sender: after a Commit that adds leaves, the kind `448` events that the
+committer's leaf sends in the epoch that Commit creates or a later one. Only the owner check below uses this, and it
+can be wrong: a snapshot has no end marker, and a repair reply from the committer's leaf looks like a snapshot. A new
+leaf never needs to recognize its snapshot, because it announces at the end of its join window whatever arrived.
+
+A device whose own current record is missing from a snapshot SHOULD re-share it in a kind `447` self-update. The record
+is missing when no entry in the snapshot's kind `448` events has its record key and an ordering stamp equal to or
+greater than its own. A snapshot can span several events and has no end marker, so the device judges it only after
+processing every snapshot event it has received, and re-shares at most once per Commit that added leaves. A device that
+judges too early, or takes a repair reply from the committer for a snapshot, sends one redundant self-update. A device
+does not judge the snapshot that follows the Commit adding its own leaf, because no other member can hold its record
+yet; it shares its record in that group as a new record, in a plain self-update while its join window lasts (see
+"Announce").
+
+### Announce
+
+A device SHOULD send an announce, a kind `447` carrying `have` (see "Request, update, and announce (kind 447)"), in a
+group:
+
+- when it shares a new or changed record of its own there after its join window has ended, instead of a plain
+  self-update;
+- once when its join window in the group ends, whether or not snapshot events arrived; and
+- with the next group message it sends there after its join window has ended, when it has not announced there within
+  the announce interval. A device that has never announced in a group has not announced within the interval, so it
+  announces with the first group message it sends there after the window.
+
+Inside its join window, a device that joined follows the window rules below instead: a record it shares goes in a plain
+self-update, with no `have`. A group's creator has no join window there, so the first and third rules apply to it at
+once.
+
+A device's join completes when all of these hold:
+
+- the receiving flow in [../protocol-core/joining.md](../protocol-core/joining.md) has stored the group state;
+- the device's convergence status in the group has reached `Settled`
+  ([../protocol-core/group-state.md](../protocol-core/group-state.md)); and
+- the device has fetched the group messages that the group's delivery endpoints hold from its join epoch onward, and
+  has processed them. `Settled` alone does not imply this, because it covers only input the device already holds.
+
+Time during which the device cannot fetch the group's messages, for example while it is offline, does not count toward
+T.
+
+A device's join window in a group lasts from its join until T has passed since its join completed. Inside the window
+the device sends no `have` in that group, and a record it shares there goes in a plain self-update. An announce sent
+before the snapshot arrived would ask for records the snapshot is about to bring. A device that created the group has
+no join window there.
+
+The announce at the end of the window carries the device's own record, if it has one, and a `have` that already
+includes whatever the snapshot brought. It is normally a check: when the device holds everything, no member owes it
+anything and no member replies. It also finds what a snapshot missed, for example when part of a split snapshot was
+lost, when the adder held nothing and sent no snapshot, or when the adder sends no snapshots at all. This announce
+counts as the device's last announce for the third rule above.
+
+Tying the periodic announce to sending spreads announces over time, rather than sending one to every group when an
+application opens, and the device learns what it lacks just before its own notification triggers need it. A device
+that only reads a group still converges: the snapshot and its join-window announce cover its join, and when another
+member's announce lacks the device's record, the members that reply relay it.
+
+### Repair
+
+A device answers a request, a kind `447` with no `have` and an empty `tokens` array, as an announce whose `have` is
+empty. Every rule in this section applies to that answer, the rate limit included.
+
+A device that receives an announce works out what the announcer lacks: the active records and tombstones the device
+holds in the group, after applying the announce's own entries, whose digests are not in `have`. Only a record or
+removal entry the device holds in full, with its `owner_sig`, counts, because only those can be relayed. If the
+announcer lacks nothing, the device sends nothing, so a group whose devices hold the same set sends no repair.
+
+Otherwise the device ranks every non-blank leaf of the group's ratchet tree at the epoch in which the announce was
+sent, except the announcer's leaf. The announcer's leaf is the MLS-authenticated sender leaf of the message that
+carries the announce, not a leaf named in its entries; an announce with `tokens: []` names none. Each leaf's rank key
+is:
+
+```text
+rank_key = SHA-256(announce_id[32] || leaf_index[4])
+```
+
+`announce_id` is the 32 bytes decoded from the announce's app event `id`, which is 64 lowercase hex characters
+([../foundation/application-messages.md](../foundation/application-messages.md), "Shape"); the hash input is those
+bytes, not the hex text. `leaf_index` is the ranked leaf's MLS leaf index as a big-endian `u32`. Leaves are sorted by
+`rank_key` in ascending byte order, and the first has rank 0. Ranks belong to leaves, not accounts. The device at a
+leaf of rank 0, 1, or 2 SHOULD send a repair reply after waiting `r` × the reply slot from when it processed the
+announce, where `r` is its leaf's rank. A device whose leaf has any other rank MUST NOT send a repair reply to that
+announce, even when another leaf of the same account ranks in the top three. A repair reply is kind `448` events
+listing the missing records and kind `449` events relaying the missing tombstones, and nothing else.
+
+- **Cancelling.** Before sending, a device drops every item that an entry in a kind `448` or `449` it has processed
+  since the announce already covers. An entry covers an item when it was carried in a group message of the announce's
+  epoch or a later epoch, passes "Owner authentication", names a current member, has the item's record key, and has an
+  ordering stamp equal to or greater than the item's. An entry from an earlier epoch never covers an item, even when
+  the device processes it after the announce, because a leaf that joined later cannot decrypt it. If no item is left,
+  the device cancels its reply.
+- **Catching up.** A device that receives an announce while processing a batch of earlier group messages decides
+  whether to reply only after processing the whole batch, so replies that others already sent can cancel its own. It
+  counts its wait from that point.
+- **Rate limit.** A device SHOULD NOT send more than one repair reply per announcer's leaf, as defined above, in a
+  group in any 24 hours. It still applies the entries in every kind `447` it receives, so the limit never delays a
+  token change.
+
+If none of the three devices replies, for example because all of them are offline, the announcer's next announce has
+a new app event id and so a new ranking.
+
+`have` never writes state. Every entry a repair reply carries is checked under "Owner authentication", membership, and
+the ordering primitive like any other entry, so a false `have` can only make members send entries the announcer
+already holds. An announce draws at most three replies. A member that lies in `have` can make each of them a full
+snapshot, but a device that follows the rate limit sends one leaf at most one reply per 24 hours, however many
+announces that leaf sends. The `have` element limit bounds the work of reading an announce.
+
+### Event size
+
+A sender splits the entries it sends across events by size. Each carrying group message, as the active transport binding
+publishes it (for the Nostr binding, the kind `445` event in [../transports/nostr.md](../transports/nostr.md)), SHOULD
+fit the size limits of the group's delivery endpoints. A sender that knows no larger limit uses 65,536 bytes.
+
+Each array still holds at most 32 entries: the 32-entry maximums on `tokens` in kinds `447` and `448` and on `removals`
+in kind `449` are unchanged. A recipient discards an array of more than 32 entries before checking any signature, so a
+larger array would lose every entry in it. At the 65,536-byte default the byte budget is usually the tighter limit.
+
+The 4,096-element maximum on `have` is in "Request, update, and announce (kind 447)". The 32-chunk maximum on kind `446`
+triggers ("Notification trigger") is separate and unchanged.
+
+### Timing values
+
+- **T**, the length of a device's join window after its join completes: implementation-defined. T MUST be at least
+  one minute, so that the adder's snapshot normally arrives before the device announces.
+- **The reply slot**: implementation-defined.
+- **The announce interval**: implementation-defined. Seven days is a reasonable choice; only cost depends on it.
+
+### Mixed versions
+
+A client that predates these rules applies the snapshots, announces, and repair replies it receives, but sends none of
+them. Groups converge more fully as their clients upgrade. While a group may contain such clients, a device SHOULD
+also re-share its own record after any Commit that adds leaves, whether or not a snapshot follows, so that a new leaf
+whose adder sends no snapshot still gets it.
 
 ## Notification trigger
 
@@ -562,12 +774,12 @@ because a related push hint was missing, delayed, duplicated, or malformed.
 Push notifications draw a sharp line between two failure classes:
 
 - **Advisory push hygiene.** Everything in this document — a malformed or unsupported token entry, an entry whose
-  `owner_sig` fails to verify or names a non-member, a removal that matches no record, a stale or replayed kind `446`
-  trigger, a token list that loses an ordering race, a missing relay hint, a failed token decrypt at the server — is
-  advisory. The correct response is to drop the offending datum and continue. None of it rejects a group message,
-  mutates group state, or changes which commit wins. A single bad entry in a kind `447`/`448`/`449` event is dropped on
-  its own; the rest of the array still applies and the carrying group message remains valid. In particular, an
-  `owner_sig` that fails verification fails the entry, never the carrying group message.
+  `owner_sig` fails to verify or names a non-member, a token entry or removal that loses an ordering race, a stale or
+  replayed kind `446` trigger, a missing relay hint, a failed token decrypt at the server — is advisory. The correct
+  response is to drop the offending datum and continue. None of it rejects a group message, mutates group state, or
+  changes which commit wins. A single bad entry in a kind `447`/`448`/`449` event is dropped on its own; the rest of
+  the array still applies and the carrying group message remains valid. In particular, an `owner_sig` that fails
+  verification fails the entry, never the carrying group message.
 - **Protocol-invalid group data.** Protocol-invalid conditions are the ones the owning foundation/transport docs define
   for the carrying surface (see [../foundation/application-messages.md](../foundation/application-messages.md),
   "Encoding"). Those are decided by the app-payload decoder, not by this feature, and they are not specific to push.
@@ -605,7 +817,8 @@ document changes group state.
 
 The `marmot-push-v1` shapes above are the interop surface: JSON content with explicit member ids, leaf indexes,
 fingerprints, event-signed token and removal entries, and a kind `446` rumor whose only tag is `v`. Kind `451` is the
-current owner-proof versioning hook even though only its signature is carried in `owner_sig`. Raw-digest and
+current owner-proof versioning hook even though only its signature is carried in `owner_sig`. The optional `have`
+member of kind `447` is part of `marmot-push-v1`; a recipient that does not know it ignores it. Raw-digest and
 transitional kind `450` owner proofs remain accepted only under the explicit legacy-group rules above. Earlier
 exploratory versions that carried token gossip in `token` tags with empty content, left the sender's leaf implicit,
 defined no removal entries, or required an `["encoding", "base64"]` tag on the kind `446` rumor are not interoperable
