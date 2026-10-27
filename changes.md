@@ -13,6 +13,16 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-27: Fair scheduling covers admin and same-account intents only
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[protocol-core/convergence.md](./protocol-core/convergence.md) and
+[protocol-core/group-state.md](./protocol-core/group-state.md). The preparation attempt after a bounded pass goes to a
+queued admin-authorized intent or a same-account intent, not to every intent the member may commit; a self-update or a
+Leave does not receive it. [#443](https://github.com/marmot-protocol/marmot/pull/443) had widened the rule to every
+authorized intent. A client that gave a queued self-update or Leave the attempt stops doing so. Admin and same-account
+intents keep it.
+
 ## 2026-10-26: Push token snapshots, announces, and repair
 
 [#447](https://github.com/marmot-protocol/marmot/pull/447) changes
@@ -77,8 +87,9 @@ Welcome from its own account when the joined state requires the component. A cre
 require it when every founding leaf advertises it; existing groups activate it by an admin Commit. In such a group a
 client must not add a KeyPackage of its own account only because it is published under the account's key, except in the
 founding Add Commit. A device of an admin account can leave through a Remove by its sibling, so the SelfRemove rule for
-admins is unchanged. A component may now have no data location. The fair scheduling rule now covers every authorized
-queued intent, not only admin ones. Apart from that rule, groups that do not require the component are unaffected.
+admins is unchanged. A component may now have no data location. The fair scheduling rule now covers queued
+same-account intents as well as admin ones. Apart from that rule, groups that do not require the component are
+unaffected.
 
 ## 2026-10-19: Several devices per account
 

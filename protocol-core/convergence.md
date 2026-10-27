@@ -137,11 +137,11 @@ passes MUST NOT change the eventual canonical result. Input excluded by one cuto
 until the protocol assigns it a terminal disposition. Implementations MUST NOT use timer tuning or pass partitioning to
 resolve a difference that the deterministic selection rules leave open.
 
-After a bounded pass settles in `Stable`, the client MUST give one already-queued, authorized local group-state intent
-one preparation attempt against the selected canonical state before it begins another convergence pass solely because
-more inbound input is queued. An intent is authorized when the local member may commit it in that state, whether
-through admin authority or through a narrower rule such as the same-account authority in
-[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md). Inbound input remains durably
+After a bounded pass settles in `Stable`, the client MUST give one already-queued local group-state intent one
+preparation attempt against the selected canonical state before it begins another convergence pass solely because more
+inbound input is queued. The intent is either admin-authorized or a same-account Commit that the same-account authority
+in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) permits in that state. A
+self-update or a Leave does not receive this attempt, although any member may commit one. Inbound input remains durably
 retained during that attempt. If the attempt cannot proceed with currently available authorization, prerequisites, or
 signing capability, the scheduler proceeds rather than waiting indefinitely. A prepared Commit then follows the normal
 publication and convergence rules; this scheduling guarantee does not make it valid, accepted, or canonical.
