@@ -21,9 +21,16 @@ Marmot app components use MLS private-use component ids.
 | `0x8007`     | `marmot.group.avatar-url.v1`                    | [doc](../app-components/group-avatar-url-v1.md)                     |
 | `0x8008`     | `marmot.group.encrypted-media.v1`               | [doc](../app-components/group-encrypted-media-v1.md)                |
 | `0x8009`     | `marmot.member.account-identity-proof.v2`       | [doc](../app-components/account-identity-proof-v2.md)               |
+| `0x800a`     | withdrawn                                       | —                                                                   |
 | `0x800b`     | `marmot.group.encrypted-media.v2`               | [doc](../app-components/group-encrypted-media-v2.md)                |
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
 | `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
+
+`0x800a` was `marmot.authorization.multi-device-join.v1`, the join authorization of an earlier multi-device draft that
+[#427](https://github.com/marmot-protocol/marmot/pull/427) withdrew. It has no meaning, and data under it is
+[unknown data](../app-components/README.md#unknown-data). Some deployed clients still reject GroupContext data under
+`0x800a`, as the draft required, so reusing the id would break groups with members on those clients. It remains
+registered so the value is never reassigned.
 
 ## Upstream MLS extension draft ids
 
