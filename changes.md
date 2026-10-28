@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-28: Activation eligibility reasons and lost activations
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#453](https://github.com/marmot-protocol/marmot/pull/453) changes
 [app-components/README.md](./app-components/README.md) and
 [app-components/account-devices-v1.md](./app-components/account-devices-v1.md). A client does not commit an activation
 again on its own after it loses branch selection or fails its checks when regenerated from the queue; it activates only
