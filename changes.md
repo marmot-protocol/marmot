@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-28: Device pairing (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) adds
+[#454](https://github.com/marmot-protocol/marmot/pull/454) adds
 [features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
 for multi-device accounts in [foundation/registries.md](./foundation/registries.md), and adds "Pairing delivery" to
 [transports/nostr.md](./transports/nostr.md). The feature is a draft. A new device of an account and an existing one
