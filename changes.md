@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-28: Linking a device into the device group (draft)
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds "Linking a device" to
+[#456](https://github.com/marmot-protocol/marmot/pull/456) adds "Linking a device" to
 [features/device-group.md](./features/device-group.md). An existing device answers a pairing request only if it would
 link the named KeyPackage: its slot is not already a device or rejected, it supports everything the device group
 requires, and the roster has room for another device. The existing device's Confirm names the device group it trusts, or
