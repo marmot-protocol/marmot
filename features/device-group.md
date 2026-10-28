@@ -111,10 +111,16 @@ The new device's entry carries the label and settings the user chose, `linked_at
 device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. That Commit, or the founding Add, is
 the approval. Its Welcome is sent as for any other Add.
 
-A device adds a device to its device group only under a confirmed link. It MUST NOT add its own account's KeyPackages
-to the device group by an invite or a same-account Add
-([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)), and MUST NOT commit an Add
-proposal by reference there, since none of these writes a roster entry.
+A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
+a member MUST add exactly one, by value, and MUST set that device's roster entry in the same Commit, for a slot the
+roster does not list yet, with `announced_key_package` naming the added KeyPackage. So it never adds its own account's
+KeyPackages there by an invite or a same-account Add
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)), and never commits an Add
+proposal by reference there.
+
+A device that cannot commit the link at once, because the device group has a Commit still settling, MAY try again, but
+not once the new device has stopped waiting for its Welcome ("Joining"). It does not hold the link for later, so it
+never adds a device that will not join.
 
 Approval by any one device of the account is enough. Another device that showed the same request stops offering Link
 once the new device's entry is in its roster, and shows the labels of the new device and of the device that added it.
