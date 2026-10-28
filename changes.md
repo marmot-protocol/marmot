@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Slot announcements in the device group (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A device in a device group names each
+KeyPackage in its own roster entry (`announced_key_package`) before that KeyPackage reaches its slot, publishes only
+once the Commit carrying the announcement is in its group state, and never publishes an unannounced KeyPackage. The
+founding roster announces both devices' KeyPackages. A device that finds a publication in its own slot that it did not
+make, at least as new as its own, publishes a newer KeyPackage there, announced first. Devices without a device group
+change nothing.
+
 ## 2026-10-28: Device roster component and device group (draft)
 
 [#452](https://github.com/marmot-protocol/marmot/pull/452) adds

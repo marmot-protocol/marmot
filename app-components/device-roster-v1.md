@@ -108,7 +108,8 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `status` is `active`, `inactive` (the device's siblings marked it inactive), or `leaving` (the device recorded that it
   is signing out).
 - `announced_key_package` is the `KeyPackageRef` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.2) of
-  the KeyPackage the device announced for its slot, if it announced one.
+  the KeyPackage the device announced for its slot, if it announced one
+  ([../features/device-group.md](../features/device-group.md), "Slot announcements").
 - `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
   group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it.
 - `history_key` is reserved for account sync and has no meaning in this version.

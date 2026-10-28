@@ -7,9 +7,9 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, and how clients keep it
-out of sight. Linking, the messages devices exchange in the group, private KeyPackages, and removal are not specified
-yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out
+of sight, and how each device announces the KeyPackages it publishes. Linking, the messages devices exchange in the
+group, private KeyPackages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -21,6 +21,8 @@ yet.
   group requires under the ordinary creation rule.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
   [../protocol-core/joining.md](../protocol-core/joining.md).
+- Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
+  roster entry announces into.
 
 ## What a device group is
 
@@ -98,6 +100,38 @@ leaving one, or replacing a leaf there never commits to it.
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
 
+## Slot announcements
+
+A device in a device group names each KeyPackage in its own roster entry before that KeyPackage reaches its slot
+([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and publication slots"). The entry's
+`announced_key_package` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) holds the
+`KeyPackageRef` of the KeyPackage the device publishes there. Its siblings can then tell a refresh, which the roster
+names, from a publication in the slot that the device did not make.
+
+- Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
+  own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
+  first commits an AppDataUpdate that sets its own entry, with every other field unchanged and `announced_key_package`
+  naming the KeyPackage.
+- The device publishes only once that Commit is part of the group state it holds. A Commit that fails, or that a
+  branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
+- A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
+  MUST NOT publish an unannounced KeyPackage after a timeout; its slot ages instead
+  ([../foundation/key-packages.md](../foundation/key-packages.md), "Refreshing a slot").
+- The founding roster announces the KeyPackage the link confirmed and the creating device's current one
+  ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it next publishes.
+- A device with no device group publishes as before.
+
+The roster keeps one announcement per device. Between an announcement and its publication, and while some relays still
+serve the previous publication, a sibling can find a KeyPackage in a device's slot that the roster no longer names. A
+sibling's response to a KeyPackage the roster does not announce is not specified yet.
+
+### A publication the device did not make
+
+A device reads its own slot from its KeyPackage relays when it starts and then about once a day. If the newest valid
+publication there is one it did not make, and is at least as new as its own latest, someone else holding the account's
+signing key published it. The device then publishes a new KeyPackage of its own in the slot, with a `created_at` later
+than that publication's, announced first as above.
+
 ## Security considerations
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
@@ -106,3 +140,5 @@ leaves, warning about a leaf no device claims) is not specified yet.
   control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
 - Only the account's linked devices can read device tags. Other members of a group see opaque bytes that differ in
   every KeyPackage, and learn nothing they could not already see from the account's leaf count.
+- An announcement is evidence only among devices that trust the same device group. Someone holding the account's
+  signing key can publish into any slot, but cannot write the roster of a device group they are not in.
