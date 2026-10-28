@@ -66,6 +66,7 @@ features/
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+  device-pairing.md
 ideas/
   README.md
   account-sync.md

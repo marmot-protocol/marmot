@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Device pairing (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) adds
+[features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
+for multi-device accounts in [foundation/registries.md](./foundation/registries.md), and adds "Pairing delivery" to
+[transports/nostr.md](./transports/nostr.md). The feature is a draft. A new device of an account and an existing one
+compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings, shown as seven emoji from Matrix's
+table. Its five messages are rumors gift-wrapped from the account to itself. The new device commits to its key in its
+request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering device's slot and both
+keys; and the two confirmations cover the `KeyPackageRef` and the id of the group the new device joins. The existing
+device confirms first, and the new device confirms only once it has verified that. An answering device answers at most
+10 sessions an hour, and none while two requests are live. Clients that do not link devices change nothing.
+
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
 [#450](https://github.com/marmot-protocol/marmot/pull/450) changes
