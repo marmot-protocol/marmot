@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Linking a device into the device group (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds "Linking a device" to
+[features/device-group.md](./features/device-group.md). An existing device answers a pairing request only if it would
+link the named KeyPackage: its slot is not already a device or rejected, it supports everything the device group
+requires, and the roster has room for another device. The existing device's Confirm names the device group it trusts, or
+a fresh id for the one it will create. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one
+Commit that sets the new device's roster entry, or in the founding Add, and never adds its own account's KeyPackages to
+the device group by an invite or a same-account Add. The new device waits at most 600 seconds after its Confirm for the
+Welcome. Clients that do not support `0x800e` change nothing.
+
 ## 2026-10-28: Device roster component and device group (draft)
 
 [#452](https://github.com/marmot-protocol/marmot/pull/452) adds
