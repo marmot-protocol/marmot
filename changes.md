@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#450](https://github.com/marmot-protocol/marmot/pull/450) changes
 [protocol-core/convergence.md](./protocol-core/convergence.md) and
 [protocol-core/group-state.md](./protocol-core/group-state.md). The preparation attempt after a bounded pass goes to a
 queued admin-authorized intent or a same-account intent, not to every intent the member may commit; a self-update or a
