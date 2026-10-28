@@ -13,6 +13,20 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Device roster component and device group (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) adds
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
+[features/device-group.md](./features/device-group.md), registers `0x800e` in
+[foundation/registries.md](./foundation/registries.md), and changes
+[app-components/README.md](./app-components/README.md) to allow a component to define a diff-style update. Both new
+documents are drafts. A group that requires `0x800e` from creation is an account's device group: its update is a diff
+that sets or removes single roster entries against the candidate parent's roster, every leaf has the same credential
+identity, and no Commit or proposal may start or stop requiring it. A client that supports `0x800e` treats its entry
+and updates as unknown data in a group that does not require it, and MUST NOT write one there. A device trusts a group
+as its device group only if it created it or joined it through a Welcome a confirmed link named, and founds it with
+only the KeyPackage that link confirmed. Clients that do not support `0x800e` change nothing.
+
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
 [#450](https://github.com/marmot-protocol/marmot/pull/450) changes
