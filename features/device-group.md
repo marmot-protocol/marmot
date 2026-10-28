@@ -125,12 +125,9 @@ The roster keeps one announcement per device. Between an announcement and its pu
 serve the previous publication, a sibling can find a KeyPackage in a device's slot that the roster no longer names. A
 sibling's response to a KeyPackage the roster does not announce is not specified yet.
 
-### A publication the device did not make
-
-A device reads its own slot from its KeyPackage relays when it starts and then about once a day. If the newest valid
-publication there is one it did not make, and is at least as new as its own latest, someone else holding the account's
-signing key published it. The device then publishes a new KeyPackage of its own in the slot, with a `created_at` later
-than that publication's, announced first as above.
+A device that finds a publication in its own slot that it did not make replaces it
+([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"), announcing
+the replacement first as above.
 
 ## Security considerations
 
