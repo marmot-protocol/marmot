@@ -13,6 +13,15 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Activation eligibility reasons and lost activations
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[app-components/README.md](./app-components/README.md) and
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md). A client does not commit an activation
+again on its own after it loses branch selection or fails its checks when regenerated from the queue; it activates only
+if its user asks again. A client MAY tell its user why a group cannot activate `marmot.group.account-devices.v1` yet,
+as a reason about the whole group that never names the members or devices holding it back.
+
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
 [#450](https://github.com/marmot-protocol/marmot/pull/450) changes

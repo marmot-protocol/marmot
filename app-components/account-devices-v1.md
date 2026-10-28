@@ -191,6 +191,12 @@ Component in an Existing Group"):
 Activation is an explicit decision. A client activates the component only when its user asks; this document does not
 ask clients to activate it on their own.
 
+A client MAY tell its user whether the group can activate the component now and, if not, why: the user's account is not
+an active admin, the group already requires the component, a current leaf does not advertise it or carries an entry
+with id `0x800d`, or an account has more than `max_leaves_per_account` current leaves. A client whose user is not an
+active admin reports only that. The reason describes the group as a whole; it does not say which members, or which of
+their devices, hold activation back.
+
 ## Removal
 
 Once a group requires this component, it MUST keep requiring it for the rest of the group's lifetime. A Commit whose
