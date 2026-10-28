@@ -113,8 +113,8 @@ the approval. Its Welcome is sent as for any other Add.
 
 A device adds a device to its device group only under a confirmed link. It MUST NOT add its own account's KeyPackages
 to the device group by an invite or a same-account Add
-([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)), since neither writes a roster
-entry.
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)), and MUST NOT commit an Add
+proposal by reference there, since none of these writes a roster entry.
 
 Approval by any one device of the account is enough. Another device that showed the same request stops offering Link
 once the new device's entry is in its roster, and shows the labels of the new device and of the device that added it.

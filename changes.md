@@ -21,8 +21,8 @@ link the named KeyPackage: its slot is not already a device or rejected, it supp
 requires, and the roster has room for another device. The existing device's Confirm names the device group it trusts, or
 a fresh id for the one it will create. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one
 Commit that sets the new device's roster entry, or in the founding Add, and never adds its own account's KeyPackages to
-the device group by an invite or a same-account Add. The new device waits at most 600 seconds after its Confirm for the
-Welcome. Clients that do not support `0x800e` change nothing.
+the device group by an invite or a same-account Add, or commits an Add proposal by reference there. The new device waits
+at most 600 seconds after its Confirm for the Welcome. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 
