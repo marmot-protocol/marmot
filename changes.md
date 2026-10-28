@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-28: Device roster component and device group (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) adds
+[#452](https://github.com/marmot-protocol/marmot/pull/452) adds
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
 [features/device-group.md](./features/device-group.md), registers `0x800e` in
 [foundation/registries.md](./foundation/registries.md), and changes
