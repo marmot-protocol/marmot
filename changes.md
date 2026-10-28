@@ -20,8 +20,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [features/device-group.md](./features/device-group.md), registers `0x800e` in
 [foundation/registries.md](./foundation/registries.md), and changes
 [app-components/README.md](./app-components/README.md) to allow a component to define a diff-style update. Both new
-documents are drafts. A group that requires `0x800e` from creation is an account's device group: its update is a diff
-that sets or removes single roster entries against the candidate parent's roster, every leaf has the same credential
+documents are drafts. A group that requires `0x800e` from creation is an account's device group. Its roster holds
+devices, leaf-map entries, rejected slots and rejected KeyPackages; its update is a diff that sets or removes single
+entries against the candidate parent's roster, every leaf has the same credential
 identity, and no Commit or proposal may start or stop requiring it. A client that supports `0x800e` treats its entry
 and updates as unknown data in a group that does not require it, and MUST NOT write one there. A device trusts a group
 as its device group only if it created it or joined it through a Welcome a confirmed link named, and founds it with
