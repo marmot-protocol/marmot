@@ -30,6 +30,23 @@ device-group Welcome, and any Welcome into the group id while it waits, so a for
 for the real one. The approving device treats the link as settled once the Commit's publication is confirmed and it is
 on the selected branch with no input for the group pending. Clients that do not support `0x800e` change nothing.
 
+## 2026-10-29: Device pairing (draft)
+
+[#454](https://github.com/marmot-protocol/marmot/pull/454) adds
+[features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
+for multi-device accounts in [foundation/registries.md](./foundation/registries.md), adds "Pairing delivery" and its
+entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
+[protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
+inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new
+device and an existing device of the same account compare a code: Matrix's `m.sas.v1` verification, transcribed into
+Marmot encodings and shown as seven emoji from Matrix's table. The five messages are rumors gift-wrapped from the
+account to itself. The new device commits to its key in its request; the code binds the session, the account, the new
+device's `KeyPackageRef`, the answering device's slot and both keys; and the two confirmations cover the
+`KeyPackageRef`, and the id of the group the new device joins with the signature key of the existing device's leaf
+there, the only sender whose Welcome the new device accepts. The existing device confirms first, and the new device
+confirms only after verifying the existing device's confirmation. An existing device sends at most 10 Answers an hour,
+and none while more than one request is live. Clients that do not link devices need no changes.
+
 ## 2026-10-29: New sign-ins in the device group (draft)
 
 [#465](https://github.com/marmot-protocol/marmot/pull/465) changes

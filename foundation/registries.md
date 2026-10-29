@@ -109,6 +109,11 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
+| `452`   | Device pairing request              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `453`   | Device pairing answer               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `454`   | Device pairing reveal               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `455`   | Device pairing confirm              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `456`   | Device pairing cancel               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -144,6 +149,12 @@ clients MUST NOT produce a new push owner proof with kind `450`.
 
 The `d` tag strings in these local signing events are fixed proof-domain labels, not component names. Implementations
 MUST use the exact `d` value in each owning proof document and MUST NOT derive it from the component name.
+
+Kinds `452` to `456` are device pairing messages. They are never MLS application payloads: each travels only as a
+rumor gift-wrapped from an account to itself ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
+
+Kinds `457` to `489` are reserved for multi-device accounts: `457` to `462` for device-group messages, `463` to `469`
+spare, and `470` to `489` for later multi-device work. Any new use claims its kind in this table first.
 
 Kind `1210` is reserved for durable group system rows, such as membership, name, avatar, or other group-lifecycle
 notices that clients render separately from human chat.
