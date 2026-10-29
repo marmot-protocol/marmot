@@ -44,7 +44,9 @@ The device that approves a link creates the device group, if its account has non
 the founding Add:
 
 - The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster with an entry for the
-  creating device and one for the linked device. The founding Add therefore writes no roster entry.
+  creating device and one for the linked device. The founding Add therefore writes no roster entry. The creating
+  device's entry has the "add to all my chats" and "bring chat history" settings on, as a new device's are unless its
+  user turns them off ("Approving").
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
