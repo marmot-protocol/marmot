@@ -23,6 +23,10 @@ and [../ideas/account-sync.md](../ideas/account-sync.md).
 - Default requirement: required from creation in a device group ("Requirement" below); never required in any other
   group
 
+A client MUST NOT create an entry under `0x800e` anywhere else. An entry under `0x800e` in a LeafNode, a KeyPackage or
+any other location is unknown data ([README.md](./README.md), "Unknown Data"), in a device group as in any other
+group.
+
 ## State
 
 ```text
