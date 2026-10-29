@@ -28,6 +28,15 @@ The existing device confirms first, and the new device confirms only after verif
 confirmation. An existing device sends at most 10 Answers an hour, and none while more than one request is live.
 Clients that do not link devices need no changes.
 
+## 2026-10-28: Activation eligibility reasons and lost activations
+
+[#453](https://github.com/marmot-protocol/marmot/pull/453) changes
+[app-components/README.md](./app-components/README.md) and
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md). A client does not commit an activation
+again on its own after it loses branch selection or fails its checks when regenerated from the queue; it activates only
+if its user asks again. A client MAY tell its user why a group cannot activate `marmot.group.account-devices.v1` yet,
+as a reason about the whole group that never names the members or devices holding it back.
+
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
 [#450](https://github.com/marmot-protocol/marmot/pull/450) changes
