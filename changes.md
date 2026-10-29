@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-29: Slot announcements, the own-slot check and private KeyPackages (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#459](https://github.com/marmot-protocol/marmot/pull/459) changes
 [features/device-group.md](./features/device-group.md),
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
 [foundation/key-packages.md](./foundation/key-packages.md) and [foundation/registries.md](./foundation/registries.md).
