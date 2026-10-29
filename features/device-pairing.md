@@ -234,11 +234,12 @@ A receiver MUST compare MACs in constant time.
 4. When the existing device's Confirm arrives, it checks the MAC over the named `device_group` and `signature_key`. If
    the check fails, it sends Cancel `mismatched_confirm` and ends the session.
 5. Once its user has confirmed and the existing device's Confirm has been verified, it sends its Confirm, and the link
-   is confirmed. It MUST NOT send its Confirm before then. The new device MUST NOT accept a Welcome under this link
-   into any group other than the one the existing device's Confirm named, nor one whose sender has any signature key
-   other than the one it named. The sender is the leaf at the `signer` index of the Welcome's `GroupInfo`, whose
-   signature key verifies that `GroupInfo`. A Welcome into a group that no confirmed link named does not make that
-   group the device group ([device-group.md](./device-group.md), "Trust").
+   is confirmed. It MUST NOT send its Confirm before then. Until the link ends
+   ([device-group.md](./device-group.md), "Joining"), the new device MUST NOT join any Welcome into the group the
+   existing device's Confirm named except one whose sender has the signature key that Confirm named. The sender is the
+   leaf at the `signer` index of the Welcome's `GroupInfo`, whose signature key verifies that `GroupInfo`. A Welcome
+   into any other group does not make that group the device group, and a group that requires `0x800e` is joined only
+   through the Welcome a confirmed link named ([device-group.md](./device-group.md), "Trust").
 
 ### Existing device
 
@@ -279,9 +280,10 @@ this exchange fixes the order instead and has no closing message.
   `timeout`. The new device withdraws its link when that Cancel arrives. If the Cancel is lost too, no Welcome arrives
   under the link.
 
-"Expiry" does not apply to a confirmed link, which owes no Cancel `timeout`. How long a new device waits for its
-Welcome is part of joining the device group, not of this exchange. An existing device acts on its link as soon as the
-link is confirmed, and need not keep the session past the time it would otherwise have expired.
+"Expiry" does not apply to a confirmed link, which owes no Cancel `timeout`. How long a new device waits for its Welcome
+is part of joining the device group ([device-group.md](./device-group.md), "Joining"), not of this exchange. An existing
+device acts on its link as soon as the link is confirmed, and need not keep the session past the time it would otherwise
+have expired.
 
 ### Competing requests
 
@@ -312,17 +314,17 @@ or a Request.
 ### Every session
 
 - A device makes one decision per session. It never shows a session's code again after a decision, a cancel or expiry.
-- A device ignores a message for a session it does not hold, a message only its own role sends, and a message for a step
-  the session has passed, such as a second Reveal or a replayed Request. A Confirm whose `from` is the receiver's own
-  role is one only its own role sends: its own Confirm, returned by its inbox relays
-  ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
+- A device ignores a message only its own role sends, a message for a step the session has passed, such as a second
+  Reveal or a replayed Request, and a message for a session it does not hold, other than a Cancel for the session of a
+  link it keeps. A Confirm whose `from` is the receiver's own role is one only its own role sends: its own Confirm,
+  returned by its inbox relays ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
 - A Cancel ends the session at its receiver, whatever its reason, and the receiver sends nothing back. At a new device
-  it also withdraws a confirmed link whose Welcome has not arrived. An existing device that has confirmed the link
-  ignores it.
+  it also ends the session's confirmed link if the Welcome has not arrived, even after a restart. An existing device
+  that has confirmed the link ignores it.
 - A device keeps its private key, the shared secret, the code and the MAC keys in memory only, for the life of the
   session, and erases them when it ends. It MUST NOT write any of them to persistent storage or logs. The confirmed link
-  is not one of these secrets: a new device keeps the group id and signature key it confirmed, across restarts, until
-  it joins through the Welcome or the link is withdrawn, so it can still check a Welcome that arrives after a restart.
+  is not one of these secrets: a new device keeps it across restarts until the link ends
+  ([device-group.md](./device-group.md), "Joining").
 
 ## Security considerations
 
