@@ -58,11 +58,14 @@ Holding the account key never authenticates a device. Only the code compared on 
 
 ## Roles
 
-The **new device** has published a KeyPackage into its own publication slot and is not yet linked. It starts the
+The **new device** is the device whose user asks to link it to the account's other devices. It has published a
+KeyPackage into its own publication slot and has no device group ([device-group.md](./device-group.md)). It starts the
 session, commits to its key first and reveals it last. In Matrix's terms, it is the accepting device.
 
-An **existing device** is a device of the account that is already linked, or the account's only device. Every existing
-device sees every request. The new device takes the first answer, and the session continues with that device alone.
+An **existing device** is any other device of the account, whether or not it has a device group yet. Every existing
+device sees every request. The new device takes the first answer, and the session continues with that device alone. A
+device running a session as a new device answers no request, so if its user starts linking on two devices at once,
+neither links and both sessions expire.
 
 ## Messages
 

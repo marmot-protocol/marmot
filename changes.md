@@ -23,21 +23,23 @@ device. When the KeyPackage lacks something or the roster is full, it sends Canc
 device's Confirm names the device group it trusts, or a fresh 16-byte random id for the one it will create, and the
 signature key of its own leaf there. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one Commit
 that sets the new device's roster entry, or in the founding Add. Any Commit a device makes in the device group that adds
-a member adds exactly one, by value, with that device's roster entry for a new slot: a same-account Add with the roster
-update, committed as the group's admin, never a same-account Commit. It never adds a KeyPackage no confirmed link named,
-including when re-inviting after a founding Welcome that could not be delivered. A device that cannot commit the link at
-once may retry, but not after the new device stops waiting, counted from when the new device's Confirm arrived. Before
-it sends its Confirm, the new device records the link with the pairing session's id, and keeps it across restarts until
-it joins through the link's Welcome, 600 seconds have passed since that Confirm, a Cancel for that session arrives, or
-it confirms a newer link, which replaces it. It joins only the Welcome from the named leaf into the named group, and
-only if that group requires `0x800e`, deciding before it joins; it refuses every other device-group Welcome, and any
-Welcome into the group id while the link lasts, so a forged one leaves the KeyPackage and the id for the real one. The
-approving device treats the link as made only once the new device's first Commit there, which sets its tag signature
-key, is on the selected branch with no input for the group pending; the new device makes it as soon as it can once it
-has joined. If that Commit has not come 3600 seconds after the approving Commit, the approving device removes the new
-device's leaf and roster entry in one Commit and stops delivering the Welcome, and a new device that finds itself
-removed has no device group and links again through a new pairing session. Clients that do not support `0x800e` change
-nothing.
+a member, other than the founding Add, whose roster already lists both devices at epoch 0, adds exactly one, by value,
+with that device's roster entry for a new slot: a same-account Add with the roster update, committed as the group's
+admin, never a same-account Commit. It never adds a KeyPackage no confirmed link named, including when re-inviting after
+a founding Welcome that could not be delivered. A device that cannot commit the link at once may retry, but not after
+the new device stops waiting, counted from when the new device's Confirm arrived. Before it sends its Confirm, the new
+device records the link with the pairing session's id, and keeps it across restarts until it joins through the link's
+Welcome, 600 seconds have passed since that Confirm, a Cancel for that session arrives, or it confirms a newer link,
+which replaces it. It joins only the Welcome from the named leaf into the named group, and only if that group requires
+`0x800e`, deciding before it joins; it refuses every other device-group Welcome, and any Welcome into the group id while
+the link lasts, so a forged one leaves the KeyPackage and the id for the real one. The approving device treats the link
+as made only once the new device's first Commit there, which sets its tag signature key, is on the selected branch with
+no input for the group pending; the new device makes it as soon as it can once it has joined. Once made, a link stays
+made. If that Commit has not come 3600 seconds after the `linked_at` the approving device wrote in the new device's
+entry, the approving device, and only it, removes the new device's leaf and roster entry in one Commit and stops
+delivering the Welcome. A device whose leaf is removed from its device group stops trusting the group and discards its
+copy, so a later link's Welcome into the same id is a first join; a new device removed before its first Commit there
+tells its user that linking failed. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-29: Device pairing (draft)
 
@@ -47,14 +49,15 @@ for multi-device accounts in [foundation/registries.md](./foundation/registries.
 entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
 [protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
 inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new
-device and an existing device of the same account compare a code: Matrix's `m.sas.v1` verification, transcribed into
-Marmot encodings and shown as seven emoji from Matrix's table. The five messages are rumors gift-wrapped from the
-account to itself. The new device commits to its key in its request; the code binds the session, the account, the new
-device's `KeyPackageRef`, the answering device's slot and both keys; and the two confirmations cover the
-`KeyPackageRef`, and the id of the group the new device joins with the signature key of the existing device's leaf
-there, the only sender whose Welcome the new device accepts. The existing device confirms first, and the new device
-confirms only after verifying the existing device's confirmation. An existing device sends at most 10 Answers an hour,
-and none while more than one request is live. Clients that do not link devices need no changes.
+device, the one whose user asks to link it and which has no device group, and an existing device, any other device of
+the same account, compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven
+emoji from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits
+to its key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering
+device's slot and both keys; and the two confirmations cover the `KeyPackageRef`, and the id of the group the new device
+joins with the signature key of the existing device's leaf there, the only sender whose Welcome the new device accepts.
+The existing device confirms first, and the new device confirms only after verifying the existing device's confirmation.
+An existing device sends at most 10 Answers an hour, and none while more than one request is live. Clients that do not
+link devices need no changes.
 
 ## 2026-10-29: New sign-ins in the device group (draft)
 
