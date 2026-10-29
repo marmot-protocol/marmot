@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t4-device-account-key-and-reusable-keypackage-compromise).
+
 This document defines KeyPackage meaning, discovery requirements, and lifecycle.
 
 KeyPackages are how Marmot supports asynchronous invites. Each of a user's devices publishes a usable KeyPackage before

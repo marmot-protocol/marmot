@@ -27,6 +27,11 @@ transports MUST support redundant delivery so a group does not depend on one ser
 The protocol also tries to expose as little metadata as the design allows. Perfect metadata privacy is not possible in a
 decentralized messaging system, but Marmot SHOULD avoid new metadata leaks unless a feature cannot work without them.
 
+## Security model
+
+The [threat model and security considerations](./security-considerations.md) describe attacker capabilities, trust
+boundaries, assumptions and residual risks across the protocol. It summarizes the owning rules and is non-normative.
+
 ## Review Guidance
 
 When reviewing changes to the spec, focus on these questions:
@@ -66,3 +71,8 @@ feedback. Nothing there is part of the protocol.
 - A feature SHOULD usually point to one app component or add one component version.
 - A feature SHOULD name every surface it changes.
 - App component docs own component bytes. Feature docs own user-visible flows and the surfaces those flows touch.
+
+## Documentation checks
+
+Run `python3 scripts/check_docs.py` to check local Markdown links and anchors without network access.
+The docs workflow also runs `python3 -m unittest discover -s scripts -p 'test_*.py'` to check the validator.

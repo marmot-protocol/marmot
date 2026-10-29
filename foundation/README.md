@@ -33,3 +33,8 @@ Marmot has three Nostr-related commitments, and they do not all live in the same
 
 A future transport can replace the relay binding. It does not replace Marmot identity or the inner app payload shape
 unless the Marmot protocol itself changes.
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.

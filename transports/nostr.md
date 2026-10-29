@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t1-network-observation-discovery-and-traffic-correlation).
+
 This document defines the first Marmot transport binding: MLS bytes carried over Nostr relays.
 
 Nostr also appears in Marmot identity and app payloads. Those are separate foundation rules:

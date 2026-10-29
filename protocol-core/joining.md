@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t3-invitation-abuse-stale-packages-and-first-contact-group-substitution).
+
 This document describes the member join flow built around MLS Welcomes.
 
 ## Surfaces

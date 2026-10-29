@@ -80,3 +80,8 @@ Marmot clients choose group state from MLS-valid protocol bytes and the pinned c
 
 They MUST NOT choose group state from transport arrival order, transport envelope timestamps, outer event ids, local
 receive order, or which transport source delivered a message first.
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.
