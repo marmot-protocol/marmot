@@ -103,17 +103,18 @@ item is one JSON object:
 | `chat`    | the chat's MLS group id, lowercase hexadecimal |
 | `item`    | the item's name: `read`, `pin`, `mute` or `archive` |
 | `value`   | the item's value, below |
-| `version` | for `pin`, `mute` and `archive` only: the version, a decimal integer from 1 to 9007199254740991 without leading zeros |
+| `version` | for `pin`, `mute` and `archive` only: the version |
 | `change`  | for `pin`, `mute` and `archive` only: the change id, 32 lowercase hexadecimal characters |
 
 | Item      | `value` |
 | --------- | ------- |
-| `read`    | `{"epoch":e,"at":t,"id":"<id>"}`: the epoch the message was sent in, its `created_at` and its `id` (64 lowercase hexadecimal characters), as decimal integers without leading zeros where numeric |
+| `read`    | `{"epoch":e,"at":t,"id":"<id>"}`: the epoch the message was sent in, its `created_at` and its `id` (64 lowercase hexadecimal characters) |
 | `pin`     | `true` or `false` |
-| `mute`    | `false`, `true`, or a time in seconds since the Unix epoch, a decimal integer without leading zeros |
+| `mute`    | `false`, `true`, or a time in seconds since the Unix epoch |
 | `archive` | `true` or `false` |
 
-One message holds at most one item for each chat and item name.
+Every number in an item is a decimal integer from 0 to 9007199254740991, without leading zeros, and a version is at
+least 1. One message holds at most one item for each chat and item name.
 
 A snapshot request's content is `{"v":1,"to":"<slot>"}`: `to` is the slot of the sibling asked
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"), 64 lowercase hexadecimal
