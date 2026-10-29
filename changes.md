@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-29: New sign-ins in the device group (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#465](https://github.com/marmot-protocol/marmot/pull/465) changes
 [features/device-group.md](./features/device-group.md) and
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A client that supports `0x800e` reads its
 account's KeyPackages as an inviter does, and treats a slot holding a valid, fresh KeyPackage that is not its own, not a
