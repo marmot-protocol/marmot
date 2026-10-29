@@ -114,7 +114,8 @@ Once the link is confirmed, the device adds the new device:
 
 The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
 device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no `tag_signature_key`: the
-new device sets that itself ("Matching leaves to devices"). That Commit, or the founding Add, is the approval. Its Welcome is sent as for any other Add.
+new device sets that itself ("Matching leaves to devices"). That Commit, or the founding Add, is the approval. Its
+Welcome is sent as for any other Add.
 
 The approving device treats the link as settled once the approving Commit's publication is confirmed, its state for the
 device group is at or past that Commit's epoch with the Commit on the selected branch, and it holds no unprocessed input
