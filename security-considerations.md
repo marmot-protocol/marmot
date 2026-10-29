@@ -124,6 +124,11 @@ Owners: [Nostr replay](transports/nostr.md#duplicate-and-replay-handling),
 [conformance equality](foundation/conformance.md#canonical-snapshot). Residual risk: A4–A7 can fail, leaving a client
 blocked, unable to acquire missing evidence, or outside the progress guarantee.
 
+Complete transport retention is not complete application history. A conforming client can lose the ability to decrypt
+older app payloads after they leave its retained epoch window, even if a relay still holds their bytes. Applications
+needing longer offline history need a separate mechanism; see
+[app-payload retention](protocol-core/retained-history.md#app-payload-retention).
+
 ### T3. Invitation abuse, stale packages, and first-contact group substitution
 
 Outsiders or hostile members can send invitations, serve obsolete packages, or construct an authentic branch that is
@@ -169,6 +174,11 @@ instructions, displayed system notices or agent requests safe; display/provenanc
 [#75](https://github.com/marmot-protocol/marmot/issues/75) and
 [#412](https://github.com/marmot-protocol/marmot/issues/412).
 
+Deterministic branch ordering is not a fairness lottery or protection against every form of grinding: a committer can
+influence the digest used for an otherwise tied branch. The
+[account-device security considerations](app-components/account-devices-v1.md#security-considerations) explicitly
+describe that case. Neither G3 nor G4 promises an administrative action will prevail during unbounded valid competition.
+
 ### T6. Input flooding and availability pressure
 
 An outsider can learn the Nostr routing handle and send envelopes that reach validation and trial decryption.
@@ -213,6 +223,11 @@ Owners: [group-image capability](app-components/group-blossom-image-v1.md),
 [draft moderation](features/content-moderation.md). Retroactive deletion proposals remain
 [#418](https://github.com/marmot-protocol/marmot/issues/418).
 
+Epoch advancement also does not automatically replace an existing group-image key or erase a recipient's saved media
+key. The confidentiality of a stored object follows its own key's exposure and lifecycle, not merely the current MLS
+epoch; see [image bytes](app-components/group-blossom-image-v1.md#image-bytes) and
+[media key derivation](features/encrypted-media.md#key-derivation).
+
 ### T9. Preview brokers and group-shared stream keys
 
 Experimental QUIC previews add an untrusted endpoint and broker boundary. TLS authenticates the hop according to its
@@ -241,6 +256,26 @@ Owners: [notification behavior](features/push-notifications.md#behavior),
 [validation](features/push-notifications.md#validation). A1–A2 protect the specified token envelope, not the server,
 platform or user's device against compromise; endpoint contacts remain subject to A8.
 
+### T11. Local software, external signers, and incompatible profiles
+
+A hostile client update, unsafe parser, side channel, or compromised local key store can violate A1–A2 without breaking
+the abstract protocol. Reviewing a state-machine model does not establish memory safety, constant-time cryptography,
+software-distribution integrity, or protection from malicious local software. Those require implementation and platform
+evidence in addition to protocol analysis.
+
+An external account signer is another boundary: a producer checks that the returned event exactly matches the request
+and validates its id and signature before using the proof. A valid returned signature does not itself prove the user's
+informed consent. Proofs bind their class and context, and different authority classes cannot be substituted simply
+because their envelopes share an encoding; see [authorization proofs](foundation/authorization-proofs.md).
+
+Incompatible or misunderstood required features fail through capability and resulting-state checks. Unknown optional
+component bytes remain preserved, not reinterpreted as understood or silently rewritten. Superseded encodings and
+experimental profiles do not acquire current-profile authority by appearing in this repository. Owners:
+[negotiation](app-components/README.md#negotiation), [unknown data](app-components/README.md#unknown-data),
+[proof versioning](foundation/authorization-proofs.md#versioning), and
+[canonical encodings](foundation/canonical-encoding.md). Application resource limits remain separate from deterministic
+protocol validity; rejecting a locally unsupported operation does not authorize rewriting the group's requirements.
+
 ## Surface coverage
 
 The following map locates security ownership across the current surfaces. It does not certify conformance or proof
@@ -249,14 +284,14 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 
 | Surface and documents | Boundaries covered here |
 | --- | --- |
-| [Identity](foundation/identity.md), [authorization proofs](foundation/authorization-proofs.md), [current account proof](app-components/account-identity-proof-v2.md), [legacy account proof](foundation/account-identity-proof-v1.md) | A1–A3, G2–G3, T3–T5; legacy proof is superseded. |
+| [Identity](foundation/identity.md), [authorization proofs](foundation/authorization-proofs.md), [current account proof](app-components/account-identity-proof-v2.md), [legacy account proof](foundation/account-identity-proof-v1.md) | A1–A3, G2–G3, T3–T5, T11; legacy proof is superseded. |
 | [KeyPackages](foundation/key-packages.md), [MLS profile](foundation/mls-protocol.md) | A1–A3, T3–T4; cryptographic inheritance and retained join exposure. |
 | [Canonical encoding](foundation/canonical-encoding.md), [app payloads](foundation/application-messages.md), [wire envelopes](foundation/wire-envelopes.md), [registries](foundation/registries.md), [errors](foundation/errors.md), [conformance](foundation/conformance.md) | G2–G5, T2, T5, T7; exact identities, validation, dispositions and observable equivalence. |
 | [Group setup](protocol-core/group-setup.md), [joining](protocol-core/joining.md), [group messaging](protocol-core/group-messaging.md), [member departure](protocol-core/member-departure.md), [group state](protocol-core/group-state.md) | G2–G6, T3–T5, T7; admission, policy, membership and lifecycle gates. |
 | [Publish lifecycle](protocol-core/publish-lifecycle.md), [inbound processing](protocol-core/inbound-processing.md), [convergence](protocol-core/convergence.md), [retained history](protocol-core/retained-history.md), [durability](protocol-core/durability.md) | A4–A7, G4–G6, T2, T6–T7; scheduling versus safety, evidence retention and restart. |
 | [Admin policy](app-components/admin-policy-v1.md), [account devices](app-components/account-devices-v1.md), [group lifecycle](app-components/group-lifecycle-v1.md) | G3, T3–T5, T7; parent-relative authority, device approval and terminal effects. |
 | [Group profile](app-components/group-profile-v1.md), [avatar URL](app-components/group-avatar-url-v1.md), [group image](app-components/group-blossom-image-v1.md), [message retention](app-components/message-retention-v1.md) | A8, G3, T5, T8; authenticated data versus trusted endpoints, retained capabilities and deletion limits. |
-| [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
+| [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8, T11; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
 | [Nostr routing component](app-components/nostr-routing-v1.md), [Nostr transport](transports/nostr.md) | A7–A8, G7, T1–T2, T6; signed routing, outer metadata, replay and availability. |
 | [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content. |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service and platform boundary. |
