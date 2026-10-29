@@ -50,7 +50,8 @@ the founding Add:
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), which lets a
   creator add its own account's published KeyPackages to a new group. A device group never relies on that exemption.
 
-A Commit that adds a device to the device group or removes one also writes that device's roster entry, so each change of
+A Commit that adds a device to the device group adds exactly one KeyPackage and inserts exactly one new device entry,
+the added device's. A Commit that removes devices also writes their roster entries. Either way each change of
 membership and its record are one decision. Such a Commit carries an AppDataUpdate, so it is `privileged` in branch
 selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
 
@@ -94,8 +95,9 @@ leaving one, or replacing a leaf there never commits to it.
   flow, step 14). That Commit also replaces its leaf in the device group with one tagged under that key
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). A group where it made
   its post-join self-update before then gets a tagged leaf later.
-- Until a joining device's leaf in the device group is first replaced, its siblings know that leaf from the Commit that
-  added it, which writes the device's roster entry in the same Commit ("Creating the device group").
+- Until a joining device's leaf in the device group is first replaced, its siblings take that leaf to be the device
+  whose entry the Commit that added the leaf inserted ("Creating the device group"). A Commit that added more than one
+  leaf, or inserted more than one device entry, associates none of the leaves it added.
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
