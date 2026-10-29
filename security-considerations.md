@@ -22,15 +22,11 @@ Statements here summarize specification intent and assumptions. They are not a s
 evidence that any particular implementation follows every rule. Model-checked properties, cryptographic arguments,
 wire vectors, implementation tests, and deployment evidence answer different questions.
 
-The original [threat model](https://github.com/marmot-protocol/marmot/blob/21a67b24ffbfe14fc52022769aff77495402d728/threat_model.md)
-was introduced in [PR #12](https://github.com/marmot-protocol/marmot/pull/12) and removed by the surface reorganization in
-[PR #71](https://github.com/marmot-protocol/marmot/pull/71). This document reconciles that history with current owners;
-MIP-era throttles, encodings, and join assumptions are not restored by reference. Restoration is tracked in
-[#14](https://github.com/marmot-protocol/marmot/issues/14); the broader assurance program is
+This work is tracked in [#14](https://github.com/marmot-protocol/marmot/issues/14); the broader assurance program is
 [#457](https://github.com/marmot-protocol/marmot/issues/457).
 
 Read the [overview assumptions](#assumptions) and [intended properties](#intended-properties-and-limits), then use the
-[detailed scenario catalogue](#detailed-scenario-catalogue), [historical disposition index](#historical-scenario-disposition),
+[detailed scenario catalogue](#detailed-scenario-catalogue), [questions for maintainer review](#questions-for-maintainer-review),
 and [surface coverage](#surface-coverage) to follow individual risks and their owners.
 
 ## Assets
@@ -284,7 +280,8 @@ protocol validity; rejecting a locally unsupported operation does not authorize 
 
 This catalogue complements the overview above. SC identifiers are stable references; titles and grouping may evolve,
 but an identifier is not reused for a different threat. Each entry states an attack path and a concrete candidate
-check. The historical index below accounts for every named scenario in the pre-reorganization document.
+check grounded in the current owning surfaces. Related entries distinguish different attack paths rather than
+claiming separate guarantees for each one.
 
 **Verification status:** `Unverified` means this PR links no scenario-specific model-check, proof, implementation-test,
 or deployment result. Existing evidence may exist elsewhere; it has to be linked and scoped before upgrading that
@@ -300,7 +297,13 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 | [SC-019](#sc-019)–[SC-030](#sc-030) | Device/account compromise, retained secrets, recovery and join lifecycle. |
 | [SC-031](#sc-031)–[SC-045](#sc-045) | Event keys, replay, media and transport metadata. |
 | [SC-046](#sc-046)–[SC-057](#sc-057) | Cryptographic assumptions, parser/version boundaries, updates and device privacy. |
-| [SC-058](#sc-058)–[SC-068](#sc-068) | Current Welcome, endpoint, crash, capability, preview, push and signer boundaries. |
+| [SC-058](#sc-058)–[SC-068](#sc-068) | Welcome continuity, endpoint, crash, capability, preview, push and signer boundaries. |
+| [SC-069](#sc-069)–[SC-071](#sc-071) | Component activation, same-account authority and unresolved disband intent. |
+| [SC-072](#sc-072)–[SC-076](#sc-076) | Push record isolation, tombstones, repair abuse, retained wake capabilities and trigger freshness. |
+| [SC-077](#sc-077)–[SC-079](#sc-079) | Preview anchor invalidation, replay/context checks and broker resource exhaustion (experimental). |
+| [SC-080](#sc-080)–[SC-081](#sc-081) | Message edits and the provenance of system notices. |
+| [SC-082](#sc-082)–[SC-084](#sc-084) | Moderation authority, reversible display effects and report privacy (draft). |
+| [SC-085](#sc-085) | Push record replay after a device leaf is removed. |
 
 <a id="sc-001"></a>
 
@@ -410,8 +413,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   network-path boundary.
 - **Mitigations:** The binding limits explicit identifiers. Delays or cover traffic would require a separately
   evaluated application/deployment design.
-- **Residual risk:** Fresh keys do not hide timing. The historical suggested random-delay range and
-  cover-traffic requirement are not adopted rules.
+- **Residual risk:** Fresh keys do not hide timing. Correlation remains possible across relay connections and
+  externally observed activity; the binding provides no traffic-analysis resistance guarantee.
 - **Normative owners:** [Nostr transport](transports/nostr.md#metadata-exposed-to-the-transport).
 - **Verification status:** Unverified — candidate check: document the timing observations available to each
   actor; do not label ordinary functional tests as a traffic-analysis proof.
@@ -587,15 +590,17 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   valid terminalization from invalid state or ordinary competing branches.
 - **Affected property and assumptions:** G3 rejects invalid resulting state; G4–G5 govern selection and one
   effective terminal projection, not protection from an authorized disband.
-- **Mitigations:** Use the lifecycle component's mandatory convergence pass, terminal tombstone and outbound
-  gate. The admin cannot bypass validation with arbitrary empty state.
+- **Mitigations:** Check candidate-parent admin authority and the already-required lifecycle component, the
+  inline disband update, exact committing-leaf survivor, full admin replacement and forbidden proposal mix. Use
+  the mandatory convergence pass and terminal tombstone; an arbitrary empty state is not a valid disband.
 - **Residual risk:** A selected disband is absorbing; another admin cannot revive the same group. A replacement
   conversation needs a new group.
 - **Normative owners:** [Group lifecycle](app-components/group-lifecycle-v1.md), [Group
   state](protocol-core/group-state.md#legal-transitions),
   [Durability](protocol-core/durability.md#observer-atomic-transitions).
 - **Verification status:** Unverified — candidate check: check competing disband/nonterminal branches, no
-  premature terminalization, terminal restart and exactly one effective disband presentation.
+  premature terminalization, every forbidden proposal class, terminal restart and one effective
+  disband presentation. Unresolved local intent is covered separately by [SC-071](#sc-071).
 
 <a id="sc-016"></a>
 
@@ -609,8 +614,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   G6 has explicit closure/resource premises.
 - **Mitigations:** Apply current eligibility, witness and comparison order to authenticated branch evidence.
   Outer timestamps and event ids never choose the winner.
-- **Residual risk:** Digest grinding can favor a tied branch. The historical earliest-timestamp race rule is
-  superseded, and deterministic selection does not guarantee admin success under endless competition.
+- **Residual risk:** Digest grinding can favor a tied branch. Deterministic selection does not guarantee admin
+  success under endless competition.
 - **Normative owners:** [Convergence](protocol-core/convergence.md#branch-selection),
   [Convergence](protocol-core/convergence.md#same-epoch-races), [Account
   devices](app-components/account-devices-v1.md#security-considerations).
@@ -629,8 +634,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   opportunity is not guaranteed canonical admin progress.
 - **Mitigations:** Use fixed collection deadlines, immutable resolution batches and the specified preparation
   opportunity. Local budgets must not change branch validity or scoring.
-- **Residual risk:** No adopted 60-second per-sender Commit-processing throttle supplies a progress proof.
-  Endless valid competition can violate the closure premise.
+- **Residual risk:** A member can continue producing valid work; local rate limits do not supply a protocol
+  progress proof. Endless valid competition can violate the closure premise.
 - **Normative owners:** [Convergence](protocol-core/convergence.md#convergence-policy),
   [Convergence](protocol-core/convergence.md#guarantees-and-assumptions).
 - **Verification status:** Unverified — candidate check: exercise continuing self-updates, queued privileged
@@ -788,8 +793,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   peer to process an honest recovery update.
 - **Mitigations:** Use the actual MLS recovery/key-update argument and required catch-up. KeyPackage slot
   freshness and MLS leaf/epoch changes are distinct lifecycles.
-- **Residual risk:** Not every Commit automatically heals every compromise. No universal weekly MLS signing-key
-  schedule or quorum confirmation rule is introduced here.
+- **Residual risk:** Not every Commit automatically heals every compromise. Recovery depends on which secrets
+  changed, which devices remain compromised, and which honest updates peers have processed.
 - **Normative owners:** [MLS profile](foundation/mls-protocol.md),
   [Joining](protocol-core/joining.md#receiving-flow),
   [KeyPackages](foundation/key-packages.md#refreshing-a-slot),
@@ -892,8 +897,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   intentional and does not itself disclose its private key.
 - **Mitigations:** Follow the current prompt/as-practical self-update guidance, preferably before app sending
   when feasible, and the separate private init_key deletion rules.
-- **Residual risk:** The historical mandatory 24-hour interoperability deadline is not the adopted
-  receiving-flow rule, and one update does not repair a stolen account key.
+- **Residual risk:** Delayed updates can extend exposure to compromised join material; one update does not
+  repair a stolen account key.
 - **Normative owners:** [Joining](protocol-core/joining.md#receiving-flow),
   [KeyPackages](foundation/key-packages.md#selection-and-lifecycle).
 - **Verification status:** Unverified — candidate check: check that delayed updates are surfaced consistently
@@ -1087,8 +1092,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   does not revoke already disclosed file keys.
 - **Mitigations:** Follow the owning key derivation/release conditions and distinguish loss of an unused
   derivation path from erasure of a copied file key.
-- **Residual risk:** The historical assertion that old media automatically becomes inaccessible on every epoch
-  change is not a valid general guarantee.
+- **Residual risk:** A retained file key can continue decrypting its object after epoch changes or removal.
+  Rotation protects later material only when it changes the relevant secret and excludes the attacker.
 - **Normative owners:** [Encrypted media v2](features/encrypted-media.md#key-derivation), [Retained
   history](protocol-core/retained-history.md#retained-cryptographic-material).
 - **Verification status:** Unverified — candidate check: retain a key across epoch/removal transitions and
@@ -1655,114 +1660,424 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   policy across epochs and test stale expiry; require the correct deferred, invalid or unrecoverable
   classification.
 
-## Historical scenario disposition
+<a id="sc-069"></a>
 
-Source: `threat_model.md` at pre-reorganization commit
-[`21a67b24ffbfe14fc52022769aff77495402d728`](https://github.com/marmot-protocol/marmot/blob/21a67b24ffbfe14fc52022769aff77495402d728/threat_model.md).
-The source contains **87** named T.x.y scenarios. The rows below preserve their identifiers and titles and account for
-each exactly once. None is silently excluded.
+### SC-069. Component activation borrows authority from the state it is creating
 
-- **Retained:** the attack remains a distinct current scenario, with current ownership and qualified limits.
-- **Updated:** the attack remains, but the protocol, premises, mitigation or stated assurance changed.
-- **Merged:** a shared current scenario explicitly retains this attack path with related historical paths; it is not
-  merely a link to an overview category.
-- **Superseded:** the historical formulation or mitigation is no longer valid; the linked scenario preserves the
-  underlying risk and explains the current boundary.
-- **Excluded:** no current scenario would be claimed; exclusion would need a rationale here and separate review.
-  There are no excluded rows in this revision.
+- **Attacker and prerequisites:** A non-admin member or stale client prepares an activation while leaves,
+  requirements or competing branches change.
+- **Attack sequence:** The client uses resulting-state privileges to authorize its own activation, trusts
+  discovery metadata instead of authenticated leaves, or repeats a displaced activation without a renewed user
+  request.
+- **Affected property and assumptions:** G3 requires parent-relative authority and complete resulting-state
+  validation; G4 depends on consistent activation semantics under A4.
+- **Mitigations:** Read eligibility from current authenticated leaves and validate the complete result.
+  Account-devices authority starts after activation, every resulting leaf supports it, no account exceeds 20
+  leaves, and forbidden dictionary entries are absent. Follow the explicit activation decision and
+  lost-activation rules.
+- **Residual risk:** Capability advertising is a claim of support, not proof of a correct implementation.
+  Receiver-valid activation does not prove the sender obtained private user approval; irreversible components
+  cannot later be dropped to recover compatibility.
+- **Normative owners:** [Component
+  activation](app-components/README.md#enabling-a-component-in-an-existing-group), [Account-device
+  activation](app-components/account-devices-v1.md#activation-in-an-existing-group), [Account-device
+  data](app-components/account-devices-v1.md#data), [Account-device
+  removal](app-components/account-devices-v1.md#removal).
+- **Verification status:** Unverified — candidate check: vary candidate parent/result requirements, unsupported
+  replacement leaves, forbidden entries, 20/21-leaf boundaries and a losing activation branch; require correct
+  authorization and no automatic renewed activation.
 
-| Historical ID | Historical title | Disposition | Current scenario | Rationale |
-| --- | --- | --- | --- | --- |
-| T.1.1 | Invalid Key Package Publication | Merged | [SC-001](#sc-001) | Same discovery-validation workload as T.10.3; no universal spam-prevention claim. |
-| T.1.2 | Key Package Credential Mismatch | Updated | [SC-002](#sc-002) | Retains author/credential mismatch and adds the required account-to-leaf proof; removes the unconditional no-residual-risk claim. |
-| T.1.3 | Gift-Wrapped Event Spam (NIP-59) | Merged | [SC-003](#sc-003) | Duplicate inbox decryption-flood case T.10.1; operational defenses remain conditional. |
-| T.1.4 | Application Message Spam | Merged | [SC-004](#sc-004) | Duplicate route flood T.10.2; no multiple-current-route mitigation is invented. |
-| T.2.1 | Group Membership Inference | Merged | [SC-005](#sc-005) | Same IP/membership inference as T.11.8; fresh keys do not prevent traffic correlation. |
-| T.2.2 | Timing Correlation | Merged | [SC-006](#sc-006) | Includes timing, bursts and publication/subscription correlation with T.11.2/T.11.9. |
-| T.2.3 | Relay Censorship | Merged | [SC-007](#sc-007) | Combines selective censorship with relay flooding/outage; no automatic relay removal is required. |
-| T.3.1 | Message Spam | Merged | [SC-008](#sc-008) | Combines valid member-message overload with permitted proposal overload, preserving both stimuli. |
-| T.3.2 | Metadata Exposure | Merged | [SC-009](#sc-009) | Member disclosure of routing/admin metadata and tree/account relationships remain explicit, not harmless/public by assumption. |
-| T.3.3 | Group State Disclosure | Merged | [SC-009](#sc-009) | Shares the insider-disclosure boundary with T.3.2; public keys do not make membership relationships public. |
-| T.3.4 | Historical Message Retention | Merged | [SC-010](#sc-010) | Saved plaintext and cooperative expiry share the no-hostile-erasure boundary. |
-| T.3.5 | Fake Proposals | Merged | [SC-008](#sc-008) | Proposal workload remains explicit; the old claim that every proposal needs admin commitment is not retained. |
-| T.3.6 | Disappearing Message Non-Compliance | Updated | [SC-010](#sc-010) | Uses source-epoch retention and advisory expiry; does not prescribe SQLite secure_delete or promise relay/blob erasure. |
-| T.4.1 | Unauthorized Member Addition | Updated | [SC-011](#sc-011) | A harmful admin-authorized Add is distinct from a cryptographically unauthorized Add; multiple admins are not a quorum. |
-| T.4.2 | Legitimate Member Removal | Updated | [SC-012](#sc-012) | Retains abusive removal; fresh join and terminal local removal replace implied automatic undo. |
-| T.4.3 | Device Addition for Persistence | Merged | [SC-013](#sc-013) | Combines additional-device persistence with current same-account authority and leaf-scoped revocation. |
-| T.4.4 | Marmot Group Data Extension Manipulation | Updated | [SC-014](#sc-014) | Replaces the monolithic group-data extension with current component owners and parent-relative authorization. |
-| T.4.5 | Group Destruction | Updated | [SC-015](#sc-015) | Adds the adopted terminal disband path and rejects the assumption that another admin can always reverse destruction. |
-| T.4.6 | Commit Race Conditions | Superseded | [SC-016](#sc-016) | The threat remains; timestamp/outer-id priority is replaced by current authenticated branch selection and digest tie-breaking. |
-| T.4.7 | Rapid State Changes | Merged | [SC-017](#sc-017) | Same rapid-valid-state workload as T.10.5; no processing throttle is promoted to canonical validity. |
-| T.4.8 | Malformed Proposal Commits | Retained | [SC-018](#sc-018) | Malformed admin proposals/Commits still require rejection and full resulting-state validation. |
-| T.5.1 | Key Material Exposure | Merged | [SC-019](#sc-019) | Full-device exposure, decryption and forgery share a compromise case with explicit secret scope. |
-| T.5.2 | Message Decryption | Merged | [SC-019](#sc-019) | Decryption after device compromise is retained without claiming every epoch update heals it. |
-| T.5.3 | Message Forgery | Merged | [SC-019](#sc-019) | Compromised-leaf impersonation remains explicit alongside content exposure. |
-| T.5.4 | Identity Theft | Merged | [SC-020](#sc-020) | Account-key theft and its cross-application effects are one identity-root case. |
-| T.5.5 | Device Addition | Merged | [SC-013](#sc-013) | Unauthorized device persistence is retained with current sender-approval and receiver-enforcement limits. |
-| T.5.6 | Historical Message Access | Merged | [SC-021](#sc-021) | Stored plaintext/key exposure is combined with backup/restore; physical erasure is not assumed. |
-| T.5.7 | Nostr Key Compromise Cross-Application Impact | Merged | [SC-020](#sc-020) | Preserves ecosystem-wide key-use scope without claiming specific financial access for every application. |
-| T.5.8 | Partial Device Compromise (Memory-only) | Retained | [SC-022](#sc-022) | Temporary memory-only exposure remains distinct from full device/account compromise. |
-| T.6.1 | Forward Secrecy Window | Superseded | [SC-023](#sc-023) | Retains exposure-window risk but replaces removal-only forward secrecy and automatic media-expiry claims with secret-specific retention. |
-| T.6.2 | Group Image Forward Secrecy | Merged | [SC-024](#sc-024) | Persistent image keys and disclosed image identifiers share the stored-object boundary with T.11.5. |
-| T.6.3 | PCS Recovery Window | Updated | [SC-025](#sc-025) | Offline recovery remains explicit; removes the claim that applying any relevant epoch increment automatically establishes PCS. |
-| T.6.4 | Key Update Requirements | Merged | [SC-025](#sc-025) | Combines delayed updates/rotation; actual exposed secrets and honest updates determine recovery, not every Commit. |
-| T.7.1 | Last Resort KeyPackage Reuse | Updated | [SC-026](#sc-026) | Replaces the old signing-key timetable with current last-resort init_key/lifetime/replacement bounds. |
-| T.7.2 | Long-Lived Signing Keys | Merged | [SC-025](#sc-025) | Long-lived leaf material is covered in the key-specific recovery case; package refresh is not a universal weekly MLS-key rule. |
-| T.7.3 | Stale KeyPackage Exposure | Updated | [SC-027](#sc-027) | Keeps stale-slot replay and current selection/lifetime rules; replacement/deletion does not revoke retained copies. |
-| T.7.4 | Welcome Event Timing Race Conditions (State Fork Vulnerability) | Updated | [SC-028](#sc-028) | Keeps sender ordering and adds current tentative-join rollback and founding empty-obligation exceptions. |
-| T.7.5 | Large Group Welcome Limitations | Merged | [SC-029](#sc-029) | Keeps Welcome-size and general group-resource failure; removes fixed participant estimates and unadopted light-Welcome mitigation. |
-| T.7.6 | init_key Retention After Group Join | Updated | [SC-026](#sc-026) | Keeps private init_key exposure and rollback; transport access to Welcome bytes is an explicit prerequisite, not universally a stolen Nostr key. |
-| T.7.7 | Delayed Self-Update After Join | Superseded | [SC-030](#sc-030) | Post-join update risk remains; current prompt SHOULD guidance replaces a mandatory 24-hour protocol deadline and public-key exposure is not secret leakage. |
-| T.8.1 | Ephemeral Keypair Reuse | Retained | [SC-031](#sc-031) | Fresh per-new-event keys remain required; immutable retry is distinguished from new-event key reuse. |
-| T.8.2 | Inner Event Signature Leakage | Updated | [SC-032](#sc-032) | Keeps unsigned payload and sender binding; removes leak-prevention overclaims and a blanket ban on inner h tags. |
-| T.8.3 | Exporter Secret Compromise | Updated | [SC-033](#sc-033) | Separates recovered PublicMessage handshakes from still-protected application bytes instead of asserting uniform double-encryption protection. |
-| T.8.4 | Message Replay Attacks | Superseded | [SC-034](#sc-034) | Replay remains; MLS-byte protocol identities replace outer Nostr event-id deduplication. |
-| T.9.1 | Storage Provider Compromise | Updated | [SC-035](#sc-035) | Retains blob exposure/availability; content addressing does not prevent access correlation or revoke saved keys. |
-| T.9.2 | File Integrity Attacks | Updated | [SC-036](#sc-036) | Uses v2 ciphertext/plaintext hashes, exact AAD and attachment-local failure boundaries. |
-| T.9.3 | Version Compatibility Attacks | Updated | [SC-037](#sc-037) | Uses explicit media versions and distinguishes malformed references from well-formed unsupported locators. |
-| T.9.4 | MIME Type Spoofing | Updated | [SC-038](#sc-038) | Retains deceptive MIME handling and distinguishes authenticated canonical metadata from safe renderer content. |
-| T.9.5 | Key Derivation Attacks | Superseded | [SC-039](#sc-039) | Replaces filename-implies-nonce-uniqueness with exact current KDF/AAD and fresh random nonce requirements, including retries. |
-| T.9.6 | Forward Secrecy for Media | Superseded | [SC-040](#sc-040) | The retained-media exposure remains; epoch change does not revoke a previously copied file key. |
-| T.10.1 | Gift-Wrapped Event Spam | Merged | [SC-003](#sc-003) | Duplicate of the inbox gift-wrap flood in T.1.3. |
-| T.10.2 | Application Message Spam | Merged | [SC-004](#sc-004) | Duplicate of group-route ciphertext flood T.1.4; monthly/multiple-route suggestions are not adopted defenses. |
-| T.10.3 | Invalid Key Package Spam | Merged | [SC-001](#sc-001) | Duplicate invalid-discovery workload T.1.1. |
-| T.10.4 | Large Group Resource Exhaustion | Merged | [SC-029](#sc-029) | General large-group pressure is retained alongside Welcome/device capacity, without inventing signed-state limits. |
-| T.10.5 | Rapid State Changes | Merged | [SC-017](#sc-017) | Duplicate rapid state-change workload T.4.7. |
-| T.10.6 | Relay Flooding | Merged | [SC-007](#sc-007) | Relay flooding is a distinct stimulus within censorship/outage; relay admission is operational policy. |
-| T.10.7 | Targeted Relay Attacks | Merged | [SC-007](#sc-007) | Targeted relay outage remains an explicit stimulus; redundancy is not guaranteed availability. |
-| T.11.1 | Key Package Metadata Leakage | Retained | [SC-041](#sc-041) | Public capability/account/device fingerprinting remains explicit under the current slot profile. |
-| T.11.2 | Event Timing Patterns | Merged | [SC-006](#sc-006) | Publication-time inference joins T.2.2 and burst analysis T.11.9. |
-| T.11.3 | Event Size Leakage | Merged | [SC-042](#sc-042) | Length leakage and content-shape fingerprinting retain one explicit wire-size scenario. |
-| T.11.4 | Group ID Tracking | Superseded | [SC-043](#sc-043) | Tracking remains; current one-route and optional two-Commit removal rotation replace monthly/multiple-current-route claims. |
-| T.11.5 | Group Image Metadata | Merged | [SC-024](#sc-024) | Disclosed image hashes/access correlation join retained image-key exposure. |
-| T.11.6 | Relay List Correlation | Merged | [SC-044](#sc-044) | Shared relay contacts and cross-group temporal relationships are jointly analyzed, without guaranteed isolation. |
-| T.11.7 | Group Activity Tracking | Merged | [SC-043](#sc-043) | Activity/count tracking remains in the route-history case; no automatic monthly rotation claim. |
-| T.11.8 | IP Address Correlation | Merged | [SC-005](#sc-005) | Duplicate IP membership-inference case T.2.1. |
-| T.11.9 | Message Burst Pattern Analysis | Merged | [SC-006](#sc-006) | Burst/external-event inference is explicit in the timing case; old delay/cover-traffic recommendations are not normative. |
-| T.11.10 | Cross-Group Activity Correlation | Merged | [SC-044](#sc-044) | Cross-group temporal linkage remains explicit alongside shared relay observations. |
-| T.11.11 | Message Size Fingerprinting | Merged | [SC-042](#sc-042) | Message-type size fingerprinting joins length leakage T.11.3; encryption overhead is not size hiding. |
-| T.11.12 | Group Size Inference from Welcome Events | Retained | [SC-045](#sc-045) | Welcome-length inference remains separate from join capacity and claims no universal group-size estimate. |
-| T.12.1 | MLS Ciphersuite Vulnerabilities | Updated | [SC-046](#sc-046) | Separates selected primitive security from implementation misuse and respects the current ciphersuite profile. |
-| T.12.2 | secp256k1 Weaknesses | Updated | [SC-047](#sc-047) | Names the current classical account root and separates its migration from an MLS-only upgrade. |
-| T.12.3 | Hash Collision Attacks | Updated | [SC-048](#sc-048) | Retains hash-security reliance without prescribing a unilateral substitute algorithm. |
-| T.12.4 | Cryptographic Agility | Updated | [SC-049](#sc-049) | Migration follows profile/component/proof negotiation rather than assuming arbitrary in-place agility. |
-| T.12.5 | Side-Channel Attacks | Retained | [SC-050](#sc-050) | Side-channel risks remain distinct and require implementation/platform evidence. |
-| T.12.6 | Random Number Generation | Retained | [SC-051](#sc-051) | Weak entropy and nonce/key reuse remain explicit, including immutable-retry distinctions. |
-| T.12.7 | Memory Safety | Retained | [SC-052](#sc-052) | Memory/parser safety remains an implementation boundary; no one language is mandated. |
-| T.12.8 | TLS Serialization Errors | Updated | [SC-053](#sc-053) | Separates MLS TLS serialization from Marmot binary/canonical preimage rules. |
-| T.12.9 | Version Detection Failures | Superseded | [SC-054](#sc-054) | Current component/proof ids and unknown-required handling replace monolithic extension version detection. |
-| T.12.10 | Extension Version Downgrade | Superseded | [SC-054](#sc-054) | Current per-component authorization, resulting-state support and removal rules replace a generic older-extension downgrade policy. |
-| T.13.1 | Key Backup Threats | Merged | [SC-021](#sc-021) | Backup/restore extends the stored-history exposure case and includes revived secrets/work. |
-| T.13.2 | Key Rotation Failures | Merged | [SC-025](#sc-025) | Rotation failure is key-specific recovery; no generic calendar schedule establishes PCS. |
-| T.13.3 | Malicious Client Updates | Retained | [SC-055](#sc-055) | Malicious distribution/update remains a separate external trust boundary. |
-| T.13.4 | Unauthorized Member Addition | Merged | [SC-011](#sc-011) | Socially engineered admission joins the harmful admin-authorized Add case. |
-| T.13.5 | Admin Privilege Granting | Merged | [SC-014](#sc-014) | Socially engineered admin granting is retained with parent-state policy manipulation. |
-| T.13.6 | Device Synchronization Attacks | Merged | [SC-013](#sc-013) | Compromised-device/sibling persistence remains explicit under adopted account-devices authority. |
-| T.13.7 | Cross-Device Correlation | Retained | [SC-056](#sc-056) | Account-linked leaf/slot privacy is distinct from cross-group IP correlation. |
-| T.13.8 | Device Removal Race Conditions | Updated | [SC-057](#sc-057) | Separates authenticated terminal leaf removal from unknown decryption failure and preserves old source-epoch app semantics. |
+<a id="sc-070"></a>
 
-Current cases SC-058–SC-068 add explicit adopted/experimental boundaries without inventing historical identifiers.
-They supplement, rather than replace, the 87-row reconciliation.
+### SC-070. Same-account operations smuggle unrelated authority or privileged branch priority
+
+- **Attacker and prerequisites:** A current device has same-account authority in the candidate parent; another device
+  or account is the target, and branch classification also matters when the committer is an admin.
+- **Attack sequence:** It mixes a same-account Add/Remove with a foreign-account operation, AppDataUpdate,
+  SelfRemove or ProposalRef, or labels a pure same-account Commit privileged because its account is also an
+  admin.
+- **Affected property and assumptions:** G3 limits the exception to its exact Commit shape; G4 requires
+  identical branch classification under A1 and A4.
+- **Mitigations:** For a non-admin, allow only by-value same-account Adds/Removes, at least one, with the normal
+  UpdatePath allowed. Check identities against the candidate parent. A pure same-account Commit is ordinary even
+  for an admin; other authorized mixtures are privileged.
+- **Residual risk:** A valid stolen device can still replace sibling devices, and tied ordinary races can be
+  ground as in [SC-016](#sc-016). Exact shape checks do not establish user-approved enrollment
+  ([SC-013](#sc-013)).
+- **Normative owners:** [Same-account operations](app-components/account-devices-v1.md#same-account-operations),
+  [Authorization](app-components/account-devices-v1.md#authorization), [Branch
+  priority](app-components/account-devices-v1.md#branch-priority).
+- **Verification status:** Unverified — candidate check: enumerate mixed proposal classes, foreign identities,
+  own-leaf removals and references; compare non-admin refusal, admin-authorized mixtures and ordinary
+  classification of pure same-account Commits.
+
+<a id="sc-071"></a>
+
+### SC-071. Restart or a losing branch silently cancels irreversible disband intent
+
+- **Attacker and prerequisites:** A client has accepted a local irreversible disband request; transport failure,
+  a crash or competing Commit interrupts it.
+- **Attack sequence:** The client forgets its durable Disbanding gate, sends new outbound work, or treats an
+  active selected branch or Unrecoverable state as cancellation. Alternatively it retries after the requester
+  has lost authority.
+- **Affected property and assumptions:** G5 requires recoverable intent and consistent outbound gates under
+  A6–A7; G3 still requires authority in the newly selected state.
+- **Mitigations:** Keep the durable gate across failure, restart and losing branches. Regenerate against an
+  active selected state when still authorized; a selected valid disband from any admin completes the request.
+  Loss of membership/admin authority yields a typed local failure.
+- **Residual risk:** Permanent transport or repair failure can leave the request pending indefinitely under A5.
+  A pending local gate is not a canonical Disbanded state and does not prove other members have stopped.
+- **Normative owners:** [Lifecycle
+  convergence](app-components/group-lifecycle-v1.md#convergence-and-realization), [Authorization
+  failure](app-components/group-lifecycle-v1.md#authorization-failure),
+  [Durability](protocol-core/durability.md#recoverable-protocol-facts).
+- **Verification status:** Unverified — candidate check: interrupt before/after possible publication, select an
+  active competitor, remove/demote the requester, and select another admin's disband; check gates, regeneration
+  and terminal versus typed-failure outcomes.
+
+<a id="sc-072"></a>
+
+### SC-072. Relayed push records overwrite sibling devices or cross a proof context
+
+- **Attacker and prerequisites:** A member relays another account's signed token records and can alter the
+  carrier, entry fields or destination group.
+- **Attack sequence:** It changes a leaf/platform/server/relay hint, reuses a proof in another group or record
+  class, or a recipient stores records by account alone so one sibling's update/removal overwrites another.
+- **Affected property and assumptions:** G2 requires the exact feature-specific owner proof under A1; G5 does
+  not turn advisory record state into canonical group state.
+- **Mitigations:** Verify the group-bound kind-451 proof and all bound fields, scope legacy acceptance to legacy
+  groups, and key state by account, leaf index, platform and server within the group. A carrier need not be the
+  owner.
+- **Residual risk:** Account-key signatures do not establish distinct device consent. The signed leaf index and
+  the removed-leaf replay question need the separate analysis in [SC-085](#sc-085); accepting a relayed record
+  is not a delivery guarantee.
+- **Normative owners:** [Owner authentication](features/push-notifications.md#owner-authentication), [Current
+  and legacy verification](features/push-notifications.md#current-and-legacy-group-verification), [Record
+  key](features/push-notifications.md#record-key-and-ordering-primitive).
+- **Verification status:** Unverified — candidate check: mutate each bound field and proof class, relay
+  unchanged records under another sender, and update/remove one of two sibling records; require per-entry
+  rejection and preservation of the other key.
+
+<a id="sc-073"></a>
+
+### SC-073. A stale signed push record resurrects a revoked token after tombstone loss
+
+- **Attacker and prerequisites:** A current member retains an earlier valid owner-signed record; another client
+  has processed its removal or replacement.
+- **Attack sequence:** The attacker rewraps the old record in a fresh in-window list response, possibly many
+  epochs later or after restart, and the recipient has expired its tombstone or ordering stamp.
+- **Affected property and assumptions:** G5 and A6 govern durable local ordering evidence; MLS payload age is
+  not a lifetime bound on independently relayed signed records.
+- **Mitigations:** Compare owner timestamp and canonical record digest, never carrier time or arrival order.
+  Persist live stamps and winning tombstones for the owning leaf's lifetime, including removals received before
+  their record; snapshots relay tombstones too.
+- **Residual risk:** A legitimately higher owner stamp can re-establish a record. Owner-key compromise remains
+  outside this ordering defense; clearing state on leaf removal has the separate boundary in [SC-085](#sc-085).
+- **Normative owners:** [Record ordering](features/push-notifications.md#record-key-and-ordering-primitive),
+  [Removal and tombstones](features/push-notifications.md#removal-and-tombstones), [Snapshot on
+  add](features/push-notifications.md#snapshot-on-add).
+- **Verification status:** Unverified — candidate check: permute remove-before-record, equal-timestamp digest
+  ties and stale lists across epochs/restarts; include a new joiner receiving a snapshot and require identical
+  per-key high-water outcomes.
+
+<a id="sc-074"></a>
+
+### SC-074. Incomplete push snapshots or hostile announces suppress repair or amplify replies
+
+- **Attacker and prerequisites:** A member omits records/tombstones or lies in an announce's have list; network
+  loss and offline top-ranked responders can also create gaps.
+- **Attack sequence:** A joiner treats a partial snapshot as authoritative absence, a responder lets have delete
+  state, or every sibling device replies to repeated requests instead of applying leaf-ranked bounds.
+- **Affected property and assumptions:** Push repair needs execution, resources and eventual delivery assumptions
+  beyond G6's canonical-state claim (A4–A5); incompleteness must not weaken G3–G5 group processing.
+- **Mitigations:** Snapshots have no end marker and are not completeness proofs. Apply owner-verified records
+  individually; have never writes state. Use the announce's source-epoch leaf ranking, top-three responders,
+  cancellation, catch-up handling, array/size bounds and per-announcer-leaf reply guidance.
+- **Residual risk:** The one-reply-per-24-hours limit is SHOULD guidance; malicious members can ignore it or use
+  multiple leaves. Missing or censored replies can delay wake coverage indefinitely without invalidating group
+  messages.
+- **Normative owners:** [Snapshot on add](features/push-notifications.md#snapshot-on-add),
+  [Repair](features/push-notifications.md#repair), [Event size](features/push-notifications.md#event-size),
+  [Validation](features/push-notifications.md#validation).
+- **Verification status:** Unverified — candidate check: reorder split snapshots, omit tombstones, forge have
+  contents, replay announces and vary siblings/offline ranks; check that replies are bounded for conforming
+  devices, absence never deletes records and messages continue.
+
+<a id="sc-075"></a>
+
+### SC-075. A removed member keeps using copied encrypted tokens as wake capabilities
+
+- **Attacker and prerequisites:** A former or malicious member copied an EncryptedToken while it could read
+  group token gossip.
+- **Attack sequence:** After record removal or member eviction, it builds fresh triggers containing the copied
+  token and fresh padding; the notification server can still decrypt and dispatch it.
+- **Affected property and assumptions:** G1 does not revoke a previously disclosed capability. G7 and A8 include
+  notification-server/platform correlation and abuse boundaries.
+- **Mitigations:** Honest clients stop selecting removed/superseded records. The feature explicitly leaves
+  platform-token replacement, server abuse controls and key rotation to applications/operators; none changes MLS
+  validity.
+- **Residual risk:** The server has no MLS membership or tombstone view and cannot prove token currency. Record
+  removal offers no cryptographic revocation of a copied wake capability; trigger deduplication only limits
+  identical-content replay.
+- **Normative owners:** [Best-effort revocation](features/push-notifications.md#best-effort-revocation), [Replay
+  and freshness](features/push-notifications.md#replay-and-freshness), [Server
+  retention](features/push-notifications.md#server-retention).
+- **Verification status:** Unverified — candidate check: retain a token, remove its record and owning leaf, then
+  send both identical-content and freshly padded triggers; demonstrate the revocation limit without treating a
+  wake as proof of group membership or fetchable content.
+
+<a id="sc-076"></a>
+
+### SC-076. Trigger construction causes false replay suppression or unintended native wakes
+
+- **Attacker and prerequisites:** A buggy sender reuses trigger padding or uses a real encrypted token as
+  padding; a relay can rewrap an old trigger.
+- **Attack sequence:** Distinct sends with unchanged token chunks produce the same content hash and are
+  suppressed as replays, or supposed padding decrypts to an unrelated live device token and generates a spurious
+  wake.
+- **Affected property and assumptions:** A2 is needed for fresh trigger randomness; G6 does not promise wake
+  delivery, and G5 requires push failure to remain advisory.
+- **Mitigations:** Append fresh independently random padding chunks, never real device tokens. Deduplicate
+  decoded content hashes rather than outer wrap ids, and enforce trigger byte/chunk bounds before expensive
+  crypto.
+- **Residual risk:** The server cannot enforce sender padding and processes well-formed unpadded triggers.
+  Freshly constructed abuse and replay outside the short dedup window remain possible; a wake is not evidence
+  that content exists.
+- **Normative owners:** [Notification trigger](features/push-notifications.md#notification-trigger), [Replay and
+  freshness](features/push-notifications.md#replay-and-freshness), [Padding and
+  batching](features/push-notifications.md#padding-and-batching),
+  [Validation](features/push-notifications.md#validation).
+- **Verification status:** Unverified — candidate check: compare independently constructed triggers for the same
+  records, rewrap an identical one, reuse padding, inject a real token as padding and exceed the chunk cap;
+  distinguish construction defects from server-valid advisory input.
+
+<a id="sc-077"></a>
+
+### SC-077. A preview survives its epoch or a losing start anchor
+
+- **Attacker and prerequisites:** A member is removed or convergence invalidates the experimental stream's MLS
+  start payload while a broker still holds records.
+- **Attack sequence:** The sender continues using old epoch keys, or a receiver leaves withdrawn preview text
+  visible and treats its checkpoint/hash as belonging to a new start or later final message.
+- **Affected property and assumptions:** G1 access boundaries require the epoch discipline under A1–A2; G4–G5
+  require withdrawal with the authenticated branch.
+- **Mitigations:** Close the sender's old stream on accepted epoch change. When the start is invalidated, sender
+  and receivers stop and withdraw its preview; bind records, checkpoints and transcript to that exact start and
+  never reuse them for another.
+- **Residual risk:** Previously delivered text and copied keys cannot be erased. Broker deletion cannot be
+  verified, and a current member can still forge provisional data as in [SC-063](#sc-063).
+- **Normative owners:** [Epoch behavior](features/agent-text-streams-quic.md#epoch-behavior), [Key
+  derivation](features/agent-text-streams-quic.md#key-derivation), [Short
+  replay](transports/quic.md#short-replay).
+- **Verification status:** Unverified — candidate check: remove the sender/recipient, change epoch and supersede
+  the start branch during live delivery and reconnect; require proper stop/withdrawal and refusal to attach old
+  records to a fresh start.
+
+<a id="sc-078"></a>
+
+### SC-078. Broker replay, missing records or context confusion changes the preview transcript
+
+- **Attacker and prerequisites:** An untrusted experimental broker can replay, omit, reorder or cross-deliver
+  ciphertext records and choose reconnect backlog.
+- **Attack sequence:** A receiver uses arrival order, mixes rooms or start anchors, skips non-text records in
+  hashing, or presents a gapped stream as verified against an unrelated final.
+- **Affected property and assumptions:** G1 relies on the exact AEAD/key context under A1–A2; authoritative G2
+  remains the final MLS payload, not a broker or transcript hash.
+- **Mitigations:** Bind raw MLS group id, epoch, account, stream and start in the specified context. Accept each
+  sequence once and in order, backfill gaps or mark unverifiable, hash every record type, and check final
+  anchors/hash/count; progress/status are not answer text or automation input.
+- **Residual risk:** Correct sequence/transcript checks detect corruption or incompleteness but cannot force
+  backfill or authenticate previews against a current member. Receivers without preview support can still
+  display the final message.
+- **Normative owners:** [Key derivation](features/agent-text-streams-quic.md#key-derivation), [QUIC
+  records](features/agent-text-streams-quic.md#quic-records), [Transcript
+  hash](features/agent-text-streams-quic.md#transcript-hash), [Final
+  message](features/agent-text-streams-quic.md#final-message), [Reconnect](transports/quic.md#reconnect).
+- **Verification status:** Unverified — candidate check: duplicate/drop/reorder frames, mutate each context
+  field including variable-length MLS group ids, switch brokers, omit status records from hashing and substitute
+  final anchors; require no false verified preview or durable side effect.
+
+<a id="sc-079"></a>
+
+### SC-079. Unauthenticated broker clients exhaust rooms, queues or framing budgets
+
+- **Attacker and prerequisites:** An outsider can connect to an experimental broker, or learns a stream/start
+  room pair; broker availability is the asset.
+- **Attack sequence:** It opens many rooms/subscriptions, stalls frame reads, sends oversized length prefixes or
+  claims a room to interfere with the real publisher.
+- **Affected property and assumptions:** G6 remains conditional on resources and fairness (A5); TLS hop
+  authentication and room knowledge do not establish MLS publisher authority.
+- **Mitigations:** Enforce ALPN/control roles, exact room separation, the fixed framed-record ceiling, read/idle
+  timeouts and bounded queues, backlog bytes, rooms and connections. End-to-end validation still protects
+  preview consumers.
+- **Residual risk:** A room pair is a routing key, not an authorization credential. Publisher admission and
+  room-claim interference remain a design boundary tracked in
+  [#344](https://github.com/marmot-protocol/marmot/issues/344); ciphertext integrity does not ensure broker
+  availability.
+- **Normative owners:** [Broker-relayed delivery](transports/quic.md#broker-relayed), [Record
+  framing](transports/quic.md#record-framing), [Limits](transports/quic.md#limits), [Preview
+  authenticity](features/agent-text-streams-quic.md#preview-authenticity).
+- **Verification status:** Unverified — candidate check: flood rooms/subscribers, stall partial frames, exceed
+  length/backlog budgets and race a publisher claim; measure bounded resource use and document admission
+  behavior without claiming a membership-authenticated broker.
+
+<a id="sc-080"></a>
+
+### SC-080. An edit changes another account's text or becomes new conversation activity
+
+- **Attacker and prerequisites:** A member sends kind-1009 edits, or a same-account sibling edits earlier
+  content; the receiver may ingest target and edits in different orders.
+- **Attack sequence:** The receiver trusts a claimed pubkey or e tag instead of authenticated author equality,
+  overlays an unrelated target, or treats the edit as a new chat row, timestamp or unread increment.
+- **Affected property and assumptions:** G2 requires MLS-authenticated account identity under A1–A3; G5 includes
+  the specified edit projection rather than arbitrary app-event presentation.
+- **Mitigations:** Honor edits only for the original message's authenticated account author, including another
+  valid leaf of that account. Preserve original kind, position and ordering timestamp; do not add a chat row or
+  advance unread. Latest inner created_at selects the overlay; missing targets may be boundedly held or dropped.
+- **Residual risk:** An author can rewrite its own message; saved originals persist outside protocol control.
+  Equal-timestamp conflicting edits lack an explicit tie-break in the owning section, so this document claims no
+  unique result for that case.
+- **Normative owners:** [Message edits](foundation/application-messages.md#message-edits-kind-1009), [Receiver
+  authentication](foundation/application-messages.md#receiver-authentication).
+- **Verification status:** Unverified — candidate check: deliver foreign-account and sibling-account edits
+  before/after targets, vary projected kinds and timestamps, and include conflicting equal timestamps; verify
+  required projection and record the unresolved tie behavior.
+
+<a id="sc-081"></a>
+
+### SC-081. A member-authored system notice masquerades as a derived state fact
+
+- **Attacker and prerequisites:** A current member or connector can send a kind-1210 free-text notice with
+  plausible actor/subject fields.
+- **Attack sequence:** The notice claims a member was removed, an admin changed or the group disbanded, and the
+  application renders it with the provenance or state effects of a locally synthesized canonical notification.
+- **Affected property and assumptions:** G2 authenticates the message's author, not its assertion. G3–G5 derive
+  membership, authority and lifecycle effects from authenticated canonical state under A1 and A4.
+- **Mitigations:** Use state notifications as authoritative and derive system rows from their changes. Treat
+  sent kind-1210 events as assertions by their sender; their contents cannot mutate membership or lifecycle. The
+  owning section separates system rows from chat bodies.
+- **Residual risk:** The exact presentation distinction for sent versus derived notices remains a review concern
+  ([#310](https://github.com/marmot-protocol/marmot/issues/310)). A convincing authored assertion can still
+  socially mislead users even when it has no protocol effect.
+- **Normative owners:** [Group system events](foundation/application-messages.md#group-system-events-kind-1210),
+  [Inbound processing](protocol-core/inbound-processing.md), [Lifecycle
+  realization](app-components/group-lifecycle-v1.md#convergence-and-realization).
+- **Verification status:** Unverified — candidate check: send forged membership/admin/disband notices alongside
+  real canonical changes; require unchanged protocol state and review whether the interface communicates
+  distinct provenance and the actual actor.
+
+<a id="sc-082"></a>
+
+### SC-082. Draft moderation uses current authority instead of the event's source branch
+
+- **Attacker and prerequisites:** A member sends a draft-feature deletion/dismissal before gaining admin status,
+  or a valid admin event arrives after its author was demoted.
+- **Attack sequence:** The receiver checks its current admin list or event timestamp, allowing a later promotion
+  to authorize an earlier action or letting a demotion undo an already authorized one. A missing target or
+  pruned source state hides the error.
+- **Affected property and assumptions:** G2–G3 require authenticated source-epoch authority on the event's
+  branch; G5 and A6 require retaining established authorization evidence.
+- **Mitigations:** For this draft feature, check active-admin status at the authenticated source state. Bind
+  retained verdicts to event and branch; unproven authority is not permission. Check same-group references,
+  target kinds and each label reference independently.
+- **Residual risk:** An authorized admin can still hide legitimate content; reports are not votes. Missing
+  evidence may prevent applying an action, and pruning cannot manufacture authority or revoke a previously
+  established verdict.
+- **Normative owners:** [Moderation
+  authorization](features/content-moderation.md#authorization-and-existing-protocol-rules), [Dismissal
+  labels](features/content-moderation.md#dismissal-labels-kind-1985), [Admin
+  deletion](features/content-moderation.md#admin-deletion-kind-4891).
+- **Verification status:** Unverified — candidate check: permute promotion/demotion, source branches, missing
+  targets and state pruning; mix valid/invalid/cross-group references and require only effects supported by
+  source-bound authority.
+
+<a id="sc-083"></a>
+
+### SC-083. Draft deletion destroys content needed when its branch is withdrawn
+
+- **Attacker and prerequisites:** A draft-feature admin deletion is visible before convergence selects another
+  branch; a crash or late-arriving target/edit interrupts presentation.
+- **Attack sequence:** The client erases still-unexpired content immediately, forgets deletion effects on late
+  targets/attachments, or leaves the losing admin event's suppression active after withdrawal.
+- **Affected property and assumptions:** G4–G5 and A6 require selected-branch recomputation and recoverable
+  effects; display suppression is distinct from cryptographic erasure.
+- **Mitigations:** Hide authorized targets, edits and attachments in all views even when they arrive later.
+  Withdraw effects when their admin event is withdrawn; retain otherwise-unexpired content for recomputation
+  while withdrawal remains eligible, without extending retention.
+- **Residual risk:** Once normal retention has expired, this feature does not restore content. Unsupported or
+  hostile clients can keep displaying saved copies, and a dismissal is not an undo of a deletion.
+- **Normative owners:** [Admin deletion](features/content-moderation.md#admin-deletion-kind-4891), [Moderation
+  and convergence](features/content-moderation.md#authorization-and-existing-protocol-rules), [Retained
+  history](protocol-core/retained-history.md), [Message retention](app-components/message-retention-v1.md).
+- **Verification status:** Unverified — candidate check: delete before target/edit arrival, restart during
+  hide/apply, then supersede the action's branch before/after retention expiry; compare all views and reversible
+  effective state without extending content lifetime.
+
+<a id="sc-084"></a>
+
+### SC-084. A report exposes its author or quoted content beyond the expected audience
+
+- **Attacker and prerequisites:** A user reports abuse through the draft moderation feature believing the
+  submission is private to admins or will disappear with the target.
+- **Attack sequence:** The group receives the reporter's identity and explanatory content; an adversarial member
+  retaliates, or retains a quotation after the original chat message is hidden.
+- **Affected property and assumptions:** G1 protects against outsiders under A1–A2, not other group recipients;
+  G7 does not promise private reporting or anonymous moderation.
+- **Mitigations:** The draft feature explicitly sends reports to all members and limits admin deletion to chat
+  targets. Applications can explain that audience and avoid implying that deletion of a target erases its report
+  explanations.
+- **Residual risk:** Report confidentiality from other members and erasure of quoted material are not provided.
+  A future private-report design would need its own audience, key and abuse analysis.
+- **Normative owners:** [Moderation overview](features/content-moderation.md),
+  [Reports](features/content-moderation.md#reports-kind-1984), [Admin
+  deletion](features/content-moderation.md#admin-deletion-kind-4891).
+- **Verification status:** Unverified — candidate check: observe a report from ordinary member and admin
+  clients, delete the target and inspect retained report text; ensure product descriptions do not promise a
+  private or anonymous channel.
+
+<a id="sc-085"></a>
+
+### SC-085. Removed-device push records reappear while the account still has another leaf
+
+- **Attacker and prerequisites:** A member retained a valid account-signed record for a device leaf that is
+  later removed; the account remains a current member through a sibling leaf.
+- **Attack sequence:** Canonical cleanup deletes that leaf's records and tombstones. The old signed record then
+  arrives in a new list response; account membership still passes and no per-key high-water mark remains.
+- **Affected property and assumptions:** G2 binds an owner account and signed index, but does not itself
+  establish that the indexed device is currently active. Push is advisory, so this ambiguity must not alter
+  G3–G5 group validity.
+- **Mitigations:** The feature requires leaf-specific cleanup and owner verification, while [SC-073](#sc-073)
+  covers lifetime ordering. The current text explicitly checks current account membership but does not
+  explicitly specify a matching current leaf/account check on each relayed entry; this needs maintainer
+  resolution.
+- **Residual risk:** Without that check or another defined rule, a removed device's record may be reintroduced
+  while its account stays present. Even a clarified client rule would not revoke an already copied server wake
+  capability ([SC-075](#sc-075)).
+- **Normative owners:** [Current group
+  verification](features/push-notifications.md#current-and-legacy-group-verification), [Token
+  entries](features/push-notifications.md#token-entries-kinds-447-and-448), [Race handling and leaf
+  cleanup](features/push-notifications.md#race-handling).
+- **Verification status:** Unverified — candidate check: remove one of two leaves, clear exactly the specified
+  records/tombstones, then relay the removed leaf's old proof and an owner-signed nonexistent leaf index; record
+  the current ambiguity and require a specified result before claiming removed-device record exclusion.
+
+## Questions for maintainer review
+
+These are limits or ambiguities found while reviewing the current scenario paths, not new requirements or claims that
+an implementation is vulnerable. Resolve a protocol change in its owning surface before using it as a mitigation.
+
+- **Push leaf lifetime ([SC-085](#sc-085)):** Must each incoming record/removal name a current leaf whose account matches
+  the owner? The existing account-membership check and leaf-cleanup rules do not explicitly settle replay after that
+  leaf leaves while its account remains. Define entry handling, including signed nonexistent indices and leaf reuse.
+- **Edit ties ([SC-080](#sc-080)):** Is arrival-dependent selection acceptable for different edits with equal
+  `created_at`, or is a deterministic tie-break required? The current edit section only orders by that timestamp;
+  do not claim a uniquely converged overlay without resolving this case.
+- **System-notice provenance ([SC-081](#sc-081)):** What presentation distinction prevents a sent kind-1210 assertion
+  from appearing to be a derived canonical fact? [#310](https://github.com/marmot-protocol/marmot/issues/310) tracks this
+  boundary; the authenticated sender and canonical-change source must remain distinct.
+- **Experimental broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
+  when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) tracks the
+  injection/admission concern. Room routing and end-to-end ciphertext validation alone do not answer it.
 
 ## Surface coverage
 
@@ -1774,16 +2089,16 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | --- | --- |
 | [Identity](foundation/identity.md), [authorization proofs](foundation/authorization-proofs.md), [current account proof](app-components/account-identity-proof-v2.md), [legacy account proof](foundation/account-identity-proof-v1.md) | A1–A3, G2–G3, T3–T5, T11; legacy proof is superseded. |
 | [KeyPackages](foundation/key-packages.md), [MLS profile](foundation/mls-protocol.md) | A1–A3, T3–T4; cryptographic inheritance and retained join exposure. |
-| [Canonical encoding](foundation/canonical-encoding.md), [app payloads](foundation/application-messages.md), [wire envelopes](foundation/wire-envelopes.md), [registries](foundation/registries.md), [errors](foundation/errors.md), [conformance](foundation/conformance.md) | G2–G5, T2, T5, T7; exact identities, validation, dispositions and observable equivalence. |
+| [Canonical encoding](foundation/canonical-encoding.md), [app payloads](foundation/application-messages.md), [wire envelopes](foundation/wire-envelopes.md), [registries](foundation/registries.md), [errors](foundation/errors.md), [conformance](foundation/conformance.md) | G2–G5, T2, T5, T7; exact identities, validation, dispositions and observable equivalence; [SC-080](#sc-080)–[SC-081](#sc-081). |
 | [Group setup](protocol-core/group-setup.md), [joining](protocol-core/joining.md), [group messaging](protocol-core/group-messaging.md), [member departure](protocol-core/member-departure.md), [group state](protocol-core/group-state.md) | G2–G6, T3–T5, T7; admission, policy, membership and lifecycle gates. |
 | [Publish lifecycle](protocol-core/publish-lifecycle.md), [inbound processing](protocol-core/inbound-processing.md), [convergence](protocol-core/convergence.md), [retained history](protocol-core/retained-history.md), [durability](protocol-core/durability.md) | A4–A7, G4–G6, T2, T6–T7; scheduling versus safety, evidence retention and restart. |
-| [Admin policy](app-components/admin-policy-v1.md), [account devices](app-components/account-devices-v1.md), [group lifecycle](app-components/group-lifecycle-v1.md) | G3, T3–T5, T7; parent-relative authority, device approval and terminal effects. |
+| [Admin policy](app-components/admin-policy-v1.md), [account devices](app-components/account-devices-v1.md), [group lifecycle](app-components/group-lifecycle-v1.md) | G3, T3–T5, T7; parent-relative authority, device approval and terminal effects; [SC-069](#sc-069)–[SC-071](#sc-071). |
 | [Group profile](app-components/group-profile-v1.md), [avatar URL](app-components/group-avatar-url-v1.md), [group image](app-components/group-blossom-image-v1.md), [message retention](app-components/message-retention-v1.md) | A8, G3, T5, T8; authenticated data versus trusted endpoints, retained capabilities and deletion limits. |
 | [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8, T11; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
 | [Nostr routing component](app-components/nostr-routing-v1.md), [Nostr transport](transports/nostr.md) | A7–A8, G7, T1–T2, T6; signed routing, outer metadata, replay and availability. |
-| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content. |
-| [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service and platform boundary. |
-| [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state admin authority and conforming-client display effects. |
+| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
+| [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
+| [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
 
 ## Formalization and review boundary
 

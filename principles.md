@@ -191,7 +191,7 @@ Review the following with the owning rule:
 - What can a malicious member, former member, compromised device, or external service still do?
 - Does the change alter an intended guarantee, an accepted limitation, or an unresolved design question?
 - Which detailed scenarios change, and does their attack sequence or residual risk need updating? Preserve stable
-  scenario identifiers and record the disposition of merged, superseded or excluded historical threats.
+  scenario identifiers, check new attack paths against the current owning rules, and identify unresolved questions.
 - Which evidence supports it: a design argument, model check with bounds, proof under assumptions, wire vector,
   implementation test, or deployment observation?
 
