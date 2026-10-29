@@ -98,16 +98,17 @@ KeyPackage of the account. Nothing else raises a sign-in: not a publication that
 and not a Welcome on its own.
 
 A check is complete when it read every relay the account publishes its KeyPackages to (on the Nostr binding, its
-write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication") with no lower time
-bound, and each of them ended both of its answers, the one for the KeyPackages and the one for the deletion requests,
-without failing or timing out. Each answer is judged on its own: one that holds as many events as the device asked for
-in that query may have more behind it. The device MAY page further back with an upper time bound (on the Nostr binding,
-`until` set to the oldest `created_at` of the page before, removing the events it already has); the answer is whole once
-a page holds fewer events than the device asked for, and stays cut if the pages stop moving back. A relay that cuts its
-answer at a lower limit of its own looks whole, so a device SHOULD ask a relay for no more events than the limit it
-advertises (on the Nostr binding, the `max_limit` in its NIP-11 relay information document). A read with a lower time
-bound, such as one resumed with `since`, and what a live subscription delivers may show slots, but never complete a
-check. A check that is not complete still shows what it found, but proves nothing missing.
+write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication") with no time bound,
+and each of them ended both of its answers, the one for the KeyPackages and the one for the deletion requests, without
+failing or timing out and with fewer events than the device asked for in that query, counting every event the relay
+sent. An answer that holds as many events as the device asked for may have more behind it, so the check is not complete,
+and reading further back does not make it so. A relay that cuts its answer at a lower limit of its own looks whole, so a
+device SHOULD ask a relay for no more events than the limit it advertises (on the Nostr binding, the `max_limit` in its
+NIP-11 relay information document). A read with a time bound, such as one resumed with `since`, and what a live
+subscription delivers may show slots, but never complete a check. A check that is not complete still shows what it
+found, but proves nothing missing. An account with more KeyPackage publications or deletion requests than one answer
+holds therefore never has a complete check: its sign-ins stay listed and can be answered, but none is marked as no
+longer signed in.
 
 A slot that counts is an unrecognized sign-in unless it is:
 
@@ -137,10 +138,10 @@ Nothing published says which of two devices signed in first. A slot's only publi
 whoever holds the account's signing key chooses that time.
 
 - Every slot that a device's first check returns belongs to a device that was signed in before it, whether or not the
-  slot counts then. The first check is the first read of all the account's KeyPackages with no lower time bound, after
-  the device signs in or after its client gains these rules, that finishes with at least one relay having answered. It
-  covers every slot that read returns, from every relay in it, including a slot whose publication is not fresh or not
-  valid. Fetching the one KeyPackage a Welcome names, a read resumed with `since` and a live subscription are never the
+  slot counts then. The first check is the first read of all the account's KeyPackages with no time bound, after the
+  device signs in or after its client gains these rules, that finishes with at least one relay having answered. It
+  covers every slot that one read returns, from every relay in it, including a slot whose publication is not fresh or
+  not valid. Fetching the one KeyPackage a Welcome names, a read with a time bound and a live subscription are never the
   first check, and until the first check has happened the device lists no sign-in. The device keeps, across restarts,
   that its first check happened and the id of every slot it returned, so a later check is never taken for it and those
   slots keep their class. The first time such a slot is an unrecognized sign-in, at the first check or later, the device
@@ -151,8 +152,8 @@ whoever holds the account's signing key chooses that time.
 - A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
   decides only whether a slot counts. When a sign-in appeared and when it last published are for display only.
 
-A slot the first check missed, for example because a relay did not answer, is a new sign-in when a later check finds
-it. That errs toward asking.
+A slot the first check missed, for example because a relay did not answer or an answer was full, is a new sign-in when a
+later check finds it. That errs toward asking.
 
 Once a sign-in is listed, a later check that finds it again does not ask about it again: only the user's answers and the
 roster change how it is listed ([Answers](#answers), [Any one device's answer](#any-one-devices-answer)).
@@ -204,9 +205,10 @@ and is not shared.
 When a complete check finds that the slot of a listed sign-in no longer holds a valid, fresh KeyPackage, for example
 because a deletion covers it, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it
 cannot be linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait
-for the user to be asked, and delete the publication before the user saw it. A device decides that a slot is empty only
-from a complete check, never from one that failed. When a later check finds a valid, fresh KeyPackage in that slot
-again, the sign-in is signed in again and can be linked; any answer the user gave it stands.
+for the user to be asked, and delete the publication before the user saw it. When a later complete check finds a valid,
+fresh KeyPackage in that slot again, the sign-in is signed in again and can be linked; any answer the user gave it
+stands. A check that is not complete changes neither: a device decides that a slot is empty, or holds a KeyPackage
+again, only from a complete check.
 
 ## Matching leaves to devices
 

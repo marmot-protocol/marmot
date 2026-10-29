@@ -27,8 +27,9 @@ copy of a real device's. A device with no device group keeps its rejections and 
 creates or joins. A device keeps its rejections until the roster holds the slot as a device, commits one again whenever
 the roster has no entry for that slot, and never replaces an entry. A link or rejection on one device ends the question
 on all of them while the roster holds it. A device keeps its list of sign-ins and its answers across restarts. A sign-in
-whose slot a complete check finds empty stays listed, and can be linked again once the slot holds a valid, fresh
-KeyPackage. Clients that do not support `0x800e` change nothing.
+whose slot a complete check finds empty stays listed, and can be linked again once a complete check finds a valid, fresh
+KeyPackage in the slot. A check is complete only from one unbounded answer per query from every relay, each short of the
+limit the device asked for. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 
