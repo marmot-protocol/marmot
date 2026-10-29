@@ -4,9 +4,10 @@ Status: draft.
 
 Device pairing lets a new device and one of the account's existing devices authenticate each other before the new
 device joins the account's device group. Each device shows a short code, and the user checks that the two codes match.
-They match only if nobody sits between the two devices. The exchange ends in a confirmed link with two parts: the new
-device's exact `KeyPackageRef`, which the existing device may add, and the id of the group it will add it to. That
-group is the only one whose Welcome the new device accepts under this link.
+They match only if nobody sits between the two devices. The exchange ends in a confirmed link with three parts: the
+new device's exact `KeyPackageRef`, which the existing device may add; the id of the group it will add it to; and the
+MLS signature key of the existing device's leaf in that group. The new device accepts a Welcome under this link only
+into that group, and only from that leaf.
 
 The exchange is Matrix's short authentication string (SAS) verification: `m.sas.v1` with the `curve25519-hkdf-sha256`
 key agreement and the `hkdf-hmac-sha256.v2` MAC method
@@ -48,8 +49,9 @@ It cannot:
   screen;
 - swap the new device's KeyPackage. Its `KeyPackageRef` is in the commitment, the code and the new device's
   confirmation;
-- pull the new device into a group it controls. The existing device's confirmation covers the group id, and the new
-  device accepts a Welcome only into that group;
+- pull the new device into a group it controls. The existing device's confirmation covers the group id and its own
+  leaf's signature key, and the new device accepts a Welcome only into that group and only from that leaf. Reading the
+  group id lets the attacker found a group under it, but not sign as that leaf;
 - reuse a code. Every session has fresh keys and expires.
 
 Holding the account key never authenticates a device. Only the code compared on both screens does.
@@ -110,13 +112,17 @@ bytes; they use the binary encodings in "Derivations".
 
 ### Confirm
 
-| Member         | Value |
-| -------------- | ----- |
-| `v`            | `1` |
-| `session`      | 32 bytes |
-| `from`         | `"new_device"` or `"existing_device"` |
-| `device_group` | 1 to 255 bytes: the MLS group id of the group the existing device adds the new device to. Present if and only if `from` is `"existing_device"`; never `null` |
-| `mac`          | 32 bytes: the sender's confirmation ("Confirmations") |
+| Member          | Value |
+| --------------- | ----- |
+| `v`             | `1` |
+| `session`       | 32 bytes |
+| `from`          | `"new_device"` or `"existing_device"` |
+| `device_group`  | 1 to 255 bytes: the MLS group id of the group the existing device adds the new device to. Present if and only if `from` is `"existing_device"`; never `null` |
+| `signature_key` | 1 to 133 bytes: the MLS signature public key of the existing device's own leaf in that group, which is the key it creates the group with if the group does not exist yet. Present if and only if `from` is `"existing_device"`; never `null` |
+| `mac`           | 32 bytes: the sender's confirmation ("Confirmations") |
+
+133 bytes is the longest MLS signature public key, a P-521 point. With the longest group id, the existing device's
+Confirm stays within the 1024-byte limit.
 
 ### Cancel
 
@@ -186,7 +192,7 @@ and gives that text to screen readers. Matrix's decimal method is not used.
 
 ```text
 enum { new_device(1), existing_device(2), (255) } PairingConfirmSender;
-enum { key_package_ref(1), device_group_id(2), (255) } PairingConfirmItem;
+enum { key_package_ref(1), device_group(2), (255) } PairingConfirmItem;
 
 struct {
     opaque label<V> = "marmot-pairing-v1-mac";
@@ -200,12 +206,17 @@ struct {
 
 mac_key = HKDF(info = PairingMacInfo, length = 32)
 mac     = HMAC-SHA256(mac_key, opaque value<V>)
+
+struct {
+    opaque group_id<V>;
+    opaque signature_key<V>;
+} PairingDeviceGroup;
 ```
 
 - The new device's confirmation has `sender = new_device`, `item = key_package_ref`, and `value` is its own
   `KeyPackageRef` from the request.
-- The existing device's confirmation has `sender = existing_device`, `item = device_group_id`, and `value` is the
-  `device_group` it sends.
+- The existing device's confirmation has `sender = existing_device`, `item = device_group`, and `value` is the
+  `PairingDeviceGroup` of the `device_group` and `signature_key` it sends.
 
 A receiver MUST compare MACs in constant time.
 
@@ -220,12 +231,14 @@ A receiver MUST compare MACs in constant time.
 3. Its user decides once, at any time while the code is on screen. If the codes differ, it sends Cancel
    `mismatched_code` and ends the session. If they match, it holds its Confirm until the existing device's Confirm
    has been verified.
-4. When the existing device's Confirm arrives, it checks the MAC over the named `device_group`. If the check fails, it
-   sends Cancel `mismatched_confirm` and ends the session.
+4. When the existing device's Confirm arrives, it checks the MAC over the named `device_group` and `signature_key`. If
+   the check fails, it sends Cancel `mismatched_confirm` and ends the session.
 5. Once its user has confirmed and the existing device's Confirm has been verified, it sends its Confirm, and the link
    is confirmed. It MUST NOT send its Confirm before then. The new device MUST NOT accept a Welcome under this link
-   into any group other than the one the existing device's Confirm named. A Welcome into a group that no confirmed
-   link named does not make that group the device group ([device-group.md](./device-group.md), "Trust").
+   into any group other than the one the existing device's Confirm named, nor one whose sender has any signature key
+   other than the one it named. The sender is the leaf at the `signer` index of the Welcome's `GroupInfo`, whose
+   signature key verifies that `GroupInfo`. A Welcome into a group that no confirmed link named does not make that
+   group the device group ([device-group.md](./device-group.md), "Trust").
 
 ### Existing device
 
@@ -243,12 +256,15 @@ A receiver MUST compare MACs in constant time.
    - if the shared secret is invalid, it sends Cancel `unexpected_message` and ends the session;
    - otherwise it derives the code and shows it.
 5. Its user decides once. If the codes match, the user chooses the group to add the new device to, and the device sends
-   its Confirm with that group's id. If they differ, it sends Cancel `mismatched_code` and ends the session.
+   its Confirm with that group's id and the signature key of its own leaf in it. For a group it has not created yet,
+   that is the key it will create the group with. If the codes differ, it sends Cancel `mismatched_code` and ends the
+   session.
 6. It ignores a new device's Confirm that arrives before it has sent its own. When the new device's Confirm arrives
    after that, it checks the MAC over the request's `key_package_ref`. If the check fails, it sends Cancel
    `mismatched_confirm` and ends the session.
 7. When the new device's Confirm has been verified, the link is confirmed. The device MAY then add the KeyPackage with
-   exactly the confirmed `KeyPackageRef`, and no other, to the group its Confirm named. It MUST NOT add it before then.
+   exactly the confirmed `KeyPackageRef`, and no other, to the group its Confirm named, from the leaf whose signature
+   key its Confirm named, so that leaf signs the Welcome's `GroupInfo`. It MUST NOT add it before then.
 
 ### Confirmation order
 
@@ -315,6 +331,10 @@ or a Request.
 - **A code on one screen only.** An attacker that answers first, posing as an existing device, gets a code onto the new
   device's screen. The user's real devices then show none, because the Reveal names another slot.
 - **Competing requests** cost an attacker nothing to send. They block linking but never cause a link.
+- **A Welcome from another leaf.** Anyone holding the account key can read the group id in the existing device's
+  Confirm and found a group under it, adding the new device's published KeyPackage. The new device refuses that
+  Welcome, because its sender is not the leaf the Confirm named. It refuses before joining, so a forged Welcome that
+  arrives first leaves the KeyPackage and the group id for the real one.
 - **A forged Cancel** from anyone holding the account key can end any session, and can withdraw a new device's link
   after the existing device has confirmed it. The existing device may then add a device that refuses the Welcome. This
   is denial of service only: the added leaf is the new device's own KeyPackage, so the attacker adds no member of its
@@ -336,6 +356,7 @@ key_package_event_id   = b14e210763b9624f3779a7cbec5dac11d70295378309adea4e641ad
 key_package_ref        = f902a495dfe13081eeacb9a3e9810b3263036d203763a39cb43743fd859408be
 existing_device_slot   = f1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b7
 device_group_id        = 302cb48c526eec0acf5e92392604784d
+signature_key          = c3286faa8aec5c128744235ee3092a1effc4a48b11ad56070e373556b9dfad33
 new_device_secret      = 0dcf2a8012fdf56921abc17e50febc867232cb93386da5b1fef152d9858666eb
 existing_device_secret = 897378a3d00765ba889939c4b56522c8159ac5ff7f30394e7ad3ed5c9298be43
 
@@ -346,10 +367,11 @@ shared_secret          = 025c75560bdfec692c645d2ebfe9e665e33cfe16ccd79f3ec90c56b
 sas_bytes              = 38b17be5d13a
 emoji                  = 14 11 5 59 57 29 4 (Butterfly, Turtle, Pig, Bell, Guitar, Heart, Unicorn)
 new_device_mac         = c1c0251409411eda04366529b6e42c212dd441615740d317176d5b437d04b977
-existing_device_mac    = 2dac275a1dd473c0d7e12f621570569747547c63852694aef375b7e5e7509678
+existing_device_mac    = 939e0e9477fd499c405bd581c44c984a3012b58eea331666a0cb2651497f7c0e
 ```
 
-`PairingSasInfo`, then the new device's and the existing device's `PairingMacInfo`:
+`PairingSasInfo`, the new device's and the existing device's `PairingMacInfo`, then the existing device's
+`PairingDeviceGroup`:
 
 ```text
 156d61726d6f742d70616972696e672d76312d73617357729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738246dcea7bb990ddcb9d99d168ba8b5caabbff19fd7777447d7170cc00222272320f902a495dfe13081eeacb9a3e9810b3263036d203763a39cb43743fd859408be8655170bbf46c3f293a1b8e0ed2e9b3a4ff77aaaa524eb2311e10cd90dcee45ef1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b782824d142a96277f81727318ddda32774ccaf2727b48a0d7fe7d42164f27eb7c
@@ -357,6 +379,8 @@ existing_device_mac    = 2dac275a1dd473c0d7e12f621570569747547c63852694aef375b7e
 156d61726d6f742d70616972696e672d76312d6d61630157729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738246dcea7bb990ddcb9d99d168ba8b5caabbff19fd7777447d7170cc00222272320f902a495dfe13081eeacb9a3e9810b3263036d203763a39cb43743fd859408bef1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b701
 
 156d61726d6f742d70616972696e672d76312d6d61630257729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738246dcea7bb990ddcb9d99d168ba8b5caabbff19fd7777447d7170cc00222272320f902a495dfe13081eeacb9a3e9810b3263036d203763a39cb43743fd859408bef1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b702
+
+10302cb48c526eec0acf5e92392604784d20c3286faa8aec5c128744235ee3092a1effc4a48b11ad56070e373556b9dfad33
 ```
 
 The content of the Request, Answer, Reveal and the two Confirms:
@@ -366,11 +390,12 @@ The content of the Request, Answer, Reveal and the two Confirms:
 {"v":1,"session":"57729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738","slot":"f1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b7","key":"82824d142a96277f81727318ddda32774ccaf2727b48a0d7fe7d42164f27eb7c"}
 {"v":1,"session":"57729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738","answer_slot":"f1e8d7ff4ec5a09e46a51cc9a316cf243f9ea0cb0dc02eacc0991b035efa02b7","key":"8655170bbf46c3f293a1b8e0ed2e9b3a4ff77aaaa524eb2311e10cd90dcee45e"}
 {"v":1,"session":"57729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738","from":"new_device","mac":"c1c0251409411eda04366529b6e42c212dd441615740d317176d5b437d04b977"}
-{"v":1,"session":"57729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738","from":"existing_device","device_group":"302cb48c526eec0acf5e92392604784d","mac":"2dac275a1dd473c0d7e12f621570569747547c63852694aef375b7e5e7509678"}
+{"v":1,"session":"57729aa88f3b59e101e00eab5a3eaacb091602a0d51437c56a1e986652975738","from":"existing_device","device_group":"302cb48c526eec0acf5e92392604784d","signature_key":"c3286faa8aec5c128744235ee3092a1effc4a48b11ad56070e373556b9dfad33","mac":"939e0e9477fd499c405bd581c44c984a3012b58eea331666a0cb2651497f7c0e"}
 ```
 
-A second vector uses a 64-byte `KeyPackageRef` and a 255-byte group id, whose length prefixes take two bytes. Its
-`device_group_id` is the 32 bytes shown, repeated and truncated to 255 bytes:
+A second vector uses a 64-byte `KeyPackageRef`, a 255-byte group id and a 133-byte signature key, whose length
+prefixes take two bytes. Its `device_group_id` and `signature_key` are the 32 bytes shown, repeated and truncated to
+255 and 133 bytes:
 
 ```text
 account                = 10c8a4e42fed96611d9d09ccea39a1979e78026b429bafaf2c99b7919124388e
@@ -380,6 +405,7 @@ key_package_ref        = d791758d5dd7c744aa44d9e8a3e7c45e2e4ed07bc928ab997688896
                          12ae2a0dca55d03aad3f35c2c9232a46b2e0f9ce4a0a4c0546d11bb20461dce3
 existing_device_slot   = 43cf92ec8e2aab90ba226b8febc33a8fc65b6c89672588e7022233a3642f3589
 device_group_id        = 1b27ff8782165e200c664fe505bb90cb3264611312917a4ecbc6d0b542d96750 (repeated)
+signature_key          = 4cc82df86a0d2ce7d93dd9a0f804dbdc8e5cb3b60558f6f42c849794a19bd1a9 (repeated)
 new_device_secret      = 4d30860f481a8db89eaa7b24818f2f065b3703a49dba1f98be7986febfddc649
 existing_device_secret = dcf3ba787981200bd609928b3c10b3385d3b46286c0db9e7d761db8bd0d97c7b
 
@@ -387,7 +413,7 @@ commitment             = d7396351e1eb534f7620a17c771bb40d885d42e8acfa47cb1aa4c03
 sas_bytes              = 2e3888256ef4
 emoji                  = 11 35 34 8 9 22 59
 new_device_mac         = 4f1e1c74100a03966a1636442e1a1109a8387cf80547ed9b9d7b03aa7fe133e0
-existing_device_mac    = 0e57969927ceb9afc876bbb71c6e55e738f86b743f9a8dce9308fe16bccba070
+existing_device_mac    = 9f3e619fc8dd6c719d9153f00bc6084f3302e68de3d427026f6a8595ab5e26fb
 ```
 
 ## Appendix A: Emoji table

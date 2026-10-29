@@ -22,7 +22,8 @@ for multi-device accounts in [foundation/registries.md](./foundation/registries.
 account compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven emoji
 from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits to its
 key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering device's
-slot and both keys; and the two confirmations cover the `KeyPackageRef` and the id of the group the new device joins.
+slot and both keys; and the two confirmations cover the `KeyPackageRef`, and the id of the group the new device joins
+with the signature key of the existing device's leaf there, the only sender whose Welcome the new device accepts.
 The existing device confirms first, and the new device confirms only after verifying the existing device's
 confirmation. An existing device sends at most 10 Answers an hour, and none while more than one request is live.
 Clients that do not link devices need no changes.
