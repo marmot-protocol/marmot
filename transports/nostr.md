@@ -282,14 +282,14 @@ kind 1059 gift wrap
 - The gift wrap is addressed to the same account identity and published to the account's own kind `10050` inbox
   relays, where every device of the account subscribes ("Subscriptions and fetch rules").
 - The rumor has no tags. Its `content` is the message's content, and its `created_at` is the sender's current time.
-  NIP-59 randomizes the seal's and the gift wrap's timestamps, so only the rumor's is the time the message was sent.
+  NIP-59 randomizes the seal's and the gift wrap's timestamps, so only the rumor's records when the message was sent.
 - The rumor MUST NOT have a `sig` field.
 
 A receiver MUST drop a pairing rumor unless the seal's signer and the rumor's `pubkey` are both its own account
 identity. A receiver ignores a pairing rumor's tags. A gift wrap to the account that carries any other rumor kind is
 not a pairing message.
 
-A device sees its own pairing messages come back from its inbox relays, and ignores them under the session rules.
+A device receives its own pairing messages back from its inbox relays and ignores them under the session rules.
 
 ## KeyPackage publication
 
@@ -563,8 +563,8 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
   account-addressing exception ([../foundation/identity.md](../foundation/identity.md)). The gift wrap and seal hide the
   sender and the inner `kind 444` rumor.
 - Pairing messages are NIP-59 gift wraps addressed to the account that sent them. Relays see a burst of gift wraps to
-  the account while a pairing session runs, as they would for Welcomes, and each gift wrap's size. NIP-44 padding
-  rounds sizes up, but they may still tell the pairing message kinds apart.
+  the account while a pairing session runs, as they would for Welcomes, and the size of each. NIP-44 padding rounds
+  the sizes up, but they may still reveal which kind of pairing message each one carries.
 - kind `30443` KeyPackage events are authored by the account identity, because their purpose is to let others find that
   account's packages. Because each device has one slot, the number of current slots shows roughly how many devices the
   account has. An optional `client` tag also shows which client software a device runs.

@@ -2,21 +2,21 @@
 
 Status: draft.
 
-Device pairing is how a new device of an account and a device the account already has authenticate each other before
-the new device joins the account's devices. Each screen shows a short code, and the user checks that the two match. The
-codes match only when nobody sat between the two devices. The exchange ends in a confirmed link: the new device's
-exact `KeyPackageRef`, which the existing device may add, and the id of the group it adds it to, the only group whose
-Welcome the new device accepts for this link.
+Device pairing lets a new device and one of the account's existing devices authenticate each other before the new
+device joins the account's device group. Each device shows a short code, and the user checks that the two codes match.
+They match only if nobody sits between the two devices. The exchange ends in a confirmed link with two parts: the new
+device's exact `KeyPackageRef`, which the existing device may add, and the id of the group it will add it to. That
+group is the only one whose Welcome the new device accepts under this link.
 
-The exchange is Matrix's short authentication string (SAS) verification, `m.sas.v1` with the `curve25519-hkdf-sha256`
+The exchange is Matrix's short authentication string (SAS) verification: `m.sas.v1` with the `curve25519-hkdf-sha256`
 key agreement and the `hkdf-hmac-sha256.v2` MAC method
 ([Matrix client-server API, "Short Authentication String (SAS) verification"](https://spec.matrix.org/latest/client-server-api/#short-authentication-string-sas-verification)).
-This document transcribes it into Marmot encodings and does not use Matrix's event protocol. It uses Matrix's emoji
-method only; the emoji table is Matrix's own (Appendix A).
+This document transcribes it into Marmot encodings; it does not use Matrix's event protocol. Of Matrix's two code
+methods it uses only emoji, with Matrix's own emoji table (Appendix A).
 
-The non-normative direction, including what users see, is in [../ideas/multi-device.md](../ideas/multi-device.md)
-(Scenes 2 and 4). This document covers the exchange only. What a device does with a confirmed link, such as creating
-the device group, adding the new device to it, or deciding which Welcome makes a group its device group, belongs to the
+The non-normative design, including what users see, is in [../ideas/multi-device.md](../ideas/multi-device.md)
+(Scenes 2 and 4). This document covers only the exchange. What a device does with a confirmed link, such as creating
+the device group, adding the new device to it, or deciding which Welcome makes a group its device group, follows the
 device group's own rules ([device-group.md](./device-group.md)).
 
 ## Surfaces
@@ -32,24 +32,24 @@ device group's own rules ([device-group.md](./device-group.md)).
 
 ## Threat model
 
-Every device of the account can read and send pairing messages. So can anyone else holding the account's signing key.
-Such an attacker can:
+Every device of the account can read and send pairing messages. So can anyone else who holds the account's signing
+key. Such an attacker can:
 
 - read every pairing message, and drop, delay, replay or inject any of them;
 - run its own sessions from its own installation, or answer a new device while posing as an existing one;
-- keep linking blocked for as long as it holds the key, by sending competing requests ("Competing requests"). This
-  denial of service is accepted;
+- block linking for as long as it holds the key, by sending competing requests ("Competing requests"), a denial of
+  service this design accepts;
 - succeed if the user confirms a code they did not compare.
 
 It cannot:
 
-- sit between the devices unseen. Each side's key is fixed before it sees the other's, so an attacker gets one blind
-  guess per session, 1 in 2^42. A wrong guess shows as different
-  codes, or as a code on one screen only;
+- sit between the devices unseen. Each side fixes its key before it sees the other's, so an attacker gets one blind
+  guess per session, with a 1 in 2^42 chance. A wrong guess shows up as different codes, or as a code on only one
+  screen;
 - swap the new device's KeyPackage. Its `KeyPackageRef` is in the commitment, the code and the new device's
   confirmation;
-- pull the new device into a group it controls. The new device's own confirmation, and the group id covered by the
-  existing device's confirmation, prevent that;
+- pull the new device into a group it controls. The existing device's confirmation covers the group id, and the new
+  device accepts a Welcome only into that group;
 - reuse a code. Every session has fresh keys and expires.
 
 Holding the account key never authenticates a device. Only the code compared on both screens does.
@@ -57,10 +57,10 @@ Holding the account key never authenticates a device. Only the code compared on 
 ## Roles
 
 The **new device** has published a KeyPackage into its own publication slot and is not yet linked. It starts the
-session, commits to its key first and reveals it last: Matrix's accepting device.
+session, commits to its key first and reveals it last. In Matrix's terms, it is the accepting device.
 
-An **existing device** is a device of the account that is already linked, or the account's only device. Each existing
-device sees every request; the new device takes the first answer and the session continues with that device alone.
+An **existing device** is a device of the account that is already linked, or the account's only device. Every existing
+device sees every request. The new device takes the first answer, and the session continues with that device alone.
 
 ## Messages
 
@@ -77,8 +77,8 @@ lowercase hexadecimal of the exact length shown. A sender writes the members in 
 
 A reader MUST reject content longer than 1024 bytes; content that is not a JSON object; an unknown, duplicate or missing
 member; a member of the wrong type; and hex that is not lowercase or not of the exact length. It MUST ignore a message
-whose `v` is not `1`, before reading any other member. Nothing a session binds is read from the JSON bytes: the
-commitment, code and confirmations use the binary encodings in "Derivations".
+whose `v` is not `1`, before reading any other member. The commitment, code and confirmations never cover the JSON
+bytes; they use the binary encodings in "Derivations".
 
 ### Request
 
@@ -128,14 +128,14 @@ commitment, code and confirmations use the binary encodings in "Derivations".
 
 Defined reasons: `user`, `timeout`, `mismatched_commitment`, `mismatched_code`, `mismatched_confirm`,
 `unexpected_message`, `competing_requests`, `rate_limited` and `cannot_link`. A reader MUST accept any other reason
-that fits the pattern, and treats it as an unknown reason.
+in that format, and treats it as an unknown reason.
 
 ## Derivations
 
 Every structure below uses the Marmot binary profile
 ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). `account` is the account's 32-byte
 identity. HKDF is HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)) with the shared secret as input
-keying material and no salt, as in Matrix; RFC 5869 then uses 32 zero bytes.
+keying material and no salt, as in Matrix, so RFC 5869 uses 32 zero bytes as the salt.
 
 ### Keys
 
@@ -158,7 +158,7 @@ struct {
 commitment = SHA-256(PairingCommitmentInput)
 ```
 
-This is Matrix's commitment, the hash of the committing device's key and the start message, with the start message
+This is Matrix's commitment, a hash of the committing device's key and the start message, with the start message
 replaced by the fields the request binds.
 
 ### Code
@@ -177,10 +177,10 @@ struct {
 sas_bytes = HKDF(info = PairingSasInfo, length = 6)
 ```
 
-`existing_device_slot` is the `slot` of the answer the new device took. The code is seven emoji, Matrix's emoji method:
-the first 42 bits of `sas_bytes`, most significant first, as seven 6-bit numbers. Each number is an index into the
-table in Appendix A. A device shows each emoji with its English description, or a translation of it, and gives that
-text to screen readers. Matrix's decimal method is not used.
+`existing_device_slot` is the `slot` of the answer the new device took. The code is seven emoji, by Matrix's emoji
+method: the first 42 bits of `sas_bytes`, most significant bit first, split into seven 6-bit numbers. Each number is an
+index into the table in Appendix A. A device shows each emoji with its English description, or a translation of it,
+and gives that text to screen readers. Matrix's decimal method is not used.
 
 ### Confirmations
 
@@ -217,25 +217,26 @@ A receiver MUST compare MACs in constant time.
 2. It takes the first Answer for its session and ignores every later one. If the shared secret is invalid ("Keys"), it
    sends Cancel `unexpected_message` and ends the session. Otherwise it sends a Reveal naming that answer's `slot`,
    derives the code, and shows it.
-3. Its user decides once, at any time while the code shows. If the codes differ, it sends Cancel `mismatched_code`
-   and ends the session. If they match, it holds its Confirm until the existing device's Confirm has verified.
+3. Its user decides once, at any time while the code is on screen. If the codes differ, it sends Cancel
+   `mismatched_code` and ends the session. If they match, it holds its Confirm until the existing device's Confirm
+   has been verified.
 4. When the existing device's Confirm arrives, it checks the MAC over the named `device_group`. If the check fails, it
    sends Cancel `mismatched_confirm` and ends the session.
-5. Once its user has confirmed and the existing device's Confirm has verified, it sends its Confirm, and the link is
-   confirmed. It MUST NOT send its Confirm before then. The new device MUST NOT accept a Welcome under this link into
-   any group other than the one that Confirm named. A Welcome that no confirmed link named does not make its group the
-   device group ([device-group.md](./device-group.md), "Trust").
+5. Once its user has confirmed and the existing device's Confirm has been verified, it sends its Confirm, and the link
+   is confirmed. It MUST NOT send its Confirm before then. The new device MUST NOT accept a Welcome under this link
+   into any group other than the one the existing device's Confirm named. A Welcome into a group that no confirmed
+   link named does not make that group the device group ([device-group.md](./device-group.md), "Trust").
 
 ### Existing device
 
-1. On a Request, it ignores the request if its timestamp is 600 seconds or more in the past, or more than 300 seconds in
-   the future, as Matrix's request rule does. In the Nostr binding the timestamp is the rumor's `created_at`.
+1. It ignores a Request whose timestamp is 600 seconds or more in the past, or more than 300 seconds in the future, as
+   Matrix's request rule does. In the Nostr binding the timestamp is the rumor's `created_at`.
 2. Before it answers, it fetches the KeyPackage publication the request names and validates it under
    [../foundation/key-packages.md](../foundation/key-packages.md) and the transport binding. The publication MUST be the
    account's, and its decoded `KeyPackageRef` MUST equal the request's `key_package_ref`. A device that would not link
    that KeyPackage does not answer; it MAY send Cancel `cannot_link`.
 3. It sends an Answer with a fresh key and its own slot id, subject to "Competing requests" and "Rate limit".
-4. On a Reveal whose `answer_slot` is not its own slot, the new device took another answer. The device ends the
+4. A Reveal whose `answer_slot` is not its own slot means the new device took another answer. The device ends the
    session, whether or not it answered, and sends nothing. On a Reveal naming its own slot, for a session it answered:
    - if the commitment computed from the revealed key and the request does not equal the request's `commitment`, it
      sends Cancel `mismatched_commitment` and ends the session;
@@ -246,41 +247,41 @@ A receiver MUST compare MACs in constant time.
 6. It ignores a new device's Confirm that arrives before it has sent its own. When the new device's Confirm arrives
    after that, it checks the MAC over the request's `key_package_ref`. If the check fails, it sends Cancel
    `mismatched_confirm` and ends the session.
-7. When the new device's Confirm has verified, the link is confirmed. The device MAY then add the KeyPackage with
+7. When the new device's Confirm has been verified, the link is confirmed. The device MAY then add the KeyPackage with
    exactly the confirmed `KeyPackageRef`, and no other, to the group its Confirm named. It MUST NOT add it before then.
 
 ### Confirmation order
 
-The confirmations go in a fixed order: the existing device's first, then the new device's. So when the existing device
-confirms the link, the new device has already verified the group it will join. Either user may confirm at any time; only
-the sending waits. Matrix sends its MACs in either order and ends with `m.key.verification.done`; this exchange orders
-the confirmations instead and has no closing message.
+The confirmations are sent in a fixed order: the existing device's first, then the new device's. By the time the
+existing device confirms the link, the new device has already verified the group it will join. Either user may confirm
+at any time; only the sending waits. Matrix allows its MACs in either order and ends with `m.key.verification.done`;
+this exchange fixes the order instead and has no closing message.
 
 - If the existing device's Confirm is lost, the new device never sends its own. Both sessions expire and nothing is
   added.
 - If the new device's Confirm is lost, the existing device's session expires: it adds nothing and sends Cancel
-  `timeout`. The new device withdraws its link when that Cancel arrives. If the Cancel is lost too, no Welcome comes
+  `timeout`. The new device withdraws its link when that Cancel arrives. If the Cancel is lost too, no Welcome arrives
   under the link.
 
-A confirmed link does not expire under "Expiry" and owes no Cancel `timeout`. How long a new device waits for its
-Welcome belongs to joining the device group, not to this exchange. An existing device acts on its link when it confirms
-it, and need not keep the session after the time it would have expired.
+"Expiry" does not apply to a confirmed link, which owes no Cancel `timeout`. How long a new device waits for its
+Welcome is part of joining the device group, not of this exchange. An existing device acts on its link as soon as the
+link is confirmed, and need not keep the session past the time it would otherwise have expired.
 
 ### Competing requests
 
-A request is live from when a device receives it until it expires or its session ends. While more than one request is
-live, an existing device MUST NOT answer any of them and MUST NOT send a Confirm in any session. Its user is not offered
-a choice between them. A session already showing a code waits; it may continue once the other request is no longer
-live. A device MAY send Cancel `competing_requests` in sessions it answered.
+A request is live from the time a device receives it until it expires or its session ends. While more than one request
+is live, an existing device MUST NOT answer any of them and MUST NOT send a Confirm in any session. Its user is not
+offered a choice between them. A session already showing a code waits; it may continue once the other request is no
+longer live. A device MAY send Cancel `competing_requests` in sessions it answered.
 
 A device MAY bound how many requests it tracks. A request it has no room to track still counts as live until it
 would have expired.
 
 ### Rate limit
 
-An existing device sends at most 10 Answers in any 3600 seconds. Once it has sent 10, it sends no further Answer until
-the oldest of them is 3600 seconds old. A device MAY send Cancel `rate_limited` for a request it does not answer for
-this reason. Only Answers count; requests that are ignored or never answered do not.
+An existing device sends at most 10 Answers in any 3600-second window. Once it has sent 10, it sends no further Answer
+until the oldest of them is 3600 seconds old. A device MAY send Cancel `rate_limited` for a request it does not answer
+for this reason. Only Answers count; requests that are ignored or never answered do not.
 
 ### Expiry
 
@@ -289,8 +290,8 @@ this reason. Only Answers count; requests that are ignored or never answered do 
 | A request with no answer taken | 600 seconds after it was sent, or, at an existing device, after the earlier of its timestamp and its arrival |
 | A session with an answer | 600 seconds after the answer was sent or taken |
 
-When a session expires, a device ends it, shows no code, and sends Cancel `timeout` if it had sent an Answer or a
-Request.
+When a session expires, a device ends it, stops showing its code, and sends Cancel `timeout` if it had sent an Answer
+or a Request.
 
 ### Every session
 
@@ -301,13 +302,13 @@ Request.
   it also withdraws a confirmed link whose Welcome has not arrived. An existing device that has confirmed the link
   ignores it.
 - A device keeps its private key, the shared secret, the code and the MAC keys in memory only, for the life of the
-  session, and erases them when it ends. It MUST NOT write them, or the code, to persistent storage or logs.
+  session, and erases them when it ends. It MUST NOT write any of them to persistent storage or logs.
 
 ## Security considerations
 
 - **One guess per session.** The new device commits to its key before it sees the existing device's key, and the
   existing device sends its key before it sees the new device's. An attacker that takes either role must fix its key
-  before it learns the other, so it matches the code by chance only. This is Matrix's argument, inherited from ZRTP's
+  before it learns the other, so it can match the code only by chance. This is Matrix's argument, inherited from ZRTP's
   hash commitment.
 - **Careless approval.** Nothing catches a user who confirms without comparing. Clients SHOULD make the comparison the
   main thing on screen, and MUST NOT ask the user to type the code or read it to anyone.
@@ -316,17 +317,17 @@ Request.
 - **Competing requests** cost an attacker nothing to send. They block linking but never cause a link.
 - **A forged Cancel** from anyone holding the account key can end any session, and can withdraw a new device's link
   after the existing device has confirmed it. The existing device may then add a device that refuses the Welcome. This
-  is denial of service only: the added leaf is the new device's own KeyPackage, so the attacker gains no member, and
-  the user can remove the leaf.
+  is denial of service only: the added leaf is the new device's own KeyPackage, so the attacker adds no member of its
+  own, and the user can remove the leaf.
 - **The rate limit** bounds how often an attacker can put a prompt in front of the user. It does not bound guesses,
   because each session already allows only one.
-- **Metadata.** Relays see gift wraps addressed to the account, as for Welcomes. The burst of five or more of them
-  within minutes suggests a pairing session. Relays also see each gift wrap's size: NIP-44 padding rounds it up, but
-  the sizes may still tell the message kinds apart.
+- **Metadata.** Relays see gift wraps addressed to the account, as for Welcomes. A burst of five or more within
+  minutes suggests a pairing session. Relays also see each gift wrap's size: NIP-44 padding rounds it up, but the sizes
+  may still reveal which kind of message each one carries.
 
 ## Test vector
 
-This vector covers the derivations and the content. Its inputs are test material only.
+This vector covers the derivations and the message content. Its inputs are test material only.
 
 ```text
 account                = 246dcea7bb990ddcb9d99d168ba8b5caabbff19fd7777447d7170cc002222723
@@ -369,7 +370,7 @@ The content of the Request, Answer, Reveal and the two Confirms:
 ```
 
 A second vector uses a 64-byte `KeyPackageRef` and a 255-byte group id, whose length prefixes take two bytes. Its
-`device_group_id` is the 32 bytes shown repeated, cut to 255 bytes:
+`device_group_id` is the 32 bytes shown, repeated and truncated to 255 bytes:
 
 ```text
 account                = 10c8a4e42fed96611d9d09ccea39a1979e78026b429bafaf2c99b7919124388e
@@ -393,9 +394,8 @@ existing_device_mac    = 0e57969927ceb9afc876bbb71c6e55e738f86b743f9a8dce9308fe1
 
 This table is Matrix's SAS emoji table, `data-definitions/sas-emoji.json` from
 [matrix-org/matrix-spec](https://github.com/matrix-org/matrix-spec/blob/7aaeac07608f97942eff88634a56b630a745ce56/data-definitions/sas-emoji.json)
-at commit `7aaeac07608f97942eff88634a56b630a745ce56`. The entries are unchanged. The table is laid out as Markdown,
-and the translations in the source file are left out; clients that translate the descriptions SHOULD take them from
-that file.
+at commit `7aaeac07608f97942eff88634a56b630a745ce56`. The entries are unchanged; this copy is a Markdown table and
+leaves out the source file's translations. Clients that translate the descriptions SHOULD take them from that file.
 
 SHA-256 over one line per entry, `number TAB emoji TAB description TAB unicode LF` in UTF-8, is
 `2e6e8f1cdda84d2520dcbcc49152db6fc50c2a78546c36bd8991515eef48ba81`.

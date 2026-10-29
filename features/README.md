@@ -20,8 +20,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text
   streams, anchored by normal durable final messages.
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
-- [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device of an account to
-  one it already has.
+- [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
+  account's existing devices.
 
 ## Relationship to app components
 
