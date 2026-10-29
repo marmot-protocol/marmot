@@ -526,6 +526,8 @@ set:
   rule in "Welcome delivery" as each NIP-59 layer is unwrapped;
 - kind `30443` KeyPackage events MUST satisfy every outer envelope, tag, content-encoding, and signature rule in
   "KeyPackage publication";
+- kind `1059` gift wraps whose rumors have kinds `452` to `456` MUST satisfy every rule in "Pairing delivery". They
+  carry no MLS bytes and are not peeler input. A client that links devices does not drop them as an unsupported kind;
 - kind `5` deletion requests carry no MLS bytes and are not peeler input. A client that fetched them for KeyPackage
   selection applies them under "Slot deletion" and does not drop them as an unsupported kind;
 - fields that claim to be hex or base64 MUST decode successfully;

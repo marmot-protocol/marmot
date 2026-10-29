@@ -17,8 +17,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 [#454](https://github.com/marmot-protocol/marmot/pull/454) adds
 [features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
-for multi-device accounts in [foundation/registries.md](./foundation/registries.md), and adds "Pairing delivery" to
-[transports/nostr.md](./transports/nostr.md). The feature is a draft. A new device and an existing device of the same
+for multi-device accounts in [foundation/registries.md](./foundation/registries.md), adds "Pairing delivery" and its
+entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
+[protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
+inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new device and an existing device of the same
 account compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven emoji
 from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits to its
 key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering device's

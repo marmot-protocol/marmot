@@ -313,12 +313,16 @@ or a Request.
 
 - A device makes one decision per session. It never shows a session's code again after a decision, a cancel or expiry.
 - A device ignores a message for a session it does not hold, a message only its own role sends, and a message for a step
-  the session has passed, such as a second Reveal or a replayed Request.
+  the session has passed, such as a second Reveal or a replayed Request. A Confirm whose `from` is the receiver's own
+  role is one only its own role sends: its own Confirm, returned by its inbox relays
+  ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
 - A Cancel ends the session at its receiver, whatever its reason, and the receiver sends nothing back. At a new device
   it also withdraws a confirmed link whose Welcome has not arrived. An existing device that has confirmed the link
   ignores it.
 - A device keeps its private key, the shared secret, the code and the MAC keys in memory only, for the life of the
-  session, and erases them when it ends. It MUST NOT write any of them to persistent storage or logs.
+  session, and erases them when it ends. It MUST NOT write any of them to persistent storage or logs. The confirmed link
+  is not one of these secrets: a new device keeps the group id and signature key it confirmed, across restarts, until
+  it joins through the Welcome or the link is withdrawn, so it can still check a Welcome that arrives after a restart.
 
 ## Security considerations
 
