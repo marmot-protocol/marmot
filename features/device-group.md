@@ -158,8 +158,8 @@ only to the account's own user. The answers are:
   if the Commit fails or branch selection drops it.
 
 A KeyPackage is protected if the device made it, if the roster announces it for a device, or if the device's latest
-check found it current in another slot. A device MUST NOT record a protected KeyPackage as rejected, even when it finds
-it in a slot it rejects, and rejects only that slot.
+check found it current in another slot that is not rejected. A device MUST NOT record a protected KeyPackage as
+rejected, even when it finds it in a slot it rejects, and rejects only that slot.
 
 If the roster holds the slot as a device by the time the device commits, another device linked it: the device commits
 nothing for it and stops asking about it. What the user is then told, and what else a rejection does, such as warning
