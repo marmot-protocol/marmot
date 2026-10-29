@@ -17,18 +17,21 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 [#456](https://github.com/marmot-protocol/marmot/pull/456) adds "Linking a device" to
 [features/device-group.md](./features/device-group.md). An existing device answers a pairing request only if it is not
-itself a new device in a session, and would link the named KeyPackage: its slot is not already a device or rejected, it
-supports everything the device group requires, and the roster has room for another device. When the KeyPackage lacks
-something or the roster is full, it sends Cancel `cannot_link` instead. The existing device's Confirm names the device
-group it trusts, or a fresh 16-byte random id for the one it will create, and the signature key of its own leaf there.
-Once the link is confirmed it adds exactly the confirmed KeyPackage, in one Commit that sets the new device's roster
-entry, or in the founding Add. Any Commit a device makes in the device group that adds a member adds exactly one, by
-value, with that device's roster entry for a new slot. A device that cannot commit the link at once may retry, but not
-after the new device stops waiting, which is at most 600 seconds after its Confirm. The new device joins only the
-Welcome from the named leaf into the named group before its wait ends, deciding before it joins; it refuses every other
-device-group Welcome, and any Welcome into the group id while it waits, so a forged one leaves the KeyPackage and the id
-for the real one. The approving device treats the link as settled once the Commit's publication is confirmed and it is
-on the selected branch with no input for the group pending. Clients that do not support `0x800e` change nothing.
+itself a new device in a session or waiting for its Welcome, and would link the named KeyPackage: its slot is not
+already a device or rejected, it supports everything the device group requires, and the roster has room for another
+device. When the KeyPackage lacks something or the roster is full, it sends Cancel `cannot_link` instead. The existing
+device's Confirm names the device group it trusts, or a fresh 16-byte random id for the one it will create, and the
+signature key of its own leaf there. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one Commit
+that sets the new device's roster entry, or in the founding Add. Any Commit a device makes in the device group that adds
+a member adds exactly one, by value, with that device's roster entry for a new slot. A device that cannot commit the
+link at once may retry, but not after the new device stops waiting, counted from the earlier of the new device's
+Confirm's timestamp and its arrival. Before it sends its Confirm, the new device records the link with the pairing
+session's id, and keeps it across restarts until it joins, 600 seconds have passed since that Confirm, a Cancel for that
+session arrives, or it confirms a newer link, which replaces it. It joins only the Welcome from the named leaf into the
+named group, deciding before it joins; it refuses every other device-group Welcome, and any Welcome into the group id
+while the link lasts, so a forged one leaves the KeyPackage and the id for the real one. The approving device treats the
+link as settled once the Commit's publication is confirmed and it is on the selected branch with no input for the group
+pending. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-29: Device pairing (draft)
 

@@ -84,9 +84,10 @@ leaf in that group. This section covers what each device does around that exchan
 
 ### Before answering
 
-An existing device answers a pairing request only if it is not running a session as a new device itself, and only if it
-would link the KeyPackage the request names ([device-pairing.md](./device-pairing.md), "Existing device", step 2). It
-answers whether it trusts a device group or has none yet. It would not link the KeyPackage when:
+An existing device answers a pairing request only if it is not running a session as a new device itself or keeping a
+link that waits for its Welcome ("Joining"), and only if it would link the KeyPackage the request names
+([device-pairing.md](./device-pairing.md), "Existing device", step 2). It answers whether it trusts a device group or
+has none yet. It would not link the KeyPackage when:
 
 - the KeyPackage's slot is already a device in its roster, or the roster rejects that slot or that KeyPackage;
 - the KeyPackage does not support everything its device group requires, or, when it has no device group, everything
@@ -131,27 +132,34 @@ KeyPackages there by an invite or a same-account Add
 proposal by reference there.
 
 A device that cannot commit the link at once, because the device group has a Commit still settling, MAY try again, but
-not once the new device has stopped waiting for its Welcome ("Joining"). It does not hold the link for later, so it
-never adds a device that will not join.
+not once the new device has stopped waiting for its Welcome ("Joining"). It counts that wait from the earlier of the new
+device's Confirm's timestamp and its arrival. It does not hold the link for later, so it never adds a device that will
+not join.
 
 Approval by any one device of the account is enough. Another device that showed the same request stops offering Link
 once the new device's entry is in its roster, and shows the labels of the new device and of the device that added it.
 
 ### Joining
 
-By the time it sends its Confirm, the new device has recorded what the link expects: the group id, the signature key
-of the sender's leaf, and when the wait ends. It then waits for a Welcome into that group from that leaf, joins only
-through it, and on joining records the group as its device group ("Trust"). While it waits, the group id is reserved:
-the device joins no other Welcome into it, whether or not that group requires `0x800e`. A Welcome it refuses leaves the
-KeyPackage and the group id for the real one, so a forged Welcome that arrives first does not make the link fail.
+By the time it sends its Confirm, the new device has recorded the link: the pairing session's id, the group id, the
+signature key of the sender's leaf, and when its wait ends. It keeps that record across restarts until the link ends,
+so that after a restart has erased the session's secrets it can still check a Welcome and act on a Cancel. It then
+waits for a Welcome into that group from that leaf, joins only through it, and on joining records the group as its
+device group ("Trust"). While it waits, the group id is reserved: the device joins no other Welcome into it, whether or
+not that group requires `0x800e`. A Welcome it refuses leaves the KeyPackage and the group id for the real one, so a
+forged Welcome that arrives first does not make the link fail.
 
-It stops waiting, and accepts no Welcome under the link, once:
+A new device keeps at most one link. The link ends, and the device accepts no Welcome under it, once:
 
-- 600 seconds have passed since it sent its Confirm; or
-- a Cancel withdraws the link ([device-pairing.md](./device-pairing.md), "Every session").
+- its wait ends, 600 seconds after it sent its Confirm;
+- a Cancel for the link's session arrives, whether or not the device still holds that session
+  ([device-pairing.md](./device-pairing.md), "Every session"); or
+- it confirms a newer link, which replaces this one. Starting a new pairing session does not end the link; confirming
+  one does.
 
-It decides before joining. After that, a Welcome into the group is one no link expects, refused if the group requires
-`0x800e`, and linking again starts a new pairing session.
+This is the only limit on how long a new device waits for its Welcome. It decides before joining. Once the link has
+ended, a Welcome into its group is one no link expects, refused if the group requires `0x800e`, and linking again
+starts a new pairing session.
 
 ## Keeping it out of sight
 
@@ -253,7 +261,7 @@ when it appeared, and when it last published, until the user links or rejects it
 with each sign-in's answer and whether it is still signed in, so a restart neither drops a sign-in nor asks again about
 one the user put off. Like the roster, the list is shown only to the account's own user. The answers are:
 
-- **Link:** starts linking that slot's device, which is not specified yet.
+- **Link:** starts linking that slot's device ([Linking a device](#linking-a-device)).
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
   a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
