@@ -2048,8 +2048,9 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   G3–G5 group validity.
 - **Mitigations:** The feature requires leaf-specific cleanup and owner verification, while [SC-073](#sc-073)
   covers lifetime ordering. The current text explicitly checks current account membership but does not
-  explicitly specify a matching current leaf/account check on each relayed entry; this needs maintainer
-  resolution.
+  explicitly specify a matching current leaf/account check on each relayed entry. The proposed current-leaf
+  and membership-lifetime binding is tracked in [#460](https://github.com/marmot-protocol/marmot/issues/460);
+  it is not an adopted mitigation.
 - **Residual risk:** Without that check or another defined rule, a removed device's record may be reintroduced
   while its account stays present. Even a clarified client rule would not revoke an already copied server wake
   capability ([SC-075](#sc-075)).
@@ -2068,7 +2069,8 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
 
 - **Push leaf lifetime ([SC-085](#sc-085)):** Must each incoming record/removal name a current leaf whose account matches
   the owner? The existing account-membership check and leaf-cleanup rules do not explicitly settle replay after that
-  leaf leaves while its account remains. Define entry handling, including signed nonexistent indices and leaf reuse.
+  leaf leaves while its account remains. [#460](https://github.com/marmot-protocol/marmot/issues/460) tracks the proposed
+  membership-lifetime fix, including signed nonexistent indices, leaf reuse, Welcome bootstrap and versioning.
 - **Edit ties ([SC-080](#sc-080)):** Is arrival-dependent selection acceptable for different edits with equal
   `created_at`, or is a deterministic tie-break required? The current edit section only orders by that timestamp;
   do not claim a uniquely converged overlay without resolving this case.
