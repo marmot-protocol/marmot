@@ -286,9 +286,8 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Every decision is a commit.** Linking, rejecting, changing a device's settings and removing a device each change the
   roster through a commit in the device group, so MLS puts them in one order that every device agrees on.
 - **Conflicting answers:** if the iPhone links the laptop while the iPad says "This wasn't me", both make commits from
-  the same starting point and Marmot's normal convergence rules pick one. If the link wins, the iPad's answer becomes
-  an ordinary removal of the laptop. If the rejection wins, the link never happened and the laptop is told. There are
-  no seniority rules.
+  the same starting point and Marmot's normal convergence rules pick one. If the rejection wins, the link never happened
+  and the laptop is told. There are no seniority rules.
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 - **Careless approval:** if Alice taps Link without comparing, nothing catches it. The prompt makes the comparison the
@@ -512,11 +511,11 @@ signer session. The figure shows the case where the nsec itself is stolen. The w
 nsec, the only complete fix is moving to a new account, and for a signer, which session to revoke. It doesn't claim to
 know which one was taken.
 
-**What her devices do:** they mark the slot rejected so no device prompts about it again, never add it to existing chats
-or send it history, and remove its leaf from any chat they share with it. For a replaced KeyPackage in a linked
-device's slot, they reject that KeyPackage, not the slot, and the roster keeps pointing at the device's own. If
-other people's inviters have already added the replacement to a chat, Alice's devices see a leaf for her account that
-no sibling announced, and remove it.
+**What her devices do:** they mark the slot rejected so no device prompts about it again while the roster keeps that,
+never add it to existing chats or send it history, and remove its leaf from any chat they share with it. For a replaced
+KeyPackage in a linked device's slot, they reject that KeyPackage, not the slot, and the roster keeps pointing at the
+device's own. If other people's inviters have already added the replacement to a chat, Alice's devices see a leaf for
+her account that no sibling announced, and remove it.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
 devices, and publish more KeyPackages. The warning must not promise more protection than that.
