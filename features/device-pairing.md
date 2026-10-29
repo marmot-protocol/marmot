@@ -248,7 +248,8 @@ A receiver MUST compare MACs in constant time.
 2. Before it answers, it fetches the KeyPackage publication the request names and validates it under
    [../foundation/key-packages.md](../foundation/key-packages.md) and the transport binding. The publication MUST be the
    account's, and its decoded `KeyPackageRef` MUST equal the request's `key_package_ref`. A device that would not link
-   that KeyPackage does not answer; it MAY send Cancel `cannot_link`.
+   that KeyPackage does not answer. It sends Cancel `cannot_link` where the device group requires it, and MAY send it
+   otherwise ([device-group.md](./device-group.md), "Before answering").
 3. It sends an Answer with a fresh key and its own slot id, subject to "Competing requests" and "Rate limit".
 4. A Reveal whose `answer_slot` is not its own slot means the new device took another answer. The device ends the
    session, whether or not it answered, and sends nothing. On a Reveal naming its own slot, for a session it answered:
@@ -256,10 +257,10 @@ A receiver MUST compare MACs in constant time.
      sends Cancel `mismatched_commitment` and ends the session;
    - if the shared secret is invalid, it sends Cancel `unexpected_message` and ends the session;
    - otherwise it derives the code and shows it.
-5. Its user decides once. If the codes match, the user chooses the group to add the new device to, and the device sends
-   its Confirm with that group's id and the signature key of its own leaf in it. For a group it has not created yet,
-   that is the key it will create the group with. If the codes differ, it sends Cancel `mismatched_code` and ends the
-   session.
+5. Its user decides once. If the codes match, the device sends its Confirm with the id of the group it will add the new
+   device to and the signature key of its own leaf in it. Which group that is, the device group's rules decide
+   ([device-group.md](./device-group.md), "Approving"). For a group it has not created yet, that is the key it will
+   create the group with. If the codes differ, it sends Cancel `mismatched_code` and ends the session.
 6. It ignores a new device's Confirm that arrives before it has sent its own. When the new device's Confirm arrives
    after that, it checks the MAC over the request's `key_package_ref`. If the check fails, it sends Cancel
    `mismatched_confirm` and ends the session.
@@ -319,8 +320,8 @@ or a Request.
   link it keeps. A Confirm whose `from` is the receiver's own role is one only its own role sends: its own Confirm,
   returned by its inbox relays ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
 - A Cancel ends the session at its receiver, whatever its reason, and the receiver sends nothing back. At a new device
-  it also ends the session's confirmed link if the Welcome has not arrived, even after a restart. An existing device
-  that has confirmed the link ignores it.
+  it also ends the session's confirmed link, even after a restart, unless the device has already joined through the
+  link's Welcome; a Cancel after that join changes nothing. An existing device that has confirmed the link ignores it.
 - A device keeps its private key, the shared secret, the code and the MAC keys in memory only, for the life of the
   session, and erases them when it ends. It MUST NOT write any of them to persistent storage or logs. The confirmed link
   is not one of these secrets: a new device keeps it across restarts until the link ends
