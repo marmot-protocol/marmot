@@ -30,16 +30,18 @@ a founding Welcome that could not be delivered. A device that cannot commit the 
 the new device stops waiting, counted from when the new device's Confirm arrived. Before it sends its Confirm, the new
 device records the link with the pairing session's id, and keeps it across restarts until it joins through the link's
 Welcome, 600 seconds have passed since that Confirm, a Cancel for that session arrives, or it confirms a newer link,
-which replaces it. It joins only the Welcome from the named leaf into the named group, and only if that group requires
+which replaces it; each pairing session uses a KeyPackage no earlier link of the device confirmed. It joins only the
+Welcome from the named leaf into the named group that adds the confirmed KeyPackage, and only if that group requires
 `0x800e`, deciding before it joins; it refuses every other device-group Welcome, and any Welcome into the group id while
 the link lasts, so a forged one leaves the KeyPackage and the id for the real one. The approving device treats the link
 as made only once the new device's first Commit there, which sets its tag signature key, is on the selected branch with
 no input for the group pending; the new device makes it as soon as it can once it has joined. Once made, a link stays
 made. If that Commit has not come 3600 seconds after the `linked_at` the approving device wrote in the new device's
-entry, the approving device, and only it, removes the new device's leaf and roster entry in one Commit and stops
-delivering the Welcome. A device whose leaf is removed from its device group stops trusting the group and discards its
-copy, so a later link's Welcome into the same id is a first join; a new device removed before its first Commit there
-tells its user that linking failed. Clients that do not support `0x800e` change nothing.
+entry, and is still missing once it has processed the input it holds for the group, the approving device, and only it,
+removes the new device's leaf and roster entry in one Commit and stops delivering the Welcome. A device whose leaf is
+removed from its device group stops trusting the group and discards its copy, so a later link's Welcome into the same id
+is a first join; a new device removed before its first Commit there tells its user that linking failed. Clients that do
+not support `0x800e` change nothing.
 
 ## 2026-10-29: Device pairing (draft)
 
