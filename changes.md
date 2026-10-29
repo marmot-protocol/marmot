@@ -28,11 +28,10 @@ creates or joins. A device keeps its rejections until the roster holds the slot 
 the roster has no entry for that slot, and never replaces an entry. A link or rejection on one device ends the question
 on all of them while the roster holds it. A device keeps its list of sign-ins and its answers across restarts. A sign-in
 whose slot a complete check finds holding no valid KeyPackage that a deletion does not cover stays listed as no longer
-signed in, and can be linked again once a complete check finds one; a valid KeyPackage that is no longer fresh never
-signs a sign-in out. A check is complete only from one unbounded answer per query from every relay in the account's
-non-empty KeyPackage relay set, each short of the limit the device asked for; an account past one answer, and a relay
-capping below the request without advertising it, are stated limits. Clients that do not support `0x800e` change
-nothing.
+signed in, and can be linked again once a complete check finds one; being no longer fresh never on its own signs a
+sign-in out. A check is complete only from one unbounded answer per query from every relay in the account's non-empty
+KeyPackage relay set, each short of the limit the device asked for; an account past one answer, and a relay capping
+below the request without advertising it, are stated limits. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 
