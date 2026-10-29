@@ -234,14 +234,16 @@ operation for a given component id, whether that operation adds, updates, or rem
 operation for the same component id makes the Commit invalid.
 
 The update rule returns new state bytes or rejects the Commit. A component's update rule decides how update bytes relate
-to prior state. In v1 every GroupContext component document defines its update payload as a full replacement state. The
+to prior state. In v1 every GroupContext component document defines its update payload as a full replacement state,
+except [device-roster-v1.md](./device-roster-v1.md), whose update is a diff. The
 client validates the operation's proposal sender, committer, component-local encoding, value rules, and removal policy.
 Any invalid operation makes the whole Commit invalid. Resulting-epoch and cross-component invariants are then checked
-against the complete final state. Partial field updates and last-wins processing are not defined (see "Common Rules"
-above).
+against the complete final state. Last-wins processing is not defined, and partial field updates are not defined
+outside a diff-style update rule (see "Common Rules" above).
 
-A future component MAY define a diff-style update rule, but it MUST say so explicitly in its own document; no v1
-component does.
+A component MAY define a diff-style update rule, but it MUST say so explicitly in its own document, define how the
+update applies to the candidate parent's state, and make the result independent of the order of its operations.
+[device-roster-v1.md](./device-roster-v1.md) is the only component that does.
 
 Update rules MUST be deterministic. They MUST NOT read local wall-clock time, transport state, random numbers, local UI
 state, or local storage order.
@@ -326,6 +328,16 @@ remove leaves of their own account:
 The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
 
 - [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md)
+
+The following persistent GroupContext component is a draft. A group that requires it is an account's device group
+([../features/device-group.md](../features/device-group.md)):
+
+- [marmot.account.device-roster.v1](./device-roster-v1.md)
+
+The following LeafNode component is a draft. An account's linked devices carry it in their leaves so that they can tell
+which of the account's leaves belongs to which device:
+
+- [marmot.member.device-tag.v1](./device-tag-v1.md)
 
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.

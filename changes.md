@@ -13,6 +13,27 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-28: Device roster component and device group (draft)
+
+[#452](https://github.com/marmot-protocol/marmot/pull/452) adds
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and
+[features/device-group.md](./features/device-group.md), registers `0x800e` and `0x800f` in
+[foundation/registries.md](./foundation/registries.md), and changes
+[app-components/README.md](./app-components/README.md) to allow a component to define a diff-style update. All three
+new documents are drafts. A group that requires `0x800e` from creation is an account's device group. Its roster holds
+devices, rejected slots, rejected KeyPackages and the key that seals device tags; its update is a diff that sets or
+removes single entries against the candidate parent's roster, every leaf has the same credential identity, and no Commit
+or proposal may start or stop requiring it. A device SHOULD drop a `removed` slot record 30 days after it was recorded.
+A client that supports `0x800e` treats its entry and updates as unknown data in a group that does not require it, and
+MUST NOT write one there. A device trusts a group as its device group only if it created it or joined it through a
+Welcome a confirmed link named, MUST NOT join a group that requires `0x800e` through any other Welcome, and founds it
+with only the KeyPackage that link confirmed. A linked device puts a device tag (`0x800f`) in every KeyPackage and
+LeafNode it creates, so that its siblings can tell which of the account's leaves belongs to which device. A tag is
+verified with the tag signature key of the roster entry it names, or of the `removed` record that keeps that key. A tag
+never makes anything invalid, and a Commit or Welcome that requires `0x800f` is invalid. Clients that support neither
+component change nothing.
+
 ## 2026-10-28: Activation eligibility reasons and lost activations
 
 [#453](https://github.com/marmot-protocol/marmot/pull/453) changes
