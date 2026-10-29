@@ -1957,9 +1957,11 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Mitigations:** Use state notifications as authoritative and derive system rows from their changes. Treat
   sent kind-1210 events as assertions by their sender; their contents cannot mutate membership or lifecycle. The
   owning section separates system rows from chat bodies.
-- **Residual risk:** The exact presentation distinction for sent versus derived notices remains a review concern
-  ([#310](https://github.com/marmot-protocol/marmot/issues/310)). A convincing authored assertion can still
-  socially mislead users even when it has no protocol effect.
+- **Residual risk:** [#310](https://github.com/marmot-protocol/marmot/issues/310), under
+  [#75](https://github.com/marmot-protocol/marmot/issues/75), proposes reserving authoritative system rows for
+  locally derived canonical changes and preserving provenance through reconstruction, export and automation.
+  That restriction is not yet adopted. A convincing authored assertion can still socially mislead users even
+  when it has no protocol effect.
 - **Normative owners:** [Group system events](foundation/application-messages.md#group-system-events-kind-1210),
   [Inbound processing](protocol-core/inbound-processing.md), [Lifecycle
   realization](app-components/group-lifecycle-v1.md#convergence-and-realization).
@@ -2077,9 +2079,11 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
   [#461](https://github.com/marmot-protocol/marmot/issues/461) tracks a lowest-inner-id tie-break and reconsideration
   of the earlier application-semantics scope decision in [#300](https://github.com/marmot-protocol/marmot/issues/300).
   Do not claim a uniquely converged overlay without resolving this case.
-- **System-notice provenance ([SC-081](#sc-081)):** What presentation distinction prevents a sent kind-1210 assertion
-  from appearing to be a derived canonical fact? [#310](https://github.com/marmot-protocol/marmot/issues/310) tracks this
-  boundary; the authenticated sender and canonical-change source must remain distinct.
+- **System-notice provenance ([SC-081](#sc-081)):** How can authoritative system rows be restricted to locally derived
+  canonical changes, with provenance preserved beyond presentation? [#310](https://github.com/marmot-protocol/marmot/issues/310)
+  and parent [#75](https://github.com/marmot-protocol/marmot/issues/75) track the proposed canonical-only rule, removal
+  of the free-text kind-1210 exception, compatibility handling, and withdrawal of superseded rows. Authored content
+  cannot establish canonical provenance by assertion; the proposed restriction remains unadopted.
 - **Experimental broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
   when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) tracks the
   injection/admission concern. Room routing and end-to-end ciphertext validation alone do not answer it.
