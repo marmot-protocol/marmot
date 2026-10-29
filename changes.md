@@ -13,22 +13,42 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-10-28: Device pairing (draft)
+## 2026-10-29: Device pairing (draft)
 
 [#454](https://github.com/marmot-protocol/marmot/pull/454) adds
 [features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
 for multi-device accounts in [foundation/registries.md](./foundation/registries.md), adds "Pairing delivery" and its
 entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
 [protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
-inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new device and an existing device of the same
-account compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven emoji
-from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits to its
-key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering device's
-slot and both keys; and the two confirmations cover the `KeyPackageRef`, and the id of the group the new device joins
-with the signature key of the existing device's leaf there, the only sender whose Welcome the new device accepts.
-The existing device confirms first, and the new device confirms only after verifying the existing device's
-confirmation. An existing device sends at most 10 Answers an hour, and none while more than one request is live.
-Clients that do not link devices need no changes.
+inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new
+device and an existing device of the same account compare a code: Matrix's `m.sas.v1` verification, transcribed into
+Marmot encodings and shown as seven emoji from Matrix's table. The five messages are rumors gift-wrapped from the
+account to itself. The new device commits to its key in its request; the code binds the session, the account, the new
+device's `KeyPackageRef`, the answering device's slot and both keys; and the two confirmations cover the
+`KeyPackageRef`, and the id of the group the new device joins with the signature key of the existing device's leaf
+there, the only sender whose Welcome the new device accepts. The existing device confirms first, and the new device
+confirms only after verifying the existing device's confirmation. An existing device sends at most 10 Answers an hour,
+and none while more than one request is live. Clients that do not link devices need no changes.
+
+## 2026-10-29: New sign-ins in the device group (draft)
+
+[#465](https://github.com/marmot-protocol/marmot/pull/465) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A client that supports `0x800e` reads its
+account's KeyPackages as an inviter does, and treats a slot holding a valid, fresh KeyPackage that is not its own, not a
+roster device's and not a rejected slot as a sign-in to ask its user about. A Welcome naming a KeyPackage it did not
+publish is a reason to fetch and check that KeyPackage, never evidence by itself. Slots its first check returns, fresh
+or not, are devices that were signed in before it; others are new sign-ins, and a publication's time never decides
+which. "This wasn't me" commits a `not_me` rejected slot, never a rejected KeyPackage, since the KeyPackage may be a
+copy of a real device's. A device with no device group keeps its rejections and writes them into the roster it later
+creates or joins. A device keeps its rejections until the roster holds the slot as a device, commits one again whenever
+the roster has no entry for that slot, and never replaces an entry. A link or rejection on one device ends the question
+on all of them while the roster holds it. A device keeps its list of sign-ins and its answers across restarts. A sign-in
+whose slot a complete check finds holding no valid KeyPackage that a deletion does not cover stays listed as no longer
+signed in, and can be linked again once a complete check finds one; being no longer fresh never on its own signs a
+sign-in out. A check is complete only from one unbounded answer per query from every relay in the account's non-empty
+KeyPackage relay set, each short of the limit the device asked for; an account past one answer, and a relay capping
+below the request without advertising it, are stated limits. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 
