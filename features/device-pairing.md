@@ -16,7 +16,8 @@ method only; the emoji table is Matrix's own (Appendix A).
 
 The non-normative direction, including what users see, is in [../ideas/multi-device.md](../ideas/multi-device.md)
 (Scenes 2 and 4). This document covers the exchange only. What a device does with a confirmed link, such as creating
-the device group or adding the new device to it, belongs to the device group's own rules.
+the device group, adding the new device to it, or deciding which Welcome makes a group its device group, belongs to the
+device group's own rules ([device-group.md](./device-group.md)).
 
 ## Surfaces
 
@@ -222,7 +223,8 @@ A receiver MUST compare MACs in constant time.
    sends Cancel `mismatched_confirm` and ends the session.
 5. Once its user has confirmed and the existing device's Confirm has verified, it sends its Confirm, and the link is
    confirmed. It MUST NOT send its Confirm before then. The new device MUST NOT accept a Welcome under this link into
-   any group other than the one that Confirm named.
+   any group other than the one that Confirm named. A Welcome that no confirmed link named does not make its group the
+   device group ([device-group.md](./device-group.md), "Trust").
 
 ### Existing device
 
@@ -319,7 +321,8 @@ Request.
 - **The rate limit** bounds how often an attacker can put a prompt in front of the user. It does not bound guesses,
   because each session already allows only one.
 - **Metadata.** Relays see gift wraps addressed to the account, as for Welcomes. The burst of five or more of them
-  within minutes suggests a pairing session.
+  within minutes suggests a pairing session. Relays also see each gift wrap's size: NIP-44 padding rounds it up, but
+  the sizes may still tell the message kinds apart.
 
 ## Test vector
 
@@ -390,10 +393,9 @@ existing_device_mac    = 0e57969927ceb9afc876bbb71c6e55e738f86b743f9a8dce9308fe1
 
 This table is Matrix's SAS emoji table, `data-definitions/sas-emoji.json` from
 [matrix-org/matrix-spec](https://github.com/matrix-org/matrix-spec/blob/7aaeac07608f97942eff88634a56b630a745ce56/data-definitions/sas-emoji.json)
-at commit `7aaeac07608f97942eff88634a56b630a745ce56`. Copyright The Matrix.org Foundation C.I.C. It is used under the
-Apache License, Version 2.0; a copy is in [device-pairing/LICENSE-MATRIX-SPEC](./device-pairing/LICENSE-MATRIX-SPEC).
-The entries are unchanged. The table is laid out as Markdown, and the translations in the source file are left out;
-clients that translate the descriptions SHOULD take them from that file.
+at commit `7aaeac07608f97942eff88634a56b630a745ce56`. The entries are unchanged. The table is laid out as Markdown,
+and the translations in the source file are left out; clients that translate the descriptions SHOULD take them from
+that file.
 
 SHA-256 over one line per entry, `number TAB emoji TAB description TAB unicode LF` in UTF-8, is
 `2e6e8f1cdda84d2520dcbcc49152db6fc50c2a78546c36bd8991515eef48ba81`.

@@ -563,7 +563,8 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
   account-addressing exception ([../foundation/identity.md](../foundation/identity.md)). The gift wrap and seal hide the
   sender and the inner `kind 444` rumor.
 - Pairing messages are NIP-59 gift wraps addressed to the account that sent them. Relays see a burst of gift wraps to
-  the account while a pairing session runs, as they would for Welcomes, and nothing else about them.
+  the account while a pairing session runs, as they would for Welcomes, and each gift wrap's size. NIP-44 padding
+  rounds sizes up, but they may still tell the pairing message kinds apart.
 - kind `30443` KeyPackage events are authored by the account identity, because their purpose is to let others find that
   account's packages. Because each device has one slot, the number of current slots shows roughly how many devices the
   account has. An optional `client` tag also shows which client software a device runs.
