@@ -117,8 +117,9 @@ KeyPackage into a slot the user then rejects, so a slot is rejected only by its 
 A Welcome that names a KeyPackage of the account that this device did not publish
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery") is a reason to look. The device SHOULD fetch
 the KeyPackage it names ([../transports/nostr.md](../transports/nostr.md), "Welcome delivery") and classify that
-KeyPackage's slot as above. A fetch that fails, or a KeyPackage that is not valid and fresh, raises nothing: anyone can
-send a Welcome naming any KeyPackage.
+KeyPackage's slot as above, once its first check ([Already signed in, or new](#already-signed-in-or-new)) has happened;
+before that, the Welcome waits for it. A fetch that fails, or a KeyPackage that is not valid and fresh, raises nothing:
+anyone can send a Welcome naming any KeyPackage.
 
 A device SHOULD check when its client starts, so that opening Marmot on a device already signed in is enough to see a
 new sign-in, and periodically while it runs. It MAY also check when a new publication of its account reaches it, for
@@ -130,11 +131,11 @@ Nothing published says which of two devices signed in first. A slot's only publi
 whoever holds the account's signing key chooses that time.
 
 - Every unrecognized slot that a device's first check finds belongs to a device that was signed in before it. The first
-  check is the first read of all the account's KeyPackages that reaches any relay after the device signs in, or after
-  its client gains these rules; fetching the one KeyPackage a Welcome names is never the first check. The device keeps
-  the fact that its first check happened, so a later one, even after a restart, is never taken for it. It tells its
-  user that the account is already signed in elsewhere, with when that slot last published, and asks whether they still
-  have that device.
+  check is the first read of all the account's KeyPackages, after the device signs in or after its client gains these
+  rules, that finishes with at least one relay having answered. It covers every slot that read returns, from every relay
+  in it; fetching the one KeyPackage a Welcome names is never the first check. The device keeps the fact that its first
+  check happened, so a later one, even after a restart, is never taken for it. It tells its user that the account is
+  already signed in elsewhere, with when that slot last published, and asks whether they still have that device.
 - Every unrecognized slot it finds after its first check is a new sign-in, and the device asks its user whether it was
   them.
 - A device MUST NOT use a publication's time to decide which of the two a slot is. When a sign-in appeared and when it
@@ -181,10 +182,11 @@ each device's own and is not shared.
 ### A sign-in that goes away
 
 When a complete check finds that the slot of a listed sign-in no longer holds a valid, fresh KeyPackage, for example
-because a deletion covers it, the device keeps the sign-in listed and marks it as no longer signed in. It can no longer
-be linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait for the
-user to be asked, and delete the publication before the user saw it. A device decides that a slot is empty only from a
-complete check, never from one that failed.
+because a deletion covers it, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it
+cannot be linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait
+for the user to be asked, and delete the publication before the user saw it. A device decides that a slot is empty only
+from a complete check, never from one that failed. When a later check finds a valid, fresh KeyPackage in that slot
+again, the sign-in is signed in again and can be linked.
 
 ## Matching leaves to devices
 
