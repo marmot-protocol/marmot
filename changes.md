@@ -23,10 +23,10 @@ roster device's and not a rejected slot as a sign-in to ask its user about. A We
 publish is a reason to fetch and check that KeyPackage, never evidence by itself. Slots its first check finds are
 devices that were signed in before it; later ones are new sign-ins, and a publication's time never decides which. "This
 wasn't me" commits a `not_me` rejected slot and the slot's KeyPackage as a rejected KeyPackage in one roster update; a
-KeyPackage the device made, the roster announces, or another unrejected slot currently holds is never rejected, only the
-slot. A device with no device group keeps its rejections and writes them into the roster it later creates or joins. A
-link or rejection on one device ends the question on all of them. A sign-in whose slot a complete check finds empty
-stays listed. Clients that do not support `0x800e` change nothing.
+KeyPackage the device made, the roster announces, or another unrejected, still signed-in slot last held is never
+rejected, only the slot. A device with no device group keeps its rejections and writes them into the roster it later
+creates or joins. A link or rejection on one device ends the question on all of them. A sign-in whose slot a complete
+check finds empty stays listed. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 

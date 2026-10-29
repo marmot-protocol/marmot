@@ -157,9 +157,10 @@ only to the account's own user. The answers are:
   "Update"). It keeps the rejection until the roster records it, and prepares the update again against the new roster
   if the Commit fails or branch selection drops it.
 
-A KeyPackage is protected if the device made it, if the roster announces it for a device, or if the device's latest
-check found it current in another slot that is not rejected. A device MUST NOT record a protected KeyPackage as
-rejected, even when it finds it in a slot it rejects, and rejects only that slot.
+A KeyPackage is protected if the device made it, if the roster announces it for a device, or if it is the newest
+KeyPackage the device has found in another slot that is not rejected and that no complete check has since found empty. A
+device MUST NOT record a protected KeyPackage as rejected, even when it finds it in a slot it rejects, and rejects only
+that slot.
 
 If the roster holds the slot as a device by the time the device commits, another device linked it: the device commits
 nothing for it and stops asking about it. What the user is then told, and what else a rejection does, such as warning
