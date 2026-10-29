@@ -13,6 +13,20 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-29: New sign-ins in the device group (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A client that supports `0x800e` reads its
+account's KeyPackages as an inviter does, and treats a slot holding a valid, fresh KeyPackage that is not its own, not
+a roster device's and not rejected as a sign-in to ask its user about. A Welcome naming a KeyPackage it did not publish
+is a reason to fetch and check that KeyPackage, never evidence by itself. Slots its first check finds are devices that
+were signed in before it; later ones are new sign-ins, and a publication's time never decides which. "This wasn't me"
+commits a `not_me` rejected slot and a rejected KeyPackage in one roster update, never for a KeyPackage the device made
+or the roster announces; a device with no device group keeps its rejections and writes them into the roster it later
+creates or joins. A link or rejection on one device ends the question on all of them. A sign-in whose slot a complete
+check finds empty stays listed. Clients that do not support `0x800e` change nothing.
+
 ## 2026-10-28: Device roster component and device group (draft)
 
 [#452](https://github.com/marmot-protocol/marmot/pull/452) adds
