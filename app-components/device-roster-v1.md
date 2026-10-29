@@ -2,11 +2,15 @@
 
 Status: draft.
 
-`marmot.account.device-roster.v1` is the roster of an account's device group: the account's linked devices, the leaf
-each device holds in each group it joined, the sign-ins and KeyPackages its devices rejected, and account-wide fields
-reserved for account sync. A group that requires
-this component is a device group. [../features/device-group.md](../features/device-group.md) describes the device group,
-when it is created, and when a device trusts a group as its own. Requiring this component never makes a group trusted.
+`marmot.account.device-roster.v1` is the roster of an account's device group: the account's linked devices, the
+sign-ins and KeyPackages its devices rejected, the key that seals the account's device tags, and account-wide fields
+reserved for account sync. A group that requires this component is a device group.
+[../features/device-group.md](../features/device-group.md) describes the device group, when it is created, and when a
+device trusts a group as its own. Requiring this component never makes a group trusted.
+
+The roster holds nothing about the other groups the account's devices are in. Which leaf in a group belongs to which
+device is carried by that leaf's own device tag ([device-tag-v1.md](./device-tag-v1.md)), so joining a group, leaving
+one, or replacing a leaf there never changes the roster.
 
 The non-normative direction this component serves is described in [../ideas/multi-device.md](../ideas/multi-device.md)
 and [../ideas/account-sync.md](../ideas/account-sync.md).
@@ -24,6 +28,7 @@ and [../ideas/account-sync.md](../ideas/account-sync.md).
 ```text
 opaque SlotId[32];
 opaque KeyPackageRefV1<1..64>;
+opaque TagSignatureKeyV1<1..255>;
 opaque ReservedKeyV1<1..255>;
 
 enum {
@@ -43,18 +48,9 @@ struct {
   uint8 settings;
   DeviceStatusV1 status;
   optional<KeyPackageRefV1> announced_key_package;
+  optional<TagSignatureKeyV1> tag_signature_key;
   optional<ReservedKeyV1> history_key;
 } DeviceEntryV1;
-
-struct {
-  SlotId slot;
-  opaque group_id<1..255>;
-} LeafMapKeyV1;
-
-struct {
-  LeafMapKeyV1 key;
-  opaque leaf_signature_key<1..255>;
-} LeafMapEntryV1;
 
 enum {
   not_me(0),
@@ -80,8 +76,8 @@ struct {
 } AccountEntryV1;
 
 struct {
+  opaque leaf_tag_key[32];
   DeviceEntryV1 devices<V>;
-  LeafMapEntryV1 leaf_map<V>;
   RejectedSlotV1 rejected_slots<V>;
   RejectedKeyPackageV1 rejected_key_packages<V>;
   AccountEntryV1 account;
@@ -92,6 +88,10 @@ The structures use the Marmot binary profile
 ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). `optional<T>` is one presence byte,
 `0x00` for absent or `0x01` followed by `T`, as in MLS; any other presence byte is invalid. Enumerations are one byte,
 and a value the enumeration does not list is invalid.
+
+`leaf_tag_key` is the key that seals the device tags of the account's devices
+([device-tag-v1.md](./device-tag-v1.md)). The device that creates the device group sets it to 32 bytes from a
+cryptographically secure random source. No update changes it in this version.
 
 Each device the account has linked has one `DeviceEntryV1`:
 
@@ -109,17 +109,19 @@ Each device the account has linked has one `DeviceEntryV1`:
   is signing out).
 - `announced_key_package` is the `KeyPackageRef` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.2) of
   the KeyPackage the device announced for its slot, if it announced one.
+- `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
+  group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it.
 - `history_key` is reserved for account sync and has no meaning in this version.
-
-Each group a device has joined has one `LeafMapEntryV1`, keyed by the device's slot and the group's MLS group id. The
-group id is the MLS group id, not a transport routing id. `leaf_signature_key` is the signature key of the device's
-leaf in that group. It identifies the leaf rather than its position, because positions are reused after a removal, and
-the device sets the entry again when it rotates that key. A device that joins a group writes one entry, and one that
-leaves a group removes its entry.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
 `RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in. `rejected_at`
 is when the rejection was recorded, as the recording device wrote it.
+
+A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
+again. A device SHOULD remove a `removed` record once 30 days have passed since its `rejected_at`, by the device's own
+clock. Thirty days is the KeyPackage freshness window
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"): after it, inviters no
+longer select a stale copy of the removed device's KeyPackage.
 
 `AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
 public half of the recovery key. Neither has a meaning in this version.
@@ -137,21 +139,12 @@ A `DeviceRosterV1` is valid when all of these hold:
 - `devices` and `rejected_slots` are each sorted by `slot` and unique by `slot`, and `rejected_key_packages` is sorted
   and unique by `key_package_ref`, in the default order of
   [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Sorting and duplicates");
-- `leaf_map` is sorted by `slot`, then by the content bytes of `group_id` in lexicographic order, and is unique by the
-  pair (`slot`, `group_id`). This overrides the default order;
 - `devices` holds at most `max_leaves_per_account` entries, the constant of
   [account-devices-v1.md](./account-devices-v1.md) ("Leaf limit");
-- no slot appears both in `devices` and in `rejected_slots`;
-- the slot of every `leaf_map` entry is the slot of an entry in `devices`, or of an entry in `rejected_slots` whose
-  reason is `removed`.
+- no two entries in `devices` carry the same `tag_signature_key`;
+- no slot appears both in `devices` and in `rejected_slots`.
 
 A device can appear once only, so a slot that is rejected is never also a linked device.
-
-A removed device's leaf-map entries may outlive its device entry. Its siblings remove its leaves from the groups they
-are members of, but a group none of them is in keeps the removed device's leaf until an admin there removes it. While
-the slot is recorded as `removed`, its entries still say which groups those are. A Commit that removes a device entry
-without recording its slot as `removed`, or that removes a `removed` slot's record, removes that slot's leaf-map
-entries too, or the resulting roster is invalid.
 
 ## Update
 
@@ -163,13 +156,11 @@ and the members apply it to the candidate parent's roster.
 enum {
   set_device(0),
   remove_device(1),
-  set_leaf_map_entry(2),
-  remove_leaf_map_entry(3),
-  set_rejected_slot(4),
-  remove_rejected_slot(5),
-  set_rejected_key_package(6),
-  remove_rejected_key_package(7),
-  set_account(8),
+  set_rejected_slot(2),
+  remove_rejected_slot(3),
+  set_rejected_key_package(4),
+  remove_rejected_key_package(5),
+  set_account(6),
   (255)
 } RosterOperationType;
 
@@ -178,8 +169,6 @@ struct {
   select (RosterOperationV1.type) {
     case set_device:                  DeviceEntryV1 device;
     case remove_device:               SlotId slot;
-    case set_leaf_map_entry:          LeafMapEntryV1 leaf_map_entry;
-    case remove_leaf_map_entry:       LeafMapKeyV1 key;
     case set_rejected_slot:           RejectedSlotV1 rejected_slot;
     case remove_rejected_slot:        SlotId slot;
     case set_rejected_key_package:    RejectedKeyPackageV1 rejected_key_package;
@@ -193,22 +182,20 @@ struct {
 } DeviceRosterUpdateV1;
 ```
 
-Each operation names one entry. A device entry and a rejected slot are keyed by their slot, a leaf-map entry by its
-`LeafMapKeyV1`, a rejected KeyPackage by its `key_package_ref`, and the account entry is a single entry with no key.
-An update is valid only when:
+Each operation names one entry. A device entry and a rejected slot are keyed by their slot, a rejected KeyPackage by
+its `key_package_ref`, and the account entry is a single entry with no key. No operation names `leaf_tag_key`. An
+update is valid only when:
 
 - it decodes canonically and holds at least one operation;
 - it holds at most one operation per entry;
-- its operations are sorted by entry: device entries first, then leaf-map entries, then rejected slots, then rejected
-  KeyPackages, then the account entry. Within each kind they follow that kind's order in `DeviceRosterV1`
-  ("Validation" above).
+- its operations are sorted by entry: device entries first, then rejected slots, then rejected KeyPackages, then the
+  account entry. Within each kind they follow that kind's order in `DeviceRosterV1` ("Validation" above).
 
 The resulting roster is the candidate parent's roster with every operation applied:
 
-- `set_device`, `set_leaf_map_entry`, `set_rejected_slot` and `set_rejected_key_package` insert the entry, or replace
-  the entry with the same key;
-- `remove_device`, `remove_leaf_map_entry`, `remove_rejected_slot` and `remove_rejected_key_package` remove the entry
-  with that key. Removing an
+- `set_device`, `set_rejected_slot` and `set_rejected_key_package` insert the entry, or replace the entry with the same
+  key;
+- `remove_device`, `remove_rejected_slot` and `remove_rejected_key_package` remove the entry with that key. Removing an
   entry the parent's roster does not hold makes the update invalid;
 - `set_account` replaces the account entry.
 
@@ -264,26 +251,33 @@ invalid ([README.md](./README.md), "GroupContext Removal").
 
 ## Security considerations
 
-- Any device of the account can rewrite any entry, including another device's settings and the rejections. A stolen
-  linked device can do the same until it is removed. The roster records decisions; it does not protect them from a
-  linked device.
-- Only the account's own devices are members of a device group, so the roster, its labels, platforms and leaf map are
-  never visible to other accounts. A client MUST NOT copy them into any other group or show another account's roster.
-- The roster grows with the number of devices and, through the leaf map, with the number of groups each device has
-  joined. A Welcome into the device group carries the whole roster. An update carries every entry it names in full,
-  so joining a group costs one leaf-map entry.
+- Any device of the account can rewrite any entry, including another device's settings, its `tag_signature_key`, and
+  the rejections. A stolen linked device can do the same until it is removed. The roster records decisions; it does not
+  protect them from a linked device.
+- Only the account's own devices are members of a device group, so the roster, its labels, platforms and
+  `leaf_tag_key` are never visible to other accounts. A client MUST NOT copy them into any other group or show another
+  account's roster.
+- Every device that was ever in the device group holds `leaf_tag_key`, including one later removed, because this
+  version never changes it. A removed device can still read the device tags in groups it can see, which tells it no
+  more than it knew while linked. It cannot make a tag that names another device, because a tag is signed by the
+  device it names ([device-tag-v1.md](./device-tag-v1.md)).
+- The roster grows with the number of linked devices, at most `max_leaves_per_account`, and with the rejections. It
+  does not grow with the number of groups the devices are in, and activity in those groups never commits to the
+  device group. A Welcome into the device group carries the whole roster.
 - Holding the account's signing key does not by itself let anyone into the device group or let anyone write the
   roster. Only a member of the device group can write it, and a device becomes a member only through a link the user
   confirmed ([../features/device-group.md](../features/device-group.md), "Trust").
 
 ## Test vectors
 
-A roster with one device in slot `0x11` repeated 32 times, labelled `Phone`, client `wn`, no platform, linked at
-`0x6553f100`, with no linker, settings `0x05` ("add to all my chats" and "keep while inactive"), status `active`, no
-announced KeyPackage and no history key, and with no leaf-map entries, no rejections and an empty account entry:
+A roster with leaf tag key `0x33` repeated 32 times and one device in slot `0x11` repeated 32 times, labelled `Phone`,
+client `wn`, no platform, linked at `0x6553f100`, with no linker, settings `0x05` ("add to all my chats" and "keep while
+inactive"), status `active`, no announced KeyPackage, tag signature key `0x44` repeated 32 times and no history key,
+and with no rejections and an empty account entry:
 
 ```text
-37                                                               devices<V>, 55 bytes
+3333333333333333333333333333333333333333333333333333333333333333 leaf_tag_key
+4059                                                             devices<V>, 89 bytes
 1111111111111111111111111111111111111111111111111111111111111111 slot
 0550686f6e65                                                     label "Phone"
 02776e                                                           client "wn"
@@ -293,34 +287,28 @@ announced KeyPackage and no history key, and with no leaf-map entries, no reject
 05                                                               settings
 00                                                               status active
 00                                                               announced_key_package absent
+01                                                               tag_signature_key present
+20 4444444444444444444444444444444444444444444444444444444444444444 tag_signature_key
 00                                                               history_key absent
-00                                                               leaf_map<V>
 00                                                               rejected_slots<V>
 00                                                               rejected_key_packages<V>
 00                                                               backup_writer absent
 00                                                               recovery_public_key absent
 ```
 
-An update that removes that device:
+An update that removes that device and records its slot as `removed` at `0x6553f200`:
 
 ```text
-21                                                               operations<V>, 33 bytes
+404b                                                             operations<V>, 75 bytes
 01                                                               remove_device
 1111111111111111111111111111111111111111111111111111111111111111 slot
-```
-
-An update that records that device's leaf in the group with MLS group id `0x01` repeated 16 times, with signature key
-`0x02` repeated 32 times:
-
-```text
-4053                                                             operations<V>, 83 bytes
-02                                                               set_leaf_map_entry
+02                                                               set_rejected_slot
 1111111111111111111111111111111111111111111111111111111111111111 slot
-10 01010101010101010101010101010101                              group_id
-20 0202020202020202020202020202020202020202020202020202020202020202 leaf_signature_key
+01                                                               reason removed
+000000006553f200                                                 rejected_at
 ```
 
-The empty roster is `000000000000`.
+A roster with no devices, no rejections and an empty account entry is its `leaf_tag_key` followed by `0000000000`.
 
 ## Migration
 

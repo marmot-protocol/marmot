@@ -56,6 +56,7 @@ app-components/
   account-devices-v1.md
   device-roster-v1.md
   account-identity-proof-v2.md
+  device-tag-v1.md
 transports/
   README.md
   nostr.md

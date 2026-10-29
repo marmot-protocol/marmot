@@ -334,6 +334,11 @@ The following persistent GroupContext component is a draft. A group that require
 
 - [marmot.account.device-roster.v1](./device-roster-v1.md)
 
+The following LeafNode component is a draft. An account's linked devices carry it in their leaves so that they can tell
+which of the account's leaves belongs to which device:
+
+- [marmot.member.device-tag.v1](./device-tag-v1.md)
+
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.
 

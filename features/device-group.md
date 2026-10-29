@@ -15,6 +15,8 @@ yet.
 
 - App component: [marmot.account.device-roster.v1](../app-components/device-roster-v1.md) (`0x800e`), which owns the
   roster's bytes, its update operations and their validation. Requiring it marks a group as a device group.
+- App component: [marmot.member.device-tag.v1](../app-components/device-tag-v1.md) (`0x800f`), the LeafNode tag that
+  tells the account's devices which of its leaves in any group belongs to which device.
 - App component: [marmot.group.account-devices.v1](../app-components/account-devices-v1.md) (`0x800d`), which a device
   group requires under the ordinary creation rule.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
@@ -76,9 +78,31 @@ A device group is not a chat:
 - A client shows the roster of its own device group only to its own user, for example on a Devices screen. It never
   shows another account's devices.
 
+## Matching leaves to devices
+
+Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
+belongs to which device. Each linked device tags its leaves instead
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md)), and a device that holds the roster reads
+those tags in the groups it is in. Nothing about other groups is written to the device group, so joining a group,
+leaving one, or replacing a leaf there never commits to it.
+
+- Each device makes its own tag signature key pair and keeps the private key to itself.
+- The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
+  `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
+- A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit
+  there, normally its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving
+  flow, step 14). It cannot tag until it has.
+- In the device group, a device's leaf is also known from the Commit that added it, which writes the device's roster
+  entry in the same Commit ("Creating the device group").
+
+What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
+leaves, warning about a leaf no device claims) is not specified yet.
+
 ## Security considerations
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
+- Only the account's linked devices can read device tags. Other members of a group see opaque bytes that differ in
+  every KeyPackage, and learn nothing they could not already see from the account's leaf count.

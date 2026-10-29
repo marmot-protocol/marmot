@@ -43,7 +43,8 @@ have, without a server that controls the device list.
 | Allocation | The private KeyPackages one device has handed to one particular sibling. |
 | Slot announcement | A roster update in which a device records which KeyPackage it put in its slot. |
 | Device group | The hidden MLS group containing only the account's linked devices. |
-| Roster | The device group's record of linked devices (their settings, current KeyPackages, leaf maps and history keys), rejected sign-ins, and backup details. It is group state, changed only by commits. |
+| Roster | The device group's record of linked devices (their settings, current KeyPackages, tag signature keys and history keys), rejected sign-ins, the key that seals device tags, and backup details. It is group state, changed only by commits. |
+| Device tag | A small sealed tag in each leaf a linked device creates, naming that device. Only the account's linked devices can read it. |
 | Sibling | Another device on the same account. |
 | Label | The name Alice gives a device when she links it, such as "Laptop". Kept only in the roster, never in KeyPackages or chats. |
 
@@ -405,8 +406,8 @@ There is no "Alice added a device" notice.
   quiet refresh. If not, someone else replaced it (Scene 8). The device itself also notices a KeyPackage it didn't
   publish in its own slot, and republishes its own. Keeping this in the roster rather than in a message means a device
   linked later can read every sibling's current KeyPackage straight away.
-- **Checking chats for unknown leaves.** Each device compares the account's leaves in every chat it is in with the
-  siblings' leaf map (see Under the hood). A leaf for Alice's account that no sibling claims is flagged and goes to the
+- **Checking chats for unknown leaves.** Each device reads the device tags on the account's leaves in every chat it is
+  in (see Under the hood). A leaf for Alice's account that no sibling claims is flagged and goes to the
   warning in Scene 8. This catches a replaced KeyPackage that an outside inviter used, and extra leaves a stolen device
   added before it was removed.
 
@@ -439,8 +440,10 @@ doesn't take the device out of chats it is already in. Removing the device, or l
    revocation: a relay that ignores it can keep serving the old KeyPackage until it expires, and the lost laptop still
    holds that KeyPackage's private key. If an inviter adds it from such a copy, Alice's devices are invited to the same
    chat, see a leaf for a removed device, and remove it.
-3. **The roster remembers the removed slot.** If that installation, still holding its old state, publishes into its
-   old slot again, Alice's devices show a stronger warning: "A device you removed is trying to come back."
+3. **The roster remembers the removed slot for 30 days.** If that installation, still holding its old state,
+   publishes into its old slot again in that time, Alice's devices show a stronger warning: "A device you removed is
+   trying to come back." Thirty days is the KeyPackage freshness window, so by then inviters have stopped using any
+   stale copy of its KeyPackage. After that, it looks like any new sign-in (Scene 4).
 4. **Siblings check for leftovers.** A stolen device could have added extra leaves before it was removed, so siblings
    check every chat they are in for account leaves that no remaining device claims, and remove them.
 5. **If the laptop used a signer,** the app tells Alice to revoke that device's session in the signer. Removal alone
@@ -448,8 +451,8 @@ doesn't take the device out of chats it is already in. Removing the device, or l
 6. The next time the removed laptop opens, it says it was removed and offers to sign in again.
 
 A limit on points 1 and 4: siblings can only clean up chats they are in. If the laptop was in a chat none of Alice's
-remaining devices is in, its leaf stays there until a chat admin removes it. The roster's leaf map still records that
-chat, so the Devices screen can list it and Alice can ask an admin there.
+remaining devices is in, its leaf stays there until a chat admin removes it. None of Alice's devices can see that chat,
+so the Devices screen cannot list it either.
 
 A limit on point 3: a reinstalled app creates a new slot, so it looks like any other new sign-in (Scene 4), not a
 returning device. That's fine, since it goes through normal approval. The stronger warning only catches the case where
@@ -521,9 +524,9 @@ devices, and publish more KeyPackages. The warning must not promise more protect
 These pieces sit behind the scenes above. They are settled in direction; their exact encodings come with the spec.
 
 **The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
-details, settings, status, current public KeyPackage, leaf map and history key, plus the account's rejected slots and
-KeyPackages and its backup details: the backup writer and the recovery key's public half
-([account-sync.md](./account-sync.md)).
+details, settings, status, current public KeyPackage, tag signature key and history key, plus the account's rejected
+slots and KeyPackages, the key that seals device tags, and its backup details: the backup writer and the recovery key's
+public half ([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
@@ -538,8 +541,9 @@ for good ([../protocol-core/retained-history.md](../protocol-core/retained-histo
 this. Instead, every message that matters has a visible effect on the receiving side, and a sender that doesn't see
 that effect once the receiver is back online sends again:
 
-- **A Welcome for a sibling add.** A device that joins a chat adds it to its leaf map. If the laptop's leaf map still
-  doesn't list Book club, the device that added it sends the Welcome again. If that private KeyPackage has expired
+- **A Welcome for a sibling add.** A device that joins a chat updates its own leaf there soon after, as every new
+  member does. If no update from the laptop's leaf in Book club appears, the device that added it sends the Welcome
+  again. If that private KeyPackage has expired
   meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
 - **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
   does. That request is the repair.
@@ -547,9 +551,12 @@ that effect once the receiver is back online sends again:
 
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
 account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
-records in the roster which chats it has joined, identifying its leaf in each by the leaf's signature key rather than
-its position, because positions are reused after a removal. It updates the entry when it rotates that key. Other chat
-members see nothing new.
+puts a device tag in every leaf it creates, including the leaf in each of its KeyPackages. The tag names the device's
+slot, is signed by that device's own key, and is sealed under a key that only the account's linked devices hold. A
+sibling opens the tags on the account's leaves in each chat it is in. Other chat members see bytes they cannot read,
+different in every KeyPackage. Nothing about the chats is recorded in the device group, so joining a chat, leaving
+one, or rotating a key there never commits to it. A leaf created before its device was linked has no tag; the device
+tags it with its next update in that chat.
 
 **Private KeyPackage upkeep.** Private KeyPackages expire like public ones. A device replaces a sibling's allocation
 when it is halfway to expiry, and expired private KeyPackages are simply discarded. A device coming back after a long

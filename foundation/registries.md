@@ -26,6 +26,7 @@ Marmot app components use MLS private-use component ids.
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
 | `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
 | `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
+| `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
 
 `0x800a` was `marmot.authorization.multi-device-join.v1`, the join authorization of an earlier multi-device draft that
 [#427](https://github.com/marmot-protocol/marmot/pull/427) withdrew. It has no meaning, and data under it is
