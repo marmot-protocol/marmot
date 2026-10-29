@@ -154,8 +154,9 @@ only to the account's own user. The answers are:
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
   a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-  "Update"). It keeps the rejection until the roster records it, and prepares the update again against the new roster if
-  the Commit fails or branch selection drops it.
+  "Update"). It keeps the rejection, and whenever the roster lacks it, it prepares the update again against the new
+  roster: when its Commit fails, and when branch selection drops the update that recorded it, whichever device made that
+  update.
 
 A rejection names the slot alone, never the KeyPackage the device found there: whoever holds the account's signing key
 can copy a real device's KeyPackage into a slot the user then rejects. Rejected KeyPackages in the roster are for a
@@ -167,8 +168,8 @@ the user and removing the slot's leaves from chats, are not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
 device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
-it leaves out a slot the roster holds as a device, such as the one just linked. After that, the roster is the only
-record.
+it leaves out a slot the roster holds as a device, such as the one just linked. It still keeps them after that, to
+restore one the roster loses.
 
 ### Any one device's answer
 
