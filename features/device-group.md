@@ -223,6 +223,10 @@ in any other group. It drops one unless:
 A device whose leaf in the device group carries no tag yet, such as a new device before its post-join self-update, has
 its requests and hand-offs dropped and not counted. It sends them again once it has tagged its leaf.
 
+A removed device still holds `leaf_tag_key`, and its `removed` record keeps its `tag_signature_key`, so its tags still
+read as its old slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security
+considerations"). That slot is no longer a device in the roster, so the receiver drops whatever it sends.
+
 It drops a whole hand-off unless every KeyPackage in it:
 
 - is a valid KeyPackage ([../foundation/key-packages.md](../foundation/key-packages.md)) of its own account;
@@ -250,4 +254,4 @@ leaf without a tag stays valid everywhere else ([../app-components/device-tag-v1
 - Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot. One device in the device
   group therefore cannot file its KeyPackages under a sibling's slot, or make a request in a sibling's name that resets
   what was handed that sibling. Someone holding only the account's signing key has neither `leaf_tag_key` nor a tag
-  signature key.
+  signature key. A removed device can tag only with its own old slot, which is no longer a roster device.
