@@ -68,8 +68,8 @@ A device treats a group as its device group only if:
 
 - it created the group itself, as above; or
 - it joined the group through the Welcome a confirmed link named: into the group the link named, from the leaf whose
-  signature key the link named ([device-pairing.md](./device-pairing.md), "New device", step 5), and the group requires
-  `0x800e`.
+  signature key the link named, for the KeyPackage the link confirmed ([device-pairing.md](./device-pairing.md), "New
+  device", step 5), and the group requires `0x800e`.
 
 A device MUST NOT join a group that requires `0x800e` through any other Welcome, and decides that before it joins, so
 a refused Welcome uses up neither the KeyPackage nor the group id ("Joining"). The group id alone proves nothing:
@@ -149,15 +149,19 @@ once the new device's entry is in its roster, and shows the labels of the new de
 
 ### Joining
 
-By the time it sends its Confirm, the new device has recorded the link: the pairing session's id, the group id, the
-signature key of the sender's leaf, and when its wait ends. It keeps that record across restarts until the link ends, so
-that after a restart has erased the session's secrets it can still check a Welcome and act on a Cancel. It then waits
-for a Welcome into that group from that leaf, joins only through it and only if the group requires `0x800e`, and on
-joining records the group as its device group ("Trust"). While it waits, the group id is reserved: the device joins no
-other Welcome into it, whether or not that group requires `0x800e`. A Welcome it refuses leaves the KeyPackage and the
-group id for the real one, so a forged Welcome that arrives first does not make the link fail.
+By the time it sends its Confirm, the new device has recorded the link: the pairing session's id, the confirmed
+`KeyPackageRef`, the group id, the signature key of the sender's leaf, and when its wait ends. It keeps that record
+across restarts until the link ends, so that after a restart has erased the session's secrets it can still check a
+Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
+whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
+group requires `0x800e`, and on joining records the group as its device group ("Trust"). While it waits, the group id is
+reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. A Welcome it refuses
+leaves the KeyPackage and the group id for the real one, so a forged Welcome that arrives first does not make the link
+fail.
 
-A new device keeps at most one link. The link ends, and the device accepts no Welcome under it, once:
+A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
+confirmed, so a Welcome sent under an earlier link never matches a later one. The link ends, and the device accepts no
+Welcome under it, once:
 
 - it joins through the link's Welcome;
 - its wait ends, 600 seconds after it sent its Confirm;
@@ -182,8 +186,9 @@ makes that Commit as soon as it can once it has joined: this deadline, not the g
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), bounds it. Until the deadline the slot
 is a device in the roster, so a new request from it is not answered ("Before answering").
 
-If the link is not made by then, the link has failed. Only the approving device acts on that: it makes one Commit that
-removes the new device's leaf and, with `remove_device`, its roster entry
+If the link is not made by then, the approving device first processes the input it holds for the group. If the new
+device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
+acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
 link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
 selection keeps the new device's first Commit and drops that removal, the link is made after all.
