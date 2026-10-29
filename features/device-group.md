@@ -224,8 +224,10 @@ complete check decides whether a slot holds a KeyPackage.
 Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
 belongs to which device. Each linked device tags its leaves instead
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md)), and a device that holds the roster reads
-those tags in the groups it is in. Nothing about other groups is written to the device group, so joining a group,
-leaving one, or replacing a leaf there never commits to it.
+those tags in the groups it is in. No roster commit records anything about other groups, so joining a group, leaving
+one, or replacing a leaf there never commits to the device group. Small-state messages
+([account-sync.md](./account-sync.md)) do name other groups, by MLS group id; that document's security considerations
+cover what this discloses.
 
 - Each device makes its own tag signature key pair and keeps the private key to itself.
 - The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its

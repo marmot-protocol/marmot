@@ -324,7 +324,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 2. **History transfer.** A feature document for account sync, with device-group message kinds for transfer offers,
    older-history offers, sealed bundle keys, manifests, and confirmations, plus the bundle format. Large bundles reuse
    encrypted-media locators and Blossom storage.
-3. **Small-state sync.** The device-group message kinds, their versions, and their merge rules.
+3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
    the backup pointer's address derivation and encrypted content in the Nostr transport, and the restore flow.
 5. **Re-add requests**, when they are picked up.

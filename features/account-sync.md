@@ -42,9 +42,11 @@ routing id.
 | `archive` | whether the chat is archived                    | the highest version, then the tie-break |
 
 **Read positions.** A read position names one message of the chat: a Marmot app event
-([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat. It never names
-an edit (kind `1009`), or a row a client synthesizes locally, such as a kind `1210` group system row. Positions are in
-chat order, which compares, in this order:
+([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat. A device never
+sends a position naming an edit (kind `1009`) or a row a client synthesizes locally, such as a kind `1210` group system
+row; a receiver cannot tell what a position names before it holds that message, so it judges a position by its
+encoding alone. A read position carries no version or change id. Positions are in chat order, which compares, in this
+order:
 
 1. the MLS epoch the message was sent in;
 2. its `created_at`;
@@ -86,10 +88,10 @@ chat is not muted, and no update is needed when it passes.
 A device starts taking part in small state the first time it both trusts a device group
 ([device-group.md](./device-group.md), "Trust") and supports this document: when it first trusts one, or, for a device
 that already trusts one, when it gains support. It holds no item yet for settings it already has. When it starts, it
-gives each setting that differs from the default (not read, not pinned, not muted, not archived) a value at version `1`
-with a fresh change id, takes its current read position for each chat, sends them to its siblings in updates, and asks
-a sibling for a snapshot ([Snapshots](#snapshots)). Where two devices start with different settings for one chat, the
-rules above pick the same winner on both.
+gives each versioned setting that differs from the default (not pinned, not muted, not archived) a value at version `1`
+with a fresh change id, and takes its current read position for each chat it has read. It then needs snapshots
+([Snapshots](#snapshots)), which sends these items to its siblings. Where two devices start with different settings for
+one chat, the rules above pick the same winner on both.
 
 A device keeps the items it holds for a chat it is not in, so a chat it joins later starts with the account's state.
 
@@ -123,8 +125,9 @@ object:
 | `mute`    | `false`, `true`, or a time in seconds since the Unix epoch |
 | `archive` | `true` or `false` |
 
-Every number in these messages is a decimal integer from 0 to 9007199254740991, without leading zeros, and a version is
-at least 1. One message holds at most one item for each chat and item name.
+An item has exactly the members above for its name, and a `read` value exactly its three. Every number in these
+messages is a decimal integer from 0 to 9007199254740991, without leading zeros, and a version is at least 1. One
+message holds at most one item for each chat and item name.
 
 A snapshot request's content is `{"v":1,"to":"<slot>","request":"<id>"}`:
 
@@ -134,18 +137,20 @@ A snapshot request's content is `{"v":1,"to":"<slot>","request":"<id>"}`:
   hexadecimal characters.
 
 A snapshot's content is `{"v":1,"request":"<id>","part":p,"parts":n,"items":[...]}`: `request` is the request it
-answers, `parts` is how many snapshots the answer has, `part` is this one's number, from 1 to `parts`, and `items` holds
-items as in an update. A snapshot's `items` may be empty, when the device holds no item.
+answers, `parts` is how many snapshots the answer has, at least 1, `part` is this one's number, from 1 to `parts`, and
+`items` holds items as in an update. A snapshot's `items` may be empty: a device that holds no item answers with one
+snapshot, `part` 1 of 1, with no items.
 
 ### Sending
 
 - A device sends an update when its user changes small state on it. It MAY combine several items in one update, and MAY
   wait a few seconds to combine read positions that move quickly, since only the furthest one matters.
 - An update that would be longer than 32,768 bytes is split into several updates.
-- When branch selection withdraws a device's update or snapshot
+- When branch selection withdraws an update or snapshot that a device sent or merged
   ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"), the device sends
   each item that message carried again, in updates, unless it now holds a value for that item that beats it. Resending
-  keeps the item's version and change id.
+  keeps the item's version and change id. Every device that merged the message does this, not only its sender, which
+  may no longer be in the device group.
 
 ### Snapshots
 
@@ -153,20 +158,22 @@ A device can miss small state. It cannot read device-group messages sent before 
 device-group message for good when the device group's canonical tip moves more than `app_payload_past_epoch_limit`
 epochs past the message's epoch before the device reads it, even if relays still hold the message
 ([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "App-payload retention"). It asks a
-sibling for every item instead:
+sibling for every item instead. No one sibling is sure to hold every value, since it may have missed some too, so the
+device asks every sibling, and its siblings learn what it holds:
 
-- A device needs a snapshot when it starts ([Starting](#starting)), and whenever it may have lost device-group messages:
-  when one expired before it read it, or when the device group's canonical tip moved more than
-  `app_payload_past_epoch_limit` epochs while it was away.
-- It sends a snapshot request naming one device the roster lists other than itself, preferring an `active` one. While
-  the roster lists no other device, there is nobody to ask.
-- The device a request names answers it once, with every item it holds, in as many snapshots as that takes; each names
-  the request, its part number and the number of parts. Each snapshot stands alone: a receiver merges its items as they
-  arrive and waits for no other part.
-- A device has its snapshot once it has merged every part, 1 to `parts`, of the answer to one of its requests. Until
-  then, it asks again, with a new request id, naming the same device or another: at once when branch selection
-  withdraws its latest request, and otherwise when an hour has passed since it asked. It MAY wait longer between later
-  requests.
+- A device needs snapshots when it starts ([Starting](#starting)), and whenever it may have lost a device-group
+  application message: when one expired before it read it, and whenever it cannot rule that out, such as when the
+  device group's canonical tip moved more than `app_payload_past_epoch_limit` epochs past an epoch whose messages it
+  may not all have fetched, as after time offline. Asking when nothing was lost costs only messages.
+- Then it sends every item it holds to its siblings, in updates, and sends a snapshot request to each device the roster
+  lists other than itself, whatever its status, each with its own request id.
+- The device a request names answers it once, with every item it holds, in as many snapshots as that takes and at
+  least one; each names the request, its part number and the number of parts. Each snapshot stands alone: a receiver
+  merges its items as they arrive and waits for no other part.
+- A device has a sibling's snapshot once it has merged every part, 1 to `parts`, of that sibling's answer to its latest
+  request to it. Until then, while the roster lists that sibling, the device asks it again with a new request id: at
+  once when branch selection withdraws the request, and otherwise when an hour has passed since it asked. It MAY wait
+  longer between later requests to the same sibling, such as one that has been away for a long time.
 
 ### Receiving
 
@@ -175,9 +182,9 @@ A device reads updates, snapshot requests and snapshots only in the device group
 member of that group is one of the account's devices, so any member's message counts; a device does not need to tell
 which sibling sent it.
 
-- It drops a message whose content is not one JSON object with the members above for its kind, whose `v` is not `1`,
-  that is longer than 32,768 bytes, in which an object repeats a member name, or that holds two items with the same
-  `chat` and `item`.
+- It drops a message whose content is not one JSON object with exactly the members above for its kind, whose `v` is
+  not `1`, that is longer than 32,768 bytes, in which an object repeats a member name, that holds two items with the
+  same `chat` and `item`, or, for a snapshot, whose `part` is not from 1 to `parts`.
 - In a message it keeps, it checks each item on its own. It skips an item whose `item` it does not know, so a later
   version can add items without older devices dropping the message, and it skips an item that breaks the rules above.
   It merges every other item, from an update or a snapshot, whether or not it asked for that snapshot.
@@ -189,8 +196,13 @@ A device reads small state from its device group whether or not it is in the cha
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
 the message set on a device that already merged it. Every device converges on the same values once it holds every
-value: the merge rules pick the same winner everywhere, a device resends what branch selection withdrew from its
-updates and snapshots, and a device that may have lost messages keeps asking for a snapshot until one is answered.
+value: the merge rules pick the same winner everywhere, every device that merged a withdrawn update or snapshot sends
+its items again, and a device that may have lost messages sends what it holds and keeps asking each sibling the roster
+lists until that sibling's snapshot is whole. A value held only by a device that never comes back is lost with it.
+
+A read position taken on a branch that branch selection later withdraws stays where it is: the selected branch's
+messages at or before it in chat order count as read, including ones the user never saw. Positions only move forward,
+so no device moves it back; a later position moves it again once that one is further in chat order.
 
 ## Security considerations
 
