@@ -79,8 +79,9 @@ around that exchange.
 
 ### Before answering
 
-An existing device answers a pairing request only if it would link the KeyPackage the request names
-([device-pairing.md](./device-pairing.md), "Existing device", step 2). It would not when:
+An existing device answers a pairing request only if it is not running a session as a new device itself, and only if it
+would link the KeyPackage the request names ([device-pairing.md](./device-pairing.md), "Existing device", step 2). It
+answers whether it trusts a device group or has none yet. It would not link the KeyPackage when:
 
 - the KeyPackage's slot is already a device in its roster, or the roster rejects that slot or that KeyPackage;
 - the KeyPackage does not support everything its device group requires, or, when it has no device group, everything
@@ -89,8 +90,8 @@ An existing device answers a pairing request only if it would link the KeyPackag
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation").
 
 A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
-lacks, or that the account has as many devices as it can, so the user removes one first. It MAY send Cancel
-`cannot_link`.
+lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
+Cancel `cannot_link`, so the new device stops waiting. When the slot or KeyPackage is rejected, it MAY send it.
 
 ### Approving
 
@@ -99,7 +100,7 @@ and "bring chat history" settings ([../app-components/device-roster-v1.md](../ap
 "State"). Both settings are on unless the user turns them off. The device's Confirm names:
 
 - the device group it trusts, if it has one;
-- otherwise a fresh group id, for the device group it will create.
+- otherwise a fresh group id of 16 random bytes, for the device group it will create.
 
 Once the link is confirmed, the device adds the new device:
 
@@ -110,6 +111,10 @@ Once the link is confirmed, the device adds the new device:
 The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
 device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. That Commit, or the founding Add, is
 the approval. Its Welcome is sent as for any other Add.
+
+The approving device treats the link as settled once the approving Commit's publication is confirmed, its state for the
+device group is at or past that Commit's epoch with the Commit on the selected branch, and it holds no unprocessed input
+for the group. Anything that acts on the new device as a member of the account waits until then.
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
 a member MUST add exactly one, by value, and MUST set that device's roster entry in the same Commit, for a slot the
@@ -133,6 +138,8 @@ under the link, once:
 
 - 600 seconds have passed since it sent its Confirm; or
 - a Cancel withdraws the link ([device-pairing.md](./device-pairing.md), "Every session").
+
+A Welcome that arrives after that leaves its group untrusted, and linking again starts a new pairing session.
 
 ## Keeping it out of sight
 
