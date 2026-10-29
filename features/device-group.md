@@ -98,12 +98,14 @@ KeyPackage of the account. Nothing else raises a sign-in: not a publication that
 and not a Welcome on its own.
 
 A check is complete when it read every relay the account publishes its KeyPackages to (on the Nostr binding, its
-write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"), and each of them
-ended its answer for both the KeyPackages and the deletion requests without failing or timing out, and with fewer events
-than the device asked for. An answer that holds as many events as the device asked for may have more behind it, so it
-does not complete the check. A relay that cuts its answer at a lower limit of its own looks complete, so a device SHOULD
-ask a relay for no more events than the limit it advertises. A check that is not complete still shows what it found, but
-proves nothing missing.
+write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication") with no time bound,
+and each of them ended both of its answers, the one for the KeyPackages and the one for the deletion requests, without
+failing or timing out. Each answer is judged on its own: one that holds as many events as the device asked for in that
+query may have more behind it, so it does not complete the check. A relay that cuts its answer at a lower limit of its
+own looks complete, so a device SHOULD ask a relay for no more events than the limit it advertises (on the Nostr
+binding, the `max_limit` in its NIP-11 relay information document). A read bounded in time, such as one resumed with
+`since`, and what a live subscription delivers may show slots, but never complete a check. A check that is not complete
+still shows what it found, but proves nothing missing.
 
 A slot that counts is an unrecognized sign-in unless it is:
 
@@ -137,17 +139,20 @@ whoever holds the account's signing key chooses that time.
   after its client gains these rules, that finishes with at least one relay having answered. It covers every slot that
   read returns, from every relay in it, including a slot whose publication is not fresh or not valid; fetching the one
   KeyPackage a Welcome names is never the first check. The device keeps, across restarts, that its first check happened
-  and the id of every slot it returned, so a later check is never taken for it and those slots keep their class. When
-  such a slot is an unrecognized sign-in, at the first check or whenever it counts later, the device tells its user that
-  the account is already signed in elsewhere, with when that slot last published, and asks whether they still have that
-  device.
-- Every unrecognized slot that the first check did not return is a new sign-in, and the device asks its user whether it
-  was them.
+  and the id of every slot it returned, so a later check is never taken for it and those slots keep their class. The
+  first time such a slot is an unrecognized sign-in, at the first check or later, the device lists it: it tells its user
+  that the account is already signed in elsewhere, with when that slot last published, and asks whether they still have
+  that device.
+- Every unrecognized slot that the first check did not return is a new sign-in. The first time it is one, the device
+  lists it and asks its user whether it was them.
 - A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
   decides only whether a slot counts. When a sign-in appeared and when it last published are for display only.
 
 A slot the first check missed, for example because a relay did not answer, is a new sign-in when a later check finds
 it. That errs toward asking.
+
+Once a sign-in is listed, a later check that finds it again does not ask about it again: only the user's answers and the
+roster change how it is listed ([Answers](#answers), [Any one device's answer](#any-one-devices-answer)).
 
 ### Answers
 
@@ -198,7 +203,7 @@ because a deletion covers it, the device keeps the sign-in listed and marks it a
 cannot be linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait
 for the user to be asked, and delete the publication before the user saw it. A device decides that a slot is empty only
 from a complete check, never from one that failed. When a later check finds a valid, fresh KeyPackage in that slot
-again, the sign-in is signed in again and can be linked.
+again, the sign-in is signed in again and can be linked; any answer the user gave it stands.
 
 ## Matching leaves to devices
 
