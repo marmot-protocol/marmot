@@ -63,7 +63,8 @@ message the position names.
 
 - When the user changes a versioned item on a device, the device gives the change a version one higher than the highest
   version it holds for that item, from any device, and a fresh change id: 16 bytes from a cryptographically secure
-  random source.
+  random source. A device that holds no value for the item counts its highest version as 0, so its first change has
+  version 1.
 - Of two values for the same item, the one with the higher version wins. At an equal version, the one with the lower
   change id, compared as bytes, wins. At an equal version and change id, the one whose `value` is lower, compared as the
   bytes of its encoding ([Messages](#messages)), wins; only a device that breaks these rules sends two values that way.
