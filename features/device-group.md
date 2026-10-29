@@ -213,11 +213,11 @@ deletion request the check found covers it. When a complete check finds that the
 holds a KeyPackage, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it cannot be
 linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait for the
 user to be asked, and delete the publication before the user saw it. Freshness plays no part in whether a slot holds a
-KeyPackage: a valid publication that no deletion request covers holds a KeyPackage however old it is, since freshness
-decides only which KeyPackage an inviter picks and a device that has not been opened for a while has not signed out.
-When a later complete check finds that the slot holds a KeyPackage again, the sign-in is signed in again and can be
-linked; any answer the user gave it stands. A check that is not complete changes neither: only a complete check decides
-whether a slot holds a KeyPackage.
+KeyPackage: a valid publication that no deletion request covers holds a KeyPackage however old it is. Freshness decides
+which KeyPackage an inviter picks and whether a slot raises a sign-in, but a device that has not been opened for a while
+has not signed out. When a later complete check finds that the slot holds a KeyPackage again, the sign-in is signed in
+again and can be linked; any answer the user gave it stands. A check that is not complete changes neither: only a
+complete check decides whether a slot holds a KeyPackage.
 
 ## Matching leaves to devices
 
