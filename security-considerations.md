@@ -242,6 +242,11 @@ Owners: [preview authenticity](features/agent-text-streams-quic.md#preview-authe
 [#78](https://github.com/marmot-protocol/marmot/issues/78). G1 here depends on the experimental construction and A1–A2;
 it adds no stronger member-authentication or availability guarantee.
 
+Publisher-admission work is explicitly deferred in those issues until QUIC streaming is being brought into a supported
+product or a concrete future media/calling design needs related machinery. Deferral does not resolve the known risks
+or promote this experimental profile to an adopted mechanism. Future voice/video use needs its own threat analysis;
+the text-preview broker is not a selected calling architecture.
+
 ### T10. Notification service and platform trust
 
 Push is optional and advisory. Token gossip adds group-visible metadata and encrypted server-specific token material;
@@ -1912,8 +1917,10 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   preview consumers.
 - **Residual risk:** A room pair is a routing key, not an authorization credential. Publisher admission and
   room-claim interference remain a design boundary tracked in
-  [#344](https://github.com/marmot-protocol/marmot/issues/344); ciphertext integrity does not ensure broker
-  availability.
+  [#344](https://github.com/marmot-protocol/marmot/issues/344), under
+  [#78](https://github.com/marmot-protocol/marmot/issues/78). This work is explicitly deferred until renewed product
+  use; publisher-key binding is a candidate design, not an adopted mitigation. Ciphertext integrity does not
+  ensure broker availability.
 - **Normative owners:** [Broker-relayed delivery](transports/quic.md#broker-relayed), [Record
   framing](transports/quic.md#record-framing), [Limits](transports/quic.md#limits), [Preview
   authenticity](features/agent-text-streams-quic.md#preview-authenticity).
@@ -2085,8 +2092,10 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
   of the free-text kind-1210 exception, compatibility handling, and withdrawal of superseded rows. Authored content
   cannot establish canonical provenance by assertion; the proposed restriction remains unadopted.
 - **Experimental broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
-  when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) tracks the
-  injection/admission concern. Room routing and end-to-end ciphertext validation alone do not answer it.
+  when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) and parent
+  [#78](https://github.com/marmot-protocol/marmot/issues/78) explicitly defer this design until product adoption is
+  being pursued. Room routing and end-to-end ciphertext validation alone do not answer it; revisit admission and
+  any separate media/calling requirements before relying on the mechanism in a supported product.
 
 ## Surface coverage
 
