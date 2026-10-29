@@ -18,12 +18,15 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds [features/account-sync.md](./features/account-sync.md) and
 registers kinds `475`, `476` and `477` in [foundation/registries.md](./foundation/registries.md). An account's devices
 keep each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an
-update when the user changes one, and a snapshot when a device first trusts its device group or may have lost
-device-group messages. Each item names its chat by MLS group id. The furthest read position wins, in chat order by
-epoch, `created_at` and `id`; for the other items the highest version wins, and at an equal version the lowest random
-change id. A device reads these kinds only in its trusted device group, from any member, skips item names it does not
-know, keeps what a withdrawn update set, and resends its own withdrawn updates. Clients that do not support device
-groups change nothing.
+update when the user changes one, and a snapshot when a device starts taking part or may have lost device-group
+messages. Each item names its chat by raw MLS group id. The furthest read position wins, in chat order by epoch,
+`created_at` and `id`; for the other items the highest version wins, then the lowest random change id, then the lowest
+value. A version stops at 9007199254740991, and an item held there can no longer change. A snapshot request carries a
+random request id, and its answer numbers its parts, so the requester asks again until it has merged every part. A
+device reads these kinds only in its trusted device group, from any member, drops a message with a repeated member name
+or item, skips item names it does not know, keeps what a withdrawn message set, and resends the items of its own
+withdrawn updates and snapshots. [ideas/account-sync.md](./ideas/account-sync.md) now points to the feature for these
+rules. Clients that do not support device groups change nothing.
 
 ## 2026-10-29: New sign-ins in the device group (draft)
 

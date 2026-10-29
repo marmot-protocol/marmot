@@ -173,21 +173,11 @@ What matches across her devices:
 
 **Not drafts.** A draft belongs to the device it was typed on.
 
-These change often, so they travel as **device-group messages, not roster commits**. Each kind has a merge rule that
-makes arrival order irrelevant:
-
-- **Read position:** the furthest point wins. Positions only move forward.
-- **Pins, mutes, and archive:** the highest version wins. Each change to an item, such as muting Book club, carries a
-  version one higher than the highest the sending device has seen for that item. If two devices that couldn't see each
-  other pick the same version, the change whose authenticating leaf signature key sorts first wins. That is the key
-  that signed the change itself, not the device's current key, which may have rotated since. Every device picks the
-  same winner, and no device's clock matters.
-
-A newly linked device gets a snapshot of the current small state along with its history. So does a device coming back
-after a long gap: device-group messages it was offline for can be lost for good
-([../protocol-core/retained-history.md](../protocol-core/retained-history.md)), so it asks a sibling for a fresh
-snapshot. The snapshot carries each item's version, including settings that were turned back off, and merges by the same
-rules. This works whether or not history is on for that device.
+These change often, so they travel as **device-group messages, not roster commits**. Read positions, pins, mutes and
+archive are specified in [../features/account-sync.md](../features/account-sync.md): the furthest read position wins,
+the highest version wins for the others, and every device breaks a tie the same way, whatever order changes arrive in.
+A newly linked device, and one coming back after a long gap, asks a sibling for a snapshot of every item. This works
+whether or not history is on for that device.
 
 ## Scene 7: Backups
 
