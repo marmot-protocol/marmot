@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-29: Small-state sync between an account's devices (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds [features/account-sync.md](./features/account-sync.md) and
+registers kinds `475`, `476` and `477` in [foundation/registries.md](./foundation/registries.md). An account's devices
+keep each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an
+update when the user changes one, and a snapshot when a device first trusts its device group or may have lost
+device-group messages. Each item names its chat by MLS group id. The furthest read position wins, in chat order by
+epoch, `created_at` and `id`; for the other items the highest version wins, and at an equal version the lowest random
+change id. A device reads these kinds only in its trusted device group, from any member, skips item names it does not
+know, keeps what a withdrawn update set, and resends its own withdrawn updates. Clients that do not support device
+groups change nothing.
+
 ## 2026-10-29: New sign-ins in the device group (draft)
 
 [#465](https://github.com/marmot-protocol/marmot/pull/465) changes

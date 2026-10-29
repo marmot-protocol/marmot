@@ -14,6 +14,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 
 ## Current feature docs
 
+- [account-sync.md](./account-sync.md) - draft small state (read positions, pins, mutes, archived chats) shared
+  across one account's devices.
 - [content-moderation.md](./content-moderation.md) - draft group reports, admin dismissal labels, and admin deletion.
 - [device-group.md](./device-group.md) - draft hidden group of one account's devices that carries its device roster.
 - [encrypted-media.md](./encrypted-media.md) - current v2 message-attached encrypted blobs.
