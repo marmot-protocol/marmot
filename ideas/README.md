@@ -18,6 +18,7 @@ Implementations MUST NOT treat an idea document as an interop surface.
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
 - [account-sync.md](./account-sync.md) - history for a newly linked device, small-state sync, backups, and recovering when every device is lost.
+- [nostr-shared-epoch-authors.md](./nostr-shared-epoch-authors.md) - shared transport signing keys, relay-side outsider filtering, deletion protection, and the remaining recovery and privacy trade-offs.
 
 ## From idea to spec
 

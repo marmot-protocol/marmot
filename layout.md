@@ -73,6 +73,7 @@ ideas/
   README.md
   account-sync.md
   multi-device.md
+  nostr-shared-epoch-authors.md
 implementation-model.md
 ```
 
