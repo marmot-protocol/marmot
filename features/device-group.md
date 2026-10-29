@@ -97,22 +97,26 @@ binding's fetch, replacement and deletion rules. A slot counts only if its curre
 KeyPackage of the account. Nothing else raises a sign-in: not a publication that fails validation, not a `client` tag,
 and not a Welcome on its own.
 
-A check is complete when every relay it read from answered in full: none failed or timed out, and none cut its answer
-off at a limit that could hide a publication.
+A check is complete when it read every relay the account publishes its KeyPackages to (on the Nostr binding, its
+write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"), and each of them
+ended its answer for both the KeyPackages and the deletion requests without failing, timing out, or returning as many
+events as the device asked for at most. A check that is not complete still shows what it found, but proves nothing
+missing.
 
 A slot that counts is an unrecognized sign-in unless it is:
 
 - the device's own slot;
 - the slot of a device in the roster of its trusted device group ([Trust](#trust));
-- rejected: a rejected slot in that roster or among the rejections the device keeps itself ([Answers](#answers)), or a
-  slot whose current KeyPackage is rejected there
-  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+- a rejected slot in that roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "State") or among the rejections the device keeps itself ([Answers](#answers)).
 
-A device with no device group has no roster, so it recognizes only its own slot and its own rejections.
+A device with no device group has no roster, so it recognizes only its own slot and its own rejected slots. A rejected
+KeyPackage does not make another slot rejected: whoever holds the account's signing key can copy any published
+KeyPackage into a slot the user then rejects, so a slot is rejected only by its own id.
 
 A Welcome that names a KeyPackage of the account that this device did not publish
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery") is a reason to look. The device SHOULD fetch
-the KeyPackage it names (on the Nostr binding, the KeyPackage event in the Welcome rumor's `e` tag) and classify that
+the KeyPackage it names ([../transports/nostr.md](../transports/nostr.md), "Welcome delivery") and classify that
 KeyPackage's slot as above. A fetch that fails, or a KeyPackage that is not valid and fresh, raises nothing: anyone can
 send a Welcome naming any KeyPackage.
 
@@ -126,9 +130,11 @@ Nothing published says which of two devices signed in first. A slot's only publi
 whoever holds the account's signing key chooses that time.
 
 - Every unrecognized slot that a device's first check finds belongs to a device that was signed in before it. The first
-  check is the first one that reads from any relay after the device signs in, or after its client gains these rules.
-  The device tells its user that the account is already signed in elsewhere, with when that slot last published, and
-  asks whether they still have that device.
+  check is the first read of all the account's KeyPackages that reaches any relay after the device signs in, or after
+  its client gains these rules; fetching the one KeyPackage a Welcome names is never the first check. The device keeps
+  the fact that its first check happened, so a later one, even after a restart, is never taken for it. It tells its
+  user that the account is already signed in elsewhere, with when that slot last published, and asks whether they still
+  have that device.
 - Every unrecognized slot it finds after its first check is a new sign-in, and the device asks its user whether it was
   them.
 - A device MUST NOT use a publication's time to decide which of the two a slot is. When a sign-in appeared and when it
@@ -148,19 +154,21 @@ only to the account's own user. The answers are:
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits one roster update that
   sets a `not_me` rejected slot for the slot and, unless that KeyPackage is protected (below), a rejected KeyPackage for
   the KeyPackage it found there ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-  "Update"). It keeps the rejection until the roster records it, and commits again if the Commit fails or branch
-  selection drops it.
+  "Update"). It keeps the rejection until the roster records it, and prepares the update again against the new roster
+  if the Commit fails or branch selection drops it.
 
-A KeyPackage the device made itself, or that the roster announces for a device, is protected: a device MUST NOT record
-it as rejected, even when it finds it in a slot it rejects, and rejects only that slot. Whoever holds the account's
-signing key can copy a published KeyPackage into a new slot. A rejection that conflicts with the roster, such as one for
-a slot another device linked meanwhile, is not specified yet. What else a rejection does, such as warning the user and
-removing the slot's leaves from chats, is not specified yet.
+A KeyPackage is protected if the device made it, if the roster announces it for a device, or if the device's latest
+check found it current in another slot. A device MUST NOT record a protected KeyPackage as rejected, even when it finds
+it in a slot it rejects, and rejects only that slot.
 
-A device with no device group keeps its rejections itself and never asks about those slots or KeyPackages again. When
-it creates a device group, the founding roster carries them. When it joins one, it commits them once it trusts that
-group. Either way it leaves out a slot the roster holds as a device, such as the one just linked, and a KeyPackage
-that is protected under that roster. After that, the roster is the only record.
+If the roster holds the slot as a device by the time the device commits, another device linked it: the device commits
+nothing for it and stops asking about it. What the user is then told, and what else a rejection does, such as warning
+the user and removing the slot's leaves from chats, are not specified yet.
+
+A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
+device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
+it leaves out a slot the roster holds as a device, such as the one just linked, and a KeyPackage that is protected under
+that roster. After that, the roster is the only record.
 
 ### Any one device's answer
 
