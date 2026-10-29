@@ -1765,25 +1765,29 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 
 <a id="sc-073"></a>
 
-### SC-073. A stale signed push record resurrects a revoked token after tombstone loss
+### SC-073. A stale signed push record resurrects a revoked token without a tombstone
 
-- **Attacker and prerequisites:** A current member retains an earlier valid owner-signed record; another client
-  has processed its removal or replacement.
+- **Attacker and prerequisites:** A current member retains an earlier valid owner-signed record; a removal or
+  replacement exists, but the receiving client lacks its ordering evidence.
 - **Attack sequence:** The attacker rewraps the old record in a fresh in-window list response, possibly many
-  epochs later or after restart, and the recipient has expired its tombstone or ordering stamp.
+  epochs later or after restart. The recipient has discarded its ordering stamp, or is a new joiner that never
+  received the removal.
 - **Affected property and assumptions:** G5 and A6 govern durable local ordering evidence; MLS payload age is
   not a lifetime bound on independently relayed signed records.
 - **Mitigations:** Compare owner timestamp and canonical record digest, never carrier time or arrival order.
   Persist live stamps and winning tombstones for the owning leaf's lifetime, including removals received before
-  their record; snapshots relay tombstones too.
-- **Residual risk:** A legitimately higher owner stamp can re-establish a record. Owner-key compromise remains
-  outside this ordering defense; clearing state on leaf removal has the separate boundary in [SC-085](#sc-085).
+  their record. Snapshots and repair can relay a tombstone only when its complete signed removal was retained.
+- **Residual risk:** A stamp-only tombstone protects its holder but cannot inform a new joiner. An incomplete
+  snapshot can therefore leave that joiner selecting a revoked token from a stale record; repair is not guaranteed
+  to supply missing evidence. A legitimately higher owner stamp can re-establish a record. Owner-key compromise
+  remains outside this defense; leaf-removal cleanup has the separate boundary in [SC-085](#sc-085).
 - **Normative owners:** [Record ordering](features/push-notifications.md#record-key-and-ordering-primitive),
-  [Removal and tombstones](features/push-notifications.md#removal-and-tombstones), [Snapshot on
-  add](features/push-notifications.md#snapshot-on-add).
+  [Removal and tombstones](features/push-notifications.md#removal-and-tombstones), [Relaying
+  removals](features/push-notifications.md#removal-kind-449), [Snapshot on add](features/push-notifications.md#snapshot-on-add).
 - **Verification status:** Unverified — candidate check: permute remove-before-record, equal-timestamp digest
-  ties and stale lists across epochs/restarts; include a new joiner receiving a snapshot and require identical
-  per-key high-water outcomes.
+  ties and stale lists across epochs/restarts; require identical per-key outcomes after the same eligible signed
+  records and removals are acquired. Separately omit a snapshot tombstone or retain only its stamp and check the
+  new joiner's stale-token exposure rather than assuming complete revocation knowledge.
 
 <a id="sc-074"></a>
 
@@ -1800,7 +1804,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   cancellation, catch-up handling, array/size bounds and per-announcer-leaf reply guidance.
 - **Residual risk:** The one-reply-per-24-hours limit is SHOULD guidance; malicious members can ignore it or use
   multiple leaves. Missing or censored replies can delay wake coverage indefinitely without invalidating group
-  messages.
+  messages. Missing tombstones can also leave a joiner selecting revoked records, as in [SC-073](#sc-073).
 - **Normative owners:** [Snapshot on add](features/push-notifications.md#snapshot-on-add),
   [Repair](features/push-notifications.md#repair), [Event size](features/push-notifications.md#event-size),
   [Validation](features/push-notifications.md#validation).
