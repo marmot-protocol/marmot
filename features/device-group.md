@@ -7,9 +7,9 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, and how clients keep it
-out of sight. Linking, the messages devices exchange in the group, private KeyPackages, and removal are not specified
-yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out of
+sight, and how each device shows its siblings to its user. Linking, the other messages devices exchange in the group,
+private KeyPackages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -21,6 +21,8 @@ yet.
   group requires under the ordinary creation rule.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
   [../protocol-core/joining.md](../protocol-core/joining.md).
+- Marmot app event: kind `457` (heartbeat), sent only in a device group ([Heartbeats](#heartbeats)) and registered in
+  [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -98,6 +100,83 @@ leaving one, or replacing a leaf there never commits to it.
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
+
+## Devices
+
+A device shows its user the account's devices from its device group's roster, for example on a Devices screen. It never
+shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
+
+### Labels, clients and platforms
+
+A device entry's `label`, `client` and `platform`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") are what a user reads to tell
+the devices apart.
+
+- Any device MAY change any device entry's `label`, its own included. A rename is a roster update that sets that entry
+  with only `label` changed.
+- A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
+  KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
+  is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD write
+  them in a roster update it is already making to its own entry, rather than in one of their own. A device does not
+  write another device's `client` or `platform`.
+- A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
+  earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
+  older roster puts back whatever changed in that entry since.
+
+A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit. A
+device that renamed a device keeps the rename, and the label it replaced, while the Commit carrying it can still be
+superseded. When a Commit of its own in the device group is superseded, it checks each such rename against the
+winning roster:
+
+- If that entry's `label` is still the label the rename replaced, it renames the device again.
+- Otherwise another rename of that device won, and that one stands: the device drops its own.
+
+Either way, a device shows its user the label its roster holds.
+
+### Heartbeats
+
+| Kind  | Message   | Sent by                   |
+| ----- | --------- | ------------------------- |
+| `457` | Heartbeat | every device in the group |
+
+A heartbeat is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group. Its content is `{"v":1}`, written without whitespace, and its
+`created_at` is when it was sent. It says that the device that sent it is running.
+
+**Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever its
+last heartbeat there is at least one hour old, whether it has just started or has been running for a while. It keeps
+the time of its last heartbeat across restarts. It sends one only while the roster lists it and its own entry carries
+its `tag_signature_key`, so that its leaf in the device group is tagged
+([Matching leaves to devices](#matching-leaves-to-devices)). A heartbeat never asks for a push notification and never
+wakes a sibling.
+
+**Receiving.** A device reads heartbeats only in the device group it trusts, and ignores kind `457` in any other group.
+A heartbeat counts for a sibling only when the leaf that sent it, in the tree of the epoch the device holds when it
+reads it, carries a device tag that reads as that sibling's
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
+roster's `leaf_tag_key`, names a slot that is a device in the roster, and verifies under that entry's
+`tag_signature_key`. A heartbeat from an earlier epoch, from an unclaimed leaf, or from a leaf whose tag names a
+`removed` slot counts for no device; that sibling's next heartbeat counts instead. A receiver enforces no rate: every
+heartbeat that meets these rules counts.
+
+A receiver does not read a heartbeat's content, so that a later version can add to it without older devices dropping
+its heartbeats and judging its sender inactive.
+
+**Last activity.** A device keeps, for each sibling, the time of the newest heartbeat that counted for it: the
+heartbeat's `created_at`, or the time the device read it if that is earlier. A heartbeat delivered late never makes a
+sibling look active later than it was, and a sender's clock never dates activity after it was read. Each device keeps
+its own; nothing about it is written to the roster.
+
+### Inactive devices
+
+A device treats a sibling as inactive once 30 days have passed, by its own clock, since that sibling's last activity or
+since the device first found that sibling in its roster, whichever is later. A device that has just joined the device
+group, or a sibling that was just linked, therefore gets 30 days before it shows as inactive. A device never treats
+itself as inactive. A device SHOULD show its user which siblings are inactive.
+
+A device that comes back after a long absence sees every sibling as inactive until the heartbeats sent meanwhile
+arrive. It MUST NOT record a sibling as inactive in the roster on that view alone. Recording the roster's `inactive`
+status, and removing a device after a longer absence, are not specified yet.
 
 ## Security considerations
 

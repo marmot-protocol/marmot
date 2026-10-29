@@ -13,6 +13,23 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-29: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes [features/device-group.md](./features/device-group.md)
+and [foundation/registries.md](./foundation/registries.md).
+
+- Any device may rename any device in the roster. A device keeps each rename it made while the Commit carrying it can
+  still be superseded. When a Commit of its own in the device group is superseded, it renames again where the winning
+  roster still has the replaced label; where the winning roster has another label, that rename stands.
+- Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current, folded into a
+  roster update it is already making to its own entry.
+- Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever
+  its last one is at least an hour old. A receiver counts one only when the sending leaf's device tag reads as a device
+  in the roster, enforces no rate, ignores the content, and dates it `min(created_at, when it was read)`. Heartbeats
+  never trigger push notifications.
+- A device treats a sibling as inactive 30 days after its last activity, or after first finding it in the roster if
+  that is later. It must not record that in the roster from a view that has not caught up.
+
 ## 2026-10-28: Device roster component and device group (draft)
 
 [#452](https://github.com/marmot-protocol/marmot/pull/452) adds
