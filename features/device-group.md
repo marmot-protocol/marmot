@@ -7,9 +7,9 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, and how clients keep it
-out of sight. Linking, the messages devices exchange in the group, private KeyPackages, and removal are not specified
-yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out of
+sight, and how the account's devices notice a new sign-in. Linking, the messages devices exchange in the group, private
+KeyPackages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -21,6 +21,8 @@ yet.
   group requires under the ordinary creation rule.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
   [../protocol-core/joining.md](../protocol-core/joining.md).
+- Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publications are the evidence of a
+  new sign-in ([New sign-ins](#new-sign-ins)).
 
 ## What a device group is
 
@@ -78,6 +80,145 @@ A device group is not a chat:
 - A client shows the roster of its own device group only to its own user, for example on a Devices screen. It never
   shows another account's devices.
 
+## New sign-ins
+
+Each device publishes its KeyPackages into a slot of its own
+([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and publication slots"), so a slot that none
+of the account's devices accounts for is the account signed in somewhere new. That is how linking starts, and it is
+also what someone holding the account's signing key does. Only the user can tell the two apart, so a device asks and
+never decides. These rules apply to every device whose client supports `0x800e`, whether or not its account has a
+device group yet.
+
+### Evidence
+
+A device checks for sign-ins by reading its account's KeyPackage publications as an inviter reads them
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), under the transport
+binding's fetch, replacement and deletion rules. A slot counts only if its current publication is a valid, fresh
+KeyPackage of the account. Nothing else raises a sign-in: not a publication that fails validation, not a `client` tag,
+and not a Welcome on its own.
+
+A check is complete when the device found the relays the account publishes its KeyPackages to (on the Nostr binding, its
+write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"), that set is not
+empty, and it read every relay in it with no time bound, each of them ending both of its answers, the one for the
+KeyPackages and the one for the deletion requests, without failing or timing out and with fewer events than the device
+asked for in that query, counting every event the relay sent. When the device cannot find that set, or it is empty, the
+device MAY read other relays, but no check is complete. An answer that holds as many events as the device asked for may
+have more behind it, so the check is not complete, and reading further back does not make it so. A relay that cuts its
+answer at a lower limit of its own looks whole, so a device SHOULD ask a relay for no more events than the limit it
+advertises (on the Nostr binding, the `max_limit` in its NIP-11 relay information document). A read with a time bound,
+such as one resumed with `since`, and what a live subscription delivers may show slots, but never complete a check. A
+check that is not complete still shows what it found, but proves nothing missing.
+
+This has two limits. An account with more KeyPackage publications or deletion requests than one answer holds never has a
+complete check: its sign-ins stay listed and can be answered, but none is marked as no longer signed in. And a relay
+that cuts its answer at a lower limit it does not advertise makes a check look complete when it is not: a listed sign-in
+whose slot that answer left out is marked as no longer signed in, and cannot be linked, until a complete check finds it
+again.
+
+A slot that counts is an unrecognized sign-in unless it is:
+
+- the device's own slot;
+- the slot of a device in the roster of its trusted device group ([Trust](#trust));
+- a rejected slot in that roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "State") or among the rejections the device keeps itself ([Answers](#answers)).
+
+A device with no device group has no roster, so it recognizes only its own slot and its own rejected slots. A rejected
+KeyPackage does not make another slot rejected: whoever holds the account's signing key can copy any published
+KeyPackage into a slot the user then rejects, so a slot is rejected only by its own id.
+
+A Welcome that names a KeyPackage of the account that this device did not publish
+([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery") is a reason to look. The device SHOULD fetch
+the KeyPackage it names ([../transports/nostr.md](../transports/nostr.md), "Welcome delivery") and classify that
+KeyPackage's slot as above, once its first check ([Already signed in, or new](#already-signed-in-or-new)) has happened;
+before that, the Welcome waits for it. A fetch that fails, or a KeyPackage that is not valid and fresh, raises nothing:
+anyone can send a Welcome naming any KeyPackage.
+
+A device SHOULD check when its client starts, so that opening Marmot on a device already signed in is enough to see a
+new sign-in, and periodically while it runs. It MAY also check when a new publication of its account reaches it, for
+example on a live subscription; the check's read is the evidence, not the publication that prompted it.
+
+### Already signed in, or new
+
+Nothing published says which of two devices signed in first. A slot's only public time is its latest publication, and
+whoever holds the account's signing key chooses that time.
+
+- Every slot that a device's first check returns belongs to a device that was signed in before it, whether or not the
+  slot counts then. The first check is the first read of all the account's KeyPackages with no time bound, after the
+  device signs in or after its client gains these rules, that ends with at least one relay having answered. Like any
+  check, it ends only when every relay in it has ended its answers, failed or timed out. It covers every slot that one
+  read returns, from every relay that answered: the `d` of every KeyPackage publication in those answers, including one
+  that is not fresh, not valid, or covered by a deletion request. Fetching the one KeyPackage a Welcome names, a read
+  with a time bound and a live subscription are never the first check, and until the first check has happened the device
+  lists no sign-in. The device keeps, across restarts, that its first check happened and the id of every slot it
+  returned, so a later check is never taken for it and those slots keep their class. The first time such a slot is an
+  unrecognized sign-in, at the first check or later, the device lists it: it tells its user that the account is already
+  signed in elsewhere, with when that slot last published, and asks whether they still have that device.
+- Every unrecognized slot that the first check did not return is a new sign-in. The first time it is one, the device
+  lists it and asks its user whether it was them.
+- A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
+  decides only whether a slot counts. When a sign-in appeared and when it last published are for display only.
+
+A slot the first check missed, for example because a relay did not answer or an answer was full, is a new sign-in when a
+later check finds it. That errs toward asking.
+
+Once a sign-in is listed, a later check that finds it again does not ask about it again: only the user's answers and the
+roster change how it is listed ([Answers](#answers), [Any one device's answer](#any-one-devices-answer)).
+
+### Answers
+
+A device keeps each unrecognized sign-in listed for its user, with the `client` tag of its publication if it has one,
+when it appeared, and when it last published, until the user links or rejects it. It keeps that list across restarts,
+with each sign-in's answer and whether it is still signed in, so a restart neither drops a sign-in nor asks again about
+one the user put off. Like the roster, the list is shown only to the account's own user. The answers are:
+
+- **Link:** starts linking that slot's device, which is not specified yet.
+- **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
+- **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
+  a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "Update"). It commits that update only while the roster has no entry for the slot, neither a device nor a rejected
+  slot, and never replaces an entry the roster has.
+
+A rejection names the slot alone, never the KeyPackage the device found there: whoever holds the account's signing key
+can copy a real device's KeyPackage into a slot the user then rejects. Rejected KeyPackages in the roster are for a
+linked device's slot that holds a KeyPackage the device did not publish, which is not specified yet.
+
+A device keeps its own rejections, across restarts, until the roster holds the slot as a device. While it keeps one, it
+commits it again whenever the roster has no entry for the slot: when its Commit fails, and when branch selection drops
+the update that recorded it, whichever device made that update.
+
+If the roster holds the slot as a device, the user confirmed linking it, on this device or another: the device commits
+nothing for the slot, forgets its rejection, and stops asking about it. If branch selection later drops that link, the
+device asks about the slot again ([Any one device's answer](#any-one-devices-answer)) rather than restore an answer the
+user's link overrode. What the user is then told, and what else a rejection does, such as warning the user and removing
+the slot's leaves from chats, are not specified yet.
+
+A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
+device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
+it leaves out, and forgets, a rejection of a slot the roster holds as a device, such as the one just linked, and keeps
+the others as above.
+
+### Any one device's answer
+
+A link or a rejection is written to the roster, so one device's answer reaches all of them. A device that finds the slot
+of a sign-in it lists among the roster's devices or rejected slots stops asking about it: the user answered on another
+device. It MAY keep telling its user so, and which device linked it, until the user dismisses it. That answer holds only
+while the roster does: when the slot is no longer among the roster's devices or rejected slots, a device with no
+rejection of its own for it lists it again as it did before, even if the user dismissed it. Not now is each device's own
+and is not shared.
+
+### A sign-in that goes away
+
+A slot holds a KeyPackage, fresh or not, when its current publication is a valid KeyPackage of the account and no
+deletion request the check found covers it. When a complete check finds that the slot of a listed sign-in no longer
+holds a KeyPackage, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it cannot be
+linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait for the
+user to be asked, and delete the publication before the user saw it. Freshness plays no part in whether a slot holds a
+KeyPackage: a valid publication that no deletion request covers holds a KeyPackage however old it is. Freshness decides
+which KeyPackage an inviter picks and whether a slot raises a sign-in, but a device that has not been opened for a while
+has not signed out. When a later complete check finds that the slot holds a KeyPackage again, the sign-in is signed in
+again and can be linked; any answer the user gave it stands. A check that is not complete changes neither: only a
+complete check decides whether a slot holds a KeyPackage.
+
 ## Matching leaves to devices
 
 Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
@@ -105,6 +246,12 @@ leaves, warning about a leaf no device claims) is not specified yet.
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
+- A new sign-in is only ever a question. Holding the account's signing key lets anyone publish into a new slot, but a
+  sign-in never links itself: only a link the user confirms adds a device.
+- A device that gains these rules while someone holding the account's signing key is already signed in finds that
+  sign-in on its first check, and asks about it as a device that was there before, not as a new sign-in. The user still
+  sees it listed.
+- Someone holding the account's signing key can publish into many new slots, and each is a sign-in to answer.
 - Only the account's devices, including removed ones, can read device tags. Other members of a group see opaque bytes
   that differ in every KeyPackage. A tag's presence shows that the account has linked devices, which its KeyPackage
   publications already show.

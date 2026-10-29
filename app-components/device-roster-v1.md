@@ -125,7 +125,8 @@ Each device the account has linked has one `DeviceEntryV1`:
 is when the rejection was recorded, as the recording device wrote it. A `removed` record keeps the `tag_signature_key`
 the device's entry had, if it had one, so that the account's devices can still recognize that device's tags
 ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me` record has none: a rejected sign-in never had an
-entry.
+entry. When a device writes a `not_me` record, and what it then stops asking about, is in
+[../features/device-group.md](../features/device-group.md) ("New sign-ins").
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
 again or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its
