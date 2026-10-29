@@ -28,6 +28,15 @@ and updates as unknown data in a group that does not require it, and MUST NOT wr
 as its device group only if it created it or joined it through a Welcome a confirmed link named, and founds it with
 only the KeyPackage that link confirmed. Clients that do not support `0x800e` change nothing.
 
+## 2026-10-28: Activation eligibility reasons and lost activations
+
+[#453](https://github.com/marmot-protocol/marmot/pull/453) changes
+[app-components/README.md](./app-components/README.md) and
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md). A client does not commit an activation
+again on its own after it loses branch selection or fails its checks when regenerated from the queue; it activates only
+if its user asks again. A client MAY tell its user why a group cannot activate `marmot.group.account-devices.v1` yet,
+as a reason about the whole group that never names the members or devices holding it back.
+
 ## 2026-10-27: Fair scheduling covers admin and same-account intents only
 
 [#450](https://github.com/marmot-protocol/marmot/pull/450) changes

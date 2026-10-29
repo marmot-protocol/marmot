@@ -172,6 +172,10 @@ otherwise.
 Activation is an explicit decision by an authorized member. A client MUST NOT activate a component unless its user, or
 the component's own document, asks it to. Before committing, the client checks again that the component is not already
 required and that every leaf still advertises it, so it does not repeat an activation another admin already committed.
+If the activation Commit loses branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or
+those checks fail when a queued activation is regenerated after convergence settles
+([../protocol-core/group-state.md](../protocol-core/group-state.md), "Local actions during convergence"), the client
+does not commit it on its own. It activates only if its user asks again.
 
 After activation, a member whose KeyPackage does not advertise the id cannot be added ("Negotiation" above). A client
 SHOULD tell an inviter when an invitee's KeyPackages are refused for this reason, so the invitee can update.
