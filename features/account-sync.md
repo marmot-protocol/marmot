@@ -146,7 +146,8 @@ snapshot, `part` 1 of 1, with no items.
 
 - A device sends an update when its user changes small state on it. It MAY combine several items in one update, and MAY
   wait a few seconds to combine read positions that move quickly, since only the furthest one matters.
-- An update that would be longer than 32,768 bytes is split into several updates.
+- An update whose content would be longer than 32,768 bytes is split into several updates, as a snapshot is split
+  into parts. The limit is on the content's UTF-8 bytes alone, not the app event or MLS message around it.
 - When branch selection withdraws an update or snapshot that a device sent or merged
   ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"), the device sends
   each item that message carried again, in updates, unless it now holds a value for that item that beats it. Resending
@@ -162,10 +163,12 @@ epochs past the message's epoch before the device reads it, even if relays still
 sibling for every item instead. No one sibling is sure to hold every value, since it may have missed some too, so the
 device asks every sibling, and its siblings learn what it holds:
 
-- A device needs snapshots when it starts ([Starting](#starting)), and whenever it may have lost a device-group
-  application message: when one expired before it read it, and whenever it cannot rule that out, such as when the
-  device group's canonical tip moved more than `app_payload_past_epoch_limit` epochs past an epoch whose messages it
-  may not all have fetched, as after time offline. Asking when nothing was lost costs only messages.
+- A device needs snapshots when it starts ([Starting](#starting)), and again whenever the device group's canonical tip
+  is more than `app_payload_past_epoch_limit` epochs past the tip at which it last needed them. A message is lost to
+  the app-payload window only as the tip moves, so these rounds recover what any lost message carried from the
+  siblings that hold it, whether or not the device noticed the loss. How much a device fetched, or a relay having
+  nothing more, never stands in for a round. A device MAY also need snapshots sooner, such as when a device-group
+  message expired before it read it; asking when nothing was lost costs only messages.
 - Then it sends every item it holds to its siblings, in updates, and sends a snapshot request to each device the roster
   lists other than itself, whatever its status, each with its own request id.
 - The device a request names answers it once, with every item it holds, in as many snapshots as that takes and at
@@ -184,8 +187,8 @@ member of that group is one of the account's devices, so any member's message co
 which sibling sent it.
 
 - It drops a message whose content is not one JSON object with exactly the members above for its kind, whose `v` is
-  not `1`, that is longer than 32,768 bytes, in which an object repeats a member name, that holds two items with the
-  same `chat` and `item`, or, for a snapshot, whose `part` is not from 1 to `parts`.
+  not `1`, whose content is longer than 32,768 bytes, in which an object repeats a member name, that holds two items
+  with the same `chat` and `item`, or, for a snapshot, whose `part` is not from 1 to `parts`.
 - In a message it keeps, it checks each item on its own. It skips an item whose `item` it does not know, so a later
   version can add items without older devices dropping the message, and it skips an item that breaks the rules above.
   It merges every other item, from an update or a snapshot, whether or not it asked for that snapshot.

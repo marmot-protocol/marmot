@@ -22,11 +22,12 @@ update when the user changes one, and snapshots when a device starts taking part
 messages. Each item names its chat by raw MLS group id. The furthest read position wins, in chat order by epoch,
 `created_at` and `id`; for the other items the highest version wins, then the lowest random change id, then the lowest
 value. A version stops at 9007199254740991, and an item held there can no longer change. A device that may have lost
-messages sends every item it holds and asks each sibling the roster lists for a snapshot; a request carries a random
-request id and its answer numbers its parts, so the device asks each sibling again until that sibling's answer is
-whole. A device reads these kinds only in its trusted device group, from any member, drops a message with a repeated
-member name or item, skips item names it does not know, keeps what a withdrawn message set, and resends the items of
-every withdrawn update or snapshot it sent or merged. [features/device-group.md](./features/device-group.md) now says
+messages sends every item it holds and asks each sibling the roster lists for a snapshot, and does so again whenever
+the device group's tip moves past the app-payload window; a request carries a random request id and its answer numbers
+its parts, so the device asks each sibling again until that sibling's answer is whole. A device reads these kinds
+only in its trusted device group, from any member, drops a message with a repeated member name or item, skips item
+names it does not know, keeps what a withdrawn message set, and resends the items of every withdrawn update or
+snapshot it sent or merged. [features/device-group.md](./features/device-group.md) now says
 small-state messages name other groups, and [ideas/account-sync.md](./ideas/account-sync.md) points to the feature for
 these rules. Clients that do not support device groups change nothing.
 
