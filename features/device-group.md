@@ -95,10 +95,11 @@ leaving one, or replacing a leaf there never commits to it.
 - The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
   `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
 - A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit
-  there, normally its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving
-  flow, step 14). It cannot tag until it has.
-- In the device group, a device's leaf is also known from the Commit that added it, which writes the device's roster
-  entry in the same Commit ("Creating the device group").
+  there, its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step
+  14), which it SHOULD make as soon as it has joined. That Commit also replaces its leaf in the device group with one
+  tagged under that key ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags").
+  Until then its leaf there is unclaimed, like any untagged leaf. A group where it made its post-join self-update
+  before then gets a tagged leaf later.
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
@@ -239,8 +240,9 @@ leaf without a tag stays valid everywhere else ([../app-components/device-tag-v1
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
-- Only the account's linked devices can read device tags. Other members of a group see opaque bytes that differ in
-  every KeyPackage, and learn nothing they could not already see from the account's leaf count.
+- Only the account's devices, including removed ones, can read device tags. Other members of a group see opaque bytes
+  that differ in every KeyPackage. A tag's presence shows that the account has linked devices, which its KeyPackage
+  publications already show.
 - An announcement is evidence only among devices that trust the same device group. Someone holding the account's
   signing key can publish into any slot, but cannot write the roster of a device group they are not in.
 - Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: siblings

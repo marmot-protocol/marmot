@@ -44,7 +44,7 @@ have, without a server that controls the device list.
 | Slot announcement | A roster update in which a device records which KeyPackage it put in its slot. |
 | Device group | The hidden MLS group containing only the account's linked devices. |
 | Roster | The device group's record of linked devices (their settings, current KeyPackages, tag signature keys and history keys), rejected sign-ins, the key that seals device tags, and backup details. It is group state, changed only by commits. |
-| Device tag | A small sealed tag in each leaf a linked device creates, naming that device. Only the account's linked devices can read it. |
+| Device tag | A small sealed tag in each leaf a linked device creates, naming that device. Only the account's devices can read it, including a removed one. |
 | Sibling | Another device on the same account. |
 | Label | The name Alice gives a device when she links it, such as "Laptop". Kept only in the roster, never in KeyPackages or chats. |
 
@@ -442,8 +442,10 @@ doesn't take the device out of chats it is already in. Removing the device, or l
    chat, see a leaf for a removed device, and remove it.
 3. **The roster remembers the removed slot for 30 days.** If that installation, still holding its old state,
    publishes into its old slot again in that time, Alice's devices show a stronger warning: "A device you removed is
-   trying to come back." Thirty days is the KeyPackage freshness window, so by then inviters have stopped using any
-   stale copy of its KeyPackage. After that, it looks like any new sign-in (Scene 4).
+   trying to come back." Thirty days keeps the roster from holding every device Alice ever removed, but it is a
+   window, not a guarantee: a copy of the laptop's KeyPackage can stay valid for up to 84 days, and an inviter with no
+   fresh KeyPackage for Alice may still pick it. After 30 days the laptop looks like any new sign-in (Scene 4), and a
+   leaf it joins with is one no remaining device claims (point 4).
 4. **Siblings check for leftovers.** A stolen device could have added extra leaves before it was removed, so siblings
    check every chat they are in for account leaves that no remaining device claims, and remove them.
 5. **If the laptop used a signer,** the app tells Alice to revoke that device's session in the signer. Removal alone
@@ -552,9 +554,10 @@ that effect once the receiver is back online sends again:
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
 account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
 puts a device tag in every leaf it creates, including the leaf in each of its KeyPackages. The tag names the device's
-slot, is signed by that device's own key, and is sealed under a key that only the account's linked devices hold. A
-sibling opens the tags on the account's leaves in each chat it is in. Other chat members see bytes they cannot read,
-different in every KeyPackage. Nothing about the chats is recorded in the device group, so joining a chat, leaving
+slot, is signed by that device's own key, and is sealed under a key that only the account's devices hold. A removed
+device keeps that key, so in a chat it is still in it can still tell which leaf is whose. A sibling opens the tags on
+the account's leaves in each chat it is in. Other chat members see bytes they cannot read, different in every
+KeyPackage. Nothing about the chats is recorded in the device group, so joining a chat, leaving
 one, or rotating a key there never commits to it. A leaf created before its device was linked has no tag; the device
 tags it with its next update in that chat.
 
