@@ -29,8 +29,9 @@ A client that supports `0x800e` treats its entry and updates as unknown data in 
 MUST NOT write one there. A device trusts a group as its device group only if it created it or joined it through a
 Welcome a confirmed link named, MUST NOT join a group that requires `0x800e` through any other Welcome, and founds it
 with only the KeyPackage that link confirmed. A linked device puts a device tag (`0x800f`) in every KeyPackage and
-LeafNode it creates, so that its siblings can tell which of the account's leaves belongs to which device. A tag never
-makes anything invalid, and no group may require `0x800f`. Clients that support neither component change nothing.
+LeafNode it creates, so that its siblings can tell which of the account's leaves belongs to which device. A tag is
+verified with the tag signature key of the roster entry it names, or of the `removed` record that keeps that key. A tag
+never makes anything invalid, and no group may require `0x800f`. Clients that support neither component change nothing.
 
 ## 2026-10-28: Activation eligibility reasons and lost activations
 

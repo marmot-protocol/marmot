@@ -66,8 +66,8 @@ prefix and 114 sealed bytes.
 ## Producing tags
 
 A device can tag once it holds its device group's `leaf_tag_key` and its own roster entry carries its
-`tag_signature_key` ([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From
-then on:
+`tag_signature_key`, or the Commit it is creating sets that key
+([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From then on:
 
 - it MUST put a tag in the LeafNode of every KeyPackage it creates, whether it publishes the KeyPackage or hands it to a
   sibling;
@@ -76,31 +76,32 @@ then on:
   same tag; one with a new signature key needs a new tag;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
-A device whose own leaf in a group carries no tag that reads as its own, because it joined through a KeyPackage created
-before it could tag or because the leaf predates the link, SHOULD replace that leaf with a tagged one. When it joined
-that way, it does so with its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md),
-receiving flow, step 14). Otherwise it waits a random delay first, as for a leaf that advertises too few components
-([README.md](./README.md), "Advertising support"), so that linking a device does not make it commit in every group at
-once.
+A device whose own leaf in a group carries no tag that reads as its own SHOULD replace that leaf with a tagged one. This
+happens when it joined through a KeyPackage created before it could tag, or when the leaf predates the link. If it can
+tag when it makes its post-join self-update in that group ([../protocol-core/joining.md](../protocol-core/joining.md),
+receiving flow, step 14), that update is the replacement. Otherwise it replaces the leaf once it can tag, after a random
+delay as for a leaf that advertises too few components ([README.md](./README.md), "Advertising support"), so that
+linking a device does not make it commit in every group at once.
 
 ## Reading tags
 
-Only a device that holds `leaf_tag_key` can read a tag. For a leaf whose credential identity is its own account's, it:
+Only a device that holds `leaf_tag_key` can read a tag. It reads against its device group's current roster, so a tag
+signed with a key that the same Commit sets reads as its device's once that Commit is applied. For a leaf whose
+credential identity is its own account's, it:
 
 1. decodes the leaf's `0x800f` entry as a `DeviceTagV1`, opens `sealed` with `leaf_tag_key`, `nonce` and the leaf's
    signature key as `aad`, and decodes the result as a `DeviceTagContentV1`;
 2. if `slot` names a device in the roster that has a `tag_signature_key`, verifies `signature` with that key. If it
    verifies, the leaf belongs to that device;
-3. if `slot` names a slot in the roster's `rejected_slots`, takes the leaf to belong to that rejected slot. A rejected
-   slot has no key to verify with, and a tag can only make such a leaf look less trusted, so the signature is not
-   checked;
+3. if `slot` names a `removed` record in the roster's `rejected_slots` that keeps a `tag_signature_key`, verifies
+   `signature` with that key. If it verifies, the leaf belongs to that removed slot;
 4. otherwise the leaf is unclaimed. This covers a leaf with no entry, an entry that does not decode or open, a
-   signature that does not verify, and a slot the roster does not hold.
+   signature that does not verify, a slot the roster holds no key for, and a slot the roster does not hold.
 
 A device has at most one leaf in a group. Two leaves in one group that both belong to the same device show that
 device's keys were misused.
 
-What the account's devices do about an unclaimed leaf, a rejected slot's leaf, or a sibling missing from a group is
+What the account's devices do about an unclaimed leaf, a removed slot's leaf, or a sibling missing from a group is
 not specified yet.
 
 ## Validity
@@ -117,14 +118,17 @@ NOT be created, replaced or removed with `AppDataUpdate` ([README.md](./README.m
 ## Security considerations
 
 - Members outside the account see a tag as bytes that differ with every KeyPackage and reveal nothing without
-  `leaf_tag_key`. They learn nothing new: an account's leaf count is already visible. A KeyPackage used in several
-  groups, such as a last-resort one, shows the same tag in each, as it already shows the same leaf signature key.
+  `leaf_tag_key`. The entry's presence is not hidden: it shows other members, and anyone who fetches the account's
+  KeyPackages, that the account has linked devices. The account's KeyPackage publications already show that, one slot
+  per device ([../foundation/key-packages.md](../foundation/key-packages.md)). A KeyPackage used in several groups,
+  such as a last-resort one, shows the same tag in each, as it already shows the same leaf signature key.
 - A tag is bound to its leaf's signature key both as `aad` and inside the signature. Copying a tag from a published
   KeyPackage into another leaf gives a leaf whose tag does not open, so that leaf is unclaimed.
 - Holding the account's signing key gives neither `leaf_tag_key` nor any device's tag signature key, so a leaf added
   that way is unclaimed.
 - A removed device still holds `leaf_tag_key` ([device-roster-v1.md](./device-roster-v1.md), "Security
-  considerations"). It can tag a leaf only with its own slot, which its siblings recorded as `removed`.
+  considerations"). It can tag a leaf only with its own slot, which its siblings recognize as `removed` while they keep
+  that slot's record.
 
 ## Test vectors
 

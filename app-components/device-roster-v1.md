@@ -62,6 +62,7 @@ struct {
   SlotId slot;
   RejectionReasonV1 reason;
   uint64 rejected_at;
+  optional<TagSignatureKeyV1> tag_signature_key;
 } RejectedSlotV1;
 
 struct {
@@ -115,7 +116,10 @@ Each device the account has linked has one `DeviceEntryV1`:
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
 `RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in. `rejected_at`
-is when the rejection was recorded, as the recording device wrote it.
+is when the rejection was recorded, as the recording device wrote it. A `removed` record keeps the `tag_signature_key`
+the device's entry had, if it had one, so that the account's devices can still recognize that device's tags
+([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me` record has none: a rejected sign-in never had an
+entry.
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
 again or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its
@@ -144,8 +148,10 @@ A `DeviceRosterV1` is valid when all of these hold:
   [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Sorting and duplicates");
 - `devices` holds at most `max_leaves_per_account` entries, the constant of
   [account-devices-v1.md](./account-devices-v1.md) ("Leaf limit");
+- every `settings` value has bits 3 to 7 clear;
 - no two entries in `devices` carry the same `tag_signature_key`. This compares present keys only: any number of entries
   may have none;
+- no `not_me` record in `rejected_slots` carries a `tag_signature_key`;
 - no slot appears both in `devices` and in `rejected_slots`.
 
 A device can appear once only, so a slot that is rejected is never also a linked device.
@@ -263,8 +269,8 @@ invalid ([README.md](./README.md), "GroupContext Removal").
   account's roster.
 - Every device that was ever in the device group holds `leaf_tag_key`, including one later removed, because this
   version never changes it. A removed device can still read the device tags in groups it can see, which tells it no
-  more than it knew while linked. It cannot make a tag that names another device, because a tag is signed by the
-  device it names ([device-tag-v1.md](./device-tag-v1.md)).
+  more than it knew while linked. It cannot make a tag that names another device or another removed slot, because a
+  tag is verified with the key of the slot it names ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
 - The roster grows with the number of linked devices, at most `max_leaves_per_account`, and with the rejections. It
   does not grow with the number of groups the devices are in, and activity in those groups never commits to the
   device group. A Welcome into the device group carries the whole roster.
@@ -300,16 +306,18 @@ and with no rejections and an empty account entry:
 00                                                               recovery_public_key absent
 ```
 
-An update that removes that device and records its slot as `removed` at `0x6553f200`:
+An update that removes that device and records its slot as `removed` at `0x6553f200`, keeping its tag signature key:
 
 ```text
-404b                                                             operations<V>, 75 bytes
+406d                                                             operations<V>, 109 bytes
 01                                                               remove_device
 1111111111111111111111111111111111111111111111111111111111111111 slot
 02                                                               set_rejected_slot
 1111111111111111111111111111111111111111111111111111111111111111 slot
 01                                                               reason removed
 000000006553f200                                                 rejected_at
+01                                                               tag_signature_key present
+20 4444444444444444444444444444444444444444444444444444444444444444 tag_signature_key
 ```
 
 A roster with no devices, no rejections and an empty account entry is its `leaf_tag_key` followed by `0000000000`.
