@@ -268,8 +268,9 @@ invalid ([README.md](./README.md), "GroupContext Removal").
   `leaf_tag_key` are never visible to other accounts. A client MUST NOT copy them into any other group or show another
   account's roster.
 - Every device that was ever in the device group holds `leaf_tag_key`, including one later removed, because this
-  version never changes it. A removed device can still read the device tags in groups it can see, which tells it no
-  more than it knew while linked. It cannot make a tag that names another device or another removed slot, because a
+  version never changes it. A removed device can still read the device tags in groups it is still in, including those
+  of devices linked after it was removed, so it can still tell which of the account's leaves there belongs to which
+  device. It cannot make a tag that names another device or another removed slot, because a
   tag is verified with the key of the slot it names ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
 - The roster grows with the number of linked devices, at most `max_leaves_per_account`, and with the rejections. It
   does not grow with the number of groups the devices are in, and activity in those groups never commits to the

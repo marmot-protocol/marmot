@@ -91,11 +91,11 @@ leaving one, or replacing a leaf there never commits to it.
   `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
 - A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit
   there, normally its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving
-  flow, step 14). The LeafNode in that Commit can already carry a tag signed with the key it sets. A group where it
-  made its post-join self-update before then gets a tagged leaf later
-  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags").
-- Until a joining device's first Commit, its siblings know its leaf in the device group from the Commit that added it,
-  which writes the device's roster entry in the same Commit ("Creating the device group").
+  flow, step 14). That Commit also replaces its leaf in the device group with one tagged under that key
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). A group where it made
+  its post-join self-update before then gets a tagged leaf later.
+- Until a joining device's leaf in the device group is first replaced, its siblings know that leaf from the Commit that
+  added it, which writes the device's roster entry in the same Commit ("Creating the device group").
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
@@ -106,6 +106,6 @@ leaves, warning about a leaf no device claims) is not specified yet.
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
-- Only the account's linked devices can read device tags. Other members of a group see opaque bytes that differ in
-  every KeyPackage. A tag's presence shows that the account has linked devices, which its KeyPackage publications
-  already show.
+- Only the account's devices, including removed ones, can read device tags. Other members of a group see opaque bytes
+  that differ in every KeyPackage. A tag's presence shows that the account has linked devices, which its KeyPackage
+  publications already show.

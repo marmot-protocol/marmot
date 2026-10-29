@@ -31,7 +31,8 @@ Welcome a confirmed link named, MUST NOT join a group that requires `0x800e` thr
 with only the KeyPackage that link confirmed. A linked device puts a device tag (`0x800f`) in every KeyPackage and
 LeafNode it creates, so that its siblings can tell which of the account's leaves belongs to which device. A tag is
 verified with the tag signature key of the roster entry it names, or of the `removed` record that keeps that key. A tag
-never makes anything invalid, and no group may require `0x800f`. Clients that support neither component change nothing.
+never makes anything invalid, and clients never add `0x800f` to a required list. Clients that support neither
+component change nothing.
 
 ## 2026-10-28: Activation eligibility reasons and lost activations
 

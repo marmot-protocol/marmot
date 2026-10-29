@@ -4,8 +4,9 @@ Status: draft.
 
 `marmot.member.device-tag.v1` lets an account's linked devices tell which of the account's leaves in a group belongs to
 which device. Every leaf of one account carries the same credential identity, so nothing else in a group says which
-device holds a leaf. A device tag names the device's slot, is signed by that device, and is sealed so that only the
-account's linked devices can read it. Other members see opaque bytes that differ in every KeyPackage.
+device holds a leaf. A device tag names the device's slot, is signed by that device, and is sealed under a key that
+only the account's devices hold, including any removed device ([device-roster-v1.md](./device-roster-v1.md), "Security
+considerations"). Other members see opaque bytes that differ in every KeyPackage.
 
 The device group, its roster and the keys a tag uses are described in
 [../features/device-group.md](../features/device-group.md) and [device-roster-v1.md](./device-roster-v1.md).
@@ -15,8 +16,10 @@ The device group, its roster and the keys a tag uses are described in
 - Component id: `0x800f`
 - Name: `marmot.member.device-tag.v1`
 - Location: the `app_data_dictionary` in an MLS LeafNode, including the LeafNode embedded in a KeyPackage
-- Default requirement: never required. A group MUST NOT list `0x800f` in its required list, because an account with
-  one device has no tag to carry.
+- Default requirement: never required. A client MUST NOT add `0x800f` to a group's required list: requiring it would
+  not make any leaf carry a tag, and would only shut out clients that do not support it. This is a sender rule. A
+  receiver does not reject a Commit, GroupContext or Welcome whose required list contains `0x800f`, and treats that
+  requirement as it treats any other.
 
 A client MUST NOT create an entry under `0x800f` anywhere else. An entry under `0x800f` in any other location is
 unknown data ([README.md](./README.md), "Unknown Data").
@@ -41,7 +44,8 @@ struct {
 ```
 
 The structures use the Marmot binary profile
-([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)).
+([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). The entry's value is exactly one
+`DeviceTagV1`, and the opened `sealed` is exactly one `DeviceTagContentV1`, each with no trailing bytes.
 
 `sealed` is a `DeviceTagContentV1` sealed with ChaCha20-Poly1305
 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)):
@@ -76,12 +80,17 @@ A device can tag once it holds its device group's `leaf_tag_key` and its own ros
   same tag; one with a new signature key needs a new tag;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
+A device sets the `tag_signature_key` in its own roster entry only in a Commit whose UpdatePath also replaces its own
+leaf in the device group with a LeafNode tagged under that key. From that Commit on, its leaf in the device group reads
+as its own.
+
 A device whose own leaf in a group carries no tag that reads as its own SHOULD replace that leaf with a tagged one. This
 happens when it joined through a KeyPackage created before it could tag, or when the leaf predates the link. If it can
 tag when it makes its post-join self-update in that group ([../protocol-core/joining.md](../protocol-core/joining.md),
-receiving flow, step 14), that update is the replacement. Otherwise it replaces the leaf once it can tag, after a random
-delay as for a leaf that advertises too few components ([README.md](./README.md), "Advertising support"), so that
-linking a device does not make it commit in every group at once.
+receiving flow, step 14), that update is the replacement. Otherwise, once it can tag, it waits a delay chosen as for a
+leaf that advertises too few components ([README.md](./README.md), "Advertising support"), so that linking a device
+does not make it commit in every group at once. When the delay ends, it replaces the leaf only if the leaf still
+carries no tag that reads as its own.
 
 ## Reading tags
 
@@ -89,8 +98,9 @@ Only a device that holds `leaf_tag_key` can read a tag. It reads against its dev
 signed with a key that the same Commit sets reads as its device's once that Commit is applied. For a leaf whose
 credential identity is its own account's, it:
 
-1. decodes the leaf's `0x800f` entry as a `DeviceTagV1`, opens `sealed` with `leaf_tag_key`, `nonce` and the leaf's
-   signature key as `aad`, and decodes the result as a `DeviceTagContentV1`;
+1. decodes the leaf's `0x800f` entry as exactly one `DeviceTagV1`, opens `sealed` with `leaf_tag_key`, `nonce` and
+   the leaf's signature key as `aad`, and decodes the result as exactly one `DeviceTagContentV1`. Trailing bytes in
+   either mean the entry does not decode;
 2. if `slot` names a device in the roster that has a `tag_signature_key`, verifies `signature` with that key. If it
    verifies, the leaf belongs to that device;
 3. if `slot` names a `removed` record in the roster's `rejected_slots` that keeps a `tag_signature_key`, verifies
