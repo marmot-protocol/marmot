@@ -16,10 +16,11 @@ The device group, its roster and the keys a tag uses are described in
 - Component id: `0x800f`
 - Name: `marmot.member.device-tag.v1`
 - Location: the `app_data_dictionary` in an MLS LeafNode, including the LeafNode embedded in a KeyPackage
-- Default requirement: never required. A client MUST NOT add `0x800f` to a group's required list: requiring it would
-  not make any leaf carry a tag, and would only shut out clients that do not support it. This is a sender rule. A
-  receiver does not reject a Commit, GroupContext or Welcome whose required list contains `0x800f`, and treats that
-  requirement as it treats any other.
+- Default requirement: never required. No group requires `0x800f`: requiring it would not make any leaf carry a tag,
+  and would only shut out clients that do not support it. A Commit whose resulting GroupContext lists `0x800f` in its
+  required list is invalid, and so is a standalone proposal that would do so. A joiner rejects a Welcome whose
+  GroupContext requires it. A client that does not support `0x800f` rejects the same Commit as an unsupported
+  requirement, so both kinds of client agree.
 
 A client MUST NOT create an entry under `0x800f` anywhere else. An entry under `0x800f` in any other location is
 unknown data ([README.md](./README.md), "Unknown Data").
@@ -119,6 +120,8 @@ not specified yet.
 A device tag never makes a KeyPackage, LeafNode, proposal, Commit or Welcome invalid, and a receiver checks nothing
 about the entry. Most members cannot open a tag, so a rule that rejected one would split the members who can from
 those who cannot. To a device that can read tags, an entry that does not decode, open or verify is the same as no tag.
+The only rule a receiver enforces is the one on required lists in "Registry", which is about the GroupContext, not
+about any tag.
 
 ## Lifecycle
 
