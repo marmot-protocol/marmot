@@ -13,17 +13,25 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-10-28: Slot announcements and the own-slot check (draft)
+## 2026-10-29: Slot announcements, the own-slot check and private KeyPackages (draft)
 
 [#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
 [features/device-group.md](./features/device-group.md),
-[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
-[foundation/key-packages.md](./foundation/key-packages.md). A device in a device group names each KeyPackage in its
-own roster entry (`announced_key_package`) before that KeyPackage reaches its slot, publishes only once the Commit
-carrying the announcement is in its group state, and never publishes an unannounced KeyPackage. The founding roster
-announces both devices' KeyPackages. Every device, in a device group or not, now reads its own slot at start and about
-daily; a publication there that it did not make, at least as new as its own and valid or not, is replaced by a newer
-KeyPackage of its own. Devices without a device group publish as before.
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[foundation/key-packages.md](./foundation/key-packages.md) and [foundation/registries.md](./foundation/registries.md).
+
+- A device in a device group names each KeyPackage in its own roster entry (`announced_key_package`) before that
+  KeyPackage reaches its slot, publishes only once the Commit carrying the announcement is in its group state, and
+  never publishes an unannounced KeyPackage. The founding roster announces both devices' KeyPackages. A client should
+  tell its user while a refresh is held back for want of an announcement.
+- Every device, in a device group or not, now reads its own slot at start and about daily. A publication there that
+  it did not make, at least as new as its own and valid or not, is replaced by a newer KeyPackage of its own.
+- Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
+  sibling's add. A device tops a sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off
+  (kind `460`), both new, travel only in the device group. A receiver keeps a hand-off only if every KeyPackage in it
+  is its own account's, not last-resort and unexpired, and carries a device tag that reads as the sender's. It reads
+  either message only when the sending leaf's device tag reads as the `from` slot the message names.
+- Devices without a device group publish as before.
 
 ## 2026-10-28: Device roster component and device group (draft)
 

@@ -8,8 +8,8 @@ linked, which sign-ins were rejected, and in which order those decisions were ma
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
 the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out
-of sight, and how each device announces the KeyPackages it publishes. Linking, the messages devices exchange in the
-group, private KeyPackages, and removal are not specified yet.
+of sight, how each device announces the KeyPackages it publishes, and how devices hand each other private KeyPackages.
+Linking, adding a sibling to a chat, and removal are not specified yet.
 
 ## Surfaces
 
@@ -23,6 +23,9 @@ group, private KeyPackages, and removal are not specified yet.
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
   roster entry announces into.
+- Marmot app events: kind `459` (private KeyPackage request) and kind `460` (private KeyPackage hand-off), sent only in
+  a device group ([Private KeyPackages](#private-keypackages)). Their kinds are registered in
+  [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -116,7 +119,9 @@ names, from a publication in the slot that the device did not make.
   branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
 - A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
   MUST NOT publish an unannounced KeyPackage after a timeout; its slot ages instead
-  ([../foundation/key-packages.md](../foundation/key-packages.md), "Refreshing a slot").
+  ([../foundation/key-packages.md](../foundation/key-packages.md), "Refreshing a slot"). While a refresh that section
+  calls for is held back this way, a client SHOULD tell its user, so that a device whose device group stays unwritable
+  does not quietly become one that new chats cannot add.
 - The founding roster announces the KeyPackage the link confirmed and the creating device's current one
   ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it next publishes.
 - A device with no device group publishes as before.
@@ -129,6 +134,105 @@ A device that finds a publication in its own slot that it did not make replaces 
 ([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"), announcing
 the replacement first as above.
 
+## Private KeyPackages
+
+Devices in a device group add each other to chats only with private KeyPackages: single-use KeyPackages that one device
+hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication. How a
+sibling uses one to add a device to a chat is not specified yet.
+
+### Issuing
+
+A private KeyPackage is a KeyPackage of the device that issues it
+([../foundation/key-packages.md](../foundation/key-packages.md)), with the lifetime and capabilities that device gives
+the KeyPackages it publishes. It MUST NOT be last-resort, so a Welcome consumes it once. It carries the issuer's device
+tag ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), so a device issues
+private KeyPackages only once it can tag.
+
+- The issuer records which sibling, by slot, it handed each one to. It keeps the private key material until a Welcome
+  consumes the KeyPackage or until its `Lifetime.not_after`, whichever comes first.
+- Only a sibling's add may consume a private KeyPackage. A device MUST NOT join a group through any other Welcome that
+  consumes one, and keeps the KeyPackage when it refuses such a Welcome.
+- Halfway is `not_before + (not_after - not_before) / 2` in integer seconds, from the KeyPackage's `Lifetime`.
+- A device's stock with a sibling is the private KeyPackages it handed that sibling that no Welcome has consumed, that
+  have not reached halfway, and that no later request from that sibling has superseded. When the stock falls below 5,
+  the device issues enough new ones to bring it to 10 and hands them over.
+- A device tops up its siblings before it asks for its own, so a device back after a long gap serves the others first.
+- A device MAY cap how many unexpired private KeyPackages it keeps for one sibling, and issue fewer than a request asks
+  for once it reaches that cap. It MUST NOT delete one before `not_after` to make room.
+- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage.
+
+### Messages
+
+| Kind  | Message  | Sent by                                   |
+| ----- | -------- | ----------------------------------------- |
+| `459` | Request  | a device that wants private KeyPackages   |
+| `460` | Hand-off | the device that issued them               |
+
+Both are Marmot app events ([../foundation/application-messages.md](../foundation/application-messages.md)) sent as MLS
+application messages in the device group. Both name the sender's slot (`from`) and the addressee's slot (`to`), each a
+`SlotId` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+A request's content is one UTF-8 JSON object with exactly these members, written in this order without whitespace.
+Slots are lowercase hexadecimal, 64 characters, and `want` is a decimal integer without leading zeros.
+
+| Member | Value |
+| ------ | ----- |
+| `v`    | `1` |
+| `from` | the requesting device's slot |
+| `to`   | the slot of the device asked |
+| `want` | how many new private KeyPackages it asks for, from 1 to 100 |
+
+A hand-off's content is the standard base64 encoding, with padding
+([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)), of:
+
+```text
+struct {
+  uint8 version;
+  SlotId from;
+  SlotId to;
+  MLSMessage key_packages<V>;
+} PrivateKeyPackageHandOffV1;
+```
+
+`version` is `1`. `key_packages` holds 1 to 20 MLSMessages, each with `wire_format` `mls_key_package`. An answer of
+more than 20 goes out as several hand-offs.
+
+### Sending
+
+- A device asks a sibling for private KeyPackages when it holds no usable one from that sibling, or when it needs more
+  than it holds. A usable one has not reached halfway. While the need lasts, it sends the request again at most once an
+  hour.
+- A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
+  it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
+  material until a Welcome consumes them or they expire. A device answers each request, by its Marmot app event `id`,
+  once.
+- There are no receipts. A lost hand-off is repaired by the requester's next request.
+
+### Receiving
+
+A device reads a request or a hand-off only from the device group it trusts ([Trust](#trust)), and ignores both kinds
+in any other group. It drops one unless:
+
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it carries a device tag that reads as `from`'s
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
+  roster's `leaf_tag_key`, names `from`, and verifies under the `tag_signature_key` in `from`'s roster entry.
+
+A device whose leaf in the device group carries no tag yet, such as a new device before its post-join self-update, has
+its requests and hand-offs dropped and not counted. It sends them again once it has tagged its leaf.
+
+It drops a whole hand-off unless every KeyPackage in it:
+
+- is a valid KeyPackage ([../foundation/key-packages.md](../foundation/key-packages.md)) of its own account;
+- is not last-resort;
+- has not reached its `Lifetime.not_after`;
+- carries a device tag that reads as `from`'s, as above.
+
+The tag checks are the device group's rules for accepting a request or a hand-off, not validity rules: a KeyPackage or
+leaf without a tag stays valid everywhere else ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
+"Validity"). The receiver keeps the KeyPackages it accepts by `from` until it uses one, discards them, or they expire.
+
 ## Security considerations
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
@@ -139,3 +243,9 @@ the replacement first as above.
   every KeyPackage, and learn nothing they could not already see from the account's leaf count.
 - An announcement is evidence only among devices that trust the same device group. Someone holding the account's
   signing key can publish into any slot, but cannot write the roster of a device group they are not in.
+- Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: siblings
+  add each other only with KeyPackages handed over inside a device group that person is not in.
+- Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot. One device in the device
+  group therefore cannot file its KeyPackages under a sibling's slot, or make a request in a sibling's name that resets
+  what was handed that sibling. Someone holding only the account's signing key has neither `leaf_tag_key` nor a tag
+  signature key.
