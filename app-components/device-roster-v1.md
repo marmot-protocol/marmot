@@ -118,10 +118,13 @@ Each device the account has linked has one `DeviceEntryV1`:
 is when the rejection was recorded, as the recording device wrote it.
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
-again. A device SHOULD remove a `removed` record once 30 days have passed since its `rejected_at`, by the device's own
-clock. Thirty days is the KeyPackage freshness window
-([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"): after it, inviters no
-longer select a stale copy of the removed device's KeyPackage.
+again or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its
+`rejected_at`, by the device's own clock, so that the roster does not keep every device the account has ever removed.
+The record is a bounded recognition aid, not a guarantee. A KeyPackage can stay valid for up to 84 days, and an inviter
+MAY select a stale one when an account has no fresh candidate
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), so the removed
+installation can still join a group after its record is gone. Its leaf then reads as unclaimed rather than as the
+removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
 
 `AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
 public half of the recovery key. Neither has a meaning in this version.
@@ -141,7 +144,8 @@ A `DeviceRosterV1` is valid when all of these hold:
   [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Sorting and duplicates");
 - `devices` holds at most `max_leaves_per_account` entries, the constant of
   [account-devices-v1.md](./account-devices-v1.md) ("Leaf limit");
-- no two entries in `devices` carry the same `tag_signature_key`;
+- no two entries in `devices` carry the same `tag_signature_key`. This compares present keys only: any number of entries
+  may have none;
 - no slot appears both in `devices` and in `rejected_slots`.
 
 A device can appear once only, so a slot that is rejected is never also a linked device.

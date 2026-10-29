@@ -59,7 +59,9 @@ sealed = ChaCha20-Poly1305.encrypt(leaf_tag_key, nonce, DeviceTagContentV1, aad 
   group's ciphersuite. Its `slot` and `leaf_signature_key` are the same values as above. The public key is the device's
   `tag_signature_key` in the roster.
 
-Under ciphersuite `0x0001` a tag is 127 bytes.
+Under ciphersuite `0x0001` a `DeviceTagContentV1` is 98 bytes: the slot, a 2-byte length prefix and a 64-byte Ed25519
+signature. Sealing adds a 16-byte authentication tag, so a `DeviceTagV1` is 128 bytes: the nonce, a 2-byte length
+prefix and 114 sealed bytes.
 
 ## Producing tags
 
@@ -126,7 +128,40 @@ NOT be created, replaced or removed with `AppDataUpdate` ([README.md](./README.m
 
 ## Test vectors
 
-Not yet defined.
+Under ciphersuite `0x0001`, with leaf tag key `0x33` repeated 32 times, slot `0x11` repeated 32 times, a leaf signature
+key of `0x66` repeated 32 times, nonce `0x77` repeated 12 times, and an Ed25519 tag signature private key
+([RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)) of `0x55` repeated 32 times, whose public key is
+`c6822637c7d310ec57627be00ba259d253749f4aaf644470cffbe53a35f73242`.
+
+The `SignContent` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.1.2) that is signed, 92 bytes:
+
+```text
+18                                                               label<V>, 24 bytes
+4d4c5320312e30204d61726d6f7420446576696365546167                 "MLS 1.0 Marmot DeviceTag"
+4041                                                             content<V>, 65 bytes
+1111111111111111111111111111111111111111111111111111111111111111 slot
+20 6666666666666666666666666666666666666666666666666666666666666666 leaf_signature_key
+```
+
+The `DeviceTagContentV1`, 98 bytes:
+
+```text
+1111111111111111111111111111111111111111111111111111111111111111 slot
+4040                                                             signature<1..255>, 64 bytes
+601cd5e2a4fc4fc0871cac3ce66a8f2376b199110700f92abb693460bb282849
+695ff8afe6da3432ca7a60a1b409195e9cac96b3ed1ff25a31ab138f8c455e01
+```
+
+The `DeviceTagV1`, 128 bytes, whose `sealed` ends with the 16-byte authentication tag:
+
+```text
+777777777777777777777777                                         nonce
+4072                                                             sealed<1..255>, 114 bytes
+711af2f06f38f0f04032cfdf0f23a8ea57773ecac4fde7f4b8e7d4789c38ba13
+4a727afee6b3858640acf81557466cdb6abd9251bafa8de2c6cb69d4e15993fe
+39ed1ca968e78f4b4e804bf74ed76d782a2ba3d3a3ac51afda04f00318e3a2a5
+7e181129d2430033adf59c6160510eae4782
+```
 
 ## Migration
 

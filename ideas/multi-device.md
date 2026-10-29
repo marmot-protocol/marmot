@@ -442,8 +442,10 @@ doesn't take the device out of chats it is already in. Removing the device, or l
    chat, see a leaf for a removed device, and remove it.
 3. **The roster remembers the removed slot for 30 days.** If that installation, still holding its old state,
    publishes into its old slot again in that time, Alice's devices show a stronger warning: "A device you removed is
-   trying to come back." Thirty days is the KeyPackage freshness window, so by then inviters have stopped using any
-   stale copy of its KeyPackage. After that, it looks like any new sign-in (Scene 4).
+   trying to come back." Thirty days keeps the roster from holding every device Alice ever removed, but it is a
+   window, not a guarantee: a copy of the laptop's KeyPackage can stay valid for up to 84 days, and an inviter with no
+   fresh KeyPackage for Alice may still pick it. After 30 days the laptop looks like any new sign-in (Scene 4), and a
+   leaf it joins with is one no remaining device claims (point 4).
 4. **Siblings check for leftovers.** A stolen device could have added extra leaves before it was removed, so siblings
    check every chat they are in for account leaves that no remaining device claims, and remove them.
 5. **If the laptop used a signer,** the app tells Alice to revoke that device's session in the signer. Removal alone
