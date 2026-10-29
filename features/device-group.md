@@ -146,20 +146,21 @@ only to the account's own user. The answers are:
 - **Link:** starts linking that slot's device, which is not specified yet.
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits one roster update that
-  sets a `not_me` rejected slot for the slot and a rejected KeyPackage for the KeyPackage it found there
-  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"). It keeps the rejection
-  until the roster records it, and commits again if the Commit fails or branch selection drops it.
+  sets a `not_me` rejected slot for the slot and, unless that KeyPackage is protected (below), a rejected KeyPackage for
+  the KeyPackage it found there ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "Update"). It keeps the rejection until the roster records it, and commits again if the Commit fails or branch
+  selection drops it.
 
-A device MUST NOT record as rejected a KeyPackage it made itself or that the roster announces for a device, even when
-it finds that KeyPackage in a rejected slot. Whoever holds the account's signing key can copy a published KeyPackage
-into a new slot. A rejection that conflicts with the roster, such as one for a slot another device linked meanwhile, is
-not specified yet. What else a rejection does, such as warning the user and removing the slot's leaves from chats, is
-not specified yet.
+A KeyPackage the device made itself, or that the roster announces for a device, is protected: a device MUST NOT record
+it as rejected, even when it finds it in a slot it rejects, and rejects only that slot. Whoever holds the account's
+signing key can copy a published KeyPackage into a new slot. A rejection that conflicts with the roster, such as one for
+a slot another device linked meanwhile, is not specified yet. What else a rejection does, such as warning the user and
+removing the slot's leaves from chats, is not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots or KeyPackages again. When
 it creates a device group, the founding roster carries them. When it joins one, it commits them once it trusts that
-group. Either way it leaves out a slot the roster holds as a device, such as the one just linked. After that, the roster
-is the only record.
+group. Either way it leaves out a slot the roster holds as a device, such as the one just linked, and a KeyPackage
+that is protected under that roster. After that, the roster is the only record.
 
 ### Any one device's answer
 
