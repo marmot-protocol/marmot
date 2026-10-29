@@ -286,9 +286,8 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 - **Every decision is a commit.** Linking, rejecting, changing a device's settings and removing a device each change the
   roster through a commit in the device group, so MLS puts them in one order that every device agrees on.
 - **Conflicting answers:** if the iPhone links the laptop while the iPad says "This wasn't me", both make commits from
-  the same starting point and Marmot's normal convergence rules pick one. If the link wins, the iPad's answer becomes
-  an ordinary removal of the laptop. If the rejection wins, the link never happened and the laptop is told. There are
-  no seniority rules.
+  the same starting point and Marmot's normal convergence rules pick one. If the rejection wins, the link never happened
+  and the laptop is told. There are no seniority rules.
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 - **Careless approval:** if Alice taps Link without comparing, nothing catches it. The prompt makes the comparison the

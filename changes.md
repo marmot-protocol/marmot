@@ -24,9 +24,10 @@ publish is a reason to fetch and check that KeyPackage, never evidence by itself
 devices that were signed in before it; later ones are new sign-ins, and a publication's time never decides which. "This
 wasn't me" commits a `not_me` rejected slot, never a rejected KeyPackage, since the KeyPackage may be a copy of a real
 device's. A device with no device group keeps its rejections and writes them into the roster it later creates or joins.
-Every device keeps its rejections, and commits one again whenever the roster loses it. A link or rejection on one device
-ends the question on all of them. A sign-in whose slot a complete check finds empty stays listed, and can be linked
-again once the slot holds a valid, fresh KeyPackage. Clients that do not support `0x800e` change nothing.
+A device keeps its rejections until the roster holds the slot as a device, commits one again whenever the roster has no
+entry for that slot, and never replaces an entry. A link or rejection on one device ends the question on all of them
+while the roster holds it. A sign-in whose slot a complete check finds empty stays listed, and can be linked again once
+the slot holds a valid, fresh KeyPackage. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 

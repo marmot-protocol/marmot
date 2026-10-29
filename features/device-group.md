@@ -133,9 +133,10 @@ whoever holds the account's signing key chooses that time.
 - Every unrecognized slot that a device's first check finds belongs to a device that was signed in before it. The first
   check is the first read of all the account's KeyPackages, after the device signs in or after its client gains these
   rules, that finishes with at least one relay having answered. It covers every slot that read returns, from every relay
-  in it; fetching the one KeyPackage a Welcome names is never the first check. The device keeps the fact that its first
-  check happened, so a later one, even after a restart, is never taken for it. It tells its user that the account is
-  already signed in elsewhere, with when that slot last published, and asks whether they still have that device.
+  in it; fetching the one KeyPackage a Welcome names is never the first check. The device keeps, across restarts, that
+  its first check happened and which slots it found, so a later check is never taken for it and those slots keep their
+  class. It tells its user that the account is already signed in elsewhere, with when that slot last published, and asks
+  whether they still have that device.
 - Every unrecognized slot it finds after its first check is a new sign-in, and the device asks its user whether it was
   them.
 - A device MUST NOT use a publication's time to decide which of the two a slot is. When a sign-in appeared and when it
@@ -154,29 +155,34 @@ only to the account's own user. The answers are:
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
   a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-  "Update"). It keeps the rejection, and whenever the roster lacks it, it prepares the update again against the new
-  roster: when its Commit fails, and when branch selection drops the update that recorded it, whichever device made that
-  update.
+  "Update"). It commits that update only while the roster has no entry for the slot, neither a device nor a rejected
+  slot, and never replaces an entry the roster has.
 
 A rejection names the slot alone, never the KeyPackage the device found there: whoever holds the account's signing key
 can copy a real device's KeyPackage into a slot the user then rejects. Rejected KeyPackages in the roster are for a
 linked device's slot that holds a KeyPackage the device did not publish, which is not specified yet.
 
-If the roster holds the slot as a device by the time the device commits, another device linked it: the device commits
-nothing for it and stops asking about it. What the user is then told, and what else a rejection does, such as warning
-the user and removing the slot's leaves from chats, are not specified yet.
+A device keeps its own rejections, across restarts, until the roster holds the slot as a device. While it keeps one, it
+commits it again whenever the roster has no entry for the slot: when its Commit fails, and when branch selection drops
+the update that recorded it, whichever device made that update.
+
+If the roster holds the slot as a device, the user confirmed linking it, on this device or another: the device commits
+nothing for the slot, forgets its rejection, and stops asking about it. What the user is then told, and what else a
+rejection does, such as warning the user and removing the slot's leaves from chats, are not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
 device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
-it leaves out a slot the roster holds as a device, such as the one just linked. It still keeps them after that, to
-restore one the roster loses.
+it leaves out, and forgets, a rejection of a slot the roster holds as a device, such as the one just linked, and keeps
+the others as above.
 
 ### Any one device's answer
 
-A link or a rejection is written to the roster, so one device's answer reaches all of them. A device that finds the
-slot of a sign-in it lists among the roster's devices or rejected slots stops asking about it: the user answered on
-another device. It MAY keep telling its user so, and which device linked it, until the user dismisses it. Not now is
-each device's own and is not shared.
+A link or a rejection is written to the roster, so one device's answer reaches all of them. A device that finds the slot
+of a sign-in it lists among the roster's devices or rejected slots stops asking about it: the user answered on another
+device. It MAY keep telling its user so, and which device linked it, until the user dismisses it. That answer holds only
+while the roster does: when the slot is no longer among the roster's devices or rejected slots, a device with no
+rejection of its own for it lists it again as it did before, even if the user dismissed it. Not now is each device's own
+and is not shared.
 
 ### A sign-in that goes away
 
