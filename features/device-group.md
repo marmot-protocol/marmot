@@ -146,13 +146,13 @@ whoever holds the account's signing key chooses that time.
   slot counts then. The first check is the first read of all the account's KeyPackages with no time bound, after the
   device signs in or after its client gains these rules, that ends with at least one relay having answered. Like any
   check, it ends only when every relay in it has ended its answers, failed or timed out. It covers every slot that one
-  read returns, from every relay that answered, including a slot whose publication is not fresh or not valid. Fetching
-  the one KeyPackage a Welcome names, a read with a time bound and a live subscription are never the first check, and
-  until the first check has happened the device lists no sign-in. The device keeps, across restarts, that its first
-  check happened and the id of every slot it returned, so a later check is never taken for it and those slots keep their
-  class. The first time such a slot is an unrecognized sign-in, at the first check or later, the device lists it: it
-  tells its user that the account is already signed in elsewhere, with when that slot last published, and asks whether
-  they still have that device.
+  read returns, from every relay that answered: the `d` of every KeyPackage publication in those answers, including one
+  that is not fresh, not valid, or covered by a deletion request. Fetching the one KeyPackage a Welcome names, a read
+  with a time bound and a live subscription are never the first check, and until the first check has happened the device
+  lists no sign-in. The device keeps, across restarts, that its first check happened and the id of every slot it
+  returned, so a later check is never taken for it and those slots keep their class. The first time such a slot is an
+  unrecognized sign-in, at the first check or later, the device lists it: it tells its user that the account is already
+  signed in elsewhere, with when that slot last published, and asks whether they still have that device.
 - Every unrecognized slot that the first check did not return is a new sign-in. The first time it is one, the device
   lists it and asks its user whether it was them.
 - A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
@@ -208,15 +208,15 @@ and is not shared.
 
 ### A sign-in that goes away
 
-When a complete check finds that the slot of a listed sign-in no longer holds a valid KeyPackage, because the slot has
-no current publication, a deletion covers it, or its current publication is not valid, the device keeps the sign-in
-listed and marks it as no longer signed in. While it is, it cannot be linked, but it can still be rejected. Otherwise
-someone holding the account's signing key could publish, wait for the user to be asked, and delete the publication
-before the user saw it. A valid publication that is no longer fresh marks nothing: freshness decides which KeyPackage an
-inviter picks, and a device that has not been opened for a while has not signed out. When a later complete check finds a
-valid KeyPackage in that slot again, the sign-in is signed in again and can be linked; any answer the user gave it
-stands. A check that is not complete changes neither: a device decides that a slot is empty, or holds a KeyPackage
-again, only from a complete check.
+A slot holds a KeyPackage, fresh or not, when its current publication is a valid KeyPackage of the account and no
+deletion request the check found covers it. When a complete check finds that the slot of a listed sign-in no longer
+holds a KeyPackage, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it cannot be
+linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait for the
+user to be asked, and delete the publication before the user saw it. A publication that is valid but no longer fresh
+still holds a KeyPackage: freshness decides which KeyPackage an inviter picks, and a device that has not been opened for
+a while has not signed out. When a later complete check finds that the slot holds a KeyPackage again, the sign-in is
+signed in again and can be linked; any answer the user gave it stands. A check that is not complete changes neither:
+only a complete check decides whether a slot holds a KeyPackage.
 
 ## Matching leaves to devices
 
