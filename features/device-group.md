@@ -62,8 +62,7 @@ A device treats a group as its device group only if:
 - it created the group itself, as above; or
 - it joined the group through a Welcome for the group that a confirmed link named.
 
-A Welcome into a group that requires `0x800e` that the device did not expect from a confirmed link does not make that
-group its device group. The device MUST NOT act on such a group's roster, and SHOULD NOT join it.
+A device MUST NOT join a group that requires `0x800e` through any other Welcome, and decides that before it joins.
 
 A device records which group it trusts as its device group when it creates or joins it, and does not infer it later
 from group state.

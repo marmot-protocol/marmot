@@ -25,8 +25,9 @@ devices, leaf-map entries, rejected slots and rejected KeyPackages; its update i
 entries against the candidate parent's roster, every leaf has the same credential
 identity, and no Commit or proposal may start or stop requiring it. A client that supports `0x800e` treats its entry
 and updates as unknown data in a group that does not require it, and MUST NOT write one there. A device trusts a group
-as its device group only if it created it or joined it through a Welcome a confirmed link named, and founds it with
-only the KeyPackage that link confirmed. Clients that do not support `0x800e` change nothing.
+as its device group only if it created it or joined it through a Welcome a confirmed link named, MUST NOT join a
+group that requires `0x800e` through any other Welcome, and founds it with only the KeyPackage that link confirmed.
+Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Activation eligibility reasons and lost activations
 
