@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-29: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes [features/device-group.md](./features/device-group.md)
+[#462](https://github.com/marmot-protocol/marmot/pull/462) changes [features/device-group.md](./features/device-group.md)
 and [foundation/registries.md](./foundation/registries.md).
 
 - Any device may rename any device in the roster. A device keeps each rename it made while the Commit carrying it can
