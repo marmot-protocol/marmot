@@ -99,9 +99,11 @@ and not a Welcome on its own.
 
 A check is complete when it read every relay the account publishes its KeyPackages to (on the Nostr binding, its
 write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"), and each of them
-ended its answer for both the KeyPackages and the deletion requests without failing, timing out, or returning as many
-events as the device asked for at most. A check that is not complete still shows what it found, but proves nothing
-missing.
+ended its answer for both the KeyPackages and the deletion requests without failing or timing out, and with fewer events
+than the device asked for. An answer that holds as many events as the device asked for may have more behind it, so it
+does not complete the check. A relay that cuts its answer at a lower limit of its own looks complete, so a device SHOULD
+ask a relay for no more events than the limit it advertises. A check that is not complete still shows what it found, but
+proves nothing missing.
 
 A slot that counts is an unrecognized sign-in unless it is:
 
@@ -130,17 +132,19 @@ example on a live subscription; the check's read is the evidence, not the public
 Nothing published says which of two devices signed in first. A slot's only public time is its latest publication, and
 whoever holds the account's signing key chooses that time.
 
-- Every unrecognized slot that a device's first check finds belongs to a device that was signed in before it. The first
-  check is the first read of all the account's KeyPackages, after the device signs in or after its client gains these
-  rules, that finishes with at least one relay having answered. It covers every slot that read returns, from every relay
-  in it; fetching the one KeyPackage a Welcome names is never the first check. The device keeps, across restarts, that
-  its first check happened and which slots it found, so a later check is never taken for it and those slots keep their
-  class. It tells its user that the account is already signed in elsewhere, with when that slot last published, and asks
-  whether they still have that device.
-- Every unrecognized slot it finds after its first check is a new sign-in, and the device asks its user whether it was
-  them.
-- A device MUST NOT use a publication's time to decide which of the two a slot is. When a sign-in appeared and when it
-  last published are for display only.
+- Every slot that a device's first check returns belongs to a device that was signed in before it, whether or not the
+  slot counts then. The first check is the first read of all the account's KeyPackages, after the device signs in or
+  after its client gains these rules, that finishes with at least one relay having answered. It covers every slot that
+  read returns, from every relay in it, including a slot whose publication is not fresh or not valid; fetching the one
+  KeyPackage a Welcome names is never the first check. The device keeps, across restarts, that its first check happened
+  and the id of every slot it returned, so a later check is never taken for it and those slots keep their class. When
+  such a slot is an unrecognized sign-in, at the first check or whenever it counts later, the device tells its user that
+  the account is already signed in elsewhere, with when that slot last published, and asks whether they still have that
+  device.
+- Every unrecognized slot that the first check did not return is a new sign-in, and the device asks its user whether it
+  was them.
+- A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
+  decides only whether a slot counts. When a sign-in appeared and when it last published are for display only.
 
 A slot the first check missed, for example because a relay did not answer, is a new sign-in when a later check finds
 it. That errs toward asking.
@@ -148,8 +152,9 @@ it. That errs toward asking.
 ### Answers
 
 A device keeps each unrecognized sign-in listed for its user, with the `client` tag of its publication if it has one,
-when it appeared, and when it last published, until the user links or rejects it. Like the roster, the list is shown
-only to the account's own user. The answers are:
+when it appeared, and when it last published, until the user links or rejects it. It keeps that list across restarts,
+with each sign-in's answer and whether it is still signed in, so a restart neither drops a sign-in nor asks again about
+one the user put off. Like the roster, the list is shown only to the account's own user. The answers are:
 
 - **Link:** starts linking that slot's device, which is not specified yet.
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
@@ -167,8 +172,10 @@ commits it again whenever the roster has no entry for the slot: when its Commit 
 the update that recorded it, whichever device made that update.
 
 If the roster holds the slot as a device, the user confirmed linking it, on this device or another: the device commits
-nothing for the slot, forgets its rejection, and stops asking about it. What the user is then told, and what else a
-rejection does, such as warning the user and removing the slot's leaves from chats, are not specified yet.
+nothing for the slot, forgets its rejection, and stops asking about it. If branch selection later drops that link, the
+device asks about the slot again ([Any one device's answer](#any-one-devices-answer)) rather than restore an answer the
+user's link overrode. What the user is then told, and what else a rejection does, such as warning the user and removing
+the slot's leaves from chats, are not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
 device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
