@@ -30,7 +30,10 @@ decentralized messaging system, but Marmot SHOULD avoid new metadata leaks unles
 ## Security model
 
 The [threat model and security considerations](./security-considerations.md) describe attacker capabilities, trust
-boundaries, assumptions and residual risks across the protocol. It summarizes the owning rules and is non-normative.
+boundaries, assumptions and residual risks across the protocol. Its [detailed scenario catalogue](./security-considerations.md#detailed-scenario-catalogue)
+records individual attacks, mitigations, residual risks and evidence status; the
+[historical index](./security-considerations.md#historical-scenario-disposition) accounts for every earlier named scenario.
+The document summarizes the owning rules and is non-normative.
 
 ## Review Guidance
 
