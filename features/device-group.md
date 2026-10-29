@@ -43,8 +43,8 @@ rule below.
 The device that approves a link creates the device group, if its account has none, and adds the newly linked device in
 the founding Add:
 
-- The founding state requires `0x800e` and carries a roster with an entry for the creating device and one for the
-  linked device.
+- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster with an entry for the
+  creating device and one for the linked device. The founding Add therefore writes no roster entry.
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -54,9 +54,10 @@ the founding Add:
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), which lets a
   creator add its own account's published KeyPackages to a new group. A device group never relies on that exemption.
 
-A Commit that adds a device to the device group or removes one also writes that device's roster entry, so each change of
-membership and its record are one decision. Such a Commit carries an AppDataUpdate, so it is `privileged` in branch
-selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
+After the founding Add, a Commit that adds a device to the device group or removes one also writes that device's roster
+entry, so each change of membership and its record are one decision. Such a Commit carries an AppDataUpdate, so it is
+`privileged` in branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate
+branches").
 
 These are sender rules. A receiver cannot tell where a KeyPackage came from, so it does not reject a Commit or a
 Welcome for breaking them.
@@ -124,14 +125,14 @@ Welcome is sent as for any other Add.
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
 group, and it holds no unprocessed input for the group. Neither the approving Commit's publication nor its Welcome's
-delivery shows that the new device joined; only a Commit from the new device's own leaf does. Until the link is made,
-anything that acts on the new device as a member of the account waits, and the link can still fail ("A link that is
-not taken up").
+delivery shows that the new device joined; only a Commit from the new device's own leaf does. Once made, a link stays
+made. Until then, anything that acts on the new device as a member of the account waits, and the link can still fail
+("A link that is not taken up").
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
-a member MUST add exactly one, by value, and MUST set that device's roster entry in the same Commit, for a slot the
-roster does not list yet, with `announced_key_package` naming the added KeyPackage. That Commit is a same-account Add
-with the roster update, which the account commits as the group's only admin
+a member, other than the founding Add, MUST add exactly one, by value, and MUST set that device's roster entry in the
+same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage. That
+Commit is a same-account Add with the roster update, which the account commits as the group's only admin
 ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Authorization"); it is never a
 same-account Commit, whose shape cannot carry the roster update. A device never adds a KeyPackage there that no
 confirmed link named, by an invite or otherwise, and so never re-invites a member whose founding Welcome could not be
@@ -173,20 +174,26 @@ two device groups would need, is not specified yet.
 
 ### A link that is not taken up
 
-The approving device waits for the new device's first Commit until 3600 seconds after it made the approving Commit.
-That outlasts the holds that can keep a device that has joined from committing at once, such as a Commit still settling
-in the device group or one of its own still unconfirmed, and a short suspension right after it joined. Until then the
-slot is a device in the roster, so a new request from it is not answered ("Before answering").
+The approving device, the one the new device's entry names in `linked_by`, waits for the new device's first Commit until
+3600 seconds after the `linked_at` it wrote in that entry, so the deadline survives its restarts. That leaves the new
+device time to commit after the holds that can delay a device that has joined, such as a Commit still settling in the
+device group or one of its own still unconfirmed, and after a short suspension right after it joined. The new device
+makes that Commit as soon as it can once it has joined: this deadline, not the general post-join guidance
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), bounds it. Until the deadline the slot
+is a device in the roster, so a new request from it is not answered ("Before answering").
 
-If the link is not made by then, the link has failed. The approving device makes one Commit that removes the new
-device's leaf and, with `remove_device`, its roster entry
+If the link is not made by then, the link has failed. Only the approving device acts on that: it makes one Commit that
+removes the new device's leaf and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
 link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
 selection keeps the new device's first Commit and drops that removal, the link is made after all.
 
-A new device that joined, but finds when it catches up that a Commit removed its leaf from the device group, was not
-linked. It no longer has a device group, tells its user that linking failed, and links again only through a new
-pairing session.
+A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
+group. It stops trusting the group and discards its copy of it, as a removed member may
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), so that a later
+link's Welcome into the same group id is a first join ([../protocol-core/joining.md](../protocol-core/joining.md),
+"Receiving flow"). If its first Commit there was never on the selected branch, it was not linked: it tells its user that
+linking failed, and links again only through a new pairing session.
 
 ## Keeping it out of sight
 
@@ -349,11 +356,12 @@ leaving one, or replacing a leaf there never commits to it.
   `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
 - A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
   its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
-  it makes as soon as it can once it has joined. Its siblings take that Commit as the sign that it joined, and remove a
-  device that has not made it in time ("A link that is not taken up"). That Commit also replaces its leaf in the device
-  group with one tagged under that key ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
-  "Producing tags"). Until then its leaf there is unclaimed, like any untagged leaf. A group where it made its post-join
-  self-update before then gets a tagged leaf later.
+  it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
+  joined, and removes it if it has not made it in time ("A link that is not taken up"). That Commit also replaces its
+  leaf in the device group with one tagged under that key
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
+  there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
+  leaf later.
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
