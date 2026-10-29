@@ -1936,7 +1936,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   advance unread. Latest inner created_at selects the overlay; missing targets may be boundedly held or dropped.
 - **Residual risk:** An author can rewrite its own message; saved originals persist outside protocol control.
   Equal-timestamp conflicting edits lack an explicit tie-break in the owning section, so this document claims no
-  unique result for that case.
+  unique result for that case. [#461](https://github.com/marmot-protocol/marmot/issues/461) proposes newest timestamp,
+  then lowest inner app-event id; the ordering rule and its application/protocol scope are not yet adopted.
 - **Normative owners:** [Message edits](foundation/application-messages.md#message-edits-kind-1009), [Receiver
   authentication](foundation/application-messages.md#receiver-authentication).
 - **Verification status:** Unverified — candidate check: deliver foreign-account and sibling-account edits
@@ -2073,7 +2074,9 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
   membership-lifetime fix, including signed nonexistent indices, leaf reuse, Welcome bootstrap and versioning.
 - **Edit ties ([SC-080](#sc-080)):** Is arrival-dependent selection acceptable for different edits with equal
   `created_at`, or is a deterministic tie-break required? The current edit section only orders by that timestamp;
-  do not claim a uniquely converged overlay without resolving this case.
+  [#461](https://github.com/marmot-protocol/marmot/issues/461) tracks a lowest-inner-id tie-break and reconsideration
+  of the earlier application-semantics scope decision in [#300](https://github.com/marmot-protocol/marmot/issues/300).
+  Do not claim a uniquely converged overlay without resolving this case.
 - **System-notice provenance ([SC-081](#sc-081)):** What presentation distinction prevents a sent kind-1210 assertion
   from appearing to be a derived canonical fact? [#310](https://github.com/marmot-protocol/marmot/issues/310) tracks this
   boundary; the authenticated sender and canonical-change source must remain distinct.
