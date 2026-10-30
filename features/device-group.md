@@ -11,9 +11,10 @@ the device group itself: what makes a group one, how it is created, when a devic
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what the devices do when someone else publishes under the account's key where they did
 not expect it, how devices hand each other private KeyPackages, how the Welcome for an add that uses one reaches its
-sibling, and how the user removes a device. [account-sync.md](./account-sync.md) specifies the small-state messages
-devices exchange in the group. When a device adds a sibling to a chat, the group's other messages, a removed device's
-own side, and signing out through a sibling are not specified yet.
+sibling, how the user removes a device, and how each device shows its siblings to its user.
+[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a device
+adds a sibling to a chat, the group's other messages, a removed device's own side, and signing out through a sibling
+are not specified yet.
 
 ## Surfaces
 
@@ -30,10 +31,11 @@ own side, and signing out through a sibling are not specified yet.
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
   roster entry announces into, and whose publications are the evidence of a new sign-in ([New sign-ins](#new-sign-ins)).
-- Marmot app events: kind `462` (anomaly alert, [Anomaly alerts](#anomaly-alerts)), kind `459` (private KeyPackage
-  request), kind `460` (private KeyPackage hand-off, [Private KeyPackages](#private-keypackages)) and kind `461`
-  (sibling Welcome, [Sibling Welcomes](#sibling-welcomes)), each sent only in a device group. Their kinds are
-  registered in [../foundation/registries.md](../foundation/registries.md).
+- Marmot app events: kind `457` (heartbeat, [Heartbeats](#heartbeats)), kind `462` (anomaly alert,
+  [Anomaly alerts](#anomaly-alerts)), kind `459` (private KeyPackage request), kind `460` (private KeyPackage
+  hand-off, [Private KeyPackages](#private-keypackages)) and kind `461` (sibling Welcome,
+  [Sibling Welcomes](#sibling-welcomes)), each sent only in a device group. Their kinds are registered in
+  [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -142,8 +144,9 @@ Once the link is confirmed, the device adds the new device:
 
 The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
 device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no `tag_signature_key`: the
-new device sets that itself ("Matching leaves to devices"). That Commit, or the founding Add, is the approval. Its
-Welcome is sent as for any other Add.
+new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a fresh `rename_id`
+([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is the approval.
+Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
@@ -509,7 +512,8 @@ names, from a publication in the slot that the device did not make.
 - Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
   own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
   first commits an AppDataUpdate that sets its own entry, with every other field unchanged and `announced_key_package`
-  naming the KeyPackage.
+  naming the KeyPackage. The one exception: that update MAY also bring the device's own `client` and `platform`
+  current ([Labels, clients and platforms](#labels-clients-and-platforms)).
 - The device publishes only once that Commit is part of the group state it holds. A Commit that fails, or that a
   branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
 - A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
@@ -980,6 +984,123 @@ withdrawn update does not undo small state ([account-sync.md](account-sync.md), 
 
 A KeyPackage handed over again at the cap ([Issuing](#issuing)) goes to the same sibling, so the record still names the
 slot that holds it.
+
+## Devices
+
+A device shows its user the account's devices from its device group's roster, for example on a Devices screen. It never
+shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
+
+### Labels, clients and platforms
+
+A device entry's `label`, `client` and `platform`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") are what a user reads to tell
+the devices apart.
+
+- Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
+  secure random source: the creating device's entry in the founding state, and the entry of every device added, by the
+  founding Add ("Creating the device group") or a later link ("Approving").
+  Only a rename changes it afterwards, so no two entries share one, and an id a device kept can show up in the roster
+  again only when a fork brings back an earlier state, which is what rename recovery below reads.
+- Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
+  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a fresh `rename_id` drawn the
+  same way, one that clears `label` included. Every other update to an entry MUST keep its `label` and its
+  `rename_id`.
+- A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
+  KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
+  is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
+  write them in the update that announces its next KeyPackage ([Slot announcements](#slot-announcements)) rather than
+  in an update of their own, so a changed value reaches the roster with that announcement. Publishing a KeyPackage its
+  entry already names makes no announcement. A rename never carries them. A device does not write another device's
+  `client` or `platform`.
+- A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
+  earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
+  older roster puts back whatever changed in that entry since.
+
+A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit.
+The entry's `rename_id` tells the renaming device where its rename stands; labels and Commits do not, since two renames
+can set the same label and a lost Commit can be sent again as a different Commit. From before it sends a rename's
+Commit, a device keeps, for the device it renames:
+
+- as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
+- as replaced, the `rename_id` the entry held when the device built the rename. If the device still keeps an earlier
+  rename of that device, and the entry held an id that earlier rename kept, as written or as replaced, it also keeps as
+  replaced every id the earlier rename kept, both kinds. The new rename takes the earlier one's place.
+
+It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
+stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
+no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state,
+taking the first of these that matches:
+
+- One kept as written: the rename applied.
+- One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
+  fresh `rename_id`, unless the entry already shows the label it set.
+- Any other: another rename won and stands, and the device drops its own.
+
+A device MAY forget the oldest `rename_id`s it keeps for one device, but never the newest it keeps as written, nor the
+`rename_id` the entry held when the device last built the rename or made it again: while the rename has not applied and
+nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads as another rename's,
+so the device drops its rename rather than make it again over one it cannot place. Either way, a device shows its user
+the label its roster holds.
+
+### Heartbeats
+
+| Kind  | Message   | Sent by                   |
+| ----- | --------- | ------------------------- |
+| `457` | Heartbeat | every device in the group |
+
+A heartbeat is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group. Its content is `{"v":1}`, written without whitespace, and its
+`created_at` is when it was sent. It says that the device that sent it is running.
+
+**Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever it has
+sent none there or its last heartbeat there is at least one hour old, whether it has just started or has been running
+for a while. It keeps the time of its last heartbeat across restarts. A heartbeat that no relay accepted is not its last
+one, so the device sends again at its next chance. It sends one only while the roster lists it and its own leaf in the
+device group carries a device tag that reads as its slot ([Matching leaves to devices](#matching-leaves-to-devices)),
+since its siblings count no heartbeat from an untagged leaf. A heartbeat never asks for a push notification and never
+wakes a sibling.
+
+**Receiving.** A device reads heartbeats only in the device group it trusts, and ignores kind `457` in any other group.
+A heartbeat counts for a sibling only when the leaf that sent it, in the tree of the epoch the device holds when it
+reads it, carries a device tag that reads as that sibling's
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
+roster's `leaf_tag_key`, names a slot that is a device in the roster, and verifies under that entry's
+`tag_signature_key`. A heartbeat from an earlier epoch, from an unclaimed leaf, or from a leaf whose tag names a
+`removed` slot counts for no device; that sibling's next heartbeat counts instead. A device that reads a sibling's
+heartbeats only after it has applied a later Commit, as when it catches up after an absence, therefore counts none of
+them, and can show that sibling as inactive until it sends again ([Inactive devices](#inactive-devices)). A receiver
+enforces no rate: every heartbeat that meets these rules counts.
+
+A receiver does not read a heartbeat's content, so that a later version can add to it without older devices dropping
+its heartbeats and judging its sender inactive.
+
+**Last activity.** A sibling's last activity is the latest, over the heartbeats that counted for it, of each
+heartbeat's `created_at` or the time the device read it, whichever is earlier, in seconds since the Unix epoch. A
+heartbeat only ever moves it later. A heartbeat never dates activity after the device read it, and one delivered late
+counts at its `created_at`, not when it arrived. Neither holds the sender's clock to the truth: a sender whose clock
+runs behind looks less recently active than it is, which errs toward showing it inactive, and a sender whose clock
+runs ahead, read late, can look active as late as the read, which errs toward hiding a sibling that stopped. A device
+keeps each sibling's last activity, and when it first found that sibling in its roster, across restarts, for that
+sibling's roster entry: its slot together with the entry's `linked_at`. A device MUST NOT carry either from one entry to
+another: once its roster lists the slot with a different `linked_at`, the device first finds that sibling then, even if
+it never held a roster without the slot. A device MAY forget both once its roster no longer lists the entry. A fork that
+brings back an entry the device saw removed brings back the same sibling, so if the device kept that entry's times,
+they still apply. Each device keeps its own; nothing about it is written to the roster.
+
+### Inactive devices
+
+A device treats a sibling as inactive once 30 days have passed, by its own clock, since the later of that sibling's last
+activity and when the device first found that sibling in its roster, or, while no heartbeat of the sibling has
+counted, since it first found it. A device that has just joined the device group, or a sibling that was just linked,
+therefore gets 30 days before it shows as inactive. A device never treats itself as inactive. A device SHOULD show its
+user which siblings are inactive.
+
+This judgment only decides what a device shows. A device that comes back after a long absence during which a Commit
+moved its device group on counts none of the heartbeats sent before that Commit ([Heartbeats](#heartbeats)), so it sees
+siblings as inactive until they send heartbeats it counts, and its view says little about who is still running. A
+device MUST NOT set a device entry's status to `inactive`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it. When a device records that
+status, and removing a device after a longer absence, are not specified yet.
 
 ## Security considerations
 
