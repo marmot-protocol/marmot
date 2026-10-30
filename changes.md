@@ -22,11 +22,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - Any device may rename any device in the roster. `DeviceEntryV1` gains `rename_id` after `label`, absent until the
   first rename: every rename writes 16 fresh random bytes, a clear included, and no other update changes it. This
-  changes the bytes of `0x800e` in place: the roster is a draft that no release has enabled, so an implementation of
-  the earlier draft layout updates its codec, and nothing created under that layout carries over. A device keeps the
-  ids its rename wrote and the ids it replaced. Once its device group is `Stable` with no Commit of its own unresolved,
-  it renames again where the canonical roster holds one it kept as replaced, and drops its rename where the roster holds
-  any id it did not keep.
+  changes the encoding of `0x800e` in place: while the component is a draft, its encoding can change, with no promise
+  that revisions work together. A device keeps the ids its rename wrote and the ids it replaced. Once its device group
+  is `Stable` with no Commit of its own unresolved, it renames again where the canonical roster holds one it kept as
+  replaced, and drops its rename where the roster holds any id it did not keep.
 - Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current, folded into a
   roster update it is already making to its own entry.
 - Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever
