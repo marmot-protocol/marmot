@@ -265,7 +265,8 @@ A receiver MUST compare MACs in constant time.
 5. Its user decides once. If the codes match, the device sends its Confirm with the id of the group it will add the new
    device to and the signature key of its own leaf in it. Which group that is, the device group's rules decide
    ([device-group.md](./device-group.md), "Approving"). For a group it has not created yet, that is the key it will
-   create the group with. If the codes differ, it sends Cancel `mismatched_code` and ends the session.
+   create the group with. It keeps that key on its leaf there through the Commit that adds the new device, so that key
+   signs the Welcome's `GroupInfo`. If the codes differ, it sends Cancel `mismatched_code` and ends the session.
 6. It ignores a new device's Confirm that arrives before it has sent its own. When the new device's Confirm arrives
    after that, it checks the MAC over the request's `key_package_ref`. If the check fails, it sends Cancel
    `mismatched_confirm` and ends the session.
