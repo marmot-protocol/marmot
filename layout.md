@@ -63,6 +63,7 @@ transports/
   quic.md
 features/
   README.md
+  account-sync.md
   content-moderation.md
   device-group.md
   encrypted-media.md

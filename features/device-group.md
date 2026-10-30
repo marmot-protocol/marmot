@@ -7,9 +7,10 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked into
-it or moves into it from another device group, how clients keep it out of sight, and how the account's devices notice a
-new sign-in. The other messages devices exchange in the group, private KeyPackages, and removal are not specified yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
+into it or moves into it from another device group, how clients keep it out of sight, and how the account's devices
+notice a new sign-in. [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the
+group. The group's other messages, private KeyPackages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -462,8 +463,10 @@ complete check decides whether a slot holds a KeyPackage.
 Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
 belongs to which device. Each linked device tags its leaves instead
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md)), and a device that holds the roster reads
-those tags in the groups it is in. Nothing about other groups is written to the device group, so joining a group,
-leaving one, or replacing a leaf there never commits to it.
+those tags in the groups it is in. No roster commit records anything about other groups, so joining a group, leaving
+one, or replacing a leaf there never commits to the device group. Small-state messages
+([account-sync.md](./account-sync.md)) do name other groups, by MLS group id; that document's security considerations
+cover what this discloses.
 
 - Each device makes its own tag signature key pair and keeps the private key to itself.
 - The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
