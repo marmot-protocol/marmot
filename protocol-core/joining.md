@@ -72,11 +72,14 @@ After unwrapping a Welcome, the receiver:
 13. catches up on outstanding Commits as best it can;
 14. performs a self-update as soon as practical.
 
-Steps 4 through 9 are one tentative validation operation. They MUST NOT durably create or replace group state, consume
-or rotate the referenced KeyPackage, or delete its `init_key` material unless every check through step 9 succeeds. If
-the MLS Welcome-processing operation consumes KeyPackage material before exposing the resulting group id and state,
-the receiver MUST stage that mutation or provide equivalent rollback so rejection restores the exact pre-processing
-KeyPackage state. Durable group storage and KeyPackage rotation begin only at steps 10 through 12.
+Steps 4 through 9 are one tentative validation operation, which also runs any check a feature requires before a
+Welcome is joined, such as a new device's check of the Welcome's group and sender under a confirmed device link
+([../features/device-pairing.md](../features/device-pairing.md), "New device", step 5). The operation MUST NOT durably
+create or replace group state, consume or rotate the referenced KeyPackage, or delete its `init_key` material unless
+every one of its checks succeeds. If the MLS Welcome-processing operation consumes KeyPackage material before exposing
+the resulting group id and state, the receiver MUST stage that mutation or provide equivalent rollback so rejection
+restores the exact pre-processing KeyPackage state. Durable group storage and KeyPackage rotation begin only at steps 10
+through 12.
 
 A new member SHOULD perform the post-join self-update before sending application payloads when feasible, and SHOULD do
 so promptly after joining. This carries forward the MIP-02 post-join rotation guidance; this spec keeps it as a
