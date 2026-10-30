@@ -13,6 +13,16 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Resending small state after a withdrawn device-group message (draft)
+
+[#470](https://github.com/marmot-protocol/marmot/pull/470) changes
+[features/account-sync.md](./features/account-sync.md).
+
+- A device that does not keep which items a withdrawn update carried may send every item it holds again instead of only
+  those items. A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request
+  may treat it as both. Receivers change nothing: each resent item keeps its version and change id, and merging a value
+  it already holds changes nothing.
+
 ## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
 
 [#469](https://github.com/marmot-protocol/marmot/pull/469) changes
