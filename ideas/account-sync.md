@@ -173,21 +173,11 @@ What matches across her devices:
 
 **Not drafts.** A draft belongs to the device it was typed on.
 
-These change often, so they travel as **device-group messages, not roster commits**. Each kind has a merge rule that
-makes arrival order irrelevant:
-
-- **Read position:** the furthest point wins. Positions only move forward.
-- **Pins, mutes, and archive:** the highest version wins. Each change to an item, such as muting Book club, carries a
-  version one higher than the highest the sending device has seen for that item. If two devices that couldn't see each
-  other pick the same version, the change whose authenticating leaf signature key sorts first wins. That is the key
-  that signed the change itself, not the device's current key, which may have rotated since. Every device picks the
-  same winner, and no device's clock matters.
-
-A newly linked device gets a snapshot of the current small state along with its history. So does a device coming back
-after a long gap: device-group messages it was offline for can be lost for good
-([../protocol-core/retained-history.md](../protocol-core/retained-history.md)), so it asks a sibling for a fresh
-snapshot. The snapshot carries each item's version, including settings that were turned back off, and merges by the same
-rules. This works whether or not history is on for that device.
+These change often, so they travel as **device-group messages, not roster commits**. Read positions, pins, mutes and
+archive are specified in [../features/account-sync.md](../features/account-sync.md): the furthest read position wins,
+the highest version wins for the others, and every device breaks a tie the same way, whatever order changes arrive in.
+Every device sends everything it holds at least once a day, and a newly linked device asks its other devices to do so
+at once. This works whether or not history is on for that device.
 
 ## Scene 7: Backups
 
@@ -334,7 +324,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 2. **History transfer.** A feature document for account sync, with device-group message kinds for transfer offers,
    older-history offers, sealed bundle keys, manifests, and confirmations, plus the bundle format. Large bundles reuse
    encrypted-media locators and Blossom storage.
-3. **Small-state sync.** The device-group message kinds, their versions, and their merge rules.
+3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
    the backup pointer's address derivation and encrypted content in the Nostr transport, and the restore flow.
 5. **Re-add requests**, when they are picked up.

@@ -114,6 +114,8 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `454`   | Device pairing reveal               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `455`   | Device pairing confirm              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `456`   | Device pairing cancel               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
+| `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
