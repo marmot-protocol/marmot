@@ -407,7 +407,8 @@ There is no "Alice added a device" notice.
   quiet refresh. If not, the sibling asks the slot's device, which is the only one that knows: an anomaly alert
   through the device group. That device either announces the KeyPackage again, because its announcement was lost or
   undone by a fork, or rejects it as someone else's (Scene 8). If it doesn't answer within a day, for example because
-  it is lost, the sibling rejects the KeyPackage itself. The device itself also notices a KeyPackage it didn't publish
+  it is lost, the sibling rejects the KeyPackage itself, even if the slot has moved on to another KeyPackage by then.
+  The device itself also notices a KeyPackage it didn't publish
   in its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message
   means a device linked later can read every sibling's current KeyPackage straight away.
 - **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's

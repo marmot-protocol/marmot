@@ -318,24 +318,31 @@ later creates or joins gets it the same way.
 **A sibling.** A device that finds a KeyPackage unannounced in a sibling's slot:
 
 1. brings its trusted device group up to date first: it processes every Commit for the group that it can fetch, until
-   it holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, rejected, or no
-   longer the slot's current publication, it does nothing more;
+   it holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, or rejected, it does
+   nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
-   alert for each KeyPackage;
-3. rejects the KeyPackage itself, as the slot's own device would, if a check made 24 hours or more after it sent the
-   alert, by its own clock, finds that KeyPackage still unannounced in the slot.
+   alert for each KeyPackage, and keeps each alert it sent, with the slot and the time, across restarts, until it
+   settles it;
+3. settles the alert 24 hours or more after it sent it, by its own clock: unless a roster of its trusted device group
+   has by then announced the KeyPackage for any device, or rejects it, the device rejects it itself, as the slot's own
+   device would. It settles the alert this way whether or not the slot still serves that KeyPackage and whether or not
+   the KeyPackage has expired, so that replacing a KeyPackage before the day is out saves neither it nor the leaves
+   that joined with it.
 
 **On an alert.** A device that receives an anomaly alert naming a KeyPackage reads its own slot as
 [../foundation/key-packages.md](../foundation/key-packages.md) ("A publication the device did not make") describes,
-which replaces and rejects a publication it did not make as above. If it made the KeyPackage the alert names and that
-KeyPackage is still its slot's current publication, it announces it again ([Slot announcements](#slot-announcements)),
-which also repairs an announcement a branch selection dropped. If it did not make that KeyPackage, it rejects it,
-whether or not its slot still holds it.
+which replaces and rejects a publication it did not make as above. If it did not make the KeyPackage the alert names, it
+rejects it, whether or not its slot still holds it. If it made that KeyPackage, it announces it again, by the
+AppDataUpdate in [Slot announcements](#slot-announcements), even when its slot now serves another or the KeyPackage has
+expired, so that every sibling holds a roster that announced it; this also repairs an announcement a branch selection
+dropped. If that KeyPackage is not its slot's current publication, it then announces the current one again the same
+way. So that it can tell which KeyPackages it made after it deletes their `init_key`, a device keeps the
+`KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the slot.
 
-A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device. Whoever
-holds the account's signing key can copy one device's KeyPackage into another device's slot, and rejecting the copy
-would reject the KeyPackage of the device that made it. The slot's device replaces the copy like any other publication
-it did not make.
+A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device, even where a
+rule above says to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot,
+and rejecting the copy would reject the KeyPackage of the device that made it. The slot's device replaces the copy like
+any other publication it did not make.
 
 A device that rejects a KeyPackage, or whose roster gains a rejected KeyPackage, warns its user
 ([Rejections](#rejections)).
@@ -392,10 +399,12 @@ A KeyPackage is tied to a rejection, for a device, when no roster of its trusted
 device, and:
 
 - the roster of its trusted device group rejects it; or
-- the device saw it as the current publication of a slot rejected as `not_me`, in that roster or among its own
-  rejections, and never saw it as the current publication of a slot that is not rejected. Whoever holds the account's
-  signing key can copy a real device's KeyPackage into a slot the user then rejects, and the copy shows the same
-  `KeyPackageRef` in the real device's slot.
+- the device saw it as the current publication of a slot that is rejected as `not_me`, in that roster or among its own
+  rejections, and every other slot where it saw it as the current publication is rejected as `not_me` too. Whether a
+  slot is rejected is judged by the roster and rejections the device holds when it checks, not when it saw the
+  publication, so the slot the user has just rejected counts. Whoever holds the account's signing key can copy a real
+  device's KeyPackage into a slot the user then rejects, and the copy shows the same `KeyPackageRef` in the real
+  device's slot.
 
 Each device records, for each leaf of its own account in each group it is in, other than its own, the `KeyPackageRef`
 of the KeyPackage that leaf joined with, from the Add proposal that added it, which carries the whole KeyPackage. It

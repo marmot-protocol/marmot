@@ -25,8 +25,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage
   in its device group's roster, besides replacing it. A sibling that finds a KeyPackage no roster announced in a linked
   device's slot catches up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the
-  KeyPackage itself only if it is still unannounced a day later. The slot's device answers an alert by announcing a
-  KeyPackage it made again, or by rejecting one it did not. No device rejects a KeyPackage any roster announced.
+  KeyPackage itself if, a day later, no roster has announced or rejected it, even when the slot no longer serves it.
+  The slot's device answers an alert by announcing a KeyPackage it made again, even one it has since replaced, or by
+  rejecting one it did not; each device keeps the `KeyPackageRef` of every KeyPackage it publishes for that. No
+  device rejects a KeyPackage any roster announced.
 - A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
   and whenever it removes a leaf tied to one. One warning stays open per account, it never claims the key holder was
   stopped, and dismissing it is per device.
