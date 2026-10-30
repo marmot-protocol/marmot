@@ -137,8 +137,9 @@ Once the link is confirmed, the device adds the new device:
 
 The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
 device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no `tag_signature_key`: the
-new device sets that itself ("Matching leaves to devices"). It carries no `rename_id` either: setting the label there
-is not a rename. That Commit, or the founding Add, is the approval. Its Welcome is sent as for any other Add.
+new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a fresh `rename_id`
+([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is the approval.
+Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
@@ -565,10 +566,14 @@ A device entry's `label`, `client` and `platform`
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") are what a user reads to tell
 the devices apart.
 
+- Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
+  secure random source: both founding entries ("Creating the device group") and every linked device's ("Approving").
+  Only a rename changes it afterwards, so no two entries share one, and an id a device kept can show up in the roster
+  again only when a fork brings back an earlier state, which is what rename recovery below reads.
 - Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
-  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a `rename_id` of 16 bytes the
-  device draws from a cryptographically secure random source, one that clears `label` included. Every other update to
-  an entry MUST keep its `label` and its `rename_id`.
+  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a fresh `rename_id` drawn the
+  same way, one that clears `label` included. Every other update to an entry MUST keep its `label` and its
+  `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
@@ -586,10 +591,9 @@ can set the same label and a lost Commit can be sent again as a different Commit
 Commit, a device keeps, for the device it renames:
 
 - as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
-- as replaced, the `rename_id` the entry held when the device built the rename, absent for an entry never renamed. If
-  the device still keeps an earlier rename of that device, and the entry held an id that earlier rename kept, as
-  written or as replaced, it also keeps as replaced every id the earlier rename kept, both kinds. The new rename takes
-  the earlier one's place.
+- as replaced, the `rename_id` the entry held when the device built the rename. If the device still keeps an earlier
+  rename of that device, and the entry held an id that earlier rename kept, as written or as replaced, it also keeps as
+  replaced every id the earlier rename kept, both kinds. The new rename takes the earlier one's place.
 
 It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
 stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
@@ -602,10 +606,10 @@ taking the first of these that matches:
 - Any other: another rename won and stands, and the device drops its own.
 
 A device MAY forget the oldest `rename_id`s it keeps for one device, but never the newest it keeps as written, nor the
-`rename_id` the entry held, absent included, when the device last built the rename or made it again: while the rename
-has not applied and nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads
-as another rename's, so the device drops its rename rather than make it again over one it cannot place. Either way, a
-device shows its user the label its roster holds.
+`rename_id` the entry held when the device last built the rename or made it again: while the rename has not applied and
+nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads as another rename's,
+so the device drops its rename rather than make it again over one it cannot place. Either way, a device shows its user
+the label its roster holds.
 
 ### Heartbeats
 
@@ -617,13 +621,13 @@ A heartbeat is a Marmot app event ([../foundation/application-messages.md](../fo
 sent as an MLS application message in the device group. Its content is `{"v":1}`, written without whitespace, and its
 `created_at` is when it was sent. It says that the device that sent it is running.
 
-**Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever its
-last heartbeat there is at least one hour old, whether it has just started or has been running for a while. It keeps
-the time of its last heartbeat across restarts. A heartbeat that no relay accepted is not its last one, so the device
-sends again at its next chance. It sends one only while the roster lists it and its own leaf in the device group
-carries a device tag that reads as its slot ([Matching leaves to devices](#matching-leaves-to-devices)), since its
-siblings count no heartbeat from an untagged leaf. A heartbeat never asks for a push notification and never wakes a
-sibling.
+**Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever it has
+sent none there or its last heartbeat there is at least one hour old, whether it has just started or has been running
+for a while. It keeps the time of its last heartbeat across restarts. A heartbeat that no relay accepted is not its last
+one, so the device sends again at its next chance. It sends one only while the roster lists it and its own leaf in the
+device group carries a device tag that reads as its slot ([Matching leaves to devices](#matching-leaves-to-devices)),
+since its siblings count no heartbeat from an untagged leaf. A heartbeat never asks for a push notification and never
+wakes a sibling.
 
 **Receiving.** A device reads heartbeats only in the device group it trusts, and ignores kind `457` in any other group.
 A heartbeat counts for a sibling only when the leaf that sent it, in the tree of the epoch the device holds when it
@@ -657,8 +661,9 @@ counted, since it first found it. A device that has just joined the device group
 therefore gets 30 days before it shows as inactive. A device never treats itself as inactive. A device SHOULD show its
 user which siblings are inactive.
 
-This judgment only decides what a device shows. A device that comes back after a long absence sees siblings as inactive
-until they send heartbeats it counts ([Heartbeats](#heartbeats)), so its view says little about who is still running. A
+This judgment only decides what a device shows. A device that comes back after a long absence during which a Commit
+moved its device group on counts none of the heartbeats sent before that Commit ([Heartbeats](#heartbeats)), so it sees
+siblings as inactive until they send heartbeats it counts, and its view says little about who is still running. A
 device MUST NOT set a device entry's status to `inactive`
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it. When a device records that
 status, and removing a device after a longer absence, are not specified yet.

@@ -108,8 +108,8 @@ Each device the account has linked has one `DeviceEntryV1`:
   roster.
 - `label` is the name the user gave the device, `client` its client name, and `platform` its platform. Each is UTF-8,
   compared and stored as bytes and never normalized; a decoder rejects bytes that are not UTF-8.
-- `rename_id` is absent until the device is first renamed. Every rename writes a new one, and no other update changes
-  it, so a device can tell its own rename from another after a fork
+- `rename_id` is 16 random bytes. Every entry is created with a fresh one, every rename writes a new one, and no other
+  update changes it, so a device can tell its own rename from another after a fork
   ([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms").
 - `linked_at` is when the device was linked, in seconds since the Unix epoch, as the linking device wrote it.
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
