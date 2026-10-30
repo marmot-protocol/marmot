@@ -153,9 +153,12 @@ A broadcast request's content is `{"v":1}`. It names no device and no item: it a
   ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"), the device sends
   each item that update carried again, in updates, unless it now holds a value for that item that beats it. Resending
   keeps the item's version and change id. Every device that merged the update does this, not only its sender, which may
-  no longer be in the device group.
+  no longer be in the device group. A device that does not keep which items an update carried MAY instead send every
+  item it holds again.
 - When branch selection withdraws a broadcast request, every device that sent or read it sends a new broadcast request,
   so a device whose request no sibling read still gets their broadcasts.
+- A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request MAY treat it
+  as both.
 
 ### Broadcasts
 

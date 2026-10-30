@@ -10,9 +10,11 @@ The non-normative direction is described in [../ideas/multi-device.md](../ideas/
 the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what the devices do when someone else publishes under the account's key where they did
-not expect it, how devices hand each other private KeyPackages, and how each device shows its siblings to its user.
-[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. Adding a sibling
-to a chat, the group's other messages, and removal are not specified yet.
+not expect it, how devices hand each other private KeyPackages, how the Welcome for an add that uses one reaches its
+sibling, how the user removes a device, and how each device shows its siblings to its user.
+[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a device
+adds a sibling to a chat, the group's other messages, a removed device's own side, and signing out through a sibling
+are not specified yet.
 
 ## Surfaces
 
@@ -30,9 +32,10 @@ to a chat, the group's other messages, and removal are not specified yet.
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
   roster entry announces into, and whose publications are the evidence of a new sign-in ([New sign-ins](#new-sign-ins)).
 - Marmot app events: kind `457` (heartbeat, [Heartbeats](#heartbeats)), kind `462` (anomaly alert,
-  [Anomaly alerts](#anomaly-alerts)), kind `459` (private KeyPackage request) and kind `460` (private KeyPackage
-  hand-off, [Private KeyPackages](#private-keypackages)), each sent only in a device group. Their kinds are registered
-  in [../foundation/registries.md](../foundation/registries.md).
+  [Anomaly alerts](#anomaly-alerts)), kind `459` (private KeyPackage request), kind `460` (private KeyPackage
+  hand-off, [Private KeyPackages](#private-keypackages)) and kind `461` (sibling Welcome,
+  [Sibling Welcomes](#sibling-welcomes)), each sent only in a device group. Their kinds are registered in
+  [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -406,8 +409,97 @@ cover what this discloses.
   leaf later.
 
 A leaf that no device claims is not evidence of anything by itself ([Leaves tied to a
-rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section. Adding
-a sibling to a group it is missing from, and removing a removed device's leaves, are not specified yet.
+rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section, and
+removing a removed device's leaves is under [Removing a device](#removing-a-device). Adding a sibling to a group it is
+missing from is not specified yet.
+
+## Removing a device
+
+The user removes a linked device from any other device of the account. A device never removes itself this way: a
+device the user is done with signs out.
+
+### The removal Commit
+
+A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaf, the one
+whose device tag reads as the sibling's slot ([Matching leaves to devices](#matching-leaves-to-devices)), and carries a
+roster update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two
+operations for that slot, in this order:
+
+1. `remove_device`;
+2. `set_rejected_slot` with reason `removed`, `rejected_at` the time the user decided, and the `tag_signature_key` the
+   entry had.
+
+If no leaf's tag reads as the slot, the Commit carries the same roster update and removes no leaf. A client MUST NOT
+remove a device whose entry has no `tag_signature_key` yet: its link may still fail, and the approving device undoes a
+failed link with `remove_device` alone ("A link that is not taken up").
+
+A device keeps each removal it decided, across restarts, until it discards its copy of the device group ([A link that is
+not taken up](#a-link-that-is-not-taken-up)), and removes the device again whenever the roster lists its slot. It
+records the decision before it commits. While its copy of the group is terminal or cannot be read, and it has not
+discarded it, the removal waits. It commits only while it can commit in the device group, so a Commit there still in
+flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
+selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
+as a failed link, the decision stands. A device does the cleanup in [Removing it from chats](#removing-it-from-chats)
+and [Its private KeyPackages](#its-private-keypackages) only while its trusted roster records the slot as `removed`, so
+it does none when the entry went as a failed link, which writes no such record, or when the record was dropped before
+the device acted on it; the slot's leaves then read as unclaimed. When the removal's Commit fails, or branch selection
+drops the removal, even after the `removed` record has been dropped, the roster lists the slot again and the device
+commits the removal again. A removed device comes back only as a new slot. A removal committed again keeps the
+decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next pass that drops old
+`removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+### The removed device's slot
+
+The device that decided the removal deletes the removed device's publication slot, with the transport's slot deletion
+(for Nostr, [../transports/nostr.md](../transports/nostr.md), "Slot deletion"). This is the one case in which a device
+deletes a slot it did not create ([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and
+publication slots"):
+
+- it sends the deletion once its state for the device group is settled and no longer lists the slot as a device,
+  whether it records the slot as `removed`, that record has since been dropped, or the entry went as a failed link
+  after the user decided;
+- the deletion covers only publications stamped at or before its own time, so the device stamps it as far ahead of its
+  clock as it would date a publication of its own ([../foundation/key-packages.md](../foundation/key-packages.md), "A
+  publication the device did not make"), since the removed device's clock may run ahead;
+- it sends it again until the transport accepts it;
+- when branch selection drops the removal after that, it commits the removal again and, once its state is settled and
+  no longer lists the slot as a device, deletes the slot again, since the removed device may have published to it in
+  between;
+- no other device deletes the slot, and nothing else lets a device delete another device's slot.
+
+The deletion stops inviters from selecting the KeyPackages the removed device published up to the deletion's time. It
+does not cover a later publication: what the account's devices do about a removed device that publishes again is not
+specified yet. It is cleanup, not revocation: a KeyPackage a relay keeps serving, or one an inviter already holds, can
+still be used until its `Lifetime` ends.
+
+### Removing it from chats
+
+While a device's trusted roster records a slot as `removed`, the device removes from each group it is in, other than
+the device group, every leaf of its account whose device tag reads as that slot ([Matching leaves to
+devices](#matching-leaves-to-devices)). Every device that trusts the device group does this, whichever device decided
+the removal.
+
+- In a group that requires `0x800d`, it removes those leaves with one same-account Commit
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations"). It
+  makes that Commit only while it can commit in the group, and otherwise tries again later. Two devices may both make
+  one; branch selection keeps one, and the other then finds nothing left to remove.
+- In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
+  in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
+- A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
+  there: no device of the account can see it.
+
+The removed device's leaves stay readable as its old slot until the roster drops the `removed` record
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A leaf left in a group after
+that reads as unclaimed.
+
+### Its private KeyPackages
+
+While its trusted roster records a slot as `removed`, every device of the account deletes the private KeyPackages it
+exchanged with that slot ([Private KeyPackages](#private-keypackages)):
+
+- those it issued to the slot, with their private keys, so that a Welcome the removed device makes from one cannot add
+  this device to a group;
+- those the slot handed it, so that it never adds the removed device with one.
 
 ## Slot announcements
 
@@ -679,8 +771,9 @@ This has limits:
 
 Devices in a device group are to add each other to chats only with private KeyPackages: single-use KeyPackages that one
 device hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication.
-How a sibling uses one to add a device to a chat is not specified yet; until it is, the founding exemption still applies
-([Security considerations](#security-considerations)).
+The Welcome for an add that uses one reaches its sibling only inside the device group ([Sibling
+Welcomes](#sibling-welcomes)). When a device adds a sibling to a chat is not specified yet; until it is, the founding
+exemption still applies ([Security considerations](#security-considerations)).
 
 ### Issuing
 
@@ -691,11 +784,13 @@ tag ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "
 private KeyPackages only once it can tag.
 
 - The issuer records which sibling, by slot, it handed each one to. It keeps the private key material until a Welcome
-  consumes the KeyPackage or until its `Lifetime.not_after`, whichever comes first.
-- Only a sibling's add may consume a private KeyPackage, and how one does is not specified yet. Until it is, a device
-  MUST reject every Welcome that consumes a private KeyPackage it issued, within the tentative validation of
-  [../protocol-core/joining.md](../protocol-core/joining.md) (steps 4 through 9), so the KeyPackage and its `init_key`
-  stay.
+  consumes the KeyPackage, until its `Lifetime.not_after`, or until its trusted roster records that sibling's slot as
+  `removed` ([Its private KeyPackages](#its-private-keypackages)), whichever comes first.
+- Only a sibling's add may consume a private KeyPackage. A device MUST reject every Welcome that consumes a private
+  KeyPackage it issued unless it arrived as a sibling Welcome that passes [Receiving a sibling
+  Welcome](#receiving-a-sibling-welcome). It decides that within the tentative validation of
+  [../protocol-core/joining.md](../protocol-core/joining.md) (steps 4 through 9), so a refused Welcome leaves the
+  KeyPackage and its `init_key` in place.
 - Halfway is `not_before + (not_after - not_before) / 2` in integer seconds, from the KeyPackage's `Lifetime`.
 - A device's stock with a sibling is the private KeyPackages it handed that sibling that no Welcome has consumed and
   that have not reached halfway, counting, once that sibling has sent a request, only those it handed over in its answer
@@ -709,7 +804,8 @@ private KeyPackages only once it can tag.
   over again private KeyPackages it already handed that sibling that no Welcome has consumed, the most recently issued
   first, so a sibling whose hand-offs were all lost still gets some. Handing one over again does not change its
   `Lifetime`: it counts toward the stock again only until it reaches halfway.
-- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage.
+- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage. A `removed` slot
+  ends both sooner ([Its private KeyPackages](#its-private-keypackages)).
 
 ### Messages
 
@@ -759,8 +855,9 @@ as several hand-offs.
   `id` differs and the sibling answers it.
 - A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
   it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
-  material until a Welcome consumes them or they expire. A device at its cap answers as [Issuing](#issuing) allows. A
-  device answers each request, by its Marmot app event `id`, once.
+  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or its trusted roster
+  records the requester's slot as `removed`. A device at its cap answers as [Issuing](#issuing) allows. A device answers
+  each request, by its Marmot app event `id`, once.
 - There are no receipts. A lost hand-off is repaired by the requester's next request.
 
 ### Receiving
@@ -800,6 +897,93 @@ leaf without a tag stays valid everywhere else
 KeyPackages it accepts by `from` until it uses one, discards them, or they expire. A device MUST NOT keep a private
 KeyPackage it has already used, even when a sibling hands it over again. It remembers each one it used until that
 KeyPackage's `not_after`, and keeps the rest of such a hand-off.
+
+## Sibling Welcomes
+
+A device that adds a sibling to a chat with a private KeyPackage that sibling handed it sends the Welcome inside the
+device group, as a sibling Welcome. A private KeyPackage has no publication for a transport binding's Welcome delivery
+to name, and only the device group can show the receiver that a sibling sent it.
+
+### Message
+
+| Kind  | Message         | Sent by                                                   |
+| ----- | --------------- | --------------------------------------------------------- |
+| `461` | Sibling Welcome | the device that added a sibling with its private KeyPackage |
+
+A sibling Welcome is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group. Its content is the standard base64 encoding, with padding
+([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)), of:
+
+```text
+struct {
+  opaque url<1..512>;
+} SiblingWelcomeRelayV1;
+
+struct {
+  uint8 version;
+  SlotId from;
+  SlotId to;
+  KeyPackageRefV1 key_package_ref;
+  MLSMessage welcome;
+  SiblingWelcomeRelayV1 relays<V>;
+} SiblingWelcomeV1;
+```
+
+The structure uses the Marmot binary profile
+([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). `SlotId` and `KeyPackageRefV1` are as the
+roster defines them
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+- `version` is `1`.
+- `from` is the sender's slot and `to` the slot of the sibling it added.
+- `key_package_ref` is the `KeyPackageRef` of the private KeyPackage the Commit consumed, computed as
+  [../foundation/key-packages.md](../foundation/key-packages.md) gives it.
+- `welcome` is one MLSMessage with `wire_format` `mls_welcome`, encoded as MLS defines it.
+- `relays` lists, in order, where the new member SHOULD fetch the chat's group messages, as the active transport
+  binding names them: one to 16 entries, none repeated. On Nostr each entry is a relay URL under the relay URL profile
+  ([../transports/nostr.md](../transports/nostr.md), "Relay URL profile"), as in a kind `444` rumor's `relays` tag. The
+  list is a fetch hint, not group state: the chat's routing component inside the Welcome stays authoritative.
+
+### Sending a sibling Welcome
+
+- A device sends one sibling Welcome for each private KeyPackage its Commit added, each naming its own KeyPackage
+  ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"), and sends it when an inviter sends a
+  Welcome: after the Commit's publish obligation succeeds ([../protocol-core/joining.md](../protocol-core/joining.md),
+  "Behavior").
+- It MUST NOT deliver a Welcome that consumes a private KeyPackage through the transport binding's Welcome delivery.
+  Members of other accounts that the same Commit added get their Welcomes through the binding as usual.
+- When a device sends a sibling Welcome again is not specified yet.
+
+### Receiving a sibling Welcome
+
+A device reads a sibling Welcome only from the device group it trusts ([Trust](#trust)), and ignores the kind in any
+other group. It drops one unless:
+
+- its content decodes exactly as [Message](#message) gives it: `version` `1`, a `welcome` whose `wire_format` is
+  `mls_welcome`, and no bytes left over;
+- `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it, as that leaf was in the epoch the message was sent in, carries a device tag that reads as
+  `from`'s, as for a request or a hand-off ([Receiving](#receiving));
+- `key_package_ref` names a private KeyPackage this device issued and recorded as handed to `from`
+  ([Issuing](#issuing)), whose private key material it still keeps.
+
+A device that passes these checks joins through the receiving flow of
+[../protocol-core/joining.md](../protocol-core/joining.md), with the sibling Welcome as the delivery. The device
+group's authenticated sender, a device of this account, addresses it to this account (step 1), and `to` to this device
+within it. `key_package_ref` names the KeyPackage step 2 checks, and step 3 decodes the `welcome` field. A sibling
+Welcome dropped for its `to` or its `key_package_ref` consumes no KeyPackage. Joining consumes that KeyPackage: the
+issuer deletes its private key material and its record of the hand-off along with the other consumed KeyPackage state
+(steps 11 and 12).
+
+A device joins only from a sibling Welcome whose app payload was delivered to it
+([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"). Once joining has
+consumed the KeyPackage, the join stands: a branch selection that later withdraws that payload does not undo it, as a
+withdrawn update does not undo small state ([account-sync.md](account-sync.md), "Convergence and retained history").
+
+A KeyPackage handed over again at the cap ([Issuing](#issuing)) goes to the same sibling, so the record still names the
+slot that holds it.
 
 ## Devices
 
@@ -947,11 +1131,14 @@ status, and removing a device after a longer absence, are not specified yet.
   publications already show.
 - An announcement is evidence only among devices that trust the same device group. Someone holding the account's
   signing key can publish into any slot, but cannot write the roster of a device group they are not in.
-- Once sibling adds are specified, private KeyPackages are why holding the account's signing key never lets someone join
-  a chat as a sibling: siblings will add each other only with KeyPackages handed over inside a device group that person
-  is not in. Until then, a device that creates a group may still add its account's published KeyPackages under the
-  founding exemption in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender
-  rules"), including one that someone holding that key published.
+- Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
+  joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
+  sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. Until when a
+  device adds a sibling is specified, a device that creates a group may still add its account's published KeyPackages
+  under the founding exemption in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)
+  ("Sender rules"), including one that someone holding that key published.
+- A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
+  another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
 - Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records
   it. One device in the device group therefore cannot file its KeyPackages under a sibling's slot, or make a request
   in a sibling's name that resets what was handed that sibling, without first rewriting that sibling's roster entry,

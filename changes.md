@@ -41,6 +41,59 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   sibling as inactive 30 days after its last activity, or after first finding it in the roster if that is later. That
   judgment only decides what the device shows: a device must not set an entry's `inactive` status from it.
 
+## 2026-10-30: Removing a device (draft)
+
+[#472](https://github.com/marmot-protocol/marmot/pull/472) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and [transports/nostr.md](./transports/nostr.md).
+
+- The user removes a linked device from another device of the account with one device-group Commit: it removes the
+  device's leaf (the one whose tag reads as its slot) and carries `remove_device` and a `removed` rejected slot with
+  the entry's `tag_signature_key`. A device whose entry has no `tag_signature_key` yet is not removed this way. The
+  deciding device records the decision first, keeps it until it discards its copy of the device group, and commits
+  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
+- The deciding device then deletes the removed device's KeyPackage slot once its settled device-group state no longer
+  lists the device, and again after committing a removal that branch selection dropped: the one case where a device
+  deletes a slot it did not create. It stamps the deletion as far ahead of its clock as it would date its own
+  publication.
+- Every device that trusts the device group removes the removed slot's tagged leaves from the groups it is in, with a
+  same-account Commit where the group requires `0x800d`, and tells its user about the others. It also deletes the
+  private KeyPackages it issued to a removed slot, with their keys, and those that slot handed it, before `not_after`.
+- A device does that cleanup only while its trusted roster records the slot as `removed`: none after a failed link,
+  which writes no such record, or for a record dropped before it acted
+  ([mdk#2761](https://github.com/marmot-protocol/mdk/issues/2761)).
+
+## 2026-10-30: Sibling Welcomes (draft)
+
+[#471](https://github.com/marmot-protocol/marmot/pull/471) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[transports/nostr.md](./transports/nostr.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A Welcome that consumes a private KeyPackage travels as a sibling Welcome (kind `461`, new), an app event in the
+  device group carrying the Welcome, the consumed KeyPackage's `KeyPackageRef` and the chat's relays. A device MUST NOT
+  deliver such a Welcome through the transport binding's Welcome delivery.
+- A device joins through a Welcome that consumes a private KeyPackage it issued only when it arrived as a sibling
+  Welcome in its trusted device group, from a leaf whose device tag reads as the sender's slot, for a KeyPackage it
+  recorded as handed to that slot and still keeps. Every other Welcome that consumes one is still rejected. The join
+  stands if branch selection later withdraws the sibling Welcome.
+- A sibling Welcome's relay list holds one to 16 entries, none repeated, each valid under the binding's relay rules.
+- A transport binding carries Welcomes only for published KeyPackages, and the Nostr binding sends no kind `444` rumor
+  for a never-published one. A sibling Welcome names its consumed KeyPackage by `KeyPackageRef`.
+- When a device adds a sibling to a chat, and when it sends a sibling Welcome again, are not specified yet.
+
+## 2026-10-30: Resending small state after a withdrawn device-group message (draft)
+
+[#470](https://github.com/marmot-protocol/marmot/pull/470) changes
+[features/account-sync.md](./features/account-sync.md).
+
+- A device that does not keep which items a withdrawn update carried may send every item it holds again instead of only
+  those items. A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request
+  may treat it as both. Receivers change nothing: each resent item keeps its version and change id, and merging a value
+  it already holds changes nothing.
+
 ## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
 
 [#469](https://github.com/marmot-protocol/marmot/pull/469) changes
