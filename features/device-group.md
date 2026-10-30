@@ -43,10 +43,10 @@ rule below.
 The device that approves a link creates the device group, if its account has none, and adds the newly linked device in
 the founding Add:
 
-- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster with an entry for the
-  creating device and one for the linked device. The founding Add therefore writes no roster entry. The creating
-  device's entry has the "add to all my chats" and "bring chat history" settings on, as a new device's are unless its
-  user turns them off ("Approving").
+- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the
+  creating device, with the rejections it already holds ("Answers"). The founding Add sets the linked device's roster
+  entry, as every later Add sets the entry of the device it adds. The creating device's entry has the "add to all my
+  chats" and "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving").
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -56,9 +56,9 @@ the founding Add:
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), which lets a
   creator add its own account's published KeyPackages to a new group. A device group never relies on that exemption.
 
-After the founding Add, a Commit that adds a device to the device group or removes one also writes that device's roster
-entry, so each change of membership and its record are one decision. Such a Commit carries an AppDataUpdate, so it is
-`privileged` in branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate
+A Commit that adds a device to the device group or removes one, the founding Add included, also writes that device's
+roster entry, so each change of membership and its record are one decision. Such a Commit carries an AppDataUpdate, so
+it is `privileged` in branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate
 branches").
 
 These are sender rules. A receiver cannot tell where a KeyPackage came from, so it does not reject a Commit or a
@@ -132,7 +132,7 @@ made. Until then, anything that acts on the new device as a member of the accoun
 ("A link that is not taken up").
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
-a member, other than the founding Add, MUST add exactly one, by value, and MUST set that device's roster entry in the
+a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
 same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage. That
 Commit is a same-account Add with the roster update, which the account commits as the group's only admin
 ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Authorization"); it is never a
@@ -325,8 +325,7 @@ the slot's leaves from chats, are not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
 device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
-it leaves out, and forgets, a rejection of a slot the roster holds as a device, such as the one just linked, and keeps
-the others as above.
+it leaves out, and forgets, a rejection of a slot the roster holds as a device, and keeps the others as above.
 
 ### Any one device's answer
 
