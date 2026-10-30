@@ -264,9 +264,9 @@ delivered in the chat that the sender holds in the stretch, as the inner event i
 
 A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
 
-**Encoding.** A bundle is one UTF-8 JSON object, written without whitespace, with its members in the order shown, and
-no object in it repeats a member name. Every number in it is a decimal integer from 0 to 9007199254740991, without
-leading zeros. Its encoding is at most 8,388,608 bytes long.
+**Encoding.** A bundle is one UTF-8 JSON object, and no object in it repeats a member name. Every number in it is a
+decimal integer from 0 to 9007199254740991, without leading zeros. Its encoding is at most 8,388,608 bytes long. The
+sender writes it without whitespace, with its members in the order shown.
 
 | Member   | Value |
 | -------- | ----- |
@@ -299,14 +299,18 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
 
 **Importing.** A device that receives a bundle:
 
-- drops the whole bundle if it does not decrypt, breaks the encoding above, has a `v` other than `1`, names a chat
-  other than the one its carrying message names, or has a `from` after its `to`;
+- drops the whole bundle if it does not decrypt, has a `v` other than `1`, names a chat other than the one its carrying
+  message names, has a `from` after its `to`, or breaks the encoding above other than in layout: it is longer than
+  8,388,608 bytes, an object in it lacks a member it must have, has one not shown or repeats one, a member holds the
+  wrong kind of value (`null` included), a number is out of range, hexadecimal is not lowercase or not the length shown,
+  or `keys` is empty. It does not check whitespace or member order, which only the sender's rule fixes;
 - checks each event on its own, and drops one whose `id` does not match its content
   ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
   bundle's stretch, that has `grant` on another kind, or whose retention has expired;
 - adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
-- takes `grant` as the event's authority, and gives an event without one no authority;
+- takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
+  event reaches it live, when it judges that copy's authority as for any live event;
 - has each event expire at its `created_at` plus its `retention`, as message retention does for live messages.
 
 The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
