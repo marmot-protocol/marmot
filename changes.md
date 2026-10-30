@@ -23,7 +23,15 @@ the founder in the founding roster, a joining device in the update that first se
 device whose entry lacks its key, or holds another, in a later update of its own entry. A device never changes another
 device's `history_key`. Siblings seal to it with `EncryptWithLabel` under the label `"Marmot History"` and a context
 the carrying message defines. A `history_key` that is not a public key of the KEM still leaves the roster valid; that
-device gets no history. Clients that do not support device groups change nothing.
+device gets no history. It also adds "History bundles": one stretch of one chat's history as a UTF-8 JSON object
+(`v`, `chat`, `from`, `to`, `events`) of at most 8,388,608 bytes, each event the raw inner event with its epoch, its
+retention, a moderation `grant` for kinds `1985` and `4891`, and per-file attachment `keys`. Deleted and admin-removed
+messages and every event that targets them stay out; the deletions themselves go in. Each bundle is encrypted with
+ChaCha20-Poly1305 under a fresh one-use key and a zero nonce, longer histories split into bundles over consecutive
+stretches, and a receiver only adds events it lacks, never moves its read position for them, and should not count them
+as unread. [features/encrypted-media.md](./features/encrypted-media.md) and
+[features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
+exporter secret, to its own account's devices in a bundle. Clients that do not support device groups change nothing.
 
 ## 2026-10-30: Small-state sync between an account's devices (draft)
 

@@ -241,6 +241,81 @@ A sibling sends history only to a device whose roster entry has a history key it
 not a public key of the KEM is not an error ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md));
 that device gets no history.
 
+### History bundles
+
+A device sends history as bundles. A bundle holds one stretch of one chat's history, as the sending device holds it,
+for one receiving device.
+
+**Stretches.** Chat order is the order of read positions ([Items](#items)): the epoch a message was sent in, then its
+`created_at`, then its `id`. A position names one message by those three values, encoded as a read position's value:
+`{"epoch":e,"at":t,"id":"<id>"}`. A stretch is every message from one position to another in chat order, both
+included. A position may name a message the receiver does not hold, or one the bundle leaves out.
+
+**What a bundle carries.** Every Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+delivered in the chat that the sender holds in the stretch, as the inner event it received or sent, except:
+
+- an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
+  expired;
+- an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
+  the sender sent and no relay accepted;
+- a message deleted by its author or removed by an admin, and every event that targets one, such as a reaction, an
+  edit or a report. The deletion or removal itself is carried, so a later bundle from a sibling that missed it does not
+  bring the message back.
+
+A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
+
+**Encoding.** A bundle is one UTF-8 JSON object, written without whitespace, with its members in the order shown, and
+no object in it repeats a member name. Every number in it is a decimal integer from 0 to 9007199254740991, without
+leading zeros. Its encoding is at most 8,388,608 bytes long.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `chat`   | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so at most 512 characters |
+| `from`   | the position the stretch starts at |
+| `to`     | the position the stretch ends at, at or after `from` |
+| `events` | the events, each one object below, in chat order |
+
+| Member      | Value |
+| ----------- | ----- |
+| `event`     | the inner event, as a JSON object with exactly the members [../foundation/application-messages.md](../foundation/application-messages.md) gives it |
+| `epoch`     | the MLS epoch the event was sent in |
+| `retention` | the event's retention in seconds, from the retention decision the sender holds for it; absent when the sender holds none |
+| `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender found that the event's author had the authority the kind needs at the event's epoch, `false` when it found they did not; absent when the sender has not decided |
+| `keys`      | for an event with encrypted-media attachments only: one or more attachment keys, below; absent when the sender can give none |
+
+An attachment key is `{"ciphertext_sha256":"<hash>","key":"<key>"}`: the `ciphertext_sha256` of one of the event's
+media references ([encrypted-media.md](./encrypted-media.md)) and that file's `file_key`, each as 64 lowercase
+hexadecimal characters.
+
+**Splitting.** A history longer than one bundle allows is split into bundles over consecutive stretches: each bundle's
+`from` is the previous bundle's `to`, and an event at that shared position travels in either bundle.
+
+**Encryption.** The sender encrypts each bundle with ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439))
+under a fresh 32-byte key from a cryptographically secure random source, a nonce of 12 zero bytes, and the 24 ASCII
+bytes of `marmot history bundle v1` as associated data. It uses each key for one bundle only, so the fixed nonce never
+repeats under a key. The key and the SHA-256 of the ciphertext reach the receiving device sealed to its history key
+([History keys](#history-keys)) in the message that carries the bundle. No compression is applied.
+
+**Importing.** A device that receives a bundle:
+
+- drops the whole bundle if it does not decrypt, breaks the encoding above, has a `v` other than `1`, names a chat
+  other than the one its carrying message names, or has a `from` after its `to`;
+- checks each event on its own, and drops one whose `id` does not match its content
+  ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
+  bundle's stretch, that has `grant` on another kind, or whose retention has expired;
+- adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
+  newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
+- takes `grant` as the event's authority, and gives an event without one no authority;
+- has each event expire at its `created_at` plus its `retention`, as message retention does for live messages.
+
+The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
+Imported history is as trustworthy as the sibling that sent it ([Security considerations](#security-considerations)).
+A client MAY show which device a message was imported from.
+
+Importing history is not reading it. It never moves the device's read position, so the device never sends a read
+position for a message only because it was imported. A client SHOULD NOT count imported messages as unread.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -277,3 +352,7 @@ so no device moves it back; a later position moves it again once that one is fur
   device linked with "add to all my chats" off.
 - A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
   value sealed to it, past and future, until it writes a new key.
+- Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
+  alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
+  them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
+  receiving device only. An attachment key opens only the one file it names, never the rest of that epoch's media.
