@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#469](https://github.com/marmot-protocol/marmot/pull/469) changes
 [features/device-group.md](./features/device-group.md),
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
