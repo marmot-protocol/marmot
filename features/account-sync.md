@@ -157,6 +157,8 @@ A broadcast request's content is `{"v":1}`. It names no device and no item: it a
   item it holds again.
 - When branch selection withdraws a broadcast request, every device that sent or read it sends a new broadcast request,
   so a device whose request no sibling read still gets their broadcasts.
+- A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request MAY treat it
+  as both.
 
 ### Broadcasts
 
