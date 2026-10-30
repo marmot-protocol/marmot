@@ -256,8 +256,9 @@ the laptop into a device group they control. Without the laptop's own confirmati
 - a Welcome sent to the account for a KeyPackage no roster device announced. Every device can open gift wraps addressed
   to the account, so any of them can notice this.
 
-A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Someone else
-replaced it, so it goes straight to the warning in Scene 8.
+A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Its siblings ask
+that device first, and reject the KeyPackage if it doesn't answer within a day (Scene 6, "Refreshing a slot"); a
+rejection goes to the warning in Scene 8.
 
 **Only checked evidence counts.** Before anything raises a prompt, a device validates what it saw under the existing
 KeyPackage and Nostr transport rules; this idea adds no checks of its own. A Welcome that names an unfamiliar KeyPackage

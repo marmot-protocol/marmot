@@ -33,6 +33,7 @@ group.
 opaque SlotId[32];
 opaque KeyPackageRefV1<1..64>;
 opaque TagSignatureKeyV1<1..255>;
+opaque LeafSignatureKeyV1<1..255>;
 opaque ReservedKeyV1<1..255>;
 
 enum {
@@ -72,6 +73,7 @@ struct {
 struct {
   KeyPackageRefV1 key_package_ref;
   SlotId slot;
+  LeafSignatureKeyV1 leaf_signature_key;
   uint64 rejected_at;
 } RejectedKeyPackageV1;
 
@@ -122,14 +124,15 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `history_key` is reserved for account sync and has no meaning in this version.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
-`RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in. `rejected_at`
-is when the rejection was recorded, as the recording device wrote it. A `removed` record keeps the `tag_signature_key`
-the device's entry had, if it had one, so that the account's devices can still recognize that device's tags
-([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me` record has none: a rejected sign-in never had an
-entry. When a device writes a `not_me` record, and what it then stops asking about, is in
-[../features/device-group.md](../features/device-group.md) ("New sign-ins"). When a device writes a
-`RejectedKeyPackageV1` is in the same document ("A KeyPackage the roster does not announce"), and what either
-rejection does in other groups is in its "Rejections".
+`RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in and the
+`signature_key` of its LeafNode as `leaf_signature_key`, so that a device that never saw the KeyPackage can still
+recognize a leaf that joined with it. `rejected_at` is when the rejection was recorded, as the recording device wrote
+it. A `removed` record keeps the `tag_signature_key` the device's entry had, if it had one, so that the account's
+devices can still recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me`
+record has none: a rejected sign-in never had an entry. When a device writes a `not_me` record, and what it then stops
+asking about, is in [../features/device-group.md](../features/device-group.md) ("New sign-ins"). When a device writes a
+`RejectedKeyPackageV1` is in the same document ("A KeyPackage the roster does not announce"), and what either rejection
+does in other groups is in its "Rejections".
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
 again or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its
