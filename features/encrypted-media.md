@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t8-external-media-shared-credentials-and-deletion-limits).
+
 Encrypted media lets a Marmot app payload refer to one or more encrypted blobs stored outside the MLS message.
 
 This feature is for message-attached files: images, videos, audio, documents, and other binary attachments. Group
