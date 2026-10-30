@@ -10,9 +10,10 @@ The non-normative direction is described in [../ideas/multi-device.md](../ideas/
 the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what the devices do when someone else publishes under the account's key where they did
-not expect it, and how devices hand each other private KeyPackages. [account-sync.md](./account-sync.md) specifies the
-small-state messages devices exchange in the group. Adding a sibling to a chat, the group's other messages, and
-removal are not specified yet.
+not expect it, how devices hand each other private KeyPackages, and how the user removes a device.
+[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. Adding a sibling
+to a chat, the group's other messages, a removed device's own side, and signing out through a sibling are not specified
+yet.
 
 ## Surfaces
 
@@ -404,8 +405,90 @@ cover what this discloses.
   leaf later.
 
 A leaf that no device claims is not evidence of anything by itself ([Leaves tied to a
-rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section. Adding
-a sibling to a group it is missing from, and removing a removed device's leaves, are not specified yet.
+rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section, and
+removing a removed device's leaves is under [Removing a device](#removing-a-device). Adding a sibling to a group it is
+missing from is not specified yet.
+
+## Removing a device
+
+The user removes a linked device from any other device of the account. A device never removes itself this way: a
+device the user is done with signs out.
+
+### The removal Commit
+
+A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaf, the one
+whose device tag reads as the sibling's slot ([Matching leaves to devices](#matching-leaves-to-devices)), and carries a
+roster update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two
+operations for that slot, in this order:
+
+1. `remove_device`;
+2. `set_rejected_slot` with reason `removed`, `rejected_at` the time the user decided, and the `tag_signature_key` the
+   entry had.
+
+If no leaf's tag reads as the slot, the Commit removes the entry alone. A client MUST NOT remove a device whose entry
+has no `tag_signature_key` yet: its link may still fail, and the approving device undoes a failed link with
+`remove_device` alone ("A link that is not taken up").
+
+A device keeps each removal it decided, across restarts, for as long as it trusts the device group, and removes the
+device again whenever the roster lists its slot. It records the decision before it commits, and only forgetting the
+device group ends it: while its copy of the group is terminal or cannot be read, the removal waits. It commits only
+while it can commit in the device group, so a Commit there still in flight or settling only delays the removal. It also
+waits while the entry has no `tag_signature_key`, which branch selection can drop after the user decided. When its
+Commit fails, or branch selection drops the removal, even after the `removed` record has been dropped, the roster lists
+the slot again and the device commits the removal again. A removed device comes back only as a new slot. A removal
+committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next
+pass that drops old `removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State").
+
+### The removed device's slot
+
+The device that decided the removal deletes the removed device's publication slot, with the transport's slot deletion
+(for Nostr, [../transports/nostr.md](../transports/nostr.md), "Slot deletion"). This is the one case in which a device
+deletes a slot it did not create ([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and
+publication slots"):
+
+- it sends the deletion once its state for the device group is settled and no longer lists the slot as a device,
+  whether it records the slot as `removed` or that record has since been dropped;
+- the deletion covers only publications stamped at or before its own time, so the device stamps it as far ahead of its
+  clock as it lets a KeyPackage's time run ahead of its own when it invites, since the removed device's clock may run
+  ahead;
+- it sends it again until the transport accepts it;
+- when branch selection drops the removal after that, it commits the removal again and, once the roster no longer lists
+  the slot, deletes the slot again, since the removed device may have published to it in between;
+- no other device deletes the slot, and nothing else lets a device delete another device's slot.
+
+The deletion stops inviters from selecting the removed device's KeyPackages. It is cleanup, not revocation: a KeyPackage
+a relay keeps serving, or one an inviter already holds, can still be used until its `Lifetime` ends.
+
+### Removing it from chats
+
+While a device's trusted roster records a slot as `removed`, the device removes from each group it is in, other than
+the device group, every leaf of its account whose device tag reads as that slot ([Matching leaves to
+devices](#matching-leaves-to-devices)). Every device that trusts the device group does this, whichever device decided
+the removal.
+
+- In a group that requires `0x800d`, it removes those leaves with one same-account Commit
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations"). It
+  makes that Commit only while it can commit in the group, and otherwise tries again later. Two devices may both make
+  one; branch selection keeps one, and the other then finds nothing left to remove.
+- In a group that does not require `0x800d`, only an admin can remove one leaf of an account. A device that is an admin
+  there MAY remove the leaf with an ordinary Remove. Otherwise it leaves the leaf in place and SHOULD tell its user that
+  an admin of that group can remove it.
+- A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
+  there: no device of the account can see it.
+
+The removed device's leaves stay readable as its old slot until the roster drops the `removed` record
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A leaf left in a group after
+that reads as unclaimed.
+
+### Its private KeyPackages
+
+While its trusted roster records a slot as `removed`, every device of the account deletes the private KeyPackages it
+exchanged with that slot ([Private KeyPackages](#private-keypackages)):
+
+- those it issued to the slot, with their private keys, so that a Welcome the removed device makes from one cannot add
+  this device to a group;
+- those the slot handed it, so that it never adds the removed device with one.
 
 ## Slot announcements
 

@@ -113,9 +113,10 @@ A device has at most one leaf in a group. Two leaves in one group that both belo
 device's keys were misused.
 
 An unclaimed leaf is not evidence of anything by itself: a device's leaves from before it could tag, and the leaves of
-a sign-in nobody has linked, are unclaimed too. The account's devices act only on a leaf tied to a rejection
-([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection"). What they do about a removed
-slot's leaf, or a sibling missing from a group, is not specified yet.
+a sign-in nobody has linked, are unclaimed too. The account's devices act on an unclaimed leaf only when it is tied to a
+rejection ([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection"). They remove a
+removed slot's leaves from the groups they are in ([../features/device-group.md](../features/device-group.md),
+"Removing it from chats"). What they do about a sibling missing from a group is not specified yet.
 
 ## Validity
 
