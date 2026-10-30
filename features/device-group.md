@@ -8,8 +8,9 @@ linked, which sign-ins were rejected, and in which order those decisions were ma
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
 the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out of
-sight, and how the account's devices notice a new sign-in. Linking, the messages devices exchange in the group, private
-KeyPackages, and removal are not specified yet.
+sight, and how the account's devices notice a new sign-in. [account-sync.md](./account-sync.md) specifies the
+small-state messages devices exchange in the group. Linking, the group's other messages, private KeyPackages, and
+removal are not specified yet.
 
 ## Surfaces
 

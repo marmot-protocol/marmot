@@ -176,8 +176,8 @@ What matches across her devices:
 These change often, so they travel as **device-group messages, not roster commits**. Read positions, pins, mutes and
 archive are specified in [../features/account-sync.md](../features/account-sync.md): the furthest read position wins,
 the highest version wins for the others, and every device breaks a tie the same way, whatever order changes arrive in.
-A newly linked device, and one coming back after a long gap, asks each of its other devices for a snapshot of every
-item. This works whether or not history is on for that device.
+Every device sends everything it holds at least once a day, and a newly linked device asks its other devices to do so
+at once. This works whether or not history is on for that device.
 
 ## Scene 7: Backups
 

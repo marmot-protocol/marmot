@@ -16,20 +16,20 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-10-29: Small-state sync between an account's devices (draft)
 
 [#PR](https://github.com/marmot-protocol/marmot/pull/PR) adds [features/account-sync.md](./features/account-sync.md) and
-registers kinds `475`, `476` and `477` in [foundation/registries.md](./foundation/registries.md). An account's devices
-keep each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an
-update when the user changes one, and snapshots when a device starts taking part or may have lost device-group
-messages. Each item names its chat by raw MLS group id. The furthest read position wins, in chat order by epoch,
-`created_at` and `id`; for the other items the highest version wins, then the lowest random change id, then the lowest
-value. A version stops at 9007199254740991, and an item held there can no longer change. A device that may have lost
-messages sends every item it holds and asks each sibling the roster lists for a snapshot, and does so again whenever
-the device group's tip moves past the app-payload window; a request carries a random request id and its answer numbers
-its parts, so the device asks each sibling again until that sibling's answer is whole. A device reads these kinds
-only in its trusted device group, from any member, drops a message with a repeated member name or item, skips item
-names it does not know, keeps what a withdrawn message set, and resends the items of every withdrawn update or
-snapshot it sent or merged. [features/device-group.md](./features/device-group.md) now says
-small-state messages name other groups, and [ideas/account-sync.md](./ideas/account-sync.md) points to the feature for
-these rules. Clients that do not support device groups change nothing.
+registers kinds `475` and `476` in [foundation/registries.md](./foundation/registries.md). An account's devices keep
+each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an update
+when the user changes one, and a broadcast of every item a device holds. Each item names its chat by raw MLS group id.
+The furthest read position wins, in chat order by epoch, `created_at` and `id`; for the other items the highest version
+wins, then the lowest random change id, then the lowest value. A version stops at 9007199254740991, and an item held
+there can no longer change. Each device broadcasts when it starts, at least every 24 hours, and whenever the device
+group's tip moves past the app-payload window since its last broadcast. A starting device also sends a broadcast
+request, which each sibling answers with one broadcast, at most once an hour. No device asks a particular sibling or
+tracks what its siblings hold. A device reads these kinds only in its trusted device group, from any member, drops a
+message with a repeated member name or item, skips item names it does not know, and keeps what a withdrawn message
+set. It resends the items of every withdrawn update it sent or merged, and a new broadcast request for every withdrawn
+one it sent or read. [features/device-group.md](./features/device-group.md) now says small-state messages name other
+groups and leaves them to the new document, and [ideas/account-sync.md](./ideas/account-sync.md) points to the
+feature for these rules. Clients that do not support device groups change nothing.
 
 ## 2026-10-29: New sign-ins in the device group (draft)
 

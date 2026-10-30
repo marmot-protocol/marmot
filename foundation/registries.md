@@ -110,8 +110,7 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
-| `476`   | Small-state snapshot request        | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
-| `477`   | Small-state snapshot                | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
+| `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
