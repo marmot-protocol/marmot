@@ -238,11 +238,13 @@ A receiver MUST compare MACs in constant time.
    the check fails, it sends Cancel `mismatched_confirm` and ends the session.
 5. Once its user has confirmed and the existing device's Confirm has been verified, it sends its Confirm, and the link
    is confirmed. It MUST NOT send its Confirm before then. Until the link ends ([device-group.md](./device-group.md),
-   "Joining"), the new device MUST NOT join any Welcome into the group the existing device's Confirm named except one
-   whose sender has the signature key that Confirm named and that adds the KeyPackage the link confirmed. The sender is
-   the leaf at the `signer` index of the Welcome's `GroupInfo`, whose signature key verifies that `GroupInfo`. A Welcome
-   into any other group does not make that group the device group, and a group that requires `0x800e` is joined only
-   through the Welcome a confirmed link named ([device-group.md](./device-group.md), "Trust").
+   "Joining"), the new device MUST NOT join any Welcome into the group the existing device's Confirm named, or any
+   Welcome that adds the KeyPackage the link confirmed, except the link's Welcome: one into that group, whose sender has
+   the signature key that Confirm named, that adds that KeyPackage, and whose group requires `0x800e`. The sender is the
+   leaf at the `signer` index of the Welcome's `GroupInfo`, whose signature key verifies that `GroupInfo`. It refuses
+   every other such Welcome before joining, so none takes the group id or uses up the KeyPackage. Any other Welcome
+   never makes its group the device group, and a group that requires `0x800e` is joined only through the Welcome a
+   confirmed link named ([device-group.md](./device-group.md), "Trust").
 
 ### Existing device
 
