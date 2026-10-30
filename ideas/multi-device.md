@@ -405,13 +405,13 @@ There is no "Alice added a device" notice.
   Alice's choice.
 - **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. A sibling that
   sees a new KeyPackage in a known slot catches up on the device group before deciding. If the roster has it, it is a
-  quiet refresh. If not, the sibling asks the slot's device, which is the only one that knows: an anomaly alert
-  through the device group. That device either announces the KeyPackage again, because its announcement was lost or
-  undone by a fork, or rejects it as someone else's (Scene 8). If it doesn't answer within a day, for example because
-  it is lost, the sibling rejects the KeyPackage itself, even if the slot has moved on to another KeyPackage by then.
-  The device itself also notices a KeyPackage it didn't publish
-  in its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message
-  means a device linked later can read every sibling's current KeyPackage straight away.
+  quiet refresh. If not, the sibling asks the slot's device, which is the only one that knows: an anomaly alert through
+  the device group. That device either announces the KeyPackage again, because its announcement was lost or undone by a
+  fork, or, while its slot still holds it, rejects it as someone else's (Scene 8). If it doesn't answer within a day,
+  for example because it is lost or the KeyPackage has left its slot, the sibling rejects the KeyPackage itself, even if
+  the slot has moved on to another KeyPackage by then. The device itself also notices a KeyPackage it didn't publish in
+  its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message means a
+  device linked later can read every sibling's current KeyPackage straight away.
 - **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's leaves
   joined with, and reads the device tags on them (see Under the hood). A leaf that joined with a rejected KeyPackage,
   and that no sibling claims, is removed and goes to the warning in Scene 8. This catches a replaced KeyPackage that an
