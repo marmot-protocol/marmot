@@ -24,15 +24,16 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   KeyPackage reaches its slot, publishes only once the Commit carrying the announcement is in its group state, and
   never publishes an unannounced KeyPackage. The founding roster announces both devices' KeyPackages. A client should
   tell its user while a refresh is held back for want of an announcement.
-- Every device, in a device group or not, now reads its own slot at start and about daily. A publication there that
-  it did not make, at least as new as its own and valid or not, is replaced by a newer KeyPackage of its own.
+- Every device, in a device group or not, now reads its own slot at start and about daily. A current publication
+  there that it did not make, valid or not, is replaced by a newer KeyPackage of its own.
 - Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
-  sibling's add. A device tops a sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off
-  (kind `460`), both new, travel only in the device group. A receiver keeps a hand-off only if every KeyPackage in it
+  sibling's add; until sibling adds are specified, a device rejects any Welcome that consumes one. A device tops a
+  sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off (kind `460`), both new, travel
+  only in the device group. A receiver keeps a hand-off only if every KeyPackage in it
   is its own account's, not last-resort and unexpired, and carries a device tag that reads as the sender's. It reads
   either message only when the sending leaf's device tag reads as the `from` slot the message names. A device that
   caps what it keeps for a sibling never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones
-  again, and a holder never keeps one it has already used.
+  again, without renewing them, and a holder never keeps one it has already used.
 - Devices without a device group publish as before.
 
 ## 2026-10-29: New sign-ins in the device group (draft)
