@@ -268,13 +268,16 @@ names, from a publication in the slot that the device did not make.
   calls for, or a replacement its "A publication the device did not make" calls for, is held back this way, a client
   SHOULD tell its user, so that a device whose device group stays unwritable does not quietly become one that new
   chats cannot add.
-- The founding roster announces the KeyPackage the link confirmed and the creating device's current one
-  ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it next publishes.
+- The founding roster announces the KeyPackage the link confirmed and the creating device's current one, if any
+  ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it publishes one of
+  those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
 - A device with no device group publishes as before.
 
-The roster keeps one announcement per device. Between an announcement and its publication, and while some relays still
-serve the previous publication, a sibling can find a KeyPackage in a device's slot that the roster no longer names. A
-sibling's response to a KeyPackage the roster does not announce is not specified yet.
+The roster keeps one announcement per device. Between an announcement and its publication, while some relays still serve
+the previous publication, and after branch selection drops an announcement whose KeyPackage the device had already
+published, a sibling can find a KeyPackage in a device's slot that the roster does not name. In the last case the device
+announces again before it next publishes, whether the same KeyPackage or a new one. A sibling's response to a KeyPackage
+the roster does not announce is not specified yet.
 
 A device that finds a publication in its own slot that it did not make replaces it
 ([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"), announcing
@@ -307,11 +310,11 @@ private KeyPackages only once it can tag.
   them over.
 - A device tops up its siblings before it asks for its own, so a device back after a long gap serves the others first.
 - A device MAY cap how many unexpired private KeyPackages it keeps for one sibling. Once it reaches that cap it issues
-  fewer than a top-up or a request calls for, and a top-up waits for room. It MUST NOT delete one before `not_after`
-  to make room. At the cap it MAY make up the rest of an answer to a request by handing over again private KeyPackages
-  it already handed that sibling that no Welcome has consumed, newest first, so a sibling whose hand-offs were all lost
-  still gets some. Handing one over again does not change its `Lifetime`: it counts toward the stock again only until
-  it reaches halfway.
+  fewer than a top-up or a request calls for, and a top-up waits for room. It MUST NOT delete one before `not_after` to
+  make room. At the cap it MAY make up the rest of an answer to a request by handing over again private KeyPackages it
+  already handed that sibling that no Welcome has consumed, the most recently issued first, so a sibling whose hand-offs
+  were all lost still gets some. Handing one over again does not change its `Lifetime`: it counts toward the stock again
+  only until it reaches halfway.
 - At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage.
 
 ### Messages
