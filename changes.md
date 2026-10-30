@@ -45,7 +45,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A client that lets a new device start without the sign-ins its first check found answers Not now for every slot that
   check returned, never This wasn't me.
 
-## 2026-10-29: Slot announcements, the own-slot check and private KeyPackages (draft)
+## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
 
 [#459](https://github.com/marmot-protocol/marmot/pull/459) changes
 [features/device-group.md](./features/device-group.md),
@@ -54,19 +54,96 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - A device in a device group names each KeyPackage in its own roster entry (`announced_key_package`) before that
   KeyPackage reaches its slot, publishes only once the Commit carrying the announcement is in its group state, and
-  never publishes an unannounced KeyPackage. The founding roster announces both devices' KeyPackages. A client should
-  tell its user while a refresh is held back for want of an announcement.
+  never publishes an unannounced KeyPackage. The creating device's founding entry announces the KeyPackage it last
+  published, as the founding Add announces the linked one. A client should tell its user while a refresh is held back
+  for want of an announcement.
 - Every device, in a device group or not, now reads its own slot at start and about daily. A current publication
   there other than its own latest, valid or not, is replaced by a newer KeyPackage of its own.
 - Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
   sibling's add; until sibling adds are specified, a device rejects any Welcome that consumes one. A device tops a
   sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off (kind `460`), both new, travel
-  only in the device group. A receiver keeps a hand-off only if every KeyPackage in it
-  is its own account's, not last-resort and unexpired, and carries a device tag that reads as the sender's. It reads
-  either message only when the sending leaf's device tag reads as the `from` slot the message names. A device that
-  caps what it keeps for a sibling never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones
-  again, without renewing them, and a holder never keeps one it has already used.
+  only in the device group. A receiver keeps a hand-off only if every KeyPackage in it is its own account's, not
+  last-resort and unexpired, and carries a device tag that reads as the sender's. It reads either message only when the
+  sending leaf's device tag reads as the `from` slot the message names. A device may cap what it keeps for a sibling, at
+  no fewer than 300, and never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones again,
+  without renewing them, and a holder never keeps one it has already used.
 - Devices without a device group publish as before.
+
+## 2026-10-30: Small-state sync between an account's devices (draft)
+
+[#466](https://github.com/marmot-protocol/marmot/pull/466) adds [features/account-sync.md](./features/account-sync.md)
+and registers kinds `475` and `476` in [foundation/registries.md](./foundation/registries.md). An account's devices keep
+each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an update
+when the user changes one, and a broadcast of every item a device holds. Each item names its chat by raw MLS group id.
+Only chats whose MLS group id is at most 256 bytes have small state. The furthest read position wins, in chat order by
+epoch, `created_at` and `id`, a device's own position is the furthest message a position may name that its user has read
+there, and a receiver judges a position by its encoding alone; for the other items the highest version wins, then the
+lowest random change id, then the lowest value. A version stops at 9007199254740991, and no user can change an item held
+there. Each device broadcasts when it starts, at least every 24 hours, and whenever the device group's tip moves past
+the app-payload window since its last broadcast began. A starting device also sends a broadcast request, which each
+sibling answers with one broadcast, at most once an hour. No device asks a particular sibling or tracks what its
+siblings hold. A device reads these kinds only in its trusted device group, from any member, drops a message with a
+repeated member name or item, skips item names it does not know, and keeps what a withdrawn message set. It resends the
+items of every withdrawn update it sent or merged, and a new broadcast request for every withdrawn one it sent or read.
+[features/device-group.md](./features/device-group.md) now says small-state messages name other groups and leaves them
+to the new document, and [ideas/account-sync.md](./ideas/account-sync.md) and
+[ideas/multi-device.md](./ideas/multi-device.md) point to the feature for these rules. Clients that do not support
+device groups change nothing.
+
+## 2026-10-29: Linking a device into the device group (draft)
+
+[#456](https://github.com/marmot-protocol/marmot/pull/456) adds "Linking a device" to
+[features/device-group.md](./features/device-group.md). An existing device answers a pairing request only if it is not
+itself a new device in a session or waiting for its Welcome, and would link the named KeyPackage: its slot is not
+already a device or rejected, by the roster or by the device itself, it supports everything the device group requires,
+and the roster has room for another device. When the KeyPackage lacks something or the roster is full, it sends Cancel
+`cannot_link` instead. The existing device's Confirm names the device group it trusts, or a fresh 16-byte random id for
+the one it will create, and the signature key of its own leaf there, which it keeps through the Commit that adds the new
+device so that key signs the Welcome. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one Commit
+that sets the new device's roster entry. A device that trusts no device group creates one first, and that Commit is the
+founding Add. Another device of the account may already have one it cannot see; merging two is not specified yet. The
+founding roster lists only the creating device, with the rejections it already holds, where #452's listed the linked
+device too. The creating device's own entry has the "add to all my chats" and "bring chat history" settings on, as a new
+device's are by default. Any Commit a device makes in the device group that adds a member, the founding Add included,
+adds exactly one, by value, with that device's roster entry for a new slot: a same-account Add with the roster update,
+committed as the group's admin, never a same-account Commit. It never adds a KeyPackage no confirmed link named,
+including when re-inviting after a founding Welcome that could not be delivered. A device that cannot commit the link at
+once may retry, but not after the new device stops waiting, counted from when the new device's Confirm arrived. Before
+it sends its Confirm, the new device records the link with the pairing session's id, and keeps it across restarts until
+it joins through the link's Welcome, 600 seconds have passed since that Confirm, a Cancel for that session arrives, or
+it confirms a newer link, which replaces it; each pairing session uses a KeyPackage no earlier link of the device
+confirmed. It joins only the Welcome from the named leaf into the named group that adds the confirmed KeyPackage, and
+only if that group requires `0x800e`, deciding before it joins; it refuses every other device-group Welcome, and while
+the link lasts any Welcome into the group id or that adds the confirmed KeyPackage, so a forged one or an invite to a
+chat leaves the KeyPackage and the id for the real one. The approving device treats the link as made only once the new
+device's first Commit there, which sets its tag signature key, is on the selected branch with no input for the group
+pending; the new device makes it as soon as it can once it has joined. Once made, a link stays made. If that Commit has
+not come 3600 seconds after the `linked_at` the approving device wrote in the new device's entry, and is still missing
+once it has processed the input it holds for the group, the approving device, and only it, removes the new device's leaf
+and roster entry in one Commit and stops delivering the Welcome. A device whose leaf is removed from its device group
+stops trusting the group and must discard its copy's active state, keeping at most its history and a removal tombstone,
+so a later link's Welcome into the same id is a first join; a new device removed before its first Commit there tells its
+user that linking failed. Clients that do not support `0x800e` change nothing.
+
+## 2026-10-29: Device pairing (draft)
+
+[#454](https://github.com/marmot-protocol/marmot/pull/454) adds
+[features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
+for multi-device accounts in [foundation/registries.md](./foundation/registries.md), adds "Pairing delivery" and its
+entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
+[protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
+inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new
+device, the one whose user asks to link it and which has no device group, and an existing device, any other device of
+the same account, compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven
+emoji from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits
+to its key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering
+device's slot and both keys; and the two confirmations cover the `KeyPackageRef`, and the id of the group the new device
+joins with the signature key of the existing device's leaf there, the only sender whose Welcome the new device accepts.
+While the link lasts, the new device joins no other Welcome into that group or that adds that KeyPackage, and joins the
+link's Welcome only if its group requires `0x800e`.
+The existing device confirms first, and the new device confirms only after verifying the existing device's confirmation.
+An existing device sends at most 10 Answers an hour, and none while more than one request is live. Clients that do not
+link devices need no changes.
 
 ## 2026-10-29: New sign-ins in the device group (draft)
 

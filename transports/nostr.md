@@ -68,7 +68,7 @@ first matching tag and ignore later duplicates.
 | Event shape | Tag | Cardinality and value rule |
 | --- | --- | --- |
 | kind `445` group message | `h` | exactly one tag, exactly one value: lowercase hex `nostr_group_id` |
-| kind `1059` welcome gift wrap | `p` | exactly one tag, exactly one value: lowercase hex account identity of the recipient |
+| kind `1059` welcome or pairing gift wrap | `p` | exactly one tag, exactly one value: lowercase hex account identity of the recipient |
 | kind `444` welcome rumor | `e` | exactly one tag, exactly one value: lowercase hex Nostr event id of the claimed KeyPackage event |
 | kind `444` welcome rumor | `relays` | exactly one tag, one or more relay URL values using the relay URL profile |
 | kind `30443` KeyPackage | `d` | exactly one tag, exactly one 64-character lowercase hex value decoding to 32 bytes |
@@ -266,6 +266,30 @@ kind 1059 gift wrap
 The seal is signed by the same fresh ephemeral key named by the rumor's `pubkey`. The gift wrap uses a separate fresh
 ephemeral key and is addressed to the notification server's account identity. The publish target is defined under
 "Publish targets and acknowledgements."
+
+## Pairing delivery
+
+Device pairing ([../features/device-pairing.md](../features/device-pairing.md)) carries each of its messages in a NIP-59
+envelope from an account to itself:
+
+```text
+kind 1059 gift wrap
+  kind 13 seal
+    unsigned pairing rumor, kind 452 to 456
+```
+
+- The rumor's `pubkey` is the account identity, and the account identity signs the seal.
+- The gift wrap is addressed to the same account identity and published to the account's own kind `10050` inbox
+  relays, where every device of the account subscribes ("Subscriptions and fetch rules").
+- The rumor has no tags. Its `content` is the message's content, and its `created_at` is the sender's current time.
+  NIP-59 randomizes the seal's and the gift wrap's timestamps, so only the rumor's records when the message was sent.
+- The rumor MUST NOT have a `sig` field.
+
+A receiver MUST drop a pairing rumor unless the seal's signer and the rumor's `pubkey` are both its own account
+identity. A receiver ignores a pairing rumor's tags. A gift wrap to the account that carries any other rumor kind is
+not a pairing message.
+
+A device receives its own pairing messages back from its inbox relays and ignores them under the session rules.
 
 ## KeyPackage publication
 
@@ -502,6 +526,8 @@ set:
   rule in "Welcome delivery" as each NIP-59 layer is unwrapped;
 - kind `30443` KeyPackage events MUST satisfy every outer envelope, tag, content-encoding, and signature rule in
   "KeyPackage publication";
+- kind `1059` gift wraps whose rumors have kinds `452` to `456` MUST satisfy every rule in "Pairing delivery". They
+  carry no MLS bytes and are not peeler input. A client that links devices does not drop them as an unsupported kind;
 - kind `5` deletion requests carry no MLS bytes and are not peeler input. A client that fetched them for KeyPackage
   selection applies them under "Slot deletion" and does not drop them as an unsupported kind;
 - fields that claim to be hex or base64 MUST decode successfully;
@@ -538,6 +564,9 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
 - Welcomes are NIP-59 gift wraps addressed to the invitee's account public key; the inbox address is the deliberate
   account-addressing exception ([../foundation/identity.md](../foundation/identity.md)). The gift wrap and seal hide the
   sender and the inner `kind 444` rumor.
+- Pairing messages are NIP-59 gift wraps addressed to the account that sent them. Relays see a burst of gift wraps to
+  the account while a pairing session runs, as they would for Welcomes, and the size of each. NIP-44 padding rounds
+  the sizes up, but they may still reveal which kind of pairing message each one carries.
 - kind `30443` KeyPackage events are authored by the account identity, because their purpose is to let others find that
   account's packages. Because each device has one slot, the number of current slots shows roughly how many devices the
   account has. An optional `client` tag also shows which client software a device runs.
