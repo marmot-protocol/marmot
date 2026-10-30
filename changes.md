@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-30: History keys for an account's devices (draft)
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) gives the device roster's `history_key` its meaning in
+[#467](https://github.com/marmot-protocol/marmot/pull/467) gives the device roster's `history_key` its meaning in
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "History" section of
 [features/account-sync.md](./features/account-sync.md). Each device has one history key, an HPKE key pair under the
 device group's ciphersuite, and writes its public half into its own roster entry in a roster update it already makes:
