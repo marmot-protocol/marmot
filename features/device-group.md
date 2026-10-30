@@ -53,10 +53,10 @@ device in the founding Add:
 
 - The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the creating
   device, with the rejected sign-ins it already keeps ("Answers"), which never name the linked device's slot ("Before
-  answering"), and every rejected KeyPackage it keeps ("A KeyPackage the roster does not announce"). The founding Add
-  sets the linked device's roster entry, as every later Add sets the entry of the device it adds. The creating device's
-  entry has the "add to all my chats" and "bring chat history" settings on, as a new device's are unless its user turns
-  them off ("Approving").
+  answering"), and every rejected KeyPackage it keeps ("A KeyPackage the roster does not announce"), which is at most
+  eight for one slot ("How long a rejected KeyPackage lasts"). The founding Add sets the linked device's roster entry,
+  as every later Add sets the entry of the device it adds. The creating device's entry has the "add to all my chats" and
+  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving").
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -476,22 +476,28 @@ than any the roster already rejects, once it trusts that group. Leaving out a sl
 
 **A sibling.** A device that finds a KeyPackage unannounced in a sibling's slot:
 
-1. brings its trusted device group up to date first: it processes every Commit for the group that it can fetch, until it
-   holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, or rejected, or its
-   LeafNode carries a device tag that reads as a device's (below), or the slot is no longer a device in its roster, it
-   does nothing more;
+1. brings its trusted device group up to date first: it fetches the group's messages and processes every Commit for the
+   group that it fetched, until it holds no unprocessed input for the group. This counts only when the fetch succeeded:
+   at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
+   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") ended its answer without failing
+   or timing out, and with fewer events than the device asked for, as for a check's answers ([Evidence](#evidence)). A
+   fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
+   one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the KeyPackage
+   is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's (below), or
+   the slot is no longer a device in its roster, it does nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
    alert for each KeyPackage, and keeps each alert it sent, with the slot, the KeyPackage's `KeyPackageRef`, the
    signature key of its LeafNode and the time it sent it, across restarts, until it settles it;
 3. settles the alert 24 hours or more after it sent it, by its own clock. It first brings its trusted device group up to
-   date again, as in step 1, so that it does not miss an announcement the slot's device made meanwhile. Then, unless a
-   roster of its trusted device group has announced the KeyPackage for any device, or rejects it, the device rejects it
-   itself: it records a rejected KeyPackage with the `KeyPackageRef`, slot and leaf signature key it kept with the alert
-   and the time it settles, and keeps and commits it as the slot's own device would. It needs no LeafNode for this: it
-   read the KeyPackage's tag in step 1, while it held the KeyPackage. It settles the alert this way whether or not the
-   slot still serves that KeyPackage, whether or not the KeyPackage is still valid, and whether or not the slot is still
-   a device in its roster, so that replacing a KeyPackage, letting it expire, or removing the slot's device before the
-   day is out saves neither it nor the leaves that joined with it.
+   date again, as in step 1, so that it does not miss an announcement the slot's device made meanwhile, and settles only
+   after a fetch that succeeded; until one does, the alert stays unsettled. Then, unless a roster of its trusted device
+   group has announced the KeyPackage for any device, or rejects it, the device rejects it itself: it records a rejected
+   KeyPackage with the `KeyPackageRef`, slot and leaf signature key it kept with the alert and the time it settles, and
+   keeps and commits it as the slot's own device would. It needs no LeafNode for this: it read the KeyPackage's tag in
+   step 1, while it held the KeyPackage. It settles the alert this way whether or not the slot still serves that
+   KeyPackage, whether or not the KeyPackage is still valid, and whether or not the slot is still a device in its
+   roster, so that replacing a KeyPackage, letting it expire, or removing the slot's device before the day is out saves
+   neither it nor the leaves that joined with it.
 
 **On an alert.** A device that receives an anomaly alert naming a KeyPackage reads its own slot as
 [../foundation/key-packages.md](../foundation/key-packages.md) ("A publication the device did not make") describes,
@@ -501,10 +507,11 @@ the device does not hold its LeafNode and cannot read its tag, so it does nothin
 settles it a day later, as above. If it made that KeyPackage, it announces it again, by the AppDataUpdate in [Slot
 announcements](#slot-announcements), even when its slot now serves another or the KeyPackage has expired, so that the
 sibling that alerted holds a roster that announced it; this also repairs an announcement a branch selection dropped. If
-that KeyPackage is not its slot's current publication, it then announces the current one again the same way. It makes
-either announcement again when its Commit fails or a branch selection drops it. So that it can tell which KeyPackages it
-made after it deletes their `init_key`, a device keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot
-for as long as it keeps the slot.
+that KeyPackage is not its slot's current publication and the device made the current one too, it then announces the
+current one again the same way. It never announces a current publication it did not make: that one is replaced and
+rejected by the reading above, which announces the replacement first. It makes either announcement again when its Commit
+fails or a branch selection drops it. So that it can tell which KeyPackages it made after it deletes their `init_key`, a
+device keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the slot.
 
 A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device, or whose
 LeafNode carries a device tag that reads as a device's
@@ -581,8 +588,11 @@ a record, so rejected KeyPackages are bounded
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A device SHOULD drop one from
 the roster 30 days after its `rejected_at`, and the roster holds at most eight for one slot: a device that adds one
 keeps the eight newest for that slot and drops the others in the same update. The rejections a device keeps itself are
-bounded the same way. It stops keeping one once 30 days have passed since it recorded it, or once the roster, or its own
-rejections, hold eight newer ones for the same slot.
+bounded the same way. It stops keeping one once 30 days have passed since it recorded it, or once that one is not among
+the eight newest for its slot, by latest `rejected_at` and then highest `key_package_ref` (the roster's order,
+[../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"), of the records for that slot
+in the roster and its own rejections together, each counted once. So a device keeps at most eight for one slot, and a
+founding roster carries at most eight for one slot.
 
 ### The warning
 
@@ -600,7 +610,9 @@ rejection; and when it finds such a leaf in a group where it can remove it by ne
   it. It keeps a seen rejected KeyPackage, by its `KeyPackageRef`, for 7,261,200 seconds, the longest a KeyPackage can
   be valid, so that one dropped and recorded again ([How long a rejected KeyPackage
   lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either.
-- Dismissing the warning on one device dismisses it there only.
+- Dismissing the warning on a device marks every rejection, removal and group the warning then gathers as seen on that
+  device, so the warning stays closed there until something it has not seen arrives. It dismisses it there only: another
+  device's warning is unchanged.
 - Like the roster, the warning is shown only to the account's own user.
 
 ### Leaves tied to a rejection

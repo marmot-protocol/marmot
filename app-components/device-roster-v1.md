@@ -150,7 +150,8 @@ passed since its `rejected_at`, by the device's own clock. A roster holds at mos
 below). A device that adds rejected KeyPackages for a slot keeps, of the records for that slot in the parent its Commit
 is based on together with the ones it adds, the eight newest, by latest `rejected_at` and then highest
 `key_package_ref`. In the same update it removes the others that the parent holds and does not add the others. It works
-this out again from the new parent each time it commits the update again.
+this out again from the new parent each time it commits the update again. A founding state has no parent: it carries,
+for each slot, at most the eight newest of the records it starts with, in the same order.
 
 The number trades the roster's size against how long a record lasts. Eight keeps the records for the 20 slots a roster
 can hold as devices ([account-devices-v1.md](./account-devices-v1.md), "Leaf limit") to 160, about 17 KB with 32-byte
