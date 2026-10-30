@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#intended-properties-and-limits).
+
 Convergence chooses one canonical branch from unordered group input.
 
 Commits are the consensus log. MLS application messages can witness that members used a branch, but they do not create

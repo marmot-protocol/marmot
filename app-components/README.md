@@ -362,3 +362,8 @@ Every Marmot leaf uses the adopted
   standalone MLS proposals are not the default non-admin request path for admin-gated component changes.
 - `marmot.group.encrypted-media.v2` owns the current group media policy. Individual media attachments remain message
   metadata and are described in [encrypted-media.md](../features/encrypted-media.md).
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.

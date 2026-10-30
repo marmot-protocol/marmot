@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#actors-and-trust-boundaries).
+
 Marmot account identity is a Nostr public key.
 
 The protocol identity is the raw 32-byte x-only secp256k1 public key. Human formats such as `npub` are presentation
