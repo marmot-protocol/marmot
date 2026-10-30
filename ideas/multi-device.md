@@ -412,13 +412,12 @@ There is no "Alice added a device" notice.
   The device itself also notices a KeyPackage it didn't publish
   in its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message
   means a device linked later can read every sibling's current KeyPackage straight away.
-- **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's
-  leaves joined with, and reads the device tags on them (see Under the hood). A leaf that joined with a rejected
-  KeyPackage, or one only seen in a rejected sign-in's slot, and that no sibling claims, is removed and goes to the
-  warning in Scene 8. This catches a replaced KeyPackage that an outside inviter used. A leaf that no sibling claims is
-  not enough on its own: a device's leaves from before it was linked, and those of a sign-in Alice hasn't answered yet,
-  are unclaimed too, so flagging every unclaimed leaf would warn her about her own devices. Extra leaves a stolen
-  device added before it was removed are Scene 7's.
+- **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's leaves
+  joined with, and reads the device tags on them (see Under the hood). A leaf that joined with a rejected KeyPackage,
+  and that no sibling claims, is removed and goes to the warning in Scene 8. This catches a replaced KeyPackage that an
+  outside inviter used. A leaf that no sibling claims is not enough on its own: a device's leaves from before it was
+  linked, and those of a sign-in Alice hasn't answered yet, are unclaimed too, so flagging every unclaimed leaf would
+  warn her about her own devices. Extra leaves a stolen device added before it was removed are Scene 7's.
 
 **Trade-offs:** device counts are visible to chat members and, roughly, to anyone reading relays. We accept that and
 show it plainly rather than hiding it behind a notice.
@@ -524,12 +523,12 @@ nsec, the only complete fix is moving to a new account, and for a signer, which 
 know which one was taken.
 
 **What her devices do:** they mark the slot rejected so no device prompts about it again while the roster keeps that,
-never add it to existing chats or send it history, and remove its leaf from any chat they share with it. For a replaced
-KeyPackage in a linked device's slot, they reject that KeyPackage, not the slot, and the roster keeps pointing at the
-device's own. If other people's inviters have already added the replacement to a chat, Alice's devices know which leaf
-joined with it, and remove that leaf. They can remove a leaf only in a chat that lets devices remove their own
-account's leaves, or where Alice is an admin; the warning lists the other chats. Each device shows one warning for
-everything new, and Alice dismisses it on each device.
+reject the KeyPackage it published unless another slot shows it too, never add it to existing chats or send it history,
+and remove its leaf from any chat they share with it. For a replaced KeyPackage in a linked device's slot, they reject
+that KeyPackage, not the slot, and the roster keeps pointing at the device's own. If other people's inviters have
+already added the replacement to a chat, Alice's devices know which leaf joined with it, and remove that leaf. They can
+remove a leaf only in a chat that lets devices remove their own account's leaves, or where Alice is an admin; the
+warning lists the other chats. Each device shows one warning for everything new, and Alice dismisses it on each device.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
 devices, and publish more KeyPackages. The warning must not promise more protection than that.

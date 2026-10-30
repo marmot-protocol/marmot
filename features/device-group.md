@@ -189,8 +189,10 @@ one the user put off. Like the roster, the list is shown only to the account's o
   slot, and never replaces an entry the roster has.
 
 A rejection names the slot alone, never the KeyPackage the device found there: whoever holds the account's signing key
-can copy a real device's KeyPackage into a slot the user then rejects. Rejected KeyPackages in the roster are for a
-linked device's slot that holds a KeyPackage the device did not publish ([A KeyPackage the roster does not
+can copy a real device's KeyPackage into a slot the user then rejects. The KeyPackage found there is rejected
+separately, and only when no other slot shows it ([KeyPackages in a rejected sign-in's
+slot](#keypackages-in-a-rejected-sign-ins-slot)). Rejected KeyPackages are also for a linked device's slot that holds a
+KeyPackage the device did not publish ([A KeyPackage the roster does not
 announce](#a-keypackage-the-roster-does-not-announce)).
 
 A device keeps its own rejections, across restarts, until the roster holds the slot as a device. While it keeps one, it
@@ -301,8 +303,10 @@ To a device, a KeyPackage is announced for a slot when the entry of the device i
 KeyPackage can be valid ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), or
 until that KeyPackage's `Lifetime.not_after` if the device holds the KeyPackage and that is later. So a sibling's
 earlier KeyPackage that some relays still serve stays announced, whether or not the device ever fetched it. A KeyPackage
-is unannounced in a slot of a device in the roster when it is the slot's current publication, counts as evidence
-([Evidence](#evidence)), is not announced for that slot, and is not a rejected KeyPackage in the roster.
+is unannounced in a slot of a device in the roster when it is the slot's current publication, is a valid KeyPackage of
+the account, is not announced for that slot, and is not a rejected KeyPackage in the roster. It need not be fresh: an
+inviter that finds no fresh KeyPackage for the account may still select it
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle").
 
 Only the slot's own device knows whether it made a KeyPackage. A sibling cannot tell a publication someone else made
 from one whose announcement it has not processed yet, or whose announcement a branch selection dropped after the
@@ -325,27 +329,30 @@ or joins gets it the same way.
    holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, or rejected, or the slot
    is no longer a device in its roster, it does nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
-   alert for each KeyPackage, and keeps each alert it sent, with the slot and the time, across restarts, until it
-   settles it;
+   alert for each KeyPackage, and keeps each alert it sent, with the slot, the KeyPackage's `KeyPackageRef`, the
+   signature key of its LeafNode and the time it sent it, across restarts, until it settles it;
 3. settles the alert 24 hours or more after it sent it, by its own clock. It first brings its trusted device group up to
    date again, as in step 1, so that it does not miss an announcement the slot's device made meanwhile. Then, unless a
    roster of its trusted device group has announced the KeyPackage for any device, or rejects it, or the slot is no
-   longer a device in its roster, the device rejects it itself, as the slot's own device would. A slot that has left the
-   roster, because its device was removed or did not take up its link, has no device left to answer, and its
-   publications count as those of any other slot that is not a device's. It settles the alert this way whether or not
-   the slot still serves that KeyPackage and whether or not the KeyPackage has expired, so that replacing a KeyPackage
-   before the day is out saves neither it nor the leaves that joined with it.
+   longer a device in its roster, the device rejects it itself: it records a rejected KeyPackage with the
+   `KeyPackageRef`, slot and leaf signature key it kept with the alert and the time it settles, and keeps and commits it
+   as the slot's own device would. A slot that has left the roster, because its device was removed or did not take up
+   its link, has no device left to answer, and its publications count as those of any other slot that is not a device's.
+   It settles the alert this way whether or not the slot still serves that KeyPackage and whether or not the KeyPackage
+   is still valid, so that replacing a KeyPackage, or letting it expire, before the day is out saves neither it nor the
+   leaves that joined with it.
 
 **On an alert.** A device that receives an anomaly alert naming a KeyPackage reads its own slot as
 [../foundation/key-packages.md](../foundation/key-packages.md) ("A publication the device did not make") describes,
 which replaces and rejects a publication it did not make as above. If it did not make the KeyPackage the alert names, it
-rejects it, whether or not its slot still holds it, recording the `leaf_signature_key` the alert names. If it made that
-KeyPackage, it announces it again, by the AppDataUpdate in [Slot announcements](#slot-announcements), even when its slot
-now serves another or the KeyPackage has expired, so that the sibling that alerted holds a roster that announced it;
-this also repairs an announcement a branch selection dropped. If that KeyPackage is not its slot's current publication,
-it then announces the current one again the same way. It makes either announcement again when its Commit fails or a
-branch selection drops it. So that it can tell which KeyPackages it made after it deletes their `init_key`, a device
-keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the slot.
+rejects it, whether or not its slot still holds it and whether or not it is still valid, recording the alert's
+`key_package_ref` and `leaf_signature_key` with its own slot. If it made that KeyPackage, it announces it again, by the
+AppDataUpdate in [Slot announcements](#slot-announcements), even when its slot now serves another or the KeyPackage has
+expired, so that the sibling that alerted holds a roster that announced it; this also repairs an announcement a branch
+selection dropped. If that KeyPackage is not its slot's current publication, it then announces the current one again the
+same way. It makes either announcement again when its Commit fails or a branch selection drops it. So that it can tell
+which KeyPackages it made after it deletes their `init_key`, a device keeps the `KeyPackageRef` of every KeyPackage it
+publishes to its slot for as long as it keeps the slot.
 
 A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device, even where a
 rule above says to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot,
@@ -369,7 +376,7 @@ whitespace. Slots are JSON strings of lowercase hexadecimal, 64 characters, as i
 | `from`               | the alerting device's slot |
 | `to`                 | the slot that holds the KeyPackage, and so the device the alert is for |
 | `key_package_ref`    | the KeyPackage's `KeyPackageRef`, as a JSON string of lowercase hexadecimal, 2 to 128 characters |
-| `leaf_signature_key` | the `signature_key` of the KeyPackage's LeafNode, as a JSON string of lowercase hexadecimal, 2 to 510 characters |
+| `leaf_signature_key` | the contents of the `signature_key` vector of the KeyPackage's LeafNode, without its length prefix, as a JSON string of lowercase hexadecimal, 2 to 510 characters |
 
 A device reads an alert only from the device group it trusts ([Trust](#trust)), and ignores the kind in any other group.
 It drops an alert unless its content decodes exactly as above with `v` `1`, `to` is its own slot, `from` is another
@@ -380,13 +387,42 @@ earlier answer, which never held the roster that answer wrote, still gets one.
 ## Rejections
 
 A `not_me` rejected slot and a rejected KeyPackage each record that someone holding the account's signing key published
-where the account's devices did not: a sign-in the user rejected ([Answers](#answers)), or a KeyPackage in a linked
-device's slot that the device did not make ([A KeyPackage the roster does not
+where the account's devices did not: a sign-in the user rejected ([Answers](#answers)), or a KeyPackage found in a
+rejected sign-in's slot or in a linked device's slot that the device did not make ([KeyPackages in a rejected sign-in's
+slot](#keypackages-in-a-rejected-sign-ins-slot), [A KeyPackage the roster does not
 announce](#a-keypackage-the-roster-does-not-announce)). Neither stops them. Other accounts' inviters read only published
 KeyPackages, never the roster, so they can still add whoever holds the key to new groups; and whoever holds it can still
 send as the account, remove the account's devices, and publish more KeyPackages. A rejection does two things: it warns
 the user, and it takes leaves tied to it out of the groups the account's devices can clean up. A `removed` rejected slot
 is not a rejection in this sense.
+
+### KeyPackages in a rejected sign-in's slot
+
+A device whose check is complete ([Evidence](#evidence)) rejects each valid KeyPackage of the account that the check
+found as the current publication of a slot rejected as `not_me`, in the roster of its trusted device group or among the
+rejections it keeps itself ([Answers](#answers)). It records the KeyPackage's `KeyPackageRef`, that slot, the signature
+key of its LeafNode and the time, and keeps and commits the rejection as for one in its own slot ([A KeyPackage the
+roster does not announce](#a-keypackage-the-roster-does-not-announce)), unless:
+
+- the roster already rejects it;
+- in the same check, it is also the current publication of a slot that is not rejected as `not_me`; or
+- a roster of its trusted device group has announced it for any device.
+
+Whoever holds the account's signing key can copy a real device's KeyPackage into a slot the user then rejects. The copy
+also shows in the real device's own slot in the same check, or, for a linked device, among the roster's announcements,
+so it is not rejected. An incomplete check rejects nothing here, since it may have missed the slot the copy came from.
+When the user answers This wasn't me, the device applies this at once to what its latest complete check found in that
+slot.
+
+### How long a rejected KeyPackage lasts
+
+Whoever holds the account's signing key can publish without limit, and each KeyPackage the account's devices reject adds
+a record, so rejected KeyPackages are bounded
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A device SHOULD drop one from
+the roster 30 days after its `rejected_at`, and the roster holds at most eight for one slot: a device that records a
+ninth drops the oldest in the same update. The rejections a device keeps itself are bounded the same way. It stops
+keeping one once 30 days have passed since it recorded it, or once the roster, or its own rejections, hold eight newer
+ones for the same slot.
 
 ### The warning
 
@@ -400,28 +436,19 @@ rejection; and when it finds such a leaf in a group where it can remove it by ne
   leaves made the account safe. For a signing key, the only complete fix is moving to a new account.
 - A device keeps at most one warning open for the account, which gathers every rejection, removal and group it cannot
   clean up that its user has not yet seen, so a run of rejections does not become a run of warnings. It records, across
-  restarts, each of them its user has seen, and does not warn about one again when a branch selection drops and
-  restores it.
+  restarts, each of them its user has seen, and does not warn about one again when a branch selection drops and restores
+  it. It keeps a seen rejected KeyPackage, by its `KeyPackageRef`, for 7,261,200 seconds, the longest a KeyPackage can
+  be valid, so that one dropped and recorded again ([How long a rejected KeyPackage
+  lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either.
 - Dismissing the warning on one device dismisses it there only.
 - Like the roster, the warning is shown only to the account's own user.
 
 ### Leaves tied to a rejection
 
 A KeyPackage is tied to a rejection, for a device, when no roster of its trusted device group has announced it for any
-device, and:
-
-- the roster of its trusted device group rejects it; or
-- the device saw it as the current publication of a slot that is rejected as `not_me`, in that roster or among its own
-  rejections, and every other slot where it saw it as the current publication is rejected as `not_me` too. Whether a
-  slot is rejected is judged by the roster and rejections the device holds when it checks, not when it saw the
-  publication, so the slot the user has just rejected counts. Whoever holds the account's signing key can copy a real
-  device's KeyPackage into a slot the user then rejects, and the copy shows the same `KeyPackageRef` in the real
-  device's slot.
-
-For the second, a device keeps a record of the KeyPackages it finds in slots that are not devices in its roster: for
-each KeyPackage it finds as the current publication of such a slot, its `KeyPackageRef`, the signature key of its
-LeafNode, and every slot where it found it. It keeps that record, across restarts, while any of those slots is a
-sign-in it lists ([Answers](#answers)) or is rejected as `not_me`.
+device, and the roster of its trusted device group rejects it or the device keeps that rejection itself ([A KeyPackage
+the roster does not announce](#a-keypackage-the-roster-does-not-announce), [KeyPackages in a rejected sign-in's
+slot](#keypackages-in-a-rejected-sign-ins-slot)).
 
 Each device records, for each leaf of its own account in each group it is in, other than its own, the `KeyPackageRef` of
 the KeyPackage that leaf joined with, from the Add proposal that added it, which carries the whole KeyPackage. It keeps
@@ -429,8 +456,8 @@ the record while that leaf is in the group. Such a leaf is tied to a rejection w
 a group the device joined after the leaf was added, it has no such record: there the leaf is tied to a rejection when
 its signature key is the signature key of the LeafNode of a KeyPackage tied to a rejection, as the roster's rejected
 KeyPackage records it (`leaf_signature_key`,
-[../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") or as the device's own record
-holds it.
+[../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") or as a rejection the device
+keeps itself records it.
 
 A device SHOULD remove, from each group it is in, every leaf of its account that is tied to a rejection and does not
 read as a device's or a removed slot's ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
@@ -453,8 +480,17 @@ This has limits:
 - In a group a device joined after the leaf was added, a leaf whose signature key has changed since it was added is
   not tied to a rejection, so whoever holds the account's signing key can keep a leaf there by replacing it before such
   a device joins.
-- A KeyPackage that a device never found as a slot's current publication, such as one published and replaced between
-  two of its checks, is tied to a rejection for that device only if the roster rejects it.
+- A KeyPackage in a rejected sign-in's slot is rejected only when a complete check finds it there. One published and
+  replaced between the account's devices' checks is never rejected, and neither is any in an account whose checks are
+  never complete ([Evidence](#evidence)).
+- A device that is not linked shows a KeyPackage it has replaced in no slot, so whoever holds the account's signing key
+  can copy that KeyPackage into a rejected sign-in's slot and have it rejected. The device's leaves that joined with it
+  are then removed, unless they read as a device's. Whoever holds the key can remove the account's leaves anyway
+  ([Rejections](#rejections)).
+- A rejected KeyPackage lasts 30 days, or less once eight newer ones are recorded for its slot ([How long a rejected
+  KeyPackage lasts](#how-long-a-rejected-keypackage-lasts)), and whoever holds the account's signing key can push it out
+  sooner by publishing more into that slot. Once it is dropped, a leaf that joined with it stays in a group where no
+  device has removed it, unless the KeyPackage is rejected again.
 - A device cleans up only groups it is in.
 
 ## Private KeyPackages

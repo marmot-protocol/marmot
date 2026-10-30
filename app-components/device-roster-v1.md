@@ -124,13 +124,14 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `history_key` is reserved for account sync and has no meaning in this version.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
-`RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in and the
-`signature_key` of its LeafNode as `leaf_signature_key`, so that a device that never saw the KeyPackage can still
-recognize a leaf that joined with it. `rejected_at` is when the rejection was recorded, as the recording device wrote
-it. A `removed` record keeps the `tag_signature_key` the device's entry had, if it had one, so that the account's
-devices can still recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me`
-record has none: a rejected sign-in never had an entry. When a device writes a `not_me` record, and what it then stops
-asking about, is in [../features/device-group.md](../features/device-group.md) ("New sign-ins"). When a device writes a
+`RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in and, as
+`leaf_signature_key`, the exact contents of its LeafNode's `signature_key` vector, without its length prefix, as for a
+device tag ([device-tag-v1.md](./device-tag-v1.md)), so that a device that never saw the KeyPackage can still recognize
+a leaf that joined with it. `rejected_at` is when the rejection was recorded, as the recording device wrote it. A
+`removed` record keeps the `tag_signature_key` the device's entry had, if it had one, so that the account's devices can
+still recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me` record has none:
+a rejected sign-in never had an entry. When a device writes a `not_me` record, and what it then stops asking about, is
+in [../features/device-group.md](../features/device-group.md) ("New sign-ins"). When a device writes a
 `RejectedKeyPackageV1` is in the same document ("A KeyPackage the roster does not announce"), and what either rejection
 does in other groups is in its "Rejections".
 
@@ -142,6 +143,20 @@ MAY select a stale one when an account has no fresh candidate
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), so the removed
 installation can still join a group after its record is gone. Its leaf then reads as unclaimed rather than as the
 removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
+
+Rejected KeyPackages are bounded too, because whoever holds the account's signing key can publish without limit and each
+KeyPackage the account's devices reject adds a record. A device SHOULD remove a `RejectedKeyPackageV1` once 30 days have
+passed since its `rejected_at`, by the device's own clock. A roster holds at most eight for one slot ("Validation"
+below): a device that records one for a slot that already has eight removes, in the same update, the one with the
+earliest `rejected_at`, and of those with the earliest, the one with the lowest `key_package_ref`. Eight keeps the
+newest records, which matter most. A slot serves one current publication at a time, so an older rejected KeyPackage
+joins new groups only through an inviter that fetched it before it was replaced, and the leaves it already joined are
+removed by the account's devices in those groups once the record reaches them
+([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection"). Eight is about a week of
+rejections when whoever holds the key publishes into a slot each time its device replaces the publication, about once a
+day ([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"). It also
+keeps the records for the 20 slots a roster can hold as devices ([account-devices-v1.md](./account-devices-v1.md), "Leaf
+limit") to 160, about 17 KB with 32-byte references and keys.
 
 `AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
 public half of the recovery key. Neither has a meaning in this version.
@@ -159,6 +174,7 @@ A `DeviceRosterV1` is valid when all of these hold:
 - `devices` and `rejected_slots` are each sorted by `slot` and unique by `slot`, and `rejected_key_packages` is sorted
   and unique by `key_package_ref`, in the default order of
   [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Sorting and duplicates");
+- at most eight entries in `rejected_key_packages` have the same `slot`;
 - `devices` holds at most `max_leaves_per_account` entries, the constant of
   [account-devices-v1.md](./account-devices-v1.md) ("Leaf limit");
 - every `settings` value has bits 3 to 7 clear;
@@ -333,6 +349,20 @@ An update that removes that device and records its slot as `removed` at `0x6553f
 01                                                               tag_signature_key present
 20 4444444444444444444444444444444444444444444444444444444444444444 tag_signature_key
 ```
+
+An update that records a rejected KeyPackage with `KeyPackageRef` `0x55` repeated 32 times, found in slot `0x11`
+repeated 32 times, whose LeafNode's `signature_key` vector holds `0x66` repeated 32 times, rejected at `0x6553f300`:
+
+```text
+406b                                                             operations<V>, 107 bytes
+04                                                               set_rejected_key_package
+20 5555555555555555555555555555555555555555555555555555555555555555 key_package_ref
+1111111111111111111111111111111111111111111111111111111111111111 slot
+20 6666666666666666666666666666666666666666666666666666666666666666 leaf_signature_key
+000000006553f300                                                 rejected_at
+```
+
+In a roster that holds that record alone, `rejected_key_packages<V>` is `406a` followed by the 106 bytes after `04`.
 
 A roster with no devices, no rejections and an empty account entry is its `leaf_tag_key` followed by `0000000000`.
 

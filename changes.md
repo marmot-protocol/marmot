@@ -23,21 +23,25 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [foundation/registries.md](./foundation/registries.md).
 
 - A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage in
-  its device group's roster, besides replacing it. `RejectedKeyPackageV1` gains `leaf_signature_key`, the signature key
-  of the KeyPackage's LeafNode. A sibling that finds a KeyPackage no roster announced in a linked device's slot catches
-  up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the KeyPackage itself if, a
-  day later and caught up again, no roster has announced or rejected it, even when the slot no longer serves it. A
-  device keeps each announcement it has seen for the longest time a KeyPackage can be valid. The slot's device answers
-  an alert by announcing a KeyPackage it made again, even one it has since replaced, or by rejecting one it did not;
-  each device keeps the `KeyPackageRef` of every KeyPackage it publishes for that. No device rejects a KeyPackage any
-  roster announced.
+  its device group's roster, besides replacing it. `RejectedKeyPackageV1` gains `leaf_signature_key`, the raw
+  `signature_key` of the KeyPackage's LeafNode, and the roster's test vectors gain one. A sibling that finds a valid
+  KeyPackage, fresh or not, that no roster announced in a linked device's slot catches up on the device group, sends
+  that device an anomaly alert (kind `462`, new), and rejects the KeyPackage itself if, a day later and caught up again,
+  no roster has announced or rejected it, even when the slot no longer serves it. A device keeps each announcement it
+  has seen for the longest time a KeyPackage can be valid. The slot's device answers an alert by announcing a KeyPackage
+  it made again, even one it has since replaced, or by rejecting one it did not; each device keeps the `KeyPackageRef`
+  of every KeyPackage it publishes for that. No device rejects a KeyPackage any roster announced.
+- A device whose check is complete rejects each valid KeyPackage it finds as the current publication of a `not_me` slot,
+  unless the same check finds it in another slot or a roster announced it. Each rejected KeyPackage is dropped 30 days
+  after it was recorded, and a roster holds at most eight for one slot, so the roster stays bounded whatever the key
+  holder publishes.
 - A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
   whenever it removes a leaf tied to one, and whenever it finds such a leaf in a group it cannot clean up. One warning
   stays open per account, it never claims the key holder was stopped, and dismissing it is per device.
-- Each device records the `KeyPackageRef` each of its account's leaves joined with, and the KeyPackages it finds in
-  slots that are not its siblings', and removes, where it can, the leaves tied to a rejection that no device claims: by
-  a same-account Remove, now allowed for this by the sender rules of `marmot.group.account-devices.v1`, or as an admin.
-  A leaf that no device claims is not evidence by itself and is never removed or warned about for that alone.
+- Each device records the `KeyPackageRef` each of its account's leaves joined with, and removes, where it can, the
+  leaves that no device claims and that joined with a KeyPackage its roster rejects or it has rejected itself: by a
+  same-account Remove, now allowed for this by the sender rules of `marmot.group.account-devices.v1`, or as an admin. A
+  leaf that no device claims is not evidence by itself and is never removed or warned about for that alone.
 - A client that lets a new device start without the sign-ins its first check found answers Not now for every slot that
   check returned, never This wasn't me.
 
