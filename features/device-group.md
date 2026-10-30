@@ -268,7 +268,7 @@ names, from a publication in the slot that the device did not make.
   calls for, or a replacement its "A publication the device did not make" calls for, is held back this way, a client
   SHOULD tell its user, so that a device whose device group stays unwritable does not quietly become one that new
   chats cannot add.
-- The founding roster announces the KeyPackage the link confirmed and the creating device's current one, if any
+- The founding roster announces the KeyPackage the link confirmed and the one the creating device last published, if any
   ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it publishes one of
   those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
 - A device with no device group publishes as before.
@@ -306,9 +306,9 @@ private KeyPackages only once it can tag.
   stay.
 - Halfway is `not_before + (not_after - not_before) / 2` in integer seconds, from the KeyPackage's `Lifetime`.
 - A device's stock with a sibling is the private KeyPackages it handed that sibling that no Welcome has consumed and
-  that have not reached halfway, counting only those it handed over in its answer to that sibling's latest request or
-  after it ([Sending](#sending)). When the stock falls below 5, the device issues enough new ones to bring it to 10 and
-  hands them over.
+  that have not reached halfway, counting, once that sibling has sent a request, only those it handed over in its answer
+  to that sibling's latest request or after it ([Sending](#sending)). When the stock falls below 5, the device issues
+  enough new ones to bring it to 10 and hands them over.
 - A device tops up its siblings before it asks for its own, so a device back after a long gap serves the others first.
 - A device MAY cap how many unexpired private KeyPackages it keeps for one sibling, but the cap MUST be at least 300:
   that leaves room for a full answer of 100 beside the ones a device at the default stock keeps until `not_after`. Once
