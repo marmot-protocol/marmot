@@ -230,11 +230,15 @@ Marmot welcome rumor.
 
 The gift-wrap recipient is the invitee's Nostr public key.
 
-An inviter sends one gift-wrapped kind `444` rumor for each KeyPackage its Commit added, with that KeyPackage's event id
-in the `e` tag ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"). When it added several
-KeyPackages of one account, each of those rumors is gift-wrapped to that account, so every device of the account
-receives all of them. A rumor's content MAY be a Welcome that also covers other new members (RFC 9420 §12.4.3.1); its
-`e` tag still names exactly one KeyPackage event.
+An inviter sends one gift-wrapped kind `444` rumor for each published KeyPackage its Commit added, with that
+KeyPackage's event id in the `e` tag ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"). When it
+added several KeyPackages of one account, each of those rumors is gift-wrapped to that account, so every device of the
+account receives all of them. A rumor's content MAY be a Welcome that also covers other new members (RFC 9420
+§12.4.3.1); its `e` tag still names exactly one KeyPackage event.
+
+This binding carries no Welcome for a KeyPackage that was never published, such as a private KeyPackage a sibling
+handed over: no KeyPackage event exists for its `e` tag. That Welcome travels inside the device group as a sibling
+Welcome ([../features/device-group.md](../features/device-group.md), "Sibling Welcomes").
 
 The inner kind `444` rumor MUST include:
 
