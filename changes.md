@@ -15,12 +15,15 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-29: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
 
-[#462](https://github.com/marmot-protocol/marmot/pull/462) changes [features/device-group.md](./features/device-group.md)
-and [foundation/registries.md](./foundation/registries.md).
+[#462](https://github.com/marmot-protocol/marmot/pull/462) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
+[foundation/registries.md](./foundation/registries.md).
 
-- Any device may rename any device in the roster. A device keeps each rename it made while the Commit carrying it can
-  still be superseded. When a Commit of its own in the device group is superseded, it renames again where the winning
-  roster still has the replaced label; where the winning roster has another label, that rename stands.
+- Any device may rename any device in the roster. `DeviceEntryV1` gains `rename_id` after `label`, absent until the
+  first rename: every rename writes 16 fresh random bytes, a clear included, and no other update changes it. A device
+  keeps the ids its rename wrote and the ids it replaced. After a fork it renames again where the winning roster holds
+  one it kept as replaced, and drops its rename where the roster holds any id it did not keep.
 - Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current, folded into a
   roster update it is already making to its own entry.
 - Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever

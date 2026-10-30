@@ -31,6 +31,7 @@ group.
 
 ```text
 opaque SlotId[32];
+opaque RenameIdV1[16];
 opaque KeyPackageRefV1<1..64>;
 opaque TagSignatureKeyV1<1..255>;
 opaque ReservedKeyV1<1..255>;
@@ -45,6 +46,7 @@ enum {
 struct {
   SlotId slot;
   opaque label<0..64>;
+  optional<RenameIdV1> rename_id;
   opaque client<0..64>;
   opaque platform<0..64>;
   uint64 linked_at;
@@ -106,6 +108,9 @@ Each device the account has linked has one `DeviceEntryV1`:
   roster.
 - `label` is the name the user gave the device, `client` its client name, and `platform` its platform. Each is UTF-8,
   compared and stored as bytes and never normalized; a decoder rejects bytes that are not UTF-8.
+- `rename_id` is absent until the device is first renamed. Every rename writes a new one, and no other update changes
+  it, so a device can tell its own rename from another after a fork
+  ([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms").
 - `linked_at` is when the device was linked, in seconds since the Unix epoch, as the linking device wrote it.
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
 - `settings` holds one flag per bit: bit 0 (`0x01`) "add to all my chats", bit 1 (`0x02`) "bring chat history", and
@@ -288,16 +293,17 @@ invalid ([README.md](./README.md), "GroupContext Removal").
 
 ## Test vectors
 
-A roster with leaf tag key `0x33` repeated 32 times and one device in slot `0x11` repeated 32 times, labelled `Phone`,
-client `wn`, no platform, linked at `0x6553f100`, with no linker, settings `0x05` ("add to all my chats" and "keep while
-inactive"), status `active`, no announced KeyPackage, tag signature key `0x44` repeated 32 times and no history key,
-and with no rejections and an empty account entry:
+A roster with leaf tag key `0x33` repeated 32 times and one device in slot `0x11` repeated 32 times, labelled `Phone`
+with rename id `0x55` repeated 16 times, client `wn`, no platform, linked at `0x6553f100`, with no linker, settings
+`0x05` ("add to all my chats" and "keep while inactive"), status `active`, no announced KeyPackage, tag signature key
+`0x44` repeated 32 times and no history key, and with no rejections and an empty account entry:
 
 ```text
 3333333333333333333333333333333333333333333333333333333333333333 leaf_tag_key
-4059                                                             devices<V>, 89 bytes
+406a                                                             devices<V>, 106 bytes
 1111111111111111111111111111111111111111111111111111111111111111 slot
 0550686f6e65                                                     label "Phone"
+01 55555555555555555555555555555555                              rename_id
 02776e                                                           client "wn"
 00                                                               platform ""
 000000006553f100                                                 linked_at

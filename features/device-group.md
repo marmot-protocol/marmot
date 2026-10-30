@@ -254,7 +254,9 @@ A device entry's `label`, `client` and `platform`
 the devices apart.
 
 - Any device MAY change any device entry's `label`, its own included. A rename is a roster update that sets that entry
-  with only `label` changed.
+  with only `label` and `rename_id` changed. Every rename, one that clears `label` included, MUST write a `rename_id`
+  of 16 bytes the device draws from a cryptographically secure random source. Any other update to an entry MUST keep
+  its `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD write
@@ -264,15 +266,25 @@ the devices apart.
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
   older roster puts back whatever changed in that entry since.
 
-A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit. A
-device that renamed a device keeps the rename, and the label it replaced, while the Commit carrying it can still be
-superseded. When a Commit of its own in the device group is superseded, it checks each such rename against the
-winning roster:
+A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit.
+The entry's `rename_id` tells the renaming device where its rename stands; labels and Commits do not, since two renames
+can set the same label and a lost Commit can be sent again as a different Commit. From before it sends a rename's
+Commit, a device keeps:
 
-- If that entry's `label` is still the label the rename replaced, it renames the device again.
-- Otherwise another rename of that device won, and that one stands: the device drops its own.
+- as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
+- as replaced, the `rename_id` the entry held, absent for an entry never renamed, and every id its previous rename of
+  that device kept, unless another rename had replaced that one.
 
-Either way, a device shows its user the label its roster holds.
+It keeps them until another rename of that device stands or the device leaves the roster. Whenever no Commit of its own
+in the device group is unresolved, it reads that entry's `rename_id` in the roster of the state it follows:
+
+- One kept as written: the rename applied.
+- One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
+  fresh `rename_id`, unless the entry already shows the label it set.
+- Any other: another rename won and stands, and the device drops its own.
+
+A device MAY forget the oldest `rename_id`s it keeps for one device; a roster holding a forgotten one reads as another
+rename's. Either way, a device shows its user the label its roster holds.
 
 ### Heartbeats
 
