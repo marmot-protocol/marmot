@@ -135,7 +135,9 @@ to delete that one publication by its identifier, using the active transport bin
 ([../transports/nostr.md](../transports/nostr.md), "Deleting one publication"), and then publish a new KeyPackage of
 its own into the slot, later than every other publication it found there. It deletes publications this way only in its
 own slot. A transport that ignores the request keeps serving the publication, and the device's next read of the slot
-finds it again.
+finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it. Reading the
+slot does not show that gap, since an empty slot holds no publication the device did not make, so a device that loses
+track of the owed KeyPackage leaves the slot empty there until its next refresh.
 
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
