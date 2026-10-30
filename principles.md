@@ -175,3 +175,26 @@ Prefer direct explanations over compressed slogans. Short is useful only when it
 
 Use `MUST`, `SHOULD`, and `MAY` only when the sentence is meant to become normative. Use ordinary language for notes,
 rationale, and examples.
+
+## Security-model maintenance
+
+The non-normative [threat model](./security-considerations.md) keeps security assumptions and residual risks visible
+across surfaces. Changes that add or alter a transport, an externally visible capability, a retained secret or service
+credential, metadata exposure, or a trust assumption update that document, or explain in the PR why the model is
+unchanged.
+
+Review the following with the owning rule:
+
+- Which asset and attacker capability does the change affect?
+- Does it change an identity, authorization, device, transport, service, or observation boundary?
+- Which cryptographic, key-lifecycle, recovery, delivery, resource, or fairness assumptions does the claim need?
+- What can a malicious member, former member, compromised device, or external service still do?
+- Does the change alter an intended guarantee, an accepted limitation, or an unresolved design question?
+- Which detailed scenarios change, and does their attack sequence or residual risk need updating? Preserve stable
+  scenario identifiers, check new attack paths against the current owning rules, and identify unresolved questions.
+- Which evidence supports it: a design argument, model check with bounds, proof under assumptions, wire vector,
+  implementation test, or deployment observation?
+
+Keep requirements in their owning surface and link them from the model. Do not resolve an uncertain security claim by
+silently strengthening an assumption or treating a proposal as adopted. Run `python3 scripts/check_docs.py` after
+editing the model or its links.

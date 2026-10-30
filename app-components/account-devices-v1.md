@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t5-malicious-members-administrators-and-same-account-devices).
+
 `marmot.group.account-devices.v1` lets a member add and remove leaves of its own account in a group without admin
 authority. A device can then add another device of the same account to a group it is in, or remove one, for example
 when that device signs out. A group turns this on by requiring the component.

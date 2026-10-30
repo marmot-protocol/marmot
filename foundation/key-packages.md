@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t4-device-account-key-and-reusable-keypackage-compromise).
+
 This document defines KeyPackage meaning, discovery requirements, and lifecycle.
 
 KeyPackages are how Marmot supports asynchronous invites. Each of a user's devices publishes a usable KeyPackage before
@@ -115,6 +117,20 @@ deletion bound instead, and a device that signs out MAY delete at once ("Stoppin
 The weekly refresh keeps the slot's publication time recent, which is how an inviter tells a device that still exists
 from one that has been uninstalled. A client can refresh only while it runs, so a device that is rarely opened looks
 older than it is.
+
+### A publication the device did not make
+
+Anyone holding the account's signing key can publish into any of its slots. A device SHOULD read its own slot when it
+starts and then about once a day, from every place the active transport binding lets it read the slot's current
+publication. If any of them serves, as the current publication, anything other than the device's own latest publication,
+the device SHOULD publish a new KeyPackage of its own into the slot, with a later publication time than every such
+publication. That includes an earlier KeyPackage of the device's own that someone published again: the device may no
+longer hold its `init_key`. The publication's transport authentication is enough to count it: one whose content is not a
+valid KeyPackage still occupies the slot. The device reads the slot itself, not a page of the account's publications, so
+that the account's other slots cannot crowd its own out.
+
+A device in a device group announces that KeyPackage first, like any other
+([../features/device-group.md](../features/device-group.md), "Slot announcements").
 
 ### Stopping publication
 
