@@ -403,7 +403,8 @@ names, from a publication in the slot that the device did not make.
 - Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
   own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
   first commits an AppDataUpdate that sets its own entry, with every other field unchanged and `announced_key_package`
-  naming the KeyPackage.
+  naming the KeyPackage. The one exception: that update MAY also bring the device's own `client` and `platform`
+  current ([Labels, clients and platforms](#labels-clients-and-platforms)).
 - The device publishes only once that Commit is part of the group state it holds. A Commit that fails, or that a
   branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
 - A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
@@ -564,16 +565,17 @@ A device entry's `label`, `client` and `platform`
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") are what a user reads to tell
 the devices apart.
 
-- Any device MAY change any device entry's `label`, its own included. A rename is a roster update that sets that entry
-  with only `label` and `rename_id` changed. Every rename, one that clears `label` included, MUST write a `rename_id`
-  of 16 bytes the device draws from a cryptographically secure random source. Any other update to an entry MUST keep
-  its `rename_id`.
+- Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
+  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a `rename_id` of 16 bytes the
+  device draws from a cryptographically secure random source, one that clears `label` included. Every other update to
+  an entry MUST keep its `label` and its `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
-  is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD write
-  them in a roster update it is already making to its own entry, rather than in one of their own; it announces each
-  KeyPackage it publishes in its own entry ([Slot announcements](#slot-announcements)), so it makes one at least that
-  often. A rename never carries them. A device does not write another device's `client` or `platform`.
+  is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
+  write them in the update that announces its next KeyPackage ([Slot announcements](#slot-announcements)) rather than
+  in an update of their own, so a changed value reaches the roster with that announcement. Publishing a KeyPackage its
+  entry already names makes no announcement. A rename never carries them. A device does not write another device's
+  `client` or `platform`.
 - A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
   older roster puts back whatever changed in that entry since.
@@ -591,17 +593,19 @@ Commit, a device keeps, for the device it renames:
 
 It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
 stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
-no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state:
+no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state,
+taking the first of these that matches:
 
 - One kept as written: the rename applied.
 - One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
   fresh `rename_id`, unless the entry already shows the label it set.
 - Any other: another rename won and stands, and the device drops its own.
 
-A device MAY forget the oldest `rename_id`s it keeps for one device, as long as it keeps the newest it keeps as written
-and the newest it keeps as replaced. A roster holding a forgotten one reads as another rename's, so the device drops its
-rename rather than make it again over one it cannot place. Either way, a device shows its user the label its roster
-holds.
+A device MAY forget the oldest `rename_id`s it keeps for one device, but never the newest it keeps as written, nor the
+`rename_id` the entry held, absent included, when the device last built the rename or made it again: while the rename
+has not applied and nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads
+as another rename's, so the device drops its rename rather than make it again over one it cannot place. Either way, a
+device shows its user the label its roster holds.
 
 ### Heartbeats
 
@@ -637,11 +641,13 @@ its heartbeats and judging its sender inactive.
 
 **Last activity.** A sibling's last activity is the latest, over the heartbeats that counted for it, of each
 heartbeat's `created_at` or the time the device read it, whichever is earlier, in seconds since the Unix epoch. A
-heartbeat only ever moves it later. A heartbeat delivered late never makes a sibling look active later than it was, and
-a sender's clock never dates activity after it was read. A sender whose clock runs behind looks less recently active
-than it is, which errs toward showing it inactive, never toward hiding a sibling that stopped. A device keeps each
-sibling's last activity, and when it first found that sibling in its roster, across restarts. Each device keeps its own;
-nothing about it is written to the roster.
+heartbeat only ever moves it later. A heartbeat never dates activity after the device read it, and one delivered late
+counts at its `created_at`, not when it arrived. Neither holds the sender's clock to the truth: a sender whose clock
+runs behind looks less recently active than it is, which errs toward showing it inactive, and a sender whose clock
+runs ahead, read late, can look active as late as the read, which errs toward hiding a sibling that stopped. A device
+keeps each sibling's last activity, and when it first found that sibling in its roster, across restarts. When a slot
+stops being a device in its roster, the device forgets both; if that slot is a device again later, the device first
+finds it then. Each device keeps its own; nothing about it is written to the roster.
 
 ### Inactive devices
 

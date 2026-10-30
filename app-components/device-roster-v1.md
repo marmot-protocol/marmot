@@ -225,8 +225,10 @@ The resulting roster is the candidate parent's roster with every operation appli
 Because no two operations name the same entry, the result does not depend on the order in which they are applied. The
 resulting roster MUST be valid ("Validation" above); otherwise the update, and the Commit that carries it, is invalid.
 
-An update replaces whole the entries it names. A device that changes one field of an entry, such as its label, sends
-the whole entry with that field changed. Other entries are untouched.
+An update replaces whole the entries it names. A device that changes one field of an entry, such as its `platform`,
+sends the whole entry with that field changed; a rename changes `label` and `rename_id` together
+([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms"). Other entries are
+untouched.
 
 A client that applies the update differently, for example by taking the update's bytes as the new state, computes a
 different GroupContext from every other member's, so its Commit does not stage for them and creates no candidate edge

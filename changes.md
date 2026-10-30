@@ -21,21 +21,24 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [foundation/registries.md](./foundation/registries.md).
 
 - Any device may rename any device in the roster. `DeviceEntryV1` gains `rename_id` after `label`, absent until the
-  first rename: every rename writes 16 fresh random bytes, a clear included, and no other update changes it. This
-  changes the encoding of `0x800e` in place: while the component is a draft, its encoding can change, with no promise
-  that revisions work together. A device keeps the ids its rename wrote and the ids it replaced. Once its device group
-  is `Stable` with no Commit of its own unresolved, it renames again where the canonical roster holds one it kept as
-  replaced, and drops its rename where the roster holds any id it did not keep.
-- Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current, folded into a
-  roster update it is already making to its own entry.
+  first rename. Any update that changes `label` is a rename: it changes only `label` and `rename_id`, writing 16 fresh
+  random bytes, a clear included, and no other update changes either field. This changes the encoding of `0x800e` in
+  place: while the component is a draft, its encoding can change, with no promise that revisions work together. A
+  device keeps the ids its rename wrote and the ids it replaced, and never forgets the newest it wrote or the one the
+  entry held when it last built the rename. Once its device group is `Stable` with no Commit of its own unresolved, it
+  renames again where the canonical roster holds one it kept as replaced, and drops its rename where the roster holds
+  any id it did not keep.
+- Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current in the update
+  that announces its next KeyPackage, the one exception to that update leaving every other field unchanged.
 - Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever
   its last one is at least an hour old, once its own leaf there is tagged. A receiver counts one only when the sending
   leaf's device tag reads as a device in the roster, in the tree it holds when it reads the heartbeat, enforces no
   rate, ignores the content, and dates it `min(created_at, when it was read)`. Heartbeats never trigger push
   notifications.
-- A sibling's last activity is the latest `min(created_at, when it was read)` over its counted heartbeats. A device
-  treats a sibling as inactive 30 days after its last activity, or after first finding it in the roster if that is
-  later. That judgment only decides what the device shows: a device must not set an entry's `inactive` status from it.
+- A sibling's last activity is the latest `min(created_at, when it was read)` over its counted heartbeats; a device
+  forgets it, and when it first found the sibling, once the slot stops being a device in its roster. A device treats a
+  sibling as inactive 30 days after its last activity, or after first finding it in the roster if that is later. That
+  judgment only decides what the device shows: a device must not set an entry's `inactive` status from it.
 
 ## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
 
