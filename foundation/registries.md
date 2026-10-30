@@ -111,6 +111,7 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
 | `459`   | Private KeyPackage request          | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `460`   | Private KeyPackage hand-off         | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `462`   | Anomaly alert                       | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |

@@ -170,9 +170,11 @@ to from now on, and it says so: her old chats aren't available here, and people 
 she can also choose **Restore from backup** to bring back her old chats' content, read-only until she is added back
 ([account-sync.md](./account-sync.md)).
 
-**Underneath:** the laptop has no device group. If one of her old devices is still alive, say an iPad in a drawer, it
-sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links it there, the laptop joins the old
-device group and is added to her old chats.
+**Underneath:** the laptop has no device group. Starting fresh answers **Not now** for the devices it found, never
+**This wasn't me**: they stay listed, nothing is rejected, and no warning appears. If one of her old devices is still
+alive, say an iPad in a drawer, it sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links
+it there, the laptop joins the old device group and is added to her old chats. If she thinks an old device is in
+someone else's hands, she answers **This wasn't me** for that one (Scene 8).
 
 Two device groups for one account only exist when both sides have linked more devices on their own, as in the figure.
 **When devices from two device groups are linked, the approving device's group absorbs the other one.** Alice's own
@@ -402,13 +404,19 @@ There is no "Alice added a device" notice.
   Alice's choice.
 - **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. A sibling that
   sees a new KeyPackage in a known slot catches up on the device group before deciding. If the roster has it, it is a
-  quiet refresh. If not, someone else replaced it (Scene 8). The device itself also notices a KeyPackage it didn't
-  publish in its own slot, and republishes its own. Keeping this in the roster rather than in a message means a device
-  linked later can read every sibling's current KeyPackage straight away.
-- **Checking chats for unknown leaves.** Each device reads the device tags on the account's leaves in every chat it is
-  in (see Under the hood). A leaf for Alice's account that no sibling claims is flagged and goes to the
-  warning in Scene 8. This catches a replaced KeyPackage that an outside inviter used, and extra leaves a stolen device
-  added before it was removed.
+  quiet refresh. If not, the sibling asks the slot's device, which is the only one that knows: an anomaly alert
+  through the device group. That device either announces the KeyPackage again, because its announcement was lost or
+  undone by a fork, or rejects it as someone else's (Scene 8). If it doesn't answer within a day, for example because
+  it is lost, the sibling rejects the KeyPackage itself. The device itself also notices a KeyPackage it didn't publish
+  in its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message
+  means a device linked later can read every sibling's current KeyPackage straight away.
+- **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's
+  leaves joined with, and reads the device tags on them (see Under the hood). A leaf that joined with a rejected
+  KeyPackage, or one only seen in a rejected sign-in's slot, and that no sibling claims, is removed and goes to the
+  warning in Scene 8. This catches a replaced KeyPackage that an outside inviter used. A leaf that no sibling claims is
+  not enough on its own: a device's leaves from before it was linked, and those of a sign-in Alice hasn't answered yet,
+  are unclaimed too, so flagging every unclaimed leaf would warn her about her own devices. Extra leaves a stolen
+  device added before it was removed are Scene 7's.
 
 **Trade-offs:** device counts are visible to chat members and, roughly, to anyone reading relays. We accept that and
 show it plainly rather than hiding it behind a notice.
@@ -504,7 +512,9 @@ as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not
 
 **Two ways in:** Alice taps **This wasn't me** on a new sign-in, or her devices find a KeyPackage in a linked device's
 slot that the device never announced. The second needs no tap. A linked device always announces before it publishes,
-so there is no innocent explanation, and the warning appears on its own.
+but its siblings may not have caught up, or a fork may have undone the announcement, so the slot's own device decides
+(Scene 6, "Refreshing a slot"), and its siblings decide by themselves only after it has had a day to answer. The
+warning then appears on its own, on every device.
 
 **What Alice sees:** a full-screen warning that her account's signing access may be compromised: either her nsec, or a
 signer session. The figure shows the case where the nsec itself is stolen. The warning says plainly that for a stolen
@@ -514,8 +524,10 @@ know which one was taken.
 **What her devices do:** they mark the slot rejected so no device prompts about it again while the roster keeps that,
 never add it to existing chats or send it history, and remove its leaf from any chat they share with it. For a replaced
 KeyPackage in a linked device's slot, they reject that KeyPackage, not the slot, and the roster keeps pointing at the
-device's own. If other people's inviters have already added the replacement to a chat, Alice's devices see a leaf for
-her account that no sibling announced, and remove it.
+device's own. If other people's inviters have already added the replacement to a chat, Alice's devices know which leaf
+joined with it, and remove that leaf. They can remove a leaf only in a chat that lets devices remove their own
+account's leaves, or where Alice is an admin; the warning lists the other chats. Each device shows one warning for
+everything new, and Alice dismisses it on each device.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
 devices, and publish more KeyPackages. The warning must not promise more protection than that.

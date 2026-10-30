@@ -13,6 +13,30 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage
+  in its device group's roster, besides replacing it. A sibling that finds a KeyPackage no roster announced in a linked
+  device's slot catches up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the
+  KeyPackage itself only if it is still unannounced a day later. The slot's device answers an alert by announcing a
+  KeyPackage it made again, or by rejecting one it did not. No device rejects a KeyPackage any roster announced.
+- A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
+  and whenever it removes a leaf tied to one. One warning stays open per account, it never claims the key holder was
+  stopped, and dismissing it is per device.
+- Each device records the `KeyPackageRef` each of its account's leaves joined with, and removes, where it can, the
+  leaves tied to a rejection that no device claims: by a same-account Remove, now allowed for this by the sender rules
+  of `marmot.group.account-devices.v1`, or as an admin. A leaf that no device claims is not evidence by itself and is
+  never removed or warned about for that alone.
+- A client that lets a new device start without the sign-ins its first check found answers Not now for them, never
+  This wasn't me.
+
 ## 2026-10-29: Slot announcements, the own-slot check and private KeyPackages (draft)
 
 [#459](https://github.com/marmot-protocol/marmot/pull/459) changes
