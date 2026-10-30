@@ -187,9 +187,10 @@ group remains.
 3. **It brings its rejections along.** Rejected sign-ins and removed devices from group 2 are added to group 1's roster.
    A device that is linked in group 1 but was rejected in group 2 stays linked, because Alice confirmed that link, and
    she is told so she can remove it if she meant the rejection.
-4. **It leaves group 2.** It tells the desktop it has moved, and the desktop removes it from group 2. The desktop then
-   sees the laptop as a sign-in again and suggests moving the desktop too. Alice does that the same way, with its own
-   code. On the laptop, the desktop shows as a device still in her other device group, not as an unknown sign-in.
+4. **It leaves group 2.** It marks itself as moved in group 2's roster, and the desktop removes it from group 2, though
+   not from any chat. The desktop then sees the laptop as a sign-in again and suggests moving the desktop too. Alice
+   does that the same way, with its own code. On the laptop, the desktop shows as a device still in her other device
+   group, not as an unknown sign-in, until it arrives in group 1.
 5. **Chats catch up.** Gap filling runs in both directions for each device that moves, using allocations and respecting
    each device's settings.
 6. **Group 2 is left behind** once no device is in it. If both groups had backups turned on, the surviving group's

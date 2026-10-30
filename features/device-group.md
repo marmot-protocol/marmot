@@ -26,8 +26,6 @@ group. The group's other messages, private KeyPackages, and removal are not spec
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publications are the evidence of a
   new sign-in ([New sign-ins](#new-sign-ins)).
-- Marmot app event: kind `463` (moved notice), sent only in a device group ([Moving to another device
-  group](#moving-to-another-device-group)) and registered in [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -109,11 +107,12 @@ has none yet. It would not link the KeyPackage when:
 
 A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
 lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
-Cancel `cannot_link`, so the new device stops waiting. When the slot is already a device in its roster, it MUST NOT send
-it: that device may be moving to another device group ([Moving to another device
+Cancel `cannot_link`, so the new device stops waiting, unless the slot is already a device in its roster or the slot or
+KeyPackage is rejected. When the slot is already a device in its roster, it MUST NOT send it, even when the new device's
+client lacks support or the roster is full: that device may be moving to another device group ([Moving to another device
 group](#moving-to-another-device-group)), and a Cancel from any device ends its session. When the slot or KeyPackage is
-rejected, it SHOULD NOT send it: a Cancel would tell whoever holds the account's signing key that the user noticed, and
-a device the user rejected by mistake stops waiting when its session expires.
+rejected, it SHOULD NOT send it either, in any of those cases: a Cancel would tell whoever holds the account's signing
+key that the user noticed, and a device the user rejected by mistake stops waiting when its session expires.
 
 ### Approving
 
@@ -240,18 +239,22 @@ that Commit. While its session runs and while its link waits for its Welcome, th
 
 **Joining.** It joins as any new device does ("Joining"). On joining, it trusts the new group and no longer the old one
 ("Trust"): it reads its roster, its siblings and its rejections from the new group only, and commits nothing more to the
-old one. Its move is made once its first Commit in the new group ("Matching leaves to devices") is on the selected
-branch of its state for that group and it holds no unprocessed input for the group. If a Commit removes it from the new
-group before then ("A link that is not taken up"), the move has failed: it discards the new group's active state, as for
-any removal from a device group, keeps its copy of the old group, trusts that group again as it did before it moved, and
-tells its user. A removal from the new group after the move is made is an ordinary removal, after which the device has
-no device group.
+old one but the update that marks it moved ("Leaving the old group" below). Its move is made once its first Commit in
+the new group ("Matching leaves to devices") is on the selected branch of its state for that group and it holds no
+unprocessed input for the group. If a Commit removes it from the new group before then ("A link that is not taken up"),
+the move has failed: it discards the new group's active state, as for any removal from a device group, keeps its copy of
+the old group, trusts that group again as it did before it moved, and tells its user. A removal from the new group after
+the move is made is an ordinary removal, after which the device has no device group.
 
 From the time it joins, the moving device does not list its old roster's other devices as sign-ins to answer
 ([Answers](#answers)). It SHOULD show them to its user with the labels its old roster gave them, as devices still in its
 old device group that the user can move too. It does not offer Link or This wasn't me for them there, so that the user
-does not reject, by mistake, a device they are about to move. It treats a slot this way while that slot is a device in
-its old group's roster, as it last held that roster, and not a device in its own.
+does not reject, by mistake, a device they are about to move. This covers each slot that is a device in its old group's
+roster as it holds that roster when it joins, and lasts, across restarts, until that slot is first a device in its own
+roster; from then on the slot is like any other, even when it leaves that roster again. The old group removing that
+device does not end it, and neither does the moving device discarding its copy of the old group, so the device keeps
+those slots and their labels itself. Its user MAY end it for a slot, for example for a device they no longer have, which
+is then listed as a sign-in.
 
 **What it brings.** Once its move is made, the device commits to the new group's roster each rejected slot, `not_me` and
 `removed`, and each rejected KeyPackage that its old group's roster holds then, with `rejected_at` unchanged, so that a
@@ -275,41 +278,26 @@ KeyPackage, tagged under the new key, once its move is made.
 **Leaving the old group.** A device cannot commit its own removal
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Removal by another device of the same
 account"), and a SelfRemove cannot write the roster, so a sibling in the old group removes it. Once its move is made,
-the device sends a moved notice in its old group:
-
-| Kind  | Message      | Sent by                                     |
-| ----- | ------------ | ------------------------------------------- |
-| `463` | Moved notice | a device that moved to another device group |
-
-A moved notice is an ordinary Marmot app event
-([../foundation/application-messages.md](../foundation/application-messages.md)) of kind `463`, sent as an MLS
-application message in the device group the sender moved from. Its `tags` is `[]`, and its `content` is the string
-`{"v":1,"from":"<slot>"}`: one UTF-8 JSON object with exactly the members `v`, the JSON number `1`, and `from`, the
-sender's slot as a JSON string of 64 lowercase hexadecimal characters, written in that order without whitespace.
-
-The moving device keeps its copy of the old group and reads it until a Commit removes its leaf there. It sends the
-notice again whenever it starts and at least once a day until then. It also reads the moved notices of the old group's
-other devices, under the checks below, though it no longer trusts that group, since they may move before any of them
-removes another. Once the Commit that removes it reaches it, or once every other member of the old group is one whose
-moved notice it has read, it stops sending and discards the active state of its copy, as a removed member may
+the device commits, in its old group, a roster update that sets the `status` of its own entry to `moved`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State" and "Update"). A device sets
+`moved` only this way, and only on its own entry. It commits the update again when its Commit fails or a branch
+selection drops the update, until that update is on the selected branch of its copy of the old group and it holds no
+unprocessed input for that group, or until it is no longer a member of the old group, for example because a sibling
+removed it first. It then stops reading the old group and discards the active state of its copy, as a removed member may
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
-group's history.
+group's history. It needs nothing from any other device for this.
 
-A device reads moved notices in the device group it trusts and, as above, in the one it moved from, and ignores kind
-`463` in any other group. It drops a notice unless it decodes as a Marmot app event and passes that document's receiver
-authentication, its `content` decodes exactly as above, `from` is another device in that group's roster, the notice was
-sent in the epoch the device holds when it reads it, and the leaf that sent it, in that epoch's tree, carries a device
-tag that reads as `from`'s ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A
-notice from an earlier epoch counts for no device: the device it names may have been removed since and linked again,
-perhaps at the same leaf, and the sender's next notice counts instead. In the device group it trusts, on a notice it
-keeps, a device removes the device that sent it: one Commit that removes the leaf that sent the notice and, with
-`remove_device`, its roster entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-"Update"), unless that device is already gone from its roster. It writes no rejected slot, so the slot is a sign-in
-again ([Any one device's answer](#any-one-devices-answer)), and it SHOULD tell its user that the device moved to another
-device group and offer to move this one too. Several devices may each make that Commit; branch selection keeps one.
+In the device group it trusts, a device whose roster holds another device's entry with status `moved` removes that
+device: one Commit that removes the leaf whose device tag reads as that device's
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags") and, with `remove_device`,
+its roster entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"). When no
+leaf of the group reads as that device's, the Commit removes the roster entry alone. It removes nothing from any other
+group: the device that moved stays in its chats. It writes no rejected slot, so the slot is a sign-in again ([Any one
+device's answer](#any-one-devices-answer)), and it SHOULD tell its user that the device moved to another device group
+and offer to move this one too. Several devices may each make that Commit; branch selection keeps one.
 
-A device group is left behind once no device trusts it. Nothing closes it: each of its devices leaves it as it moves,
-and the last one discards its copy.
+A device group is left behind once no device trusts it. Nothing closes it: each of its devices marks itself moved and
+discards its copy as it moves, and a device still there removes those that moved.
 
 ## Keeping it out of sight
 
@@ -499,9 +487,10 @@ leaves, warning about a leaf no device claims) is not specified yet.
   from another sign-in. When it approves a link it founds a second device group. The user then moves the devices of one
   into the other, one at a time ([Moving to another device group](#moving-to-another-device-group)).
 - A device moves only through a link whose code both users compared, like any other link, so moving gives whoever holds
-  the account's signing key no new way into a device group. A moved notice is read only from a device of the group whose
-  tag reads as the slot it names, so it removes only the device that sent it; a stolen linked device could remove itself
-  that way, or any device by an ordinary Commit.
+  the account's signing key no new way into a device group. A `moved` status makes the old group's devices remove that
+  device from the device group only, never from chats. Any device of the group can write any roster entry, so a stolen
+  linked device could mark a sibling moved, as it could remove that sibling by an ordinary Commit
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security considerations").
 - Holding the account's signing key never authenticates a device. A device enters the device group only under a link
   whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
   under the account is not enough.

@@ -39,6 +39,7 @@ enum {
   active(0),
   inactive(1),
   leaving(2),
+  moved(3),
   (255)
 } DeviceStatusV1;
 
@@ -110,8 +111,9 @@ Each device the account has linked has one `DeviceEntryV1`:
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
 - `settings` holds one flag per bit: bit 0 (`0x01`) "add to all my chats", bit 1 (`0x02`) "bring chat history", and
   bit 2 (`0x04`) "keep while inactive". The other bits MUST be zero.
-- `status` is `active`, `inactive` (the device's siblings marked it inactive), or `leaving` (the device recorded that it
-  is signing out).
+- `status` is `active`, `inactive` (the device's siblings marked it inactive), `leaving` (the device recorded that it
+  is signing out), or `moved` (the device recorded that it moved to another device group; see
+  [../features/device-group.md](../features/device-group.md), "Moving to another device group").
 - `announced_key_package` is the `KeyPackageRef` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.2) of
   the KeyPackage the device announced for its slot, if it announced one. A `KeyPackageRefV1` holds the raw output of
   `MakeKeyPackageRef` under the KeyPackage's ciphersuite, without the length prefix MLS gives a `HashReference`: 32
@@ -332,4 +334,6 @@ A roster with no devices, no rejections and an empty account entry is its `leaf_
 
 ## Migration
 
-This is the first version. A breaking change gets a new component id and document.
+This is the first version. While this component is a draft, its encoding can change under the id `0x800e`, with no
+promise that two revisions of the draft work together. Once it is adopted, a breaking change gets a new component id and
+document.

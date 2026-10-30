@@ -17,25 +17,27 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 [#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
 [features/device-group.md](./features/device-group.md), [features/device-pairing.md](./features/device-pairing.md) and
-[foundation/registries.md](./foundation/registries.md).
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md).
 
 - An account whose devices formed two device groups joins them by moving devices from one into the other, one at a time.
   A device that trusts a device group may now run a pairing session as a new device; its own siblings never answer it,
   so it links into the answering device's group, joins as any new device does, and trusts that group from then on
   instead of its old one. A device trusts one device group at a time. If the new group removes it before its first
   Commit there lands, it discards that group and trusts its old group again. From the time it joins, it does not ask its
-  user about its old siblings as sign-ins, but shows them as devices still to move.
+  user about its old siblings as sign-ins, but shows them as devices still to move, until its new roster first lists
+  each of them.
 - Once its move is made, the device copies its old roster's rejected slots and rejected KeyPackages into the new roster,
   keeping `rejected_at`. It leaves out entries the new roster already holds and rejected slots that the new roster holds
   as devices, since a confirmed link ends a rejection, and tells its user about those.
-- It then sends a moved notice (kind `463`, new: an app event with `tags` `[]` and `content` `{"v":1,"from":"<slot>"}`)
-  in its old group, again at each start and daily until removed or until every other device of the old group has sent
-  its own. A device that trusts the old group and reads one, sent in its current epoch from a leaf whose tag reads as
-  `from`'s, removes that device's leaf and roster entry in one Commit, writing no rejected slot, so the slot is a
-  sign-in again there.
+- It then sets its own roster entry's `status` to `moved` in its old group, a new `DeviceStatusV1` value, committing
+  again until that update is on the old group's selected branch or it is no longer a member there, and discards its
+  copy. A device that trusts the old group and holds a `moved` entry removes that device's leaf and roster entry in one
+  Commit, writing no rejected slot and removing nothing from chats, so the slot is a sign-in again there. While the
+  roster component is a draft, its encoding can change under `0x800e`, with no promise that revisions work together.
 - An existing device MUST NOT send Cancel `cannot_link` to a request from a slot that is already a device in its roster,
-  which may be a sibling moving away, and SHOULD NOT send it for a rejected slot or KeyPackage, where it was MAY. The
-  pairing new-device role now includes a device moving out of its device group.
+  which may be a sibling moving away, even when the roster is full or the new device's client lacks support. It SHOULD
+  NOT send it for a rejected slot or KeyPackage in any case, where it was MAY. The pairing new-device role now includes
+  a device moving out of its device group.
 
 ## 2026-10-30: Small-state sync between an account's devices (draft)
 
