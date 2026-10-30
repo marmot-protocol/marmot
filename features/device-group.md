@@ -321,29 +321,31 @@ or joins gets it the same way.
 
 **A sibling.** A device that finds a KeyPackage unannounced in a sibling's slot:
 
-1. brings its trusted device group up to date first: it processes every Commit for the group that it can fetch, until
-   it holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, or rejected, it does
-   nothing more;
+1. brings its trusted device group up to date first: it processes every Commit for the group that it can fetch, until it
+   holds no unprocessed input for the group. If the KeyPackage is then announced for that slot, or rejected, or the slot
+   is no longer a device in its roster, it does nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
    alert for each KeyPackage, and keeps each alert it sent, with the slot and the time, across restarts, until it
    settles it;
 3. settles the alert 24 hours or more after it sent it, by its own clock. It first brings its trusted device group up to
    date again, as in step 1, so that it does not miss an announcement the slot's device made meanwhile. Then, unless a
-   roster of its trusted device group has announced the KeyPackage for any device, or rejects it, the device rejects it
-   itself, as the slot's own device would. It settles the alert this way whether or not the slot still serves that
-   KeyPackage and whether or not the KeyPackage has expired, so that replacing a KeyPackage before the day is out saves
-   neither it nor the leaves that joined with it.
+   roster of its trusted device group has announced the KeyPackage for any device, or rejects it, or the slot is no
+   longer a device in its roster, the device rejects it itself, as the slot's own device would. A slot that has left the
+   roster, because its device was removed or did not take up its link, has no device left to answer, and its
+   publications count as those of any other slot that is not a device's. It settles the alert this way whether or not
+   the slot still serves that KeyPackage and whether or not the KeyPackage has expired, so that replacing a KeyPackage
+   before the day is out saves neither it nor the leaves that joined with it.
 
 **On an alert.** A device that receives an anomaly alert naming a KeyPackage reads its own slot as
 [../foundation/key-packages.md](../foundation/key-packages.md) ("A publication the device did not make") describes,
 which replaces and rejects a publication it did not make as above. If it did not make the KeyPackage the alert names, it
 rejects it, whether or not its slot still holds it, recording the `leaf_signature_key` the alert names. If it made that
 KeyPackage, it announces it again, by the AppDataUpdate in [Slot announcements](#slot-announcements), even when its slot
-now serves another or the KeyPackage has expired, so that every sibling holds a roster that announced it; this also
-repairs an announcement a branch selection dropped. If that KeyPackage is not its slot's current publication, it then
-announces the current one again the same way. So that it can tell which KeyPackages it made after it deletes their
-`init_key`, a device keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the
-slot.
+now serves another or the KeyPackage has expired, so that the sibling that alerted holds a roster that announced it;
+this also repairs an announcement a branch selection dropped. If that KeyPackage is not its slot's current publication,
+it then announces the current one again the same way. It makes either announcement again when its Commit fails or a
+branch selection drops it. So that it can tell which KeyPackages it made after it deletes their `init_key`, a device
+keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the slot.
 
 A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device, even where a
 rule above says to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot,
@@ -369,10 +371,11 @@ whitespace. Slots are JSON strings of lowercase hexadecimal, 64 characters, as i
 | `key_package_ref`    | the KeyPackage's `KeyPackageRef`, as a JSON string of lowercase hexadecimal, 2 to 128 characters |
 | `leaf_signature_key` | the `signature_key` of the KeyPackage's LeafNode, as a JSON string of lowercase hexadecimal, 2 to 510 characters |
 
-A device reads an alert only from the device group it trusts ([Trust](#trust)), and ignores the kind in any other
-group. It drops an alert unless its content decodes exactly as above with `v` `1`, `to` is its own slot, `from` is
-another device in its current roster, and the leaf that sent it carries a device tag that reads as `from`'s, as for a
-request ([Receiving](#receiving)). It acts on each KeyPackage that alerts name once.
+A device reads an alert only from the device group it trusts ([Trust](#trust)), and ignores the kind in any other group.
+It drops an alert unless its content decodes exactly as above with `v` `1`, `to` is its own slot, `from` is another
+device in its current roster, and the leaf that sent it carries a device tag that reads as `from`'s, as for a request
+([Receiving](#receiving)). It answers once for each sending device and KeyPackage, so that a sibling linked after an
+earlier answer, which never held the roster that answer wrote, still gets one.
 
 ## Rejections
 
