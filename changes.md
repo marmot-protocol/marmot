@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-30: Sibling Welcomes (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#471](https://github.com/marmot-protocol/marmot/pull/471) changes
 [features/device-group.md](./features/device-group.md),
 [app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
 [protocol-core/joining.md](./protocol-core/joining.md) and
