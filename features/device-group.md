@@ -571,8 +571,9 @@ the devices apart.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD write
-  them in a roster update it is already making to its own entry, rather than in one of their own. A device does not
-  write another device's `client` or `platform`.
+  them in a roster update it is already making to its own entry, rather than in one of their own; it announces each
+  KeyPackage it publishes in its own entry ([Slot announcements](#slot-announcements)), so it makes one at least that
+  often. A rename never carries them. A device does not write another device's `client` or `platform`.
 - A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
   older roster puts back whatever changed in that entry since.
@@ -580,22 +581,27 @@ the devices apart.
 A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit.
 The entry's `rename_id` tells the renaming device where its rename stands; labels and Commits do not, since two renames
 can set the same label and a lost Commit can be sent again as a different Commit. From before it sends a rename's
-Commit, a device keeps:
+Commit, a device keeps, for the device it renames:
 
 - as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
-- as replaced, the `rename_id` the entry held, absent for an entry never renamed, and every id its previous rename of
-  that device kept, unless another rename had replaced that one.
+- as replaced, the `rename_id` the entry held when the device built the rename, absent for an entry never renamed. If
+  the device still keeps an earlier rename of that device, and the entry held an id that earlier rename kept, as
+  written or as replaced, it also keeps as replaced every id the earlier rename kept, both kinds. The new rename takes
+  the earlier one's place.
 
-It keeps them until another rename of that device stands or the device leaves the roster. Whenever no Commit of its own
-in the device group is unresolved, it reads that entry's `rename_id` in the roster of the state it follows:
+It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
+stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
+no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state:
 
 - One kept as written: the rename applied.
 - One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
   fresh `rename_id`, unless the entry already shows the label it set.
 - Any other: another rename won and stands, and the device drops its own.
 
-A device MAY forget the oldest `rename_id`s it keeps for one device; a roster holding a forgotten one reads as another
-rename's. Either way, a device shows its user the label its roster holds.
+A device MAY forget the oldest `rename_id`s it keeps for one device, as long as it keeps the newest it keeps as written
+and the newest it keeps as replaced. A roster holding a forgotten one reads as another rename's, so the device drops its
+rename rather than make it again over one it cannot place. Either way, a device shows its user the label its roster
+holds.
 
 ### Heartbeats
 
@@ -621,26 +627,34 @@ reads it, carries a device tag that reads as that sibling's
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
 roster's `leaf_tag_key`, names a slot that is a device in the roster, and verifies under that entry's
 `tag_signature_key`. A heartbeat from an earlier epoch, from an unclaimed leaf, or from a leaf whose tag names a
-`removed` slot counts for no device; that sibling's next heartbeat counts instead. A receiver enforces no rate: every
-heartbeat that meets these rules counts.
+`removed` slot counts for no device; that sibling's next heartbeat counts instead. A device that reads a sibling's
+heartbeats only after it has applied a later Commit, as when it catches up after an absence, therefore counts none of
+them, and can show that sibling as inactive until it sends again ([Inactive devices](#inactive-devices)). A receiver
+enforces no rate: every heartbeat that meets these rules counts.
 
 A receiver does not read a heartbeat's content, so that a later version can add to it without older devices dropping
 its heartbeats and judging its sender inactive.
 
-**Last activity.** A device keeps, for each sibling, the time of the newest heartbeat that counted for it: the
-heartbeat's `created_at`, or the time the device read it if that is earlier. A heartbeat delivered late never makes a
-sibling look active later than it was, and a sender's clock never dates activity after it was read. Each device keeps
-its own; nothing about it is written to the roster.
+**Last activity.** A sibling's last activity is the latest, over the heartbeats that counted for it, of each
+heartbeat's `created_at` or the time the device read it, whichever is earlier, in seconds since the Unix epoch. A
+heartbeat only ever moves it later. A heartbeat delivered late never makes a sibling look active later than it was, and
+a sender's clock never dates activity after it was read. A sender whose clock runs behind looks less recently active
+than it is, which errs toward showing it inactive, never toward hiding a sibling that stopped. A device keeps each
+sibling's last activity, and when it first found that sibling in its roster, across restarts. Each device keeps its own;
+nothing about it is written to the roster.
 
 ### Inactive devices
 
-A device treats a sibling as inactive once 30 days have passed, by its own clock, since that sibling's last activity or
-since the device first found that sibling in its roster, whichever is later. A device that has just joined the device
-group, or a sibling that was just linked, therefore gets 30 days before it shows as inactive. A device never treats
-itself as inactive. A device SHOULD show its user which siblings are inactive.
+A device treats a sibling as inactive once 30 days have passed, by its own clock, since the later of that sibling's last
+activity and when the device first found that sibling in its roster, or, while no heartbeat of the sibling has
+counted, since it first found it. A device that has just joined the device group, or a sibling that was just linked,
+therefore gets 30 days before it shows as inactive. A device never treats itself as inactive. A device SHOULD show its
+user which siblings are inactive.
 
-A device that comes back after a long absence sees every sibling as inactive until the heartbeats sent meanwhile
-arrive. It MUST NOT record a sibling as inactive in the roster on that view alone. Recording the roster's `inactive`
+This judgment only decides what a device shows. A device that comes back after a long absence sees siblings as inactive
+until they send heartbeats it counts ([Heartbeats](#heartbeats)), so its view says little about who is still running. A
+device MUST NOT set a device entry's status to `inactive`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it. When a device records that
 status, and removing a device after a longer absence, are not specified yet.
 
 ## Security considerations
