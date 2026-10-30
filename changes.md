@@ -33,6 +33,30 @@ as unread. [features/encrypted-media.md](./features/encrypted-media.md) and
 [features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
 exporter secret, to its own account's devices in a bundle. Clients that do not support device groups change nothing.
 
+## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
+
+[#459](https://github.com/marmot-protocol/marmot/pull/459) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[foundation/key-packages.md](./foundation/key-packages.md) and [foundation/registries.md](./foundation/registries.md).
+
+- A device in a device group names each KeyPackage in its own roster entry (`announced_key_package`) before that
+  KeyPackage reaches its slot, publishes only once the Commit carrying the announcement is in its group state, and
+  never publishes an unannounced KeyPackage. The creating device's founding entry announces the KeyPackage it last
+  published, as the founding Add announces the linked one. A client should tell its user while a refresh is held back
+  for want of an announcement.
+- Every device, in a device group or not, now reads its own slot at start and about daily. A current publication
+  there other than its own latest, valid or not, is replaced by a newer KeyPackage of its own.
+- Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
+  sibling's add; until sibling adds are specified, a device rejects any Welcome that consumes one. A device tops a
+  sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off (kind `460`), both new, travel
+  only in the device group. A receiver keeps a hand-off only if every KeyPackage in it is its own account's, not
+  last-resort and unexpired, and carries a device tag that reads as the sender's. It reads either message only when the
+  sending leaf's device tag reads as the `from` slot the message names. A device may cap what it keeps for a sibling, at
+  no fewer than 300, and never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones again,
+  without renewing them, and a holder never keeps one it has already used.
+- Devices without a device group publish as before.
+
 ## 2026-10-30: Small-state sync between an account's devices (draft)
 
 [#466](https://github.com/marmot-protocol/marmot/pull/466) adds [features/account-sync.md](./features/account-sync.md)

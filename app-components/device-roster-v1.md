@@ -115,7 +115,8 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `announced_key_package` is the `KeyPackageRef` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.2) of
   the KeyPackage the device announced for its slot, if it announced one. A `KeyPackageRefV1` holds the raw output of
   `MakeKeyPackageRef` under the KeyPackage's ciphersuite, without the length prefix MLS gives a `HashReference`: 32
-  bytes under ciphersuite `0x0001`.
+  bytes under ciphersuite `0x0001`. See [../features/device-group.md](../features/device-group.md), "Slot
+  announcements".
 - `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
   group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it.
 - `history_key` is the device's history key: the public key its siblings seal chat history to
