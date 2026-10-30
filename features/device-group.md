@@ -108,11 +108,12 @@ has none yet. It would not link the KeyPackage when:
 A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
 lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
 Cancel `cannot_link`, so the new device stops waiting, unless the slot is already a device in its roster or the slot or
-KeyPackage is rejected. When the slot is already a device in its roster, it MUST NOT send it, even when the new device's
-client lacks support or the roster is full: that device may be moving to another device group ([Moving to another device
-group](#moving-to-another-device-group)), and a Cancel from any device ends its session. When the slot or KeyPackage is
-rejected, it SHOULD NOT send it either, in any of those cases: a Cancel would tell whoever holds the account's signing
-key that the user noticed, and a device the user rejected by mistake stops waiting when its session expires.
+KeyPackage is rejected. When the slot is already a device in its roster, it MUST NOT send it, whatever else holds: that
+device may be moving to another device group ([Moving to another device group](#moving-to-another-device-group)), and a
+Cancel from any device ends its session. When the slot or KeyPackage is rejected, it SHOULD NOT send it, whatever else
+holds, including when the new device's client lacks support or the roster is full: a Cancel would tell whoever holds the
+account's signing key that the user noticed, and a device the user rejected by mistake stops waiting when its session
+expires.
 
 ### Approving
 
@@ -213,8 +214,8 @@ selection keeps the new device's first Commit and drops that removal, the link i
 
 A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
 group, unless that group is one it joined to move and its move is not made yet; it then trusts the group it was moving
-from again ([Moving to another device group](#moving-to-another-device-group)). Either way it stops trusting the group
-that removed it and MUST discard the active state of its copy, which a removed member may do
+from again if it is still a member there ([Moving to another device group](#moving-to-another-device-group)). Either way
+it stops trusting the group that removed it and MUST discard the active state of its copy, which a removed member may do
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
 group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
@@ -242,9 +243,13 @@ that Commit. While its session runs and while its link waits for its Welcome, th
 old one but the update that marks it moved ("Leaving the old group" below). Its move is made once its first Commit in
 the new group ("Matching leaves to devices") is on the selected branch of its state for that group and it holds no
 unprocessed input for the group. If a Commit removes it from the new group before then ("A link that is not taken up"),
-the move has failed: it discards the new group's active state, as for any removal from a device group, keeps its copy of
-the old group, trusts that group again as it did before it moved, and tells its user. A removal from the new group after
-the move is made is an ordinary removal, after which the device has no device group.
+the move has failed: it discards the new group's active state, as for any removal from a device group, and tells its
+user. It then brings its copy of the old group up to date, processing every Commit for that group it can fetch until it
+holds no unprocessed input for the group. If it is still a member, it trusts that group again as it did before it moved.
+If a Commit removed it there meanwhile, it discards that copy too and has no device group. A removal from the new group
+after the move is made is an ordinary removal, after which the device has no device group. The device keeps, across
+restarts, that it joined the new group to move, which group it moved from, and whether its move is made; once it is
+made, it keeps until it is done that it still owes the update in "Leaving the old group" below.
 
 From the time it joins, the moving device does not list its old roster's other devices as sign-ins to answer
 ([Answers](#answers)). It SHOULD show them to its user with the labels its old roster gave them, as devices still in its
@@ -262,6 +267,8 @@ is then listed as a sign-in.
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). It leaves out:
 
 - an entry whose key the new roster already holds;
+- a rejected KeyPackage that a device entry of the new roster names as its `announced_key_package`. The device tells its
+  user, as for a rejected slot below;
 - a rejected slot whose slot the new roster holds as a device. The user confirmed linking that device in the new group,
   and a confirmed link ends a rejection ("Answers"). The device tells its user which device its old group rejected and
   the new group links, so that the user can remove it if the rejection was meant.
@@ -273,14 +280,22 @@ nothing else. The old roster's devices are not linked in the new group; each mov
 Its leaves in other groups carry tags sealed under the old group's `leaf_tag_key`, which do not read as its own under
 the new group's key, so it replaces them as any device replaces an untagged leaf
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). It SHOULD publish a new
-KeyPackage, tagged under the new key, once its move is made.
+KeyPackage, tagged under the new key, once its move is made and its `moved` update is on the selected branch of its copy
+of the old group, or it is no longer a member there ("Leaving the old group" below), so that the old group's devices see
+it move before they see that KeyPackage.
 
 **Leaving the old group.** A device cannot commit its own removal
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Removal by another device of the same
 account"), and a SelfRemove cannot write the roster, so a sibling in the old group removes it. Once its move is made,
 the device commits, in its old group, a roster update that sets the `status` of its own entry to `moved`
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State" and "Update"). A device sets
-`moved` only this way, and only on its own entry. It commits the update again when its Commit fails or a branch
+`moved` only this way, and only on its own entry. That Commit, and each retry, keeps its leaf readable as its own to the
+old group's devices: if the Commit replaces its LeafNode there, the new LeafNode keeps the same signature key and the
+same device tag, sealed under the old group's `leaf_tag_key`
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), and not one under its new
+group's key. Under its new group's key that leaf no longer reads as its own, but the device does not replace it there
+for that reason ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"): this
+update is the only Commit it makes in the old group. It commits the update again when its Commit fails or a branch
 selection drops the update, until that update is on the selected branch of its copy of the old group and it holds no
 unprocessed input for that group, or until it is no longer a member of the old group, for example because a sibling
 removed it first. It then stops reading the old group and discards the active state of its copy, as a removed member may
@@ -348,7 +363,9 @@ A slot that counts is an unrecognized sign-in unless it is:
 - the device's own slot;
 - the slot of a device in the roster of its trusted device group ([Trust](#trust));
 - a rejected slot in that roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-  "State") or among the rejections the device keeps itself ([Answers](#answers)).
+  "State") or among the rejections the device keeps itself ([Answers](#answers));
+- after the device moved from another device group, a slot it still shows as a device of that group ([Moving to another
+  device group](#moving-to-another-device-group)).
 
 A device with no device group has no roster, so it recognizes only its own slot and its own rejected slots. A rejected
 KeyPackage does not make another slot rejected: whoever holds the account's signing key can copy any published

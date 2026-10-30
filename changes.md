@@ -23,17 +23,21 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   A device that trusts a device group may now run a pairing session as a new device; its own siblings never answer it,
   so it links into the answering device's group, joins as any new device does, and trusts that group from then on
   instead of its old one. A device trusts one device group at a time. If the new group removes it before its first
-  Commit there lands, it discards that group and trusts its old group again. From the time it joins, it does not ask its
-  user about its old siblings as sign-ins, but shows them as devices still to move, until its new roster first lists
-  each of them.
+  Commit there lands, it discards that group and trusts its old group again, if it is still a member there. It keeps the
+  state of its move across restarts. From the time it joins, it does not ask its user about its old siblings as
+  sign-ins, but shows them as devices still to move, until its new roster first lists each of them; such a slot is not
+  an unrecognized sign-in.
 - Once its move is made, the device copies its old roster's rejected slots and rejected KeyPackages into the new roster,
-  keeping `rejected_at`. It leaves out entries the new roster already holds and rejected slots that the new roster holds
-  as devices, since a confirmed link ends a rejection, and tells its user about those.
+  keeping `rejected_at`. It leaves out entries the new roster already holds, rejected slots that the new roster holds as
+  devices, and rejected KeyPackages that a new roster entry announces, since a confirmed link ends a rejection, and
+  tells its user about those.
 - It then sets its own roster entry's `status` to `moved` in its old group, a new `DeviceStatusV1` value, committing
   again until that update is on the old group's selected branch or it is no longer a member there, and discards its
-  copy. A device that trusts the old group and holds a `moved` entry removes that device's leaf and roster entry in one
-  Commit, writing no rejected slot and removing nothing from chats, so the slot is a sign-in again there. While the
-  roster component is a draft, its encoding can change under `0x800e`, with no promise that revisions work together.
+  copy. That Commit keeps its leaf tagged under the old group's key, and the device publishes a new KeyPackage only once
+  it has landed. A device that trusts the old group and holds a `moved` entry removes that device's leaf and roster
+  entry in one Commit, writing no rejected slot and removing nothing from chats, so the slot is a sign-in again there.
+  While the roster component is a draft, its encoding can change under `0x800e`, with no promise that revisions work
+  together.
 - An existing device MUST NOT send Cancel `cannot_link` to a request from a slot that is already a device in its roster,
   which may be a sibling moving away, even when the roster is full or the new device's client lacks support. It SHOULD
   NOT send it for a rejected slot or KeyPackage in any case, where it was MAY. The pairing new-device role now includes
