@@ -32,7 +32,8 @@ Drafts are not small state: a draft belongs to the device it was typed on.
 
 Small state is a set of items. An item is one setting of one chat, named by the chat and the item's name. The chat is
 the group's MLS group id ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)), never a transport
-routing id.
+routing id. Small state covers only chats whose MLS group id is at most 256 bytes long, so that every item fits in one
+update; a device holds, sends and merges no item for another chat.
 
 | Item      | What it holds                                   | Which value wins                   |
 | --------- | ----------------------------------------------- | ---------------------------------- |
@@ -42,11 +43,13 @@ routing id.
 | `archive` | whether the chat is archived                    | the highest version, then the tie-break |
 
 **Read positions.** A read position names one message of the chat: a Marmot app event
-([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat. A device never
-sends a position naming an edit (kind `1009`) or a row a client synthesizes locally, such as a kind `1210` group system
-row; a receiver cannot tell what a position names before it holds that message, so it judges a position by its
-encoding alone. A read position carries no version or change id. Positions are in chat order, which compares, in this
-order:
+([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, other than an
+edit (kind `1009`). A row a client synthesizes locally, such as a kind `1210` group system row, is not a delivered
+message, so no position names one. The position a device takes from its own state names the furthest such message its
+user has read; when the user's furthest row is an edit or a synthesized row, it is the furthest message before that
+row. A receiver cannot tell what a position names before it holds that message, so it takes any position whose
+encoding is valid, whatever the message turns out to be, and never reconsiders it. A read position carries no version
+or change id. Positions are in chat order, which compares, in this order:
 
 1. the MLS epoch the message was sent in;
 2. its `created_at`;
@@ -75,8 +78,9 @@ the sender nor any clock decides it. A setting turned back off, such as a chat u
 keeps its version.
 
 A version is at most 9007199254740991. A device that holds an item at that version cannot give a change a higher one,
-so its user cannot change that item: the device puts the held value back. Each change adds one to a version, so no
-device that follows these rules comes near that number ([Security considerations](#security-considerations)).
+so its user cannot change that item: the device puts the held value back. Values at that version still compare by
+change id and value like any others, so every device keeps picking the same winner. Each change adds one to a version,
+so no device that follows these rules comes near that number ([Security considerations](#security-considerations)).
 
 How a device orders its pinned chats is its own: a chat that becomes pinned through small state goes where the device
 puts newly pinned chats.
@@ -113,7 +117,7 @@ object:
 
 | Member    | Value |
 | --------- | ----- |
-| `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix |
+| `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so at most 512 characters |
 | `item`    | the item's name: `read`, `pin`, `mute` or `archive` |
 | `value`   | the item's value, below |
 | `version` | for `pin`, `mute` and `archive` only: the version |
@@ -182,7 +186,8 @@ devices, so any member's message counts; a device does not need to tell which si
   items with the same `chat` and `item`.
 - In an update it keeps, it checks each item on its own. It skips an item whose `item` it does not know, so a later
   version can add items without older devices dropping the update, and it skips an item that breaks the rules above.
-  It merges every other item, whether the update was sent for a change or in a broadcast.
+  It judges a read position by its encoding alone ([Items](#items)). It merges every other item, whether the update
+  was sent for a change or in a broadcast.
 - It answers a broadcast request as [Broadcasts](#broadcasts) says.
 
 A device reads small state from its device group whether or not it is in the chat an item names.
@@ -209,8 +214,9 @@ so no device moves it back; a later position moves it again once that one is fur
   MUST NOT publish a group id it learned this way through a transport envelope, and an item is not evidence that the
   device is, or may become, a member of that chat.
 - Any device of the account can set any item, including a stolen linked device until it is removed. A device that sends
-  an item at the largest version, 9007199254740991, fixes that item's value on every device for good: no later change
-  can beat it, and removing the device does not undo it. A read position that names a message no device holds can mark
-  a whole chat as read. A broadcast request makes every sibling broadcast, at most once an hour each. A linked device
+  an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good:
+  no change a user makes can beat it, and removing the device does not undo it. Only another value at that version can
+  still replace it, by the tie-break. A read position that names a message no device holds can mark a whole chat as
+  read. A broadcast request makes every sibling broadcast, at most once an hour each. A linked device
   can already read and send in the account's chats; these let it also fix or change their settings.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
