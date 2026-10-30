@@ -7,10 +7,11 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, how clients keep it out
-of sight, how the account's devices notice a new sign-in, how each device announces the KeyPackages it publishes, and
-how devices hand each other private KeyPackages. Linking, adding a sibling to a chat, the group's other messages, and
-removal are not specified yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
+into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
+the KeyPackages it publishes, and how devices hand each other private KeyPackages.
+[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. Adding a sibling
+to a chat, the group's other messages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -20,6 +21,8 @@ removal are not specified yet.
   tells the account's devices which of its leaves in any group belongs to which device.
 - App component: [marmot.group.account-devices.v1](../app-components/account-devices-v1.md) (`0x800d`), which a device
   group requires under the ordinary creation rule.
+- Feature: [device-pairing.md](./device-pairing.md), the exchange that authenticates a new device before it is
+  linked.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
@@ -34,7 +37,8 @@ A device group is a group whose GroupContext `app_components` required list cont
 devices of one account and no others ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
 "Requirement").
 
-An account has no device group while it has one device. The device group is created when a second device is linked.
+An account has no device group while it has one device. A device that trusts no device group creates one when it
+approves a link ("Creating the device group").
 
 The marker never makes a group trusted. Anyone holding the account's signing key can create a group that requires
 `0x800e` and send a Welcome for it to the account. A device acts on a group as its device group only under the trust
@@ -42,11 +46,14 @@ rule below.
 
 ## Creating the device group
 
-The device that approves a link creates the device group, if its account has none, and adds the newly linked device in
-the founding Add:
+The device that approves a link creates the device group if it trusts none yet ("Trust"), and adds the newly linked
+device in the founding Add:
 
-- The founding state requires `0x800e` and carries a roster with an entry for the creating device and one for the
-  linked device.
+- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the creating
+  device, with the rejections it already holds ("Answers"), which never name the linked device's slot ("Before
+  answering"). The founding Add sets the linked device's roster entry, as every later Add sets the entry of the device
+  it adds. The creating device's entry has the "add to all my chats" and "bring chat history" settings on, as a new
+  device's are unless its user turns them off ("Approving").
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -55,14 +62,15 @@ the founding Add:
   publications. This is narrower than the founding exemption in
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), which lets a
   creator add its own account's published KeyPackages to a new group. A device group never relies on that exemption.
-- The founding roster announces a KeyPackage for both devices ([Slot announcements](#slot-announcements)): the linked
-  device's entry sets `announced_key_package` to the `KeyPackageRef` of the KeyPackage the link confirmed, and the
-  creating device's entry sets it to the `KeyPackageRef` of the KeyPackage the creating device generated and last
-  published to its own slot, if any, whatever the slot serves now.
+- The creating device's entry in the founding state sets `announced_key_package` to the `KeyPackageRef` of the
+  KeyPackage the creating device generated and last published to its own slot, if any, whatever the slot serves now
+  ([Slot announcements](#slot-announcements)). The founding Add sets the linked device's to the KeyPackage the link
+  confirmed ("Approving").
 
-A Commit that adds a device to the device group or removes one also writes that device's roster entry, so each change of
-membership and its record are one decision. Such a Commit carries an AppDataUpdate, so it is `privileged` in branch
-selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
+A Commit that adds a device to the device group or removes one, the founding Add included, also writes that device's
+roster entry, so each change of membership and its record are one decision. Such a Commit carries an AppDataUpdate, so
+it is `privileged` in branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate
+branches").
 
 These are sender rules. A receiver cannot tell where a KeyPackage came from, so it does not reject a Commit or a
 Welcome for breaking them.
@@ -72,12 +80,145 @@ Welcome for breaking them.
 A device treats a group as its device group only if:
 
 - it created the group itself, as above; or
-- it joined the group through a Welcome for the group that a confirmed link named.
+- it joined the group through the Welcome a confirmed link named: into the group the link named, from the leaf whose
+  signature key the link named, for the KeyPackage the link confirmed ([device-pairing.md](./device-pairing.md), "New
+  device", step 5), and the group requires `0x800e`.
 
-A device MUST NOT join a group that requires `0x800e` through any other Welcome, and decides that before it joins.
+A device MUST NOT join a group that requires `0x800e` through any other Welcome, and decides that before it joins, so
+a refused Welcome uses up neither the KeyPackage nor the group id ("Joining"). The group id alone proves nothing:
+anyone holding the account's signing key can read it in the existing device's Confirm and found a group under it.
 
 A device records which group it trusts as its device group when it creates or joins it, and does not infer it later
 from group state.
+
+## Linking a device
+
+A device is linked through [device pairing](./device-pairing.md), which ends in a confirmed link: the new device's exact
+`KeyPackageRef`, the id of the group the existing device adds it to, and the signature key of the existing device's
+leaf in that group. This section covers what each device does around that exchange.
+
+### Before answering
+
+An existing device answers a pairing request only if it is not running a session as a new device itself or keeping a
+link that waits for its Welcome ("Joining"), and only if it would link the KeyPackage the request names
+([device-pairing.md](./device-pairing.md), "Existing device", step 2). It answers whether it trusts a device group or
+has none yet. It would not link the KeyPackage when:
+
+- the KeyPackage's slot is already a device in its roster, the roster rejects that slot or that KeyPackage, or the
+  device rejected that slot itself ("Answers");
+- the KeyPackage does not support everything its device group requires, or, when it has no device group, everything
+  the device group it would create will require;
+- its roster already lists `max_leaves_per_account` devices, the most a roster holds
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation").
+
+A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
+lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
+Cancel `cannot_link`, so the new device stops waiting. When the slot or KeyPackage is rejected, it MAY send it.
+
+### Approving
+
+On the existing device, the user who confirms the link also names the new device and sets its "add to all my chats"
+and "bring chat history" settings ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State"). Both settings are on unless the user turns them off. The device's Confirm names:
+
+- the device group it trusts, if it has one, with the signature key of its own leaf there;
+- otherwise a fresh group id of 16 random bytes, for the device group it will create, with the signature key it will
+  create the group with.
+
+The new device accepts only a Welcome whose `GroupInfo` that key signs ("Joining"). So that key MUST still be the
+signature key of the device's own leaf in the epoch the Welcome joins: the device does not change it there until the
+Commit that adds the new device, founding Add included, and that Commit's UpdatePath keeps it.
+
+Once the link is confirmed, the device adds the new device:
+
+- to the device group it trusts, by one Commit that adds exactly the confirmed KeyPackage and sets the new device's
+  roster entry; or
+- with no device group, by creating it under the group id its Confirm named ("Creating the device group").
+
+The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
+device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no `tag_signature_key`: the
+new device sets that itself ("Matching leaves to devices"). That Commit, or the founding Add, is the approval. Its
+Welcome is sent as for any other Add.
+
+The approving device treats the link as made once the new device's first Commit in the device group, which sets the
+`tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
+group, and it holds no unprocessed input for the group. Neither the approving Commit's publication nor its Welcome's
+delivery shows that the new device joined; only a Commit from the new device's own leaf does. Once made, a link stays
+made. Until then, anything that acts on the new device as a member of the account waits, and the link can still fail
+("A link that is not taken up").
+
+A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
+a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
+same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage. That
+Commit is a same-account Add with the roster update, which the account commits as the group's only admin
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Authorization"); it is never a
+same-account Commit, whose shape cannot carry the roster update. A device never adds a KeyPackage there that no
+confirmed link named, by an invite or otherwise, and so never re-invites a member whose founding Welcome could not be
+delivered with a fresh KeyPackage ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md),
+"Publish obligation"). It never commits an Add proposal by reference there.
+
+A device that cannot commit the link at once, because the device group has a Commit still settling, MAY try again, but
+not once the new device has stopped waiting for its Welcome ("Joining"). It counts that wait from when the new device's
+Confirm arrived. A Confirm delayed on its way can still lead to an Add the new device refuses; that link is then not
+taken up ("A link that is not taken up"). It does not hold the link for later.
+
+Approval by any one device of the account is enough. Another device that showed the same request stops offering Link
+once the new device's entry is in its roster, and shows the labels of the new device and of the device that added it.
+
+### Joining
+
+By the time it sends its Confirm, the new device has recorded the link: the pairing session's id, the confirmed
+`KeyPackageRef`, the group id, the signature key of the sender's leaf, and when its wait ends. It keeps that record
+across restarts until the link ends, so that after a restart has erased the session's secrets it can still check a
+Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
+whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
+group requires `0x800e`, and on joining records the group as its device group ("Trust"). While it waits, the group id is
+reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The confirmed
+KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite to a chat
+built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the group id for
+the real one, so a forged Welcome that arrives first does not make the link fail.
+
+A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
+confirmed, so a Welcome sent under an earlier link never matches a later one. The link ends, and the device accepts no
+Welcome under it, once:
+
+- it joins through the link's Welcome;
+- its wait ends, 600 seconds after it sent its Confirm;
+- a Cancel for the link's session arrives, whether or not the device still holds that session
+  ([device-pairing.md](./device-pairing.md), "Every session"); or
+- it confirms a newer link, which replaces this one. Starting a new pairing session does not end the link; confirming
+  one does.
+
+This is the only limit on how long a new device waits for its Welcome. It decides before joining. A Cancel after it has
+joined changes nothing: it keeps its device group and its leaf there. Once the link has ended, a Welcome into its group
+is one no link expects, refused if the group requires `0x800e`, and linking again starts a new pairing session. A device
+that has a device group does not run a pairing session as a new device: joining a second device group, which merging
+two device groups would need, is not specified yet.
+
+### A link that is not taken up
+
+The approving device, the one the new device's entry names in `linked_by`, waits for the new device's first Commit until
+3600 seconds after the `linked_at` it wrote in that entry, so the deadline survives its restarts. That leaves the new
+device time to commit after the holds that can delay a device that has joined, such as a Commit still settling in the
+device group or one of its own still unconfirmed, and after a short suspension right after it joined. The new device
+makes that Commit as soon as it can once it has joined: this deadline, not the general post-join guidance
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), bounds it. Until the deadline the slot
+is a device in the roster, so a new request from it is not answered ("Before answering").
+
+If the link is not made by then, the approving device first processes the input it holds for the group. If the new
+device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
+acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
+link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
+selection keeps the new device's first Commit and drops that removal, the link is made after all.
+
+A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
+group. It stops trusting the group and MUST discard the active state of its copy, which a removed member may do
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
+group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
+refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
+failed, and links again only through a new pairing session.
 
 ## Keeping it out of sight
 
@@ -179,7 +320,7 @@ when it appeared, and when it last published, until the user links or rejects it
 with each sign-in's answer and whether it is still signed in, so a restart neither drops a sign-in nor asks again about
 one the user put off. Like the roster, the list is shown only to the account's own user. The answers are:
 
-- **Link:** starts linking that slot's device, which is not specified yet.
+- **Link:** starts linking that slot's device ([Linking a device](#linking-a-device)).
 - **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
 - **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
   a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
@@ -202,8 +343,7 @@ the slot's leaves from chats, are not specified yet.
 
 A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
 device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
-it leaves out, and forgets, a rejection of a slot the roster holds as a device, such as the one just linked, and keeps
-the others as above.
+it leaves out, and forgets, a rejection of a slot the roster holds as a device, and keeps the others as above.
 
 ### Any one device's answer
 
@@ -232,18 +372,22 @@ complete check decides whether a slot holds a KeyPackage.
 Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
 belongs to which device. Each linked device tags its leaves instead
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md)), and a device that holds the roster reads
-those tags in the groups it is in. Nothing about other groups is written to the device group, so joining a group,
-leaving one, or replacing a leaf there never commits to it.
+those tags in the groups it is in. No roster commit records anything about other groups, so joining a group, leaving
+one, or replacing a leaf there never commits to the device group. Small-state messages
+([account-sync.md](./account-sync.md)) do name other groups, by MLS group id; that document's security considerations
+cover what this discloses.
 
 - Each device makes its own tag signature key pair and keeps the private key to itself.
 - The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
   `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
-- A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit
-  there, its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step
-  14), which it SHOULD make as soon as it has joined. That Commit also replaces its leaf in the device group with one
-  tagged under that key ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags").
-  Until then its leaf there is unclaimed, like any untagged leaf. A group where it made its post-join self-update
-  before then gets a tagged leaf later.
+- A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
+  its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
+  it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
+  joined, and removes it if it has not made it in time ("A link that is not taken up"). That Commit also replaces its
+  leaf in the device group with one tagged under that key
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
+  there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
+  leaf later.
 
 What the devices do with what they find (adding a sibling to a group it is missing from, removing a removed device's
 leaves, warning about a leaf no device claims) is not specified yet.
@@ -268,9 +412,9 @@ names, from a publication in the slot that the device did not make.
   calls for, or a replacement its "A publication the device did not make" calls for, is held back this way, a client
   SHOULD tell its user, so that a device whose device group stays unwritable does not quietly become one that new
   chats cannot add.
-- The founding roster announces the KeyPackage the link confirmed and the one the creating device last published, if any
-  ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before it publishes one of
-  those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
+- The founding state announces the KeyPackage the creating device last published, if any, and the founding Add the one
+  the link confirmed ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before
+  it publishes one of those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
 - A device with no device group publishes as before.
 
 The roster keeps one announcement per device. Between an announcement and its publication, while some relays still serve
@@ -414,7 +558,19 @@ KeyPackage's `not_after`, and keeps the rest of such a hand-off.
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
-  control. Requiring `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
+  control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
+  `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
+- Between the existing device's Confirm and the new device's own, neither the group id nor the KeyPackage is reserved
+  yet. A Welcome in that window into a group that does not require `0x800e`, under that id or adding the KeyPackage,
+  joins as an ordinary group, and the link then fails because the id is taken or the KeyPackage used up. A Welcome into
+  a group that requires `0x800e` is still refused, since no link names it yet, and uses up neither. This is denial of
+  service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security considerations").
+- A device that trusts no device group cannot see one that another device of the account already has, such as one linked
+  from another sign-in. When it approves a link it founds a second device group. Merging two device groups is not
+  specified yet ("Joining").
+- Holding the account's signing key never authenticates a device. A device enters the device group only under a link
+  whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
+  under the account is not enough.
 - A new sign-in is only ever a question. Holding the account's signing key lets anyone publish into a new slot, but a
   sign-in never links itself: only a link the user confirms adds a device.
 - A device that gains these rules while someone holding the account's signing key is already signed in finds that

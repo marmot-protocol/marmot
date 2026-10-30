@@ -533,9 +533,10 @@ the roster and no new permission rule is needed.
 
 **Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
 private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. Invite decisions travel as
-small state, which has its own versions and snapshots ([account-sync.md](./account-sync.md)). The
-sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
-roster versus message: anything a device linked later needs to know goes in the roster.
+small state ([account-sync.md](./account-sync.md)), which has its own versions and recovery
+([../features/account-sync.md](../features/account-sync.md)). The sender is already identified by its leaf in the
+device group, so messages need no device identifier tag. The rule for roster versus message: anything a device linked
+later needs to know goes in the roster, except small state, which every device sends again from time to time.
 
 **When a message is lost.** A device that is offline longer than the retention window can lose device-group messages
 for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)). There are no receipts for
@@ -548,7 +549,8 @@ that effect once the receiver is back online sends again:
   meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
 - **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
   does. That request is the repair.
-- **History and small state** recover the same way ([account-sync.md](./account-sync.md)).
+- **History** recovers the same way ([account-sync.md](./account-sync.md)). Small state does not: every device sends
+  everything it holds again from time to time ([../features/account-sync.md](../features/account-sync.md)).
 
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
 account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
@@ -556,9 +558,10 @@ puts a device tag in every leaf it creates, including the leaf in each of its Ke
 slot, is signed by that device's own key, and is sealed under a key that only the account's devices hold. A removed
 device keeps that key, so in a chat it is still in it can still tell which leaf is whose. A sibling opens the tags on
 the account's leaves in each chat it is in. Other chat members see bytes they cannot read, different in every
-KeyPackage. Nothing about the chats is recorded in the device group, so joining a chat, leaving
-one, or rotating a key there never commits to it. A leaf created before its device was linked has no tag; the device
-tags it with its next update in that chat.
+KeyPackage. No roster commit records anything about the chats, so joining a chat, leaving one, or rotating a key there
+never commits to the device group; small-state messages do name chats
+([../features/account-sync.md](../features/account-sync.md)). A leaf created before its device was linked has no tag;
+the device tags it with its next update in that chat.
 
 **Private KeyPackage upkeep.** Private KeyPackages expire like public ones. A device replaces a sibling's allocation
 when it is halfway to expiry, and expired private KeyPackages are simply discarded. A device coming back after a long
