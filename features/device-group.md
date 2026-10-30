@@ -116,6 +116,10 @@ and "bring chat history" settings ([../app-components/device-roster-v1.md](../ap
 - otherwise a fresh group id of 16 random bytes, for the device group it will create, with the signature key it will
   create the group with.
 
+The new device accepts only a Welcome whose `GroupInfo` that key signs ("Joining"). So that key MUST still be the
+signature key of the device's own leaf in the epoch the Welcome joins: the device does not change it there until the
+Commit that adds the new device, founding Add included, and that Commit's UpdatePath keeps it.
+
 Once the link is confirmed, the device adds the new device:
 
 - to the device group it trusts, by one Commit that adds exactly the confirmed KeyPackage and sets the new device's
@@ -200,11 +204,12 @@ link's Welcome. The slot is then a sign-in again ("Any one device's answer"), an
 selection keeps the new device's first Commit and drops that removal, the link is made after all.
 
 A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
-group. It stops trusting the group and discards its copy of it, as a removed member may
-([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), so that a later
-link's Welcome into the same group id is a first join ([../protocol-core/joining.md](../protocol-core/joining.md),
-"Receiving flow"). If its first Commit there was never on the selected branch, it was not linked: it tells its user that
-linking failed, and links again only through a new pairing session.
+group. It stops trusting the group and MUST discard the active state of its copy, which a removed member may do
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
+group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
+refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
+failed, and links again only through a new pairing session.
 
 ## Keeping it out of sight
 
@@ -384,10 +389,10 @@ leaves, warning about a leaf no device claims) is not specified yet.
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
 - Between the existing device's Confirm and the new device's own, neither the group id nor the KeyPackage is reserved
-  yet. A Welcome in that window under that id, into a group that does not require `0x800e`, or one that adds the
-  KeyPackage, joins as an ordinary group, and the link then fails because the id is taken or the KeyPackage used up.
-  This is denial of service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security
-  considerations").
+  yet. A Welcome in that window into a group that does not require `0x800e`, under that id or adding the KeyPackage,
+  joins as an ordinary group, and the link then fails because the id is taken or the KeyPackage used up. A Welcome into
+  a group that requires `0x800e` is still refused, since no link names it yet, and uses up neither. This is denial of
+  service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security considerations").
 - A device that trusts no device group cannot see one that another device of the account already has, such as one linked
   from another sign-in. When it approves a link it founds a second device group. Merging two device groups is not
   specified yet ("Joining").
