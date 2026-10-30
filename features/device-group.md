@@ -435,10 +435,14 @@ records the decision before it commits. While its copy of the group is terminal 
 discarded it, the removal waits. It commits only while it can commit in the device group, so a Commit there still in
 flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
 selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
-as a failed link, the decision stands. When its Commit fails, or branch selection drops the removal, even after the
-`removed` record has been dropped, the roster lists the slot again and the device commits the removal again. A removed
-device comes back only as a new slot. A removal committed again keeps the decision's time as `rejected_at`, so once that
-is 30 days past, the record goes at the next pass that drops old `removed` records
+as a failed link, the decision stands. That removal writes no `removed` record, so while it holds, the decision only
+deletes the slot: [Removing it from chats](#removing-it-from-chats) and [Its private
+KeyPackages](#its-private-keypackages) apply only while the roster records the slot as `removed`. Leaves the device got
+before its link failed, and private KeyPackages exchanged with it, stay; what a failed link leaves behind is not
+specified yet. When the removal's Commit fails, or branch selection drops the removal, even after the `removed` record
+has been dropped, the roster lists the slot again and the device commits the removal again. A removed device comes back
+only as a new slot. A removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past,
+the record goes at the next pass that drops old `removed` records
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
 
 ### The removed device's slot

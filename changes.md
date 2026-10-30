@@ -23,7 +23,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   device's leaf (the one whose tag reads as its slot) and carries `remove_device` and a `removed` rejected slot with
   the entry's `tag_signature_key`. A device whose entry has no `tag_signature_key` yet is not removed this way. The
   deciding device records the decision first, keeps it until it discards its copy of the device group, and commits
-  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
+  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`. If the entry
+  goes as a failed link instead, no `removed` record is written and the decision only deletes the slot.
 - The deciding device then deletes the removed device's KeyPackage slot once its settled device-group state no longer
   lists the device, and again after committing a removal that branch selection dropped: the one case where a device
   deletes a slot it did not create. It stamps the deletion as far ahead of its clock as it would date its own
