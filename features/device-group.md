@@ -567,7 +567,8 @@ A device entry's `label`, `client` and `platform`
 the devices apart.
 
 - Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
-  secure random source: both founding entries ("Creating the device group") and every linked device's ("Approving").
+  secure random source: the creating device's entry in the founding state, and the entry of every device added, by the
+  founding Add ("Creating the device group") or a later link ("Approving").
   Only a rename changes it afterwards, so no two entries share one, and an id a device kept can show up in the roster
   again only when a fork brings back an earlier state, which is what rename recovery below reads.
 - Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
