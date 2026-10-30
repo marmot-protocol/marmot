@@ -20,16 +20,17 @@ registers kinds `475` and `476` in [foundation/registries.md](./foundation/regis
 each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an update
 when the user changes one, and a broadcast of every item a device holds. Each item names its chat by raw MLS group id.
 Only chats whose MLS group id is at most 256 bytes have small state. The furthest read position wins, in chat order by
-epoch, `created_at` and `id`, and a receiver judges a position by its encoding alone; for the other items the highest
-version wins, then the lowest random change id, then the lowest value. A version stops at 9007199254740991, and no user
-can change an item held there. Each device broadcasts when it starts, at least every 24 hours, and whenever the device
-group's tip moves past the app-payload window since its last broadcast. A starting device also sends a broadcast
-request, which each sibling answers with one broadcast, at most once an hour. No device asks a particular sibling or
-tracks what its siblings hold. A device reads these kinds only in its trusted device group, from any member, drops a
-message with a repeated member name or item, skips item names it does not know, and keeps what a withdrawn message set.
-It resends the items of every withdrawn update it sent or merged, and a new broadcast request for every withdrawn one it
-sent or read. [features/device-group.md](./features/device-group.md) now says small-state messages name other groups and
-leaves them to the new document, and [ideas/account-sync.md](./ideas/account-sync.md) and
+epoch, `created_at` and `id`, a device's own position is the furthest message a position may name at or before what its
+user has read, and a receiver judges a position by its encoding alone; for the other items the highest version wins,
+then the lowest random change id, then the lowest value. A version stops at 9007199254740991, and no user can change an
+item held there. Each device broadcasts when it starts, at least every 24 hours, and whenever the device group's tip
+moves past the app-payload window since its last broadcast began. A starting device also sends a broadcast request,
+which each sibling answers with one broadcast, at most once an hour. No device asks a particular sibling or tracks what
+its siblings hold. A device reads these kinds only in its trusted device group, from any member, drops a message with a
+repeated member name or item, skips item names it does not know, and keeps what a withdrawn message set. It resends the
+items of every withdrawn update it sent or merged, and a new broadcast request for every withdrawn one it sent or read.
+[features/device-group.md](./features/device-group.md) now says small-state messages name other groups and leaves them
+to the new document, and [ideas/account-sync.md](./ideas/account-sync.md) and
 [ideas/multi-device.md](./ideas/multi-device.md) point to the feature for these rules. Clients that do not support
 device groups change nothing.
 

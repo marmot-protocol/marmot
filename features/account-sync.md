@@ -44,11 +44,7 @@ update; a device holds, sends and merges no item for another chat.
 
 **Read positions.** A read position names one message of the chat: a Marmot app event
 ([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, other than an
-edit (kind `1009`). A row a client synthesizes locally, such as a kind `1210` group system row, is not a delivered
-message, so no position names one. The position a device takes from its own state names the furthest such message its
-user has read; when the user's furthest row is an edit or a synthesized row, it is the furthest message before that
-row. A receiver cannot tell what a position names before it holds that message, so it takes any position whose
-encoding is valid, whatever the message turns out to be, and never reconsiders it. A read position carries no version
+edit (kind `1009`), whose epoch and `created_at` are each at most 9007199254740991. A read position carries no version
 or change id. Positions are in chat order, which compares, in this order:
 
 1. the MLS epoch the message was sent in;
@@ -56,11 +52,25 @@ or change id. Positions are in chat order, which compares, in this order:
 3. its `id`, as 32 bytes.
 
 Every device of the account sees the same values for the same message, so every device puts positions in the same
-order. A read position only moves forward: a device takes a received position when it holds none for that chat, or
-when the received one is further than the one it holds. A device marks as read every delivered message of the chat at
-or before the position it holds, including ones that reach it later; the position changes nothing else, so a message
-that never counts as unread, such as an edit, stays that way after it. A device may hold a position before it holds the
-message the position names.
+order.
+
+The position a device takes from its own state names the furthest message a position may name at or before the
+furthest row its user has read, or none when there is no such message. A client's transcript also holds rows no
+position names; for this rule each sits in chat order as follows:
+
+- an edit sits where the message it edits does, since an edit does not move that message
+  ([../foundation/application-messages.md](../foundation/application-messages.md));
+- a row the client synthesizes locally, such as a kind `1210` group system row, sits before every delivered message of
+  the epoch it is anchored to;
+- a message the device sent that is not delivered yet sits after every delivered message;
+- a delivered message whose epoch or `created_at` is larger than 9007199254740991 sits where those values put it.
+
+A receiver cannot tell what a position names before it holds that message, so it takes any position whose encoding is
+valid, whatever the message turns out to be, and never reconsiders it. A read position only moves forward: a device
+takes a received position when it holds none for that chat, or when the received one is further than the one it holds. A
+device marks as read every delivered message of the chat at or before the position it holds, including ones that reach
+it later; the position changes nothing else, so a message that never counts as unread, such as an edit, stays that way
+after it. A device may hold a position before it holds the message the position names.
 
 **Versioned items.** `pin`, `mute` and `archive` each carry a version and a change id:
 
@@ -165,9 +175,10 @@ device broadcasts:
 
 - when it starts ([Starting](#starting));
 - once 24 hours have passed since its last broadcast, by its own clock, or as soon as it runs again after that;
-- whenever the device group's canonical tip is more than `app_payload_past_epoch_limit` epochs past the tip at its last
-  broadcast. A message is lost to the app-payload window only as the tip moves, so this keeps a running device's latest
-  broadcast within reach of a sibling that lost earlier messages;
+- whenever the device group's canonical tip is more than `app_payload_past_epoch_limit` epochs past the tip at which
+  its last broadcast began. Every update of a broadcast goes out in that epoch or a later one, even when commits land
+  while it is being sent, and a message is lost to the app-payload window only as the tip moves, so this keeps every
+  update of a running device's latest broadcast within reach of a sibling that lost earlier messages;
 - in answer to a broadcast request, below.
 
 A device sends a broadcast request when it starts. It MAY send one at other times, such as when it comes back after a
@@ -214,9 +225,11 @@ so no device moves it back; a later position moves it again once that one is fur
   MUST NOT publish a group id it learned this way through a transport envelope, and an item is not evidence that the
   device is, or may become, a member of that chat.
 - Any device of the account can set any item, including a stolen linked device until it is removed. A device that sends
-  an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good:
-  no change a user makes can beat it, and removing the device does not undo it. Only another value at that version can
+  an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good: no
+  change a user makes can beat it, and removing the device does not undo it. Only another value at that version can
   still replace it, by the tie-break. A read position that names a message no device holds can mark a whole chat as
-  read. A broadcast request makes every sibling broadcast, at most once an hour each. A linked device
-  can already read and send in the account's chats; these let it also fix or change their settings.
+  read, and one at the largest epoch and `created_at` marks every later message read as well: positions never move back,
+  so removing the device does not clear it. A broadcast request makes every sibling broadcast, at most once an hour
+  each. A linked device can already read and send in the account's chats; these let it also fix or change their
+  settings.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
