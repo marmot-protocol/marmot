@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-30: Resending every held item after a withdrawn small-state update (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#470](https://github.com/marmot-protocol/marmot/pull/470) changes
 [features/account-sync.md](./features/account-sync.md).
 
 - A device that does not keep which items a withdrawn update carried may send every item it holds again instead of only
