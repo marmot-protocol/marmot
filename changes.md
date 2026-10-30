@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: History keys for an account's devices (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) gives the device roster's `history_key` its meaning in
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "History" section of
+[features/account-sync.md](./features/account-sync.md). Each device has one history key, an HPKE key pair under the
+device group's ciphersuite, and writes its public half into its own roster entry in a roster update it already makes:
+the founder in the founding roster, a joining device in the update that first sets its `tag_signature_key`, and a
+device whose entry lacks its key, or holds another, in a later update of its own entry. A device never changes another
+device's `history_key`. Siblings seal to it with `EncryptWithLabel` under the label `"Marmot History"` and a context
+the carrying message defines. A `history_key` that is not a public key of the KEM still leaves the roster valid; that
+device gets no history. Clients that do not support device groups change nothing.
+
 ## 2026-10-30: Small-state sync between an account's devices (draft)
 
 [#466](https://github.com/marmot-protocol/marmot/pull/466) adds [features/account-sync.md](./features/account-sync.md)
