@@ -22,14 +22,15 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - The user removes a linked device from another device of the account with one device-group Commit: it removes the
   device's leaf (the one whose tag reads as its slot) and carries `remove_device` and a `removed` rejected slot with
   the entry's `tag_signature_key`. A device whose entry has no `tag_signature_key` yet is not removed this way. The
-  deciding device records the decision first, keeps it until it forgets the device group, and commits the removal
-  again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
+  deciding device records the decision first, keeps it until it discards its copy of the device group, and commits
+  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
 - The deciding device then deletes the removed device's KeyPackage slot once its settled device-group state no longer
   lists the device, and again after committing a removal that branch selection dropped: the one case where a device
-  deletes a slot it did not create. It stamps the deletion ahead of its clock by the future skew it allows KeyPackages.
+  deletes a slot it did not create. It stamps the deletion as far ahead of its clock as it would date its own
+  publication.
 - Every device that trusts the device group removes the removed slot's tagged leaves from the groups it is in, with a
   same-account Commit where the group requires `0x800d`, and tells its user about the others. It also deletes the
-  private KeyPackages it issued to a removed slot, with their keys, and those that slot handed it.
+  private KeyPackages it issued to a removed slot, with their keys, and those that slot handed it, before `not_after`.
 
 ## 2026-10-30: Resending small state after a withdrawn device-group message (draft)
 
