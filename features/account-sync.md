@@ -7,12 +7,15 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 ([device-group.md](./device-group.md)), so it never reaches a chat, a relay or another account.
 
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
-small state. History transfer, backups and invite decisions are not specified yet.
+small state and the history keys that chat history is sealed to. History transfer, backups and invite decisions are not
+specified yet.
 
 ## Surfaces
 
 - Feature: [device-group.md](./device-group.md), which defines the device group, when a device trusts one, and its
   roster.
+- App component: [../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), whose device entries
+  carry each device's history key ([History keys](#history-keys)).
 - Marmot app events: kind `475` (small-state update) and kind `476` (broadcast request), sent only in a device group
   ([Messages](#messages)). Their kinds are registered in
   [../foundation/registries.md](../foundation/registries.md).
@@ -200,6 +203,44 @@ devices, so any member's message counts; a device does not need to tell which si
 
 A device reads small state from its device group whether or not it is in the chat an item names.
 
+## History
+
+A device that joins a chat cannot read the chat's earlier messages: they were encrypted for epochs it was never part
+of. Its siblings that hold them send them to it, sealed so that only that device can read them, even though they travel
+through the device group that every sibling reads.
+
+### History keys
+
+Each device has one history key: an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under the KEM of
+the device group's ciphersuite. It generates the key pair from a cryptographically secure random source, keeps the
+private half on the device, and never sends it anywhere. The public half goes in its own entry in the device group's
+roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as that entry's
+`history_key`.
+
+A device writes its history key in a roster update it already makes, so the key costs no commit of its own:
+
+- the device that creates the device group puts it in its own entry in the founding roster;
+- a device that joins the device group puts it in the update that first sets its own `tag_signature_key`
+  ([device-group.md](./device-group.md));
+- a device whose entry has no history key, or another one, writes its own in an update of its own entry, which MAY
+  carry other changes to that entry, such as its next KeyPackage announcement.
+
+A device MUST NOT change the `history_key` of another device's entry; an update that replaces another device's entry
+for another reason, such as a rename, carries that entry's `history_key` as it was. A key never rotates in this
+version. A device that loses the private half generates a new key pair and writes the new public half the same way.
+
+To seal a value to a device, a sibling uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+section 5.1.3) with that device's history key as the public key, the label `"Marmot History"`, and the context the
+message carrying the value defines, under the HPKE of the device group's ciphersuite. The sealed value is the
+`HPKECiphertext` that `EncryptWithLabel` returns, encoded as in RFC 9420. The context binds a sealed value to its
+purpose, so a value sealed for one purpose never opens for another. The device opens it with `DecryptWithLabel`, the
+same label and context, and the private half of its history key. A sealed value that has bytes after its
+`HPKECiphertext`, or that does not open, is dropped.
+
+A sibling sends history only to a device whose roster entry has a history key it can seal to. A `history_key` that is
+not a public key of the KEM is not an error ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md));
+that device gets no history.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -230,3 +271,9 @@ so no device moves it back; a later position moves it again once that one is fur
   each. A linked device can already read and send in the account's chats; these let it also fix or change their
   settings.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
+- Any device of the account can rewrite another device's `history_key`, including a stolen linked device until it is
+  removed. Siblings then seal history meant for that device to a key the stolen device chose, until that device writes
+  its own key back. That history can include chats the stolen device is not in, such as a chat the user kept off a
+  device linked with "add to all my chats" off.
+- A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
+  value sealed to it, past and future, until it writes a new key.

@@ -118,7 +118,10 @@ Each device the account has linked has one `DeviceEntryV1`:
   bytes under ciphersuite `0x0001`.
 - `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
   group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it.
-- `history_key` is reserved for account sync and has no meaning in this version.
+- `history_key` is the device's history key: the public key its siblings seal chat history to
+  ([../features/account-sync.md](../features/account-sync.md), "History keys"). It is a public key of the HPKE KEM of
+  the device group's ciphersuite, as that KEM serializes it: 32 bytes for X25519 under ciphersuite `0x0001`. It is
+  absent until the device sets it, and only the device itself sets it.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
 `RejectedKeyPackageV1` records a rejected KeyPackage by its `KeyPackageRef`, with the slot it appeared in. `rejected_at`
@@ -140,10 +143,11 @@ removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
 `AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
 public half of the recovery key. Neither has a meaning in this version.
 
-Receivers never compare `linked_at` or `rejected_at` with their own clocks. The fields reserved for account sync are
-opaque hints in the sense of [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Canonical
+Receivers never compare `linked_at` or `rejected_at` with their own clocks. `history_key` and the account entry's fields
+are opaque hints in the sense of [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Canonical
 decoding"): a receiver checks only their stated bounds, and the document that gives them a meaning MUST NOT make
-bytes within those bounds invalid.
+bytes within those bounds invalid. A `history_key` that is not a public key of the KEM never makes the roster invalid;
+that device gets no history.
 
 ## Validation
 
