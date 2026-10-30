@@ -163,7 +163,7 @@ every message, and comparing the two screens is what catches it.
 ## Scene 3: "I don't have my old device"
 
 ![Before: device group 1 has a lost iPhone and a sleeping iPad; device group 2 has the laptop and a desktop. After Alice
-approves on the iPad, group 1 absorbs the laptop and desktop and group 2 is deleted.](multi-device/scene-3-start-fresh.svg)
+moves the laptop and then the desktop into group 1, group 2 is left behind.](multi-device/scene-3-start-fresh.svg)
 
 **What Alice sees:** after choosing **No, start fresh**, the laptop works on its own. It is only in chats she is invited
 to from now on, and it says so: her old chats aren't available here, and people can re-invite her. If she has a backup,
@@ -175,43 +175,44 @@ sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice 
 device group and is added to her old chats.
 
 Two device groups for one account only exist when both sides have linked more devices on their own, as in the figure.
-**When devices from two device groups are linked, the approving device's group absorbs the other one.** Alice's own
-approval decides which group survives.
+**Alice joins them by moving devices across, one at a time, each with its own code.** Where she starts decides which
+group remains.
 
-**Merging, step by step:** say the iPad (group 1) links the laptop (group 2: laptop and desktop).
+**Moving, step by step:** say Alice moves the laptop (group 2: laptop and desktop) into group 1 (the iPad's).
 
-1. **The prompt shows everything that comes along.** The laptop's confirmation from the code exchange (Scene 4) covers
-   its whole roster, not just itself, so nobody in between can slip a device into the list. The iPad's prompt says
-   "Linking Laptop also brings Desktop", with each device's label, when it was linked and when it was last active,
-   and a checkbox for each.
-2. **The laptop joins first**, like any new device.
-3. **The laptop brings the desktop in.** It already holds the desktop's private KeyPackages from their old group, so it
-   adds the desktop to the surviving group with one of them, in a commit that also writes the desktop's roster entry.
-   The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
-4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
-   rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words are
-   used from then on. The absorbed group's backups are kept until the surviving group's backups hold the same
-   messages, and they still need the absorbed group's words, so Alice is told to keep those too
-   ([account-sync.md](./account-sync.md)). If the two groups together would have more
-   than 20 devices, Alice unchecks some before linking.
-5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
-6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
-   are offline until they come back.
+1. **She starts on the laptop** with **Link to my other devices**, as on a new device. The iPad shows the request and
+   the code as usual. The desktop doesn't offer Link, because the laptop is already in its group.
+2. **The laptop joins group 1** like any new device, and from then on trusts group 1 only. If the link doesn't take,
+   the laptop goes back to group 2 and tells Alice.
+3. **It brings its rejections along.** Rejected sign-ins and removed devices from group 2 are added to group 1's roster.
+   A device that is linked in group 1 but was rejected in group 2 stays linked, because Alice confirmed that link, and
+   she is told so she can remove it if she meant the rejection.
+4. **It leaves group 2.** It tells the desktop it has moved, and the desktop removes it from group 2. The desktop then
+   sees the laptop as a sign-in again and suggests moving the desktop too. Alice does that the same way, with its own
+   code. On the laptop, the desktop shows as a device still in her other device group, not as an unknown sign-in.
+5. **Chats catch up.** Gap filling runs in both directions for each device that moves, using allocations and respecting
+   each device's settings.
+6. **Group 2 is left behind** once no device is in it. If both groups had backups turned on, the surviving group's
+   backup settings and recovery words are used from then on. The old group's backups are kept until the surviving
+   group's backups hold the same messages, and they still need the old group's words, so Alice is told to keep those
+   too ([account-sync.md](./account-sync.md)). A move into a group that already has 20 devices is refused like any
+   other link, so Alice removes one first.
 
-A device Alice unchecks isn't brought in. It shows up under Unrecognized sign-ins in the surviving group, where she can
-link it later with its own code or reject it.
+A device of group 2 that Alice never moves stays there, and shows up under Unrecognized sign-ins in group 1, where she
+can move it later or reject it.
 
-**Which side approves:** in a merge, both devices see each other as a new sign-in. Whichever device Alice taps **Link**
-on is the approver, and its group survives. The other device shows **They match**. If two merges are started at once,
-neither is offered Link until one is finished or cancelled, the same rule as two pairing requests at once.
+**Why one at a time:** bringing the desktop along with the laptop would need the laptop's code exchange to cover a list
+of devices, a third way into a device group, and wider rules on who may add a device. Moving each device with its own
+code needs nothing new in pairing, at the cost of one more code comparison per device, in a case that only arises when
+two device groups formed on their own. If two moves are started at once, neither is offered Link until one is finished
+or cancelled, the same rule as two pairing requests at once.
 
 **Trade-offs:**
 
 - Starting fresh never recovers old chats by itself. A backup can restore their content read-only
   ([account-sync.md](./account-sync.md)), but getting back into them needs a fresh add from someone still there.
-- The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
-  same way as a single link (Scene 5).
+- Moving touches every chat the moved devices are in, so it can take a while to finish. Progress is shown the same way
+  as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
   a chat admin.
 
@@ -531,11 +532,12 @@ public half ([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
-**Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
-private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. Invite decisions travel as
-small state, which has its own versions and snapshots ([account-sync.md](./account-sync.md)). The
-sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
-roster versus message: anything a device linked later needs to know goes in the roster.
+**Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims, private
+KeyPackage requests and hand-offs, Welcomes for sibling adds, anomaly alerts, and notices that a device moved to another
+device group. Invite decisions travel as small state, which has its own versions and snapshots
+([account-sync.md](./account-sync.md)). The sender is already identified by its leaf in the device group, so messages
+need no device identifier tag. The rule for roster versus message: anything a device linked later needs to know goes in
+the roster.
 
 **When a message is lost.** A device that is offline longer than the retention window can lose device-group messages
 for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)). There are no receipts for
@@ -548,6 +550,8 @@ that effect once the receiver is back online sends again:
   meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
 - **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
   does. That request is the repair.
+- **A moved notice.** The device that moved sends it again each time it starts, and daily, until a sibling in its old
+  group removes it there.
 - **History and small state** recover the same way ([account-sync.md](./account-sync.md)).
 
 **Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
@@ -564,9 +568,9 @@ tags it with its next update in that chat.
 when it is halfway to expiry, and expired private KeyPackages are simply discarded. A device coming back after a long
 gap first tops up its siblings' allocations, then asks for fresh allocations of theirs.
 
-**The hidden-group marker** keeps the device group out of chat lists. It never makes a group trusted by itself: a
-device treats a group as its device group only if it created it or joined it through a confirmed link or merge
-(Scene 4).
+**The hidden-group marker** keeps the device group out of chat lists. It never makes a group trusted by itself: a device
+treats a group as its device group only if it created it or joined it through a confirmed link (Scene 4), including a
+link that moves it from another device group (Scene 3).
 
 ## Numbers
 

@@ -59,8 +59,9 @@ Holding the account key never authenticates a device. Only the code compared on 
 ## Roles
 
 The **new device** is the device whose user asks to link it to the account's other devices. It has published a
-KeyPackage into its own publication slot and has no device group ([device-group.md](./device-group.md)). It starts the
-session, commits to its key first and reveals it last. In Matrix's terms, it is the accepting device.
+KeyPackage into its own publication slot and has no device group ([device-group.md](./device-group.md)), or has one and
+is moving to another ([device-group.md](./device-group.md), "Moving to another device group"). It starts the session,
+commits to its key first and reveals it last. In Matrix's terms, it is the accepting device.
 
 An **existing device** is any other device of the account, whether or not it has a device group yet. Every existing
 device sees every request. The new device takes the first answer, and the session continues with that device alone. A
@@ -253,8 +254,8 @@ A receiver MUST compare MACs in constant time.
 2. Before it answers, it fetches the KeyPackage publication the request names and validates it under
    [../foundation/key-packages.md](../foundation/key-packages.md) and the transport binding. The publication MUST be the
    account's, and its decoded `KeyPackageRef` MUST equal the request's `key_package_ref`. A device that would not link
-   that KeyPackage does not answer. It sends Cancel `cannot_link` where the device group requires it, and MAY send it
-   otherwise ([device-group.md](./device-group.md), "Before answering").
+   that KeyPackage does not answer. It sends Cancel `cannot_link` only as the device group's rules say
+   ([device-group.md](./device-group.md), "Before answering").
 3. It sends an Answer with a fresh key and its own slot id, subject to "Competing requests" and "Rate limit".
 4. A Reveal whose `answer_slot` is not its own slot means the new device took another answer. The device ends the
    session, whether or not it answered, and sends nothing. On a Reveal naming its own slot, for a session it answered:

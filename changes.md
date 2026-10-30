@@ -13,6 +13,27 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Moving a device to another device group (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/device-group.md](./features/device-group.md), [features/device-pairing.md](./features/device-pairing.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- An account whose devices formed two device groups joins them by moving devices from one into the other, one at a time.
+  A device that trusts a device group may now run a pairing session as a new device; its own siblings never answer it,
+  so it links into the answering device's group, joins as any new device does, and trusts that group from then on
+  instead of its old one. A device trusts one device group at a time. If the new group removes it before its first
+  Commit there lands, it trusts its old group again.
+- Once its move is made, the device copies its old roster's rejected slots and rejected KeyPackages into the new roster,
+  keeping `rejected_at`. It leaves out entries the new roster already holds and rejected slots that the new roster holds
+  as devices, since a confirmed link ends a rejection, and tells its user about those.
+- It then sends a moved notice (kind `463`, new: `{"v":1,"from":"<slot>"}`) in its old group, again at each start and
+  daily until removed. A device of the old group that reads one from a leaf whose tag reads as `from`'s removes that
+  device's leaf and roster entry in one Commit, writing no rejected slot, so the slot is a sign-in again there.
+- An existing device MUST NOT send Cancel `cannot_link` to a request from a slot that is already a device in its roster,
+  which may be a sibling moving away, and SHOULD NOT send it for a rejected slot or KeyPackage, where it was MAY. The
+  pairing new-device role now includes a device moving out of its device group.
+
 ## 2026-10-29: Linking a device into the device group (draft)
 
 [#456](https://github.com/marmot-protocol/marmot/pull/456) adds "Linking a device" to

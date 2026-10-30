@@ -7,9 +7,9 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
-into it, how clients keep it out of sight, and how the account's devices notice a new sign-in. The messages devices
-exchange in the group, private KeyPackages, and removal are not specified yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked into
+it or moves into it from another device group, how clients keep it out of sight, and how the account's devices notice a
+new sign-in. The other messages devices exchange in the group, private KeyPackages, and removal are not specified yet.
 
 ## Surfaces
 
@@ -25,6 +25,8 @@ exchange in the group, private KeyPackages, and removal are not specified yet.
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publications are the evidence of a
   new sign-in ([New sign-ins](#new-sign-ins)).
+- Marmot app event: kind `463` (moved notice), sent only in a device group ([Moving to another device
+  group](#moving-to-another-device-group)) and registered in [../foundation/registries.md](../foundation/registries.md).
 
 ## What a device group is
 
@@ -79,8 +81,10 @@ A device MUST NOT join a group that requires `0x800e` through any other Welcome,
 a refused Welcome uses up neither the KeyPackage nor the group id ("Joining"). The group id alone proves nothing:
 anyone holding the account's signing key can read it in the existing device's Confirm and found a group under it.
 
-A device records which group it trusts as its device group when it creates or joins it, and does not infer it later
-from group state.
+A device records which group it trusts as its device group when it creates or joins it, and does not infer it later from
+group state. It trusts one device group at a time: a device that joins another device group through a confirmed link
+trusts that group from then on, and no longer the one it trusted before ([Moving to another device
+group](#moving-to-another-device-group)).
 
 ## Linking a device
 
@@ -104,7 +108,11 @@ has none yet. It would not link the KeyPackage when:
 
 A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
 lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
-Cancel `cannot_link`, so the new device stops waiting. When the slot or KeyPackage is rejected, it MAY send it.
+Cancel `cannot_link`, so the new device stops waiting. When the slot is already a device in its roster, it MUST NOT send
+it: that device may be moving to another device group ([Moving to another device
+group](#moving-to-another-device-group)), and a Cancel from any device ends its session. When the slot or KeyPackage is
+rejected, it SHOULD NOT send it: a Cancel would tell whoever holds the account's signing key that the user noticed, and
+a device the user rejected by mistake stops waiting when its session expires.
 
 ### Approving
 
@@ -183,8 +191,8 @@ Welcome under it, once:
 This is the only limit on how long a new device waits for its Welcome. It decides before joining. A Cancel after it has
 joined changes nothing: it keeps its device group and its leaf there. Once the link has ended, a Welcome into its group
 is one no link expects, refused if the group requires `0x800e`, and linking again starts a new pairing session. A device
-that has a device group does not run a pairing session as a new device: joining a second device group, which merging
-two device groups would need, is not specified yet.
+that has a device group runs a pairing session as a new device only to move to another device group ([Moving to another
+device group](#moving-to-another-device-group)).
 
 ### A link that is not taken up
 
@@ -204,12 +212,90 @@ link's Welcome. The slot is then a sign-in again ("Any one device's answer"), an
 selection keeps the new device's first Commit and drops that removal, the link is made after all.
 
 A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
-group. It stops trusting the group and MUST discard the active state of its copy, which a removed member may do
+group, unless it is moving and still holds the device group it is moving from ([Moving to another device
+group](#moving-to-another-device-group)). It stops trusting the group and MUST discard the active state of its copy,
+which a removed member may do ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing
+removal"); it MAY keep the group's history and a removal tombstone. A later link's Welcome into the same group id is
+then a first join ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy
+would make it refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user
+that linking failed, and links again only through a new pairing session.
+
+### Moving to another device group
+
+An account has two device groups when two of its devices that trusted none each approved a link, unaware of each other
+([Security considerations](#security-considerations)). The user joins them by moving the devices of one into the other,
+one device at a time, each through a link of its own. Moving needs no message, field or code input that linking does
+not already have.
+
+**Starting.** A device that trusts a device group MAY run a pairing session as a new device when its user asks it to
+link to the account's other devices. It sends the ordinary Request ([device-pairing.md](./device-pairing.md)) naming a
+KeyPackage from its own slot. Its siblings do not answer it, because their roster lists its slot ("Before answering"),
+so the device that answers is in another device group or in none, and the group it adds this device to, or founds for it
+("Approving"), is the one this device moves into. It does not start while a link it approved is neither made nor failed
+("A link that is not taken up"), since only it acts on that link. While its session runs and while its link waits for
+its Welcome, the device answers no pairing request ("Before answering") and otherwise goes on as a member of its device
+group.
+
+**Joining.** It joins as any new device does ("Joining"). On joining, it trusts the new group and no longer the old one
+("Trust"): it reads its roster, its siblings and its rejections from the new group only, and commits nothing more to
+the old one. Its move is made once its first Commit in the new group ("Matching leaves to devices") is on the selected
+branch of its state for that group and it holds no unprocessed input for the group. If a Commit removes it from the new
+group before then ("A link that is not taken up"), the move has failed: it trusts its old group again, as it did before
+it moved, and tells its user.
+
+**What it brings.** Once its move is made, the device commits to the new group's roster each rejected slot, `not_me`
+and `removed`, and each rejected KeyPackage that its old group's roster holds then, with `rejected_at` unchanged, so
+that a `removed` record still goes once its 30 days are up
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). It leaves out:
+
+- an entry whose key the new roster already holds;
+- a rejected slot whose slot the new roster holds as a device. The user confirmed linking that device in the new group,
+  and a confirmed link ends a rejection ("Answers"). The device tells its user which device its old group rejected and
+  the new group links, so that the user can remove it if the rejection was meant.
+
+It commits them as it commits its own rejections ("Answers"): again when its Commit fails or a branch selection drops
+the update, until the new roster holds each entry or a device for its slot. It brings nothing else. The old roster's
+devices are not linked in the new group; each moves through a link of its own. On the moving device their slots are
+sign-ins like any slot outside its roster, which it SHOULD show its user with the labels its old roster gave them, as
+devices still in its old device group that the user can move too, rather than as unknown sign-ins.
+
+Its leaves in other groups carry tags sealed under the old group's `leaf_tag_key`, which do not read as its own under
+the new group's key, so it replaces them as any device replaces an untagged leaf
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). It SHOULD publish a new
+KeyPackage, tagged under the new key, once its move is made.
+
+**Leaving the old group.** A device cannot commit its own removal
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Removal by another device of the same
+account"), and a SelfRemove cannot write the roster, so a sibling in the old group removes it. Once its move is made,
+the device sends a moved notice in its old group:
+
+| Kind  | Message      | Sent by                                     |
+| ----- | ------------ | ------------------------------------------- |
+| `463` | Moved notice | a device that moved to another device group |
+
+A moved notice is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group the sender moved from. Its content is one UTF-8 JSON object
+with exactly the members `v`, the JSON number `1`, and `from`, the sender's slot as a JSON string of 64 lowercase
+hexadecimal characters, written in that order without whitespace.
+
+The moving device keeps its copy of the old group and reads it until a Commit removes its leaf there. It sends the
+notice again whenever it starts and at least once a day until then. Once that Commit reaches it, or once it is the
+group's only member, it discards the active state of its copy, as a removed member may
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
-group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
-([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
-refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
-failed, and links again only through a new pairing session.
+group's history.
+
+A device reads moved notices only in the device group it trusts, and ignores kind `463` in any other group. It drops a
+notice unless its content decodes exactly as above, `from` is another device in its current roster, and the leaf that
+sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as `from`'s
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). On a notice it keeps, it
+removes that device: one Commit that removes the leaf that sent the notice and, with `remove_device`, its roster entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), unless that device is
+already gone from its roster. It writes no rejected slot, so the slot is a sign-in again
+([Any one device's answer](#any-one-devices-answer)), and it SHOULD tell its user that the device moved to another
+device group and offer to move this one too. Several devices may each make that Commit; branch selection keeps one.
+
+A device group is left behind once no device trusts it. Nothing closes it: each of its devices leaves it as it moves,
+and the last one discards its copy.
 
 ## Keeping it out of sight
 
@@ -394,8 +480,12 @@ leaves, warning about a leaf no device claims) is not specified yet.
   a group that requires `0x800e` is still refused, since no link names it yet, and uses up neither. This is denial of
   service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security considerations").
 - A device that trusts no device group cannot see one that another device of the account already has, such as one linked
-  from another sign-in. When it approves a link it founds a second device group. Merging two device groups is not
-  specified yet ("Joining").
+  from another sign-in. When it approves a link it founds a second device group. The user then moves the devices of one
+  into the other, one at a time ([Moving to another device group](#moving-to-another-device-group)).
+- A device moves only through a link whose code both users compared, like any other link, so moving gives whoever holds
+  the account's signing key no new way into a device group. A moved notice is read only from a device of the group whose
+  tag reads as the slot it names, so it removes only the device that sent it; a stolen linked device could remove itself
+  that way, or any device by an ordinary Commit.
 - Holding the account's signing key never authenticates a device. A device enters the device group only under a link
   whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
   under the account is not enough.

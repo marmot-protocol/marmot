@@ -114,6 +114,7 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `454`   | Device pairing reveal               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `455`   | Device pairing confirm              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `456`   | Device pairing cancel               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `463`   | Device group moved notice           | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -153,8 +154,9 @@ MUST use the exact `d` value in each owning proof document and MUST NOT derive i
 Kinds `452` to `456` are device pairing messages. They are never MLS application payloads: each travels only as a
 rumor gift-wrapped from an account to itself ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
 
-Kinds `457` to `489` are reserved for multi-device accounts: `457` to `462` for device-group messages, `463` to `469`
-spare, and `470` to `489` for later multi-device work. Any new use claims its kind in this table first.
+Kinds `457` to `489` are reserved for multi-device accounts: `457` to `462` for device-group messages, `463` for the
+moved notice, `464` to `469` spare, and `470` to `489` for later multi-device work. Any new use claims its kind in this
+table first.
 
 Kind `1210` is reserved for durable group system rows, such as membership, name, avatar, or other group-lifecycle
 notices that clients render separately from human chat.
