@@ -135,7 +135,9 @@ The transition needed to escape the old key is itself delivered under that key.
 Sharing an author does give relays one lever they lack today. Once the transition is out, honest traffic under the old
 author falls to occasional late messages, so a per-author publish limit or storage quota caps how much junk Carol can
 add. A flood under fresh authors cannot be limited per author at all. This is relay policy, not a fix: Carol can still
-add junk up to the limit, and the same limit applies to honest late messages under that author.
+add junk up to the limit, and the same limit applies to honest late messages under that author. On the one relay we
+tested that has such limits, the storage quota still allowed about 11 hours of filler under one author (see
+[early relay measurements](#early-relay-measurements)).
 
 Deletion protection makes that transition harder to erase by protocol request. It also protects signature-valid junk
 carrying the marker: relays cannot inspect the MLS payload to know which protected events are useful. Independent
@@ -150,7 +152,8 @@ members' commits from that epoch. Rotating the author cannot take back that powe
 
 The proposed NIP-D9 marker would waive deletion through that signing key for the marked event. Its exact tag and relay
 behavior are owned by the NIP. The group would use that protection for its outer events and use relays that advertise
-support. Acceptance by a relay that ignores the marker would not provide the intended protection.
+support. Acceptance by a relay that ignores the marker would not provide the intended protection. In early tests, one
+of five relays honored it (see [early relay measurements](#early-relay-measurements)).
 
 The two halves could be deployed separately, but not safely. Author filtering alone works on any relay that verifies
 signatures. Without deletion protection, though, it adds an attack that does not exist today: with fresh authors,
@@ -231,6 +234,62 @@ However, retained MLS state or exporter material may allow that private key to b
 signing key alone does not erase the capability. Any eventual retention changes need to fit the existing
 [cryptographic-material lifecycle](../protocol-core/retained-history.md#retained-cryptographic-material).
 
+## Early relay measurements
+
+We ran two rounds of local tests, on 2026-10-20 and 2026-10-30, against strfry 1.1.3, nostr-rs-relay 0.10.0, two
+khatru versions, and [wok](https://github.com/erskingardner/wok) 0.7.0 in its default configuration and its Marmot
+preset. Events were about 1 KB and carried no routing tag; in the second round they also carried the NIP-D9 marker.
+Round trips were emulated by adding delay, with no loss or jitter, on one heavily loaded machine. The numbers are
+early and approximate. They show how these relays behave, not what a deployment will see.
+
+**Changing the subscription each epoch.** Opening the new author's subscription, then closing the old one a moment
+after the new one is ready, lost nothing on any relay tested. The cost is duplicate deliveries during the overlap.
+Replacing a subscription in place is less portable. wok replaced cleanly. nostr-rs-relay did too, but never confirmed
+a request whose filters all used `limit:0`. strfry dropped events that arrived in the 100 ms before the swap, the
+current khatru lost a few during its stored query, and khatru v0.19.1 added the new filter without removing the old
+one. On every relay, asking for a new author with `limit:0` missed that author's events from just before the swap,
+such as a faster member's first message of the epoch.
+
+**Filter limits.** The tightest was nostr-rs-relay's 996 authors per filter; above that, it silently returns no stored
+events. strfry and wok accept 2,047 authors per filter, and wok about 3,900 per request when split across filters.
+Subscriptions per connection ranged from 32 on nostr-rs-relay to 200 on strfry and wok. Relays advertised few of these
+limits, so a client has to enforce them itself.
+
+**Catch-up walk.** Each epoch cost one round trip on strfry, khatru, and wok, and two on nostr-rs-relay when the epoch
+returned events. With 100 ms added, 200 epochs took 21–24 s; with 300 ms, 61–64 s (122 s on nostr-rs-relay). Ten
+epochs took 1–4 s at those delays. Request budgets cut fast walks short. On a local link, wok's default budget refused
+a 200-epoch walk at epoch 127 until the client backed off, and khatru's optional rate-limit presets stopped it at
+epoch 100 for about five minutes. At the emulated mobile round trips, wok's budget never engaged.
+
+**Deletion protection.** Only wok honored the NIP-D9 marker, in both configurations and across a restart, and only wok
+lists `"D9"` among its supported NIPs. strfry, nostr-rs-relay, and both khatru versions removed a marked event when its
+author key requested deletion; strfry refused the event for good when the deletion request arrived first. Every relay
+reported both the marked event and the deletion request as accepted, so an acknowledgement says nothing about
+protection. On wok, a NIP-62 vanish request removed the author's unmarked events and kept the marked ones.
+
+**Per-author limits.** Only wok limits each author by default: 25 events per second with a burst of 50, and at most
+1,000,000 stored events. The other relays accepted hundreds to thousands of events per second from one author. On wok,
+a flood under one author got 51–84 events in before refusals began. That is the Scene 4 lever working. It also showed
+what the lever costs:
+
+- **The bound is large.** At the sustained rate, one author reaches the storage quota on a wok relay in about 11 hours.
+  With 1 KB events, that is about a gigabyte for a member catching up through that epoch to fetch, because the
+  transition looks like the filler from outside.
+- **Small pages stall.** A wok relay returns at most its newest 2,000 events per request (5,000 on the Marmot preset).
+  With limits off, a 30-second flood at 200 events per second pushed the commit out of the first response. Paging
+  backward by `until` reached it only with pages larger than the flood's events per second, because event timestamps
+  have one-second resolution.
+- **A full quota locks the author.** Once an author reaches the quota, nobody can publish under it on that relay. If
+  the filler carries the deletion marker, the key holders cannot delete it to make room; unmarked filler they can. The
+  attacker chooses which.
+- **A drained budget blocks members.** While a flood kept an author's budget empty, other members publishing under it
+  got through 14–41% of the time. wok charges events from an authenticated connection to the authenticated account
+  instead. That let a member through 12 times out of 12, but shows the relay which account publishes under which group
+  author.
+
+The same limits apply to the current epoch: any current member can drain or fill the current author's allowance. A
+new epoch brings a fresh author, but the commit that starts it is published under the exhausted one.
+
 ## Compatibility and alternatives
 
 This is incompatible with today's fresh-author, routing-tag, and permitted-tag rules. It needs an explicit negotiated
@@ -274,11 +333,16 @@ protocol-core rules remain the adopted behavior.
 ## Open questions
 
 1. How does Bob reliably find the required transition while an old-key holder floods its author, and how is current
-   traffic kept responsive without declaring refused history synchronized?
+   traffic kept responsive without declaring refused history synchronized? How does a group leave an author whose
+   relay allowance or storage quota a key holder has used up, when the commit that leaves it is published under that
+   author?
 2. How are subscriptions and historical fetches updated across staging, forks, relay-list changes, and pruning without
-   losing the eligible alternatives or exceeding practical relay filter limits?
+   losing the eligible alternatives or exceeding practical relay filter limits? Early measurements favor opening the
+   new subscription before closing the old one, requesting new authors without `limit:0`, and staying under about
+   1,000 authors per filter. Forks and staging were not tested.
 3. How is relay support established and refreshed, and which acknowledgements count when some relays lose support or
-   every supporting relay is unavailable? How does a group migrate its signed relay list safely?
+   every supporting relay is unavailable? How does a group migrate its signed relay list safely? In early tests, the
+   relay information document was the only reliable sign of deletion protection.
 4. Which compatibility mechanism keeps unsupported members out of a switch they cannot follow, while allowing recovery
    of required legacy history without reopening current delivery to arbitrary authors?
 5. What reviewed exporter construction and key-lifetime policy fit MLS recovery, and how often should quiet groups
