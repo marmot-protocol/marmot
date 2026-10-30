@@ -896,9 +896,12 @@ heartbeat only ever moves it later. A heartbeat never dates activity after the d
 counts at its `created_at`, not when it arrived. Neither holds the sender's clock to the truth: a sender whose clock
 runs behind looks less recently active than it is, which errs toward showing it inactive, and a sender whose clock
 runs ahead, read late, can look active as late as the read, which errs toward hiding a sibling that stopped. A device
-keeps each sibling's last activity, and when it first found that sibling in its roster, across restarts. When a slot
-stops being a device in its roster, the device forgets both; if that slot is a device again later, the device first
-finds it then. Each device keeps its own; nothing about it is written to the roster.
+keeps each sibling's last activity, and when it first found that sibling in its roster, across restarts, for that
+sibling's roster entry: its slot together with the entry's `linked_at`. A device MUST NOT carry either from one entry to
+another: once its roster lists the slot with a different `linked_at`, the device first finds that sibling then, even if
+it never held a roster without the slot. A device MAY forget both once its roster no longer lists the entry. A fork that
+brings back an entry the device saw removed brings back the same sibling, so if the device kept that entry's times,
+they still apply. Each device keeps its own; nothing about it is written to the roster.
 
 ### Inactive devices
 

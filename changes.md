@@ -35,8 +35,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   when the sending leaf's device tag reads as a device in the roster, in the tree it holds when it reads the heartbeat,
   enforces no rate, ignores the content, and dates it `min(created_at, when it was read)`. Heartbeats never trigger push
   notifications.
-- A sibling's last activity is the latest `min(created_at, when it was read)` over its counted heartbeats; a device
-  forgets it, and when it first found the sibling, once the slot stops being a device in its roster. A device treats a
+- A sibling's last activity is the latest `min(created_at, when it was read)` over its counted heartbeats. A device
+  keeps it, and when it first found the sibling, for that roster entry, its slot and `linked_at`: it never carries
+  them to a later entry for the slot, and may forget them once its roster no longer lists the entry. A device treats a
   sibling as inactive 30 days after its last activity, or after first finding it in the roster if that is later. That
   judgment only decides what the device shows: a device must not set an entry's `inactive` status from it.
 
