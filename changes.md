@@ -27,7 +27,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current, folded into a
   roster update it is already making to its own entry.
 - Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever
-  its last one is at least an hour old. A receiver counts one only when the sending leaf's device tag reads as a device
+  its last one is at least an hour old, once its own leaf there is tagged. A receiver counts one only when the sending leaf's device tag reads as a device
   in the roster, enforces no rate, ignores the content, and dates it `min(created_at, when it was read)`. Heartbeats
   never trigger push notifications.
 - A device treats a sibling as inactive 30 days after its last activity, or after first finding it in the roster if

@@ -609,10 +609,11 @@ sent as an MLS application message in the device group. Its content is `{"v":1}`
 
 **Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever its
 last heartbeat there is at least one hour old, whether it has just started or has been running for a while. It keeps
-the time of its last heartbeat across restarts. It sends one only while the roster lists it and its own entry carries
-its `tag_signature_key`, so that its leaf in the device group is tagged
-([Matching leaves to devices](#matching-leaves-to-devices)). A heartbeat never asks for a push notification and never
-wakes a sibling.
+the time of its last heartbeat across restarts. A heartbeat that no relay accepted is not its last one, so the device
+sends again at its next chance. It sends one only while the roster lists it and its own leaf in the device group
+carries a device tag that reads as its slot ([Matching leaves to devices](#matching-leaves-to-devices)), since its
+siblings count no heartbeat from an untagged leaf. A heartbeat never asks for a push notification and never wakes a
+sibling.
 
 **Receiving.** A device reads heartbeats only in the device group it trusts, and ignores kind `457` in any other group.
 A heartbeat counts for a sibling only when the leaf that sent it, in the tree of the epoch the device holds when it
