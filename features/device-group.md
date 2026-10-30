@@ -455,8 +455,9 @@ publication slots"):
   clock as it would date a publication of its own ([../foundation/key-packages.md](../foundation/key-packages.md), "A
   publication the device did not make"), since the removed device's clock may run ahead;
 - it sends it again until the transport accepts it;
-- when branch selection drops the removal after that, it commits the removal again and, once the roster no longer lists
-  the slot, deletes the slot again, since the removed device may have published to it in between;
+- when branch selection drops the removal after that, it commits the removal again and, once its state is settled and
+  no longer lists the slot as a device, deletes the slot again, since the removed device may have published to it in
+  between;
 - no other device deletes the slot, and nothing else lets a device delete another device's slot.
 
 The deletion stops inviters from selecting the KeyPackages the removed device published up to the deletion's time. It
@@ -844,8 +845,9 @@ as several hand-offs.
   `id` differs and the sibling answers it.
 - A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
   it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
-  material until a Welcome consumes them or they expire. A device at its cap answers as [Issuing](#issuing) allows. A
-  device answers each request, by its Marmot app event `id`, once.
+  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or its trusted roster
+  records the requester's slot as `removed`. A device at its cap answers as [Issuing](#issuing) allows. A device answers
+  each request, by its Marmot app event `id`, once.
 - There are no receipts. A lost hand-off is repaired by the requester's next request.
 
 ### Receiving
