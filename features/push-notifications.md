@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t10-notification-service-and-platform-trust).
+
 Push notifications let a sender give a recipient a delivery hint outside the normal group-message fetch path.
 
 Push notification support is optional. A group MUST still work when no client supports push notifications.

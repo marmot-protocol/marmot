@@ -18,6 +18,7 @@ top-level file stays cross-surface only.
 
 | Surface / doc | Start here |
 | --- | --- |
+| Overall threat model and security assumptions | `security-considerations.md` and `principles.md` (Security-model maintenance) |
 | Stable invariants: identity, encodings, registries, errors | `foundation/AGENTS.md` |
 | Required group flows and group-state transitions | `protocol-core/AGENTS.md` |
 | Versioned MLS `app_data_dictionary` component bytes | `app-components/AGENTS.md` |
@@ -60,6 +61,10 @@ top-level file stays cross-surface only.
   housekeeping need no entry.
 
 ## Verification
+
+After editing documentation, run `python3 scripts/check_docs.py` and
+`python3 -m unittest discover -s scripts -p 'test_*.py'`. The checker validates local Markdown links and anchors,
+including the non-normative model; it does not certify the security claims.
 
 After editing spec text, review matches from these commands from the repository root:
 

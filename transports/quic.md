@@ -2,6 +2,8 @@
 
 Status: experimental.
 
+Security context: [protocol threat model](../security-considerations.md#t9-preview-brokers-and-group-shared-stream-keys).
+
 This document defines the raw QUIC transport binding for live agent text stream previews. It is the transport companion
 to the feature document [../features/agent-text-streams-quic.md](../features/agent-text-streams-quic.md): the feature
 owns start-payload semantics, record encryption, preview status, transcript hashing, and final-message anchoring; this
