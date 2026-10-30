@@ -30,8 +30,30 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   sibling's add. A device tops a sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off
   (kind `460`), both new, travel only in the device group. A receiver keeps a hand-off only if every KeyPackage in it
   is its own account's, not last-resort and unexpired, and carries a device tag that reads as the sender's. It reads
-  either message only when the sending leaf's device tag reads as the `from` slot the message names.
+  either message only when the sending leaf's device tag reads as the `from` slot the message names. A device that
+  caps what it keeps for a sibling never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones
+  again, and a holder never keeps one it has already used.
 - Devices without a device group publish as before.
+
+## 2026-10-29: New sign-ins in the device group (draft)
+
+[#465](https://github.com/marmot-protocol/marmot/pull/465) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A client that supports `0x800e` reads its
+account's KeyPackages as an inviter does, and treats a slot holding a valid, fresh KeyPackage that is not its own, not a
+roster device's and not a rejected slot as a sign-in to ask its user about. A Welcome naming a KeyPackage it did not
+publish is a reason to fetch and check that KeyPackage, never evidence by itself. Slots its first check returns, fresh
+or not, are devices that were signed in before it; others are new sign-ins, and a publication's time never decides
+which. "This wasn't me" commits a `not_me` rejected slot, never a rejected KeyPackage, since the KeyPackage may be a
+copy of a real device's. A device with no device group keeps its rejections and writes them into the roster it later
+creates or joins. A device keeps its rejections until the roster holds the slot as a device, commits one again whenever
+the roster has no entry for that slot, and never replaces an entry. A link or rejection on one device ends the question
+on all of them while the roster holds it. A device keeps its list of sign-ins and its answers across restarts. A sign-in
+whose slot a complete check finds holding no valid KeyPackage that a deletion does not cover stays listed as no longer
+signed in, and can be linked again once a complete check finds one; being no longer fresh never on its own signs a
+sign-in out. A check is complete only from one unbounded answer per query from every relay in the account's non-empty
+KeyPackage relay set, each short of the limit the device asked for; an account past one answer, and a relay capping
+below the request without advertising it, are stated limits. Clients that do not support `0x800e` change nothing.
 
 ## 2026-10-28: Device roster component and device group (draft)
 
