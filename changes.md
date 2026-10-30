@@ -13,6 +13,16 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Deleting a far-future publication in a device's own slot (draft)
+
+[#468](https://github.com/marmot-protocol/marmot/pull/468) changes
+[foundation/key-packages.md](./foundation/key-packages.md) and [transports/nostr.md](./transports/nostr.md).
+
+- A device whose own slot serves a publication it did not make, dated further ahead than the device would date its own,
+  cannot outrank it. The device may ask relays to delete that publication by id and then publish into its slot again.
+  On Nostr the request is a kind `5` event at the current time with exactly one `e` tag naming the event and one `k`
+  tag, `30443`. Receivers selecting KeyPackages still ignore `e` tags.
+
 ## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
 
 [#459](https://github.com/marmot-protocol/marmot/pull/459) changes

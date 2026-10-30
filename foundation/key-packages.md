@@ -129,6 +129,16 @@ longer hold its `init_key`. The publication's transport authentication is enough
 valid KeyPackage still occupies the slot. The device reads the slot itself, not a page of the account's publications, so
 that the account's other slots cannot crowd its own out.
 
+A publication dated further ahead of the device's clock than the device would date its own cannot be outranked: a later
+publication time would put the device's own just as far ahead. The device does not try. It MAY instead ask the transport
+to delete that one publication by its identifier, using the active transport binding's mechanism for that
+([../transports/nostr.md](../transports/nostr.md), "Deleting one publication"), and then publish a new KeyPackage of
+its own into the slot, later than every other publication it found there. It deletes publications this way only in its
+own slot. A transport that ignores the request keeps serving the publication, and the device's next read of the slot
+finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it. Reading the
+slot does not show that gap, since an empty slot holds no publication the device did not make, so a device that loses
+track of the owed KeyPackage leaves the slot empty there until its next refresh.
+
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
 
