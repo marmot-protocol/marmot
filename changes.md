@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-30: Deleting a far-future publication in a device's own slot (draft)
 
-[#NNN](https://github.com/marmot-protocol/marmot/pull/NNN) changes
+[#468](https://github.com/marmot-protocol/marmot/pull/468) changes
 [foundation/key-packages.md](./foundation/key-packages.md) and [transports/nostr.md](./transports/nostr.md).
 
 - A device whose own slot serves a publication it did not make, dated further ahead than the device would date its own,
