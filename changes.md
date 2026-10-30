@@ -28,8 +28,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   keeping `rejected_at`. It leaves out entries the new roster already holds and rejected slots that the new roster holds
   as devices, since a confirmed link ends a rejection, and tells its user about those.
 - It then sends a moved notice (kind `463`, new: `{"v":1,"from":"<slot>"}`) in its old group, again at each start and
-  daily until removed. A device of the old group that reads one from a leaf whose tag reads as `from`'s removes that
-  device's leaf and roster entry in one Commit, writing no rejected slot, so the slot is a sign-in again there.
+  daily until removed or until every other device of the old group has sent its own. A device that trusts the old group
+  and reads one, sent in its current epoch from a leaf whose tag reads as `from`'s, removes that device's leaf and
+  roster entry in one Commit, writing no rejected slot, so the slot is a sign-in again there.
 - An existing device MUST NOT send Cancel `cannot_link` to a request from a slot that is already a device in its roster,
   which may be a sibling moving away, and SHOULD NOT send it for a rejected slot or KeyPackage, where it was MAY. The
   pairing new-device role now includes a device moving out of its device group.

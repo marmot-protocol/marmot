@@ -254,10 +254,11 @@ that a `removed` record still goes once its 30 days are up
   the new group links, so that the user can remove it if the rejection was meant.
 
 It commits them as it commits its own rejections ("Answers"): again when its Commit fails or a branch selection drops
-the update, until the new roster holds each entry or a device for its slot. It brings nothing else. The old roster's
-devices are not linked in the new group; each moves through a link of its own. On the moving device their slots are
-sign-ins like any slot outside its roster, which it SHOULD show its user with the labels its old roster gave them, as
-devices still in its old device group that the user can move too, rather than as unknown sign-ins.
+the update, until the new roster holds each entry, or, for a rejected slot, holds a device for that slot. It brings
+nothing else. The old roster's devices are not linked in the new group; each moves through a link of its own. On the
+moving device their slots are sign-ins like any slot outside its roster, which it SHOULD show its user with the labels
+its old roster gave them, as devices still in its old device group that the user can move too, rather than as unknown
+sign-ins.
 
 Its leaves in other groups carry tags sealed under the old group's `leaf_tag_key`, which do not read as its own under
 the new group's key, so it replaces them as any device replaces an untagged leaf
@@ -279,20 +280,25 @@ with exactly the members `v`, the JSON number `1`, and `from`, the sender's slot
 hexadecimal characters, written in that order without whitespace.
 
 The moving device keeps its copy of the old group and reads it until a Commit removes its leaf there. It sends the
-notice again whenever it starts and at least once a day until then. Once that Commit reaches it, or once it is the
-group's only member, it discards the active state of its copy, as a removed member may
+notice again whenever it starts and at least once a day until then. It also reads the moved notices of the old group's
+other devices, under the checks below, though it no longer trusts that group, since they may move before any of them
+removes another. Once the Commit that removes it reaches it, or once every other member of the old group is one whose
+moved notice it has read, it stops sending and discards the active state of its copy, as a removed member may
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
 group's history.
 
-A device reads moved notices only in the device group it trusts, and ignores kind `463` in any other group. It drops a
-notice unless its content decodes exactly as above, `from` is another device in its current roster, and the leaf that
-sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as `from`'s
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). On a notice it keeps, it
-removes that device: one Commit that removes the leaf that sent the notice and, with `remove_device`, its roster entry
+A device reads moved notices in the device group it trusts and, as above, in the one it moved from, and ignores kind
+`463` in any other group. It drops a notice unless its content decodes exactly as above, `from` is another device in
+that group's roster, the notice was sent in the epoch the device holds when it reads it, and the leaf that sent it, in
+that epoch's tree, carries a device tag that reads as `from`'s
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A notice from an earlier
+epoch counts for no device: the device it names may have been removed since and linked again, perhaps at the same leaf,
+and the sender's next notice counts instead. In the device group it trusts, on a notice it keeps, a device removes the
+device that sent it: one Commit that removes the leaf that sent the notice and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), unless that device is
-already gone from its roster. It writes no rejected slot, so the slot is a sign-in again
-([Any one device's answer](#any-one-devices-answer)), and it SHOULD tell its user that the device moved to another
-device group and offer to move this one too. Several devices may each make that Commit; branch selection keeps one.
+already gone from its roster. It writes no rejected slot, so the slot is a sign-in again ([Any one device's
+answer](#any-one-devices-answer)), and it SHOULD tell its user that the device moved to another device group and offer
+to move this one too. Several devices may each make that Commit; branch selection keeps one.
 
 A device group is left behind once no device trusts it. Nothing closes it: each of its devices leaves it as it moves,
 and the last one discards its copy.
