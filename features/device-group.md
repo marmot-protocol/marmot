@@ -842,10 +842,10 @@ roster defines them
 - `key_package_ref` is the `KeyPackageRef` of the private KeyPackage the Commit consumed, computed as
   [../foundation/key-packages.md](../foundation/key-packages.md) gives it.
 - `welcome` is one MLSMessage with `wire_format` `mls_welcome`, encoded as MLS defines it.
-- `relays` lists where the new member SHOULD fetch the chat's group messages, as the active transport binding names
-  them. On Nostr these are relay URLs under the relay URL profile
-  ([../transports/nostr.md](../transports/nostr.md), "Relay URL profile"), the list a kind `444` rumor's `relays` tag
-  carries.
+- `relays` lists, in order, where the new member SHOULD fetch the chat's group messages, as the active transport
+  binding names them: one to 16 entries, none repeated. On Nostr each entry is a relay URL under the relay URL profile
+  ([../transports/nostr.md](../transports/nostr.md), "Relay URL profile"), as in a kind `444` rumor's `relays` tag. The
+  list is a fetch hint, not group state: the chat's routing component inside the Welcome stays authoritative.
 
 ### Sending a sibling Welcome
 
@@ -864,6 +864,7 @@ other group. It drops one unless:
 
 - its content decodes exactly as [Message](#message) gives it: `version` `1`, a `welcome` whose `wire_format` is
   `mls_welcome`, and no bytes left over;
+- `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
 - `to` is its own slot;
 - `from` is another device in its current roster;
 - the leaf that sent it, as that leaf was in the epoch the message was sent in, carries a device tag that reads as
@@ -872,10 +873,17 @@ other group. It drops one unless:
   ([Issuing](#issuing)), whose private key material it still keeps.
 
 A device that passes these checks joins through the receiving flow of
-[../protocol-core/joining.md](../protocol-core/joining.md), with the sibling Welcome as the delivery: `to` addresses it
-to this device (step 1) and `key_package_ref` names the KeyPackage it consumes (step 2). Joining consumes that
-KeyPackage: the issuer deletes its private key material and its record of the hand-off along with the other consumed
-KeyPackage state (steps 11 and 12).
+[../protocol-core/joining.md](../protocol-core/joining.md), with the sibling Welcome as the delivery. The device
+group's authenticated sender, a device of this account, addresses it to this account (step 1), and `to` to this device
+within it. `key_package_ref` names the KeyPackage step 2 checks, and step 3 decodes the `welcome` field. A sibling
+Welcome dropped for its `to` or its `key_package_ref` consumes no KeyPackage. Joining consumes that KeyPackage: the
+issuer deletes its private key material and its record of the hand-off along with the other consumed KeyPackage state
+(steps 11 and 12).
+
+A device joins only from a sibling Welcome whose app payload was delivered to it
+([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"). Once joining has
+consumed the KeyPackage, the join stands: a branch selection that later withdraws that payload does not undo it, as a
+withdrawn update does not undo small state ([account-sync.md](account-sync.md), "Convergence and retained history").
 
 A KeyPackage handed over again at the cap ([Issuing](#issuing)) goes to the same sibling, so the record still names the
 slot that holds it.

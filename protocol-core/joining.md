@@ -34,13 +34,16 @@ not carry the ratchet tree.
 
 ## Delivery
 
-The active transport binding owns the Welcome delivery envelope, recipient addressing, and transport-specific metadata.
-Protocol core requires that the receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and
-can identify which local KeyPackage was consumed.
+The active transport binding owns the Welcome delivery envelope, recipient addressing, and transport-specific metadata
+for a Welcome that consumes a published KeyPackage. A KeyPackage that was never published has no publication for a
+binding to name, so the feature that hands it over owns its delivery: the device group's sibling Welcome
+([../features/device-group.md](../features/device-group.md), "Sibling Welcomes"). Protocol core requires that the
+receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and can identify which local
+KeyPackage was consumed.
 
-Each delivery names exactly one consumed KeyPackage, by whatever identifies it to the receiver: a binding's reference to
-the KeyPackage's publication, or the KeyPackage's `KeyPackageRef` for one that was never published. An inviter whose
-Commit added several KeyPackages, including several of one account's
+Each delivery names exactly one consumed KeyPackage: a binding's delivery by the binding's reference to the
+KeyPackage's publication, a sibling Welcome by the KeyPackage's `KeyPackageRef`. An inviter whose Commit added several
+KeyPackages, including several of one account's
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), MUST make one delivery for
 each of them, so that every added device receives a delivery naming its own KeyPackage.
 
