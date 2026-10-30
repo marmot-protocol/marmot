@@ -54,16 +54,12 @@ or change id. Positions are in chat order, which compares, in this order:
 Every device of the account sees the same values for the same message, so every device puts positions in the same
 order.
 
-The position a device takes from its own state names the furthest message a position may name at or before the
-furthest row its user has read, or none when there is no such message. A client's transcript also holds rows no
-position names; for this rule each sits in chat order as follows:
-
-- an edit sits where the message it edits does, since an edit does not move that message
-  ([../foundation/application-messages.md](../foundation/application-messages.md));
-- a row the client synthesizes locally, such as a kind `1210` group system row, sits before every delivered message of
-  the epoch it is anchored to;
-- a message the device sent that is not delivered yet sits after every delivered message;
-- a delivered message whose epoch or `created_at` is larger than 9007199254740991 sits where those values put it.
+The position a device takes from its own state names the furthest message, of those a position may name, that its
+user has read on that device, or none when there is no such message. Which messages count as read is the client's own,
+as it is without small state: a client that shows rows no position names, such as an edit, a synthesized group system
+row or a message not delivered yet, judges from its own transcript which messages its user has read. Only the device
+whose user read sends that position, and every device merges positions by the rules here, so two clients need not
+judge the same reading alike.
 
 A receiver cannot tell what a position names before it holds that message, so it takes any position whose encoding is
 valid, whatever the message turns out to be, and never reconsiders it. A read position only moves forward: a device
