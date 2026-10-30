@@ -147,16 +147,17 @@ removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
 Rejected KeyPackages are bounded too, because whoever holds the account's signing key can publish without limit and each
 KeyPackage the account's devices reject adds a record. A device SHOULD remove a `RejectedKeyPackageV1` once 30 days have
 passed since its `rejected_at`, by the device's own clock. A roster holds at most eight for one slot ("Validation"
-below): a device that records one for a slot that already has eight removes, in the same update, the one with the
-earliest `rejected_at`, and of those with the earliest, the one with the lowest `key_package_ref`. Eight keeps the
-newest records, which matter most. A slot serves one current publication at a time, so an older rejected KeyPackage
-joins new groups only through an inviter that fetched it before it was replaced, and the leaves it already joined are
-removed by the account's devices in those groups once the record reaches them
-([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection"). Eight is about a week of
-rejections when whoever holds the key publishes into a slot each time its device replaces the publication, about once a
-day ([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"). It also
-keeps the records for the 20 slots a roster can hold as devices ([account-devices-v1.md](./account-devices-v1.md), "Leaf
-limit") to 160, about 17 KB with 32-byte references and keys.
+below). A device that adds rejected KeyPackages for a slot keeps, of the records for that slot in the parent its Commit
+is based on together with the ones it adds, the eight newest, by latest `rejected_at` and then highest
+`key_package_ref`. In the same update it removes the others that the parent holds and does not add the others. It works
+this out again from the new parent each time it commits the update again.
+
+The number trades the roster's size against how long a record lasts. Eight keeps the records for the 20 slots a roster
+can hold as devices ([account-devices-v1.md](./account-devices-v1.md), "Leaf limit") to 160, about 17 KB with 32-byte
+references and keys. It keeps the newest records, which matter most: a slot serves one current publication at a time, so
+an older rejected KeyPackage joins new groups only through an inviter that fetched it before it was replaced. No number
+protects an older record from someone who keeps publishing into the slot: each KeyPackage the account's devices find and
+reject pushes the oldest out ([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection").
 
 `AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
 public half of the recovery key. Neither has a meaning in this version.
@@ -368,4 +369,6 @@ A roster with no devices, no rejections and an empty account entry is its `leaf_
 
 ## Migration
 
-This is the first version. A breaking change gets a new component id and document.
+This is the first version. While this component is a draft, its encoding can change under the id `0x800e`, with no
+promise that two revisions of the draft work together. Once it is adopted, a breaking change gets a new component id and
+document.

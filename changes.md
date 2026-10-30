@@ -24,17 +24,20 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage in
   its device group's roster, besides replacing it. `RejectedKeyPackageV1` gains `leaf_signature_key`, the raw
-  `signature_key` of the KeyPackage's LeafNode, and the roster's test vectors gain one. A sibling that finds a valid
-  KeyPackage, fresh or not, that no roster announced in a linked device's slot catches up on the device group, sends
-  that device an anomaly alert (kind `462`, new), and rejects the KeyPackage itself if, a day later and caught up again,
-  no roster has announced or rejected it, even when the slot no longer serves it. A device keeps each announcement it
-  has seen for the longest time a KeyPackage can be valid. The slot's device answers an alert by announcing a KeyPackage
-  it made again, even one it has since replaced, or by rejecting one it did not; each device keeps the `KeyPackageRef`
-  of every KeyPackage it publishes for that. No device rejects a KeyPackage any roster announced.
+  `signature_key` of the KeyPackage's LeafNode, and the roster's test vectors gain one. This changes the roster's
+  encoding under the same id `0x800e`: while the component is a draft, its encoding can change, with no promise that
+  revisions work together. A sibling that finds a valid KeyPackage, fresh or not, that no roster announced in a linked
+  device's slot catches up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the
+  KeyPackage itself if, a day later and caught up again, no roster has announced or rejected it, even when the slot no
+  longer serves it or is no longer a device's. A device keeps each announcement it has seen for the longest time a
+  KeyPackage can be valid. The slot's device answers an alert by announcing a KeyPackage it made again, even one it has
+  since replaced, or by rejecting one it did not; each device keeps the `KeyPackageRef` of every KeyPackage it publishes
+  for that. No device rejects a KeyPackage any roster it held announced, or one whose LeafNode carries a device tag that
+  reads as a device's.
 - A device whose check is complete rejects each valid KeyPackage it finds as the current publication of a `not_me` slot,
   unless the same check finds it in another slot or a roster announced it. Each rejected KeyPackage is dropped 30 days
-  after it was recorded, and a roster holds at most eight for one slot, so the roster stays bounded whatever the key
-  holder publishes.
+  after it was recorded, and a roster holds at most eight for one slot, the newest, so the roster stays bounded whatever
+  the key holder publishes.
 - A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
   whenever it removes a leaf tied to one, and whenever it finds such a leaf in a group it cannot clean up. One warning
   stays open per account, it never claims the key holder was stopped, and dismissing it is per device.
