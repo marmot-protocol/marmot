@@ -54,12 +54,14 @@ or change id. Positions are in chat order, which compares, in this order:
 Every device of the account sees the same values for the same message, so every device puts positions in the same
 order.
 
-The position a device takes from its own state names the furthest message, of those a position may name, that its
-user has read on that device, or none when there is no such message. Which messages count as read is the client's own,
-as it is without small state: a client that shows rows no position names, such as an edit, a synthesized group system
-row or a message not delivered yet, judges from its own transcript which messages its user has read. Only the device
-whose user read sends that position, and every device merges positions by the rules here, so two clients need not
-judge the same reading alike.
+The position a device takes from its own state names the furthest message, of those a position may name, that its user
+has read on that device, or none when there is no such message. Which messages count as read is the client's own, as it
+is without small state: a client that shows rows no position names, such as an edit, a synthesized group system row or a
+message not delivered yet, judges from its own transcript which messages its user has read. Only the device whose user
+read takes a position from that reading, and it merges that position as it would a received one: it keeps it only when
+it is further than the position it already holds. From there a position is an item like any other, sent in updates,
+broadcasts and resends by every device that holds it, and every device merges positions by the rules here, so two
+clients need not judge the same reading alike.
 
 A receiver cannot tell what a position names before it holds that message, so it takes any position whose encoding is
 valid, whatever the message turns out to be, and never reconsiders it. A read position only moves forward: a device
