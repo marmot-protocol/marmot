@@ -260,9 +260,11 @@ from its copy of either group, so that neither a restart nor dropping a copy los
 - that it owes the update in "Leaving the old group" below, from the Welcome until it has left the old group.
 
 It drops each part once that part is done: a slot once it is first a device in the device's own roster, or once its user
-ends the exception for it; an entry to bring once the new roster holds it, or holds a device for its slot, or once it is
-left out; the owed update once the device has left the old group. It drops the entries to bring if it stops trusting the
-new group, and the whole record if the move fails or once only the first part is left.
+ends the exception for it; a rejected slot to bring once the new roster holds it, or holds a device for that slot, or
+once it is left out; a rejected KeyPackage to bring once the new roster holds it, or once it is left out ("What it
+brings"), whatever its slot is in the new roster; the owed update once the device has left the old group. It drops the
+entries to bring if it stops trusting the new group, and the whole record if the move fails or once only the first part
+is left.
 
 From the time it joins, the moving device does not list its old roster's other devices as sign-ins to answer
 ([Answers](#answers)). It SHOULD show them to its user with the labels its old roster gave them, as devices still in its
