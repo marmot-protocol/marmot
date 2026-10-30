@@ -13,6 +13,27 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Sibling Welcomes (draft)
+
+[#471](https://github.com/marmot-protocol/marmot/pull/471) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[transports/nostr.md](./transports/nostr.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A Welcome that consumes a private KeyPackage travels as a sibling Welcome (kind `461`, new), an app event in the
+  device group carrying the Welcome, the consumed KeyPackage's `KeyPackageRef` and the chat's relays. A device MUST NOT
+  deliver such a Welcome through the transport binding's Welcome delivery.
+- A device joins through a Welcome that consumes a private KeyPackage it issued only when it arrived as a sibling
+  Welcome in its trusted device group, from a leaf whose device tag reads as the sender's slot, for a KeyPackage it
+  recorded as handed to that slot and still keeps. Every other Welcome that consumes one is still rejected. The join
+  stands if branch selection later withdraws the sibling Welcome.
+- A sibling Welcome's relay list holds one to 16 entries, none repeated, each valid under the binding's relay rules.
+- A transport binding carries Welcomes only for published KeyPackages, and the Nostr binding sends no kind `444` rumor
+  for a never-published one. A sibling Welcome names its consumed KeyPackage by `KeyPackageRef`.
+- When a device adds a sibling to a chat, and when it sends a sibling Welcome again, are not specified yet.
+
 ## 2026-10-30: Resending small state after a withdrawn device-group message (draft)
 
 [#470](https://github.com/marmot-protocol/marmot/pull/470) changes

@@ -144,11 +144,12 @@ account identity equals the joiner's own account identity when the resulting sta
 that resulting-state check are described in [../protocol-core/joining.md](../protocol-core/joining.md),
 "Welcome-bootstrap trust."
 
-Delivery does not change. The committer of a same-account Add delivers its Welcomes as any inviter does
-([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"). The Nostr binding's Welcome names the
-published KeyPackage event it consumed ([../transports/nostr.md](../transports/nostr.md), "Welcome delivery"), so on
-that binding a same-account Add uses a published KeyPackage. This document defines no delivery for a KeyPackage that
-was never published.
+The committer of a same-account Add delivers its Welcomes as any inviter does
+([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"), except for a private KeyPackage, which was
+never published. The Nostr binding's Welcome names the published KeyPackage event it consumed
+([../transports/nostr.md](../transports/nostr.md), "Welcome delivery"); a Welcome that consumes a private KeyPackage
+travels instead as a sibling Welcome inside the device group, naming the KeyPackage by its `KeyPackageRef`
+([../features/device-group.md](../features/device-group.md), "Sibling Welcomes").
 
 ## Sender rules
 
