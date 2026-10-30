@@ -390,13 +390,15 @@ candidate that selection would otherwise add.
 
 ### Slot deletion
 
-A device deletes its own slot ([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication")
-with a [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md) deletion request: a kind `5` event authored by
-the account, carrying exactly one `a` tag and exactly one `k` tag, each with exactly one value. The `a` value is the
-slot's address, `30443:<author>:<d>`, where `<author>` is the lowercase hex account identity and `<d>` is the slot's `d`
-value. The `a` tag carries no relay hint. The `k` value is `30443`. A device that deletes several of its own slots, for
-example under the one-slot migration above, sends one request per slot. Each request is published to the same
-write-capable relay set as the account's KeyPackages.
+A device deletes its own slot ([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication"),
+or, as the device that decided a sibling's removal, that sibling's slot
+([../features/device-group.md](../features/device-group.md), "The removed device's slot"), with a
+[NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md) deletion request: a kind `5` event authored by the
+account, carrying exactly one `a` tag and exactly one `k` tag, each with exactly one value. The `a` value is the slot's
+address, `30443:<author>:<d>`, where `<author>` is the lowercase hex account identity and `<d>` is the slot's `d` value.
+The `a` tag carries no relay hint. The `k` value is `30443`. A device that deletes several of its own slots, for example
+under the one-slot migration above, sends one request per slot. Each request is published to the same write-capable
+relay set as the account's KeyPackages.
 
 That shape binds senders. A receiver accepts deletion requests the way NIP-09 does, because relays delete events on the
 same terms whatever shape the request has. A deletion request applies to a slot when it is a valid signed kind `5`
@@ -412,12 +414,12 @@ MUST NOT select a candidate covered by a deletion request it holds.
 Deletion is cleanup, not revocation. A relay can ignore the request and keep serving the event, and an inviter that has
 not seen the request can still select the KeyPackage until its `Lifetime` ends.
 
-A deletion request, like a KeyPackage event, is authenticated only to the account. Nothing in it shows which device
-sent it, so a receiver cannot check the rule that a device deletes only its own slot; that rule binds senders. A
-device-bound proof on deletion requests would not close the gap: anyone who can sign as the account can already publish
-a newer event into any of its slots, which replaces that slot's KeyPackage just as completely. Telling a device's own
-publications apart from other publications under the same account is left to features that track the account's
-devices.
+A deletion request, like a KeyPackage event, is authenticated only to the account. Nothing in it shows which device sent
+it, so a receiver cannot check the rule that a device deletes only its own slot or the slot of a sibling whose removal
+it decided; that rule binds senders. A device-bound proof on deletion requests would not close the gap: anyone who can
+sign as the account can already publish a newer event into any of its slots, which replaces that slot's KeyPackage just
+as completely. Telling a device's own publications apart from other publications under the same account is left to
+features that track the account's devices.
 
 ### Deleting one publication
 

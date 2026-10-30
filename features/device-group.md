@@ -10,9 +10,10 @@ The non-normative direction is described in [../ideas/multi-device.md](../ideas/
 the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what the devices do when someone else publishes under the account's key where they did
-not expect it, how devices hand each other private KeyPackages, and how the Welcome for an add that uses one reaches
-its sibling. [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group.
-When a device adds a sibling to a chat, the group's other messages, and removal are not specified yet.
+not expect it, how devices hand each other private KeyPackages, how the Welcome for an add that uses one reaches its
+sibling, and how the user removes a device. [account-sync.md](./account-sync.md) specifies the small-state messages
+devices exchange in the group. When a device adds a sibling to a chat, the group's other messages, a removed device's
+own side, and signing out through a sibling are not specified yet.
 
 ## Surfaces
 
@@ -405,8 +406,97 @@ cover what this discloses.
   leaf later.
 
 A leaf that no device claims is not evidence of anything by itself ([Leaves tied to a
-rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section. Adding
-a sibling to a group it is missing from, and removing a removed device's leaves, are not specified yet.
+rejection](#leaves-tied-to-a-rejection)). What the devices do with a leaf tied to a rejection is in that section, and
+removing a removed device's leaves is under [Removing a device](#removing-a-device). Adding a sibling to a group it is
+missing from is not specified yet.
+
+## Removing a device
+
+The user removes a linked device from any other device of the account. A device never removes itself this way: a
+device the user is done with signs out.
+
+### The removal Commit
+
+A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaf, the one
+whose device tag reads as the sibling's slot ([Matching leaves to devices](#matching-leaves-to-devices)), and carries a
+roster update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two
+operations for that slot, in this order:
+
+1. `remove_device`;
+2. `set_rejected_slot` with reason `removed`, `rejected_at` the time the user decided, and the `tag_signature_key` the
+   entry had.
+
+If no leaf's tag reads as the slot, the Commit carries the same roster update and removes no leaf. A client MUST NOT
+remove a device whose entry has no `tag_signature_key` yet: its link may still fail, and the approving device undoes a
+failed link with `remove_device` alone ("A link that is not taken up").
+
+A device keeps each removal it decided, across restarts, until it discards its copy of the device group ([A link that is
+not taken up](#a-link-that-is-not-taken-up)), and removes the device again whenever the roster lists its slot. It
+records the decision before it commits. While its copy of the group is terminal or cannot be read, and it has not
+discarded it, the removal waits. It commits only while it can commit in the device group, so a Commit there still in
+flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
+selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
+as a failed link, the decision stands. A device does the cleanup in [Removing it from chats](#removing-it-from-chats)
+and [Its private KeyPackages](#its-private-keypackages) only while its trusted roster records the slot as `removed`, so
+it does none when the entry went as a failed link, which writes no such record, or when the record was dropped before
+the device acted on it; the slot's leaves then read as unclaimed. When the removal's Commit fails, or branch selection
+drops the removal, even after the `removed` record has been dropped, the roster lists the slot again and the device
+commits the removal again. A removed device comes back only as a new slot. A removal committed again keeps the
+decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next pass that drops old
+`removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+### The removed device's slot
+
+The device that decided the removal deletes the removed device's publication slot, with the transport's slot deletion
+(for Nostr, [../transports/nostr.md](../transports/nostr.md), "Slot deletion"). This is the one case in which a device
+deletes a slot it did not create ([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and
+publication slots"):
+
+- it sends the deletion once its state for the device group is settled and no longer lists the slot as a device,
+  whether it records the slot as `removed`, that record has since been dropped, or the entry went as a failed link
+  after the user decided;
+- the deletion covers only publications stamped at or before its own time, so the device stamps it as far ahead of its
+  clock as it would date a publication of its own ([../foundation/key-packages.md](../foundation/key-packages.md), "A
+  publication the device did not make"), since the removed device's clock may run ahead;
+- it sends it again until the transport accepts it;
+- when branch selection drops the removal after that, it commits the removal again and, once its state is settled and
+  no longer lists the slot as a device, deletes the slot again, since the removed device may have published to it in
+  between;
+- no other device deletes the slot, and nothing else lets a device delete another device's slot.
+
+The deletion stops inviters from selecting the KeyPackages the removed device published up to the deletion's time. It
+does not cover a later publication: what the account's devices do about a removed device that publishes again is not
+specified yet. It is cleanup, not revocation: a KeyPackage a relay keeps serving, or one an inviter already holds, can
+still be used until its `Lifetime` ends.
+
+### Removing it from chats
+
+While a device's trusted roster records a slot as `removed`, the device removes from each group it is in, other than
+the device group, every leaf of its account whose device tag reads as that slot ([Matching leaves to
+devices](#matching-leaves-to-devices)). Every device that trusts the device group does this, whichever device decided
+the removal.
+
+- In a group that requires `0x800d`, it removes those leaves with one same-account Commit
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations"). It
+  makes that Commit only while it can commit in the group, and otherwise tries again later. Two devices may both make
+  one; branch selection keeps one, and the other then finds nothing left to remove.
+- In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
+  in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
+- A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
+  there: no device of the account can see it.
+
+The removed device's leaves stay readable as its old slot until the roster drops the `removed` record
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A leaf left in a group after
+that reads as unclaimed.
+
+### Its private KeyPackages
+
+While its trusted roster records a slot as `removed`, every device of the account deletes the private KeyPackages it
+exchanged with that slot ([Private KeyPackages](#private-keypackages)):
+
+- those it issued to the slot, with their private keys, so that a Welcome the removed device makes from one cannot add
+  this device to a group;
+- those the slot handed it, so that it never adds the removed device with one.
 
 ## Slot announcements
 
@@ -690,7 +780,8 @@ tag ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "
 private KeyPackages only once it can tag.
 
 - The issuer records which sibling, by slot, it handed each one to. It keeps the private key material until a Welcome
-  consumes the KeyPackage or until its `Lifetime.not_after`, whichever comes first.
+  consumes the KeyPackage, until its `Lifetime.not_after`, or until its trusted roster records that sibling's slot as
+  `removed` ([Its private KeyPackages](#its-private-keypackages)), whichever comes first.
 - Only a sibling's add may consume a private KeyPackage. A device MUST reject every Welcome that consumes a private
   KeyPackage it issued unless it arrived as a sibling Welcome that passes [Receiving a sibling
   Welcome](#receiving-a-sibling-welcome). It decides that within the tentative validation of
@@ -709,7 +800,8 @@ private KeyPackages only once it can tag.
   over again private KeyPackages it already handed that sibling that no Welcome has consumed, the most recently issued
   first, so a sibling whose hand-offs were all lost still gets some. Handing one over again does not change its
   `Lifetime`: it counts toward the stock again only until it reaches halfway.
-- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage.
+- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage. A `removed` slot
+  ends both sooner ([Its private KeyPackages](#its-private-keypackages)).
 
 ### Messages
 
@@ -759,8 +851,9 @@ as several hand-offs.
   `id` differs and the sibling answers it.
 - A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
   it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
-  material until a Welcome consumes them or they expire. A device at its cap answers as [Issuing](#issuing) allows. A
-  device answers each request, by its Marmot app event `id`, once.
+  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or its trusted roster
+  records the requester's slot as `removed`. A device at its cap answers as [Issuing](#issuing) allows. A device answers
+  each request, by its Marmot app event `id`, once.
 - There are no receipts. A lost hand-off is repaired by the requester's next request.
 
 ### Receiving

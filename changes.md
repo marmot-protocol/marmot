@@ -13,6 +13,28 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-30: Removing a device (draft)
+
+[#472](https://github.com/marmot-protocol/marmot/pull/472) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and [transports/nostr.md](./transports/nostr.md).
+
+- The user removes a linked device from another device of the account with one device-group Commit: it removes the
+  device's leaf (the one whose tag reads as its slot) and carries `remove_device` and a `removed` rejected slot with
+  the entry's `tag_signature_key`. A device whose entry has no `tag_signature_key` yet is not removed this way. The
+  deciding device records the decision first, keeps it until it discards its copy of the device group, and commits
+  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
+- The deciding device then deletes the removed device's KeyPackage slot once its settled device-group state no longer
+  lists the device, and again after committing a removal that branch selection dropped: the one case where a device
+  deletes a slot it did not create. It stamps the deletion as far ahead of its clock as it would date its own
+  publication.
+- Every device that trusts the device group removes the removed slot's tagged leaves from the groups it is in, with a
+  same-account Commit where the group requires `0x800d`, and tells its user about the others. It also deletes the
+  private KeyPackages it issued to a removed slot, with their keys, and those that slot handed it, before `not_after`.
+- A device does that cleanup only while its trusted roster records the slot as `removed`: none after a failed link,
+  which writes no such record, or for a record dropped before it acted
+  ([mdk#2761](https://github.com/marmot-protocol/mdk/issues/2761)).
+
 ## 2026-10-30: Sibling Welcomes (draft)
 
 [#471](https://github.com/marmot-protocol/marmot/pull/471) changes
