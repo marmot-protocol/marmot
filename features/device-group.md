@@ -32,7 +32,8 @@ A device group is a group whose GroupContext `app_components` required list cont
 devices of one account and no others ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
 "Requirement").
 
-An account has no device group while it has one device. The device group is created when a second device is linked.
+An account has no device group while it has one device. A device that trusts no device group creates one when it
+approves a link ("Creating the device group").
 
 The marker never makes a group trusted. Anyone holding the account's signing key can create a group that requires
 `0x800e` and send a Welcome for it to the account. A device acts on a group as its device group only under the trust
@@ -40,13 +41,14 @@ rule below.
 
 ## Creating the device group
 
-The device that approves a link creates the device group, if its account has none, and adds the newly linked device in
-the founding Add:
+The device that approves a link creates the device group if it trusts none yet ("Trust"), and adds the newly linked
+device in the founding Add:
 
-- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the
-  creating device, with the rejections it already holds ("Answers"). The founding Add sets the linked device's roster
-  entry, as every later Add sets the entry of the device it adds. The creating device's entry has the "add to all my
-  chats" and "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving").
+- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the creating
+  device, with the rejections it already holds ("Answers"), which never name the linked device's slot ("Before
+  answering"). The founding Add sets the linked device's roster entry, as every later Add sets the entry of the device
+  it adds. The creating device's entry has the "add to all my chats" and "bring chat history" settings on, as a new
+  device's are unless its user turns them off ("Approving").
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -93,7 +95,8 @@ link that waits for its Welcome ("Joining"), and only if it would link the KeyPa
 ([device-pairing.md](./device-pairing.md), "Existing device", step 2). It answers whether it trusts a device group or
 has none yet. It would not link the KeyPackage when:
 
-- the KeyPackage's slot is already a device in its roster, or the roster rejects that slot or that KeyPackage;
+- the KeyPackage's slot is already a device in its roster, the roster rejects that slot or that KeyPackage, or the
+  device rejected that slot itself ("Answers");
 - the KeyPackage does not support everything its device group requires, or, when it has no device group, everything
   the device group it would create will require;
 - its roster already lists `max_leaves_per_account` devices, the most a roster holds
@@ -157,9 +160,10 @@ across restarts until the link ends, so that after a restart has erased the sess
 Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
 whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
 group requires `0x800e`, and on joining records the group as its device group ("Trust"). While it waits, the group id is
-reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. A Welcome it refuses
-leaves the KeyPackage and the group id for the real one, so a forged Welcome that arrives first does not make the link
-fail.
+reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The confirmed
+KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite to a chat
+built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the group id for
+the real one, so a forged Welcome that arrives first does not make the link fail.
 
 A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
 confirmed, so a Welcome sent under an earlier link never matches a later one. The link ends, and the device accepts no
@@ -379,10 +383,14 @@ leaves, warning about a leaf no device claims) is not specified yet.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
-- Between the existing device's Confirm and the new device's own, the group id is readable but not yet reserved. A
-  Welcome under that id in that window, into a group that does not require `0x800e`, joins as an ordinary group, and
-  the link then fails because the id is taken. This is denial of service only, like a forged Cancel
-  ([device-pairing.md](./device-pairing.md), "Security considerations").
+- Between the existing device's Confirm and the new device's own, neither the group id nor the KeyPackage is reserved
+  yet. A Welcome in that window under that id, into a group that does not require `0x800e`, or one that adds the
+  KeyPackage, joins as an ordinary group, and the link then fails because the id is taken or the KeyPackage used up.
+  This is denial of service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security
+  considerations").
+- A device that trusts no device group cannot see one that another device of the account already has, such as one linked
+  from another sign-in. When it approves a link it founds a second device group. Merging two device groups is not
+  specified yet ("Joining").
 - Holding the account's signing key never authenticates a device. A device enters the device group only under a link
   whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
   under the account is not enough.
