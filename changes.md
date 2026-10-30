@@ -23,17 +23,69 @@ the founder in the founding roster, a joining device in the update that first se
 whose entry lacks its key, or holds another, in a later update of its own entry. A device never changes another device's
 `history_key`. Siblings seal to it with `EncryptWithLabel` under the label `"Marmot History"` and a context the carrying
 message defines. A `history_key` that is not a public key of the KEM still leaves the roster valid; that device gets no
-history. The roster's encoding does not change: `history_key` was already a reserved field of `DeviceEntryV1`. It also
-adds "History bundles": one stretch of one chat's history as a UTF-8 JSON object (`v`, `chat`, `from`, `to`, `events`)
-of at most 8,388,608 bytes, each event the raw inner event with its epoch, its retention, a moderation `grant` for kinds
-`1985` and `4891`, and per-file attachment `keys`, each named by the encrypted file's `ciphertext_sha256`. Deleted and
-admin-removed messages and every event that targets them stay out; the deletions themselves go in. Each bundle is
-encrypted with ChaCha20-Poly1305 under a fresh one-use key and a zero nonce, longer histories split into bundles over
-consecutive stretches, and a receiver checks a bundle's content but not its layout, only adds events it lacks, never
-moves its read position for them, and should not count them as unread.
+history. `history_key` adds nothing to the roster's encoding: it was already a reserved field of `DeviceEntryV1`. It
+also adds "History bundles": one stretch of one chat's history as a UTF-8 JSON object (`v`, `chat`, `from`, `to`,
+`events`) of at most 8,388,608 bytes, each event the raw inner event with its epoch, its retention, a moderation `grant`
+for kinds `1985` and `4891`, and per-file attachment `keys`, each named by the encrypted file's `ciphertext_sha256`.
+Deleted and admin-removed messages and every event that targets them stay out; the deletions themselves go in. Each
+bundle is encrypted with ChaCha20-Poly1305 under a fresh one-use key and a zero nonce, longer histories split into
+bundles over consecutive stretches, and a receiver checks a bundle's content but not its layout, only adds events it
+lacks, never moves its read position for them, and should not count them as unread.
 [features/encrypted-media.md](./features/encrypted-media.md) and
 [features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
 exporter secret, to its own account's devices in a bundle. Clients that do not support device groups change nothing.
+
+## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
+
+[#469](https://github.com/marmot-protocol/marmot/pull/469) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage in
+  its device group's roster, besides replacing it. `RejectedKeyPackageV1` gains `leaf_signature_key`, the raw
+  `signature_key` of the KeyPackage's LeafNode, and the roster's test vectors gain one. This changes the roster's
+  encoding under the same id `0x800e`: while the component is a draft, its encoding can change, with no promise that
+  revisions work together. A sibling that finds a valid KeyPackage, fresh or not, that no roster announced in a linked
+  device's slot catches up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the
+  KeyPackage itself if, a day later and caught up again, no roster has announced or rejected it, even when the slot no
+  longer serves it or is no longer a device's. Catching up counts only after a fetch of the device group that succeeded.
+  A device keeps each announcement it has seen for the longest time a KeyPackage can be valid. The slot's device answers
+  an alert by announcing a KeyPackage it made again, even one it has since replaced, or, while its slot still serves one
+  it did not make, by rejecting it; it never announces a current publication it did not make. Each device keeps the
+  `KeyPackageRef` of every KeyPackage it publishes for that. No device rejects a KeyPackage any roster it held
+  announced, or one whose LeafNode carries a device tag that reads as a device's, and each rejection is decided while
+  the device holds the KeyPackage, so that it can read that tag: a sibling reads it before it alerts. A device keeps
+  each rejected KeyPackage it records until the record lapses, committing it again when a branch selection drops the
+  update that recorded it, and a device with no device group brings the ones it keeps, its own slot's included, into the
+  device group it creates or joins.
+- A device whose check is complete rejects each valid KeyPackage it finds as the current publication of a `not_me` slot,
+  unless the same check finds it in another slot or a roster announced it. Answering This wasn't me starts a check. Each
+  rejected KeyPackage is dropped 30 days after it was recorded, and a roster, a founding one included, and the
+  rejections a device keeps each hold at most eight for one slot, the newest, so the roster stays bounded whatever the
+  key holder publishes.
+- A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
+  whenever it removes a leaf tied to one, and whenever it finds such a leaf in a group it cannot clean up. One warning
+  stays open per account, it never claims the key holder was stopped, and dismissing it marks what it gathers as seen on
+  that device only.
+- Each device records the `KeyPackageRef` each of its account's leaves joined with, and removes, where it can, the
+  leaves that no device claims and that joined with a KeyPackage its roster rejects or it has rejected itself: by a
+  same-account Remove, now allowed for this by the sender rules of `marmot.group.account-devices.v1`, or as an admin. A
+  leaf that no device claims is not evidence by itself and is never removed or warned about for that alone.
+- A client that lets a new device start without the sign-ins its first check found answers Not now for every slot that
+  check returned, never This wasn't me.
+
+## 2026-10-30: Deleting a far-future publication in a device's own slot (draft)
+
+[#468](https://github.com/marmot-protocol/marmot/pull/468) changes
+[foundation/key-packages.md](./foundation/key-packages.md) and [transports/nostr.md](./transports/nostr.md).
+
+- A device whose own slot serves a publication it did not make, dated further ahead than the device would date its own,
+  cannot outrank it. The device may ask relays to delete that publication by id and then publish into its slot again.
+  On Nostr the request is a kind `5` event at the current time with exactly one `e` tag naming the event and one `k`
+  tag, `30443`. Receivers selecting KeyPackages still ignore `e` tags.
 
 ## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
 

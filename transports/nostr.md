@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t1-network-observation-discovery-and-traffic-correlation).
+
 This document defines the first Marmot transport binding: MLS bytes carried over Nostr relays.
 
 Nostr also appears in Marmot identity and app payloads. Those are separate foundation rules:
@@ -80,6 +82,7 @@ first matching tag and ignore later duplicates.
 | kind `30443` KeyPackage | `app_components` | exactly one id-list tag |
 | kind `30443` KeyPackage | `client` | optional; sender: at most one tag, exactly one value; receiver: ignores a repeated or malformed tag, never rejects the event ("KeyPackage publication") |
 | kind `5` slot deletion | `a`, `k` | sender: exactly one of each, one value each; receiver: applies the request when any `a` tag matches the slot and does not check `k` ("Slot deletion") |
+| kind `5` publication deletion | `e`, `k` | sender: exactly one of each, one value each, `e` the lowercase hex event id; receiver selecting KeyPackages: ignores it ("Deleting one publication") |
 
 The kind `444` `e` tag sits on the trust boundary: it is a claim about which KeyPackage event was consumed. It is not
 proof that the event exists, was authored by the invitee account, or carried the decoded KeyPackage. A client that needs
@@ -411,6 +414,19 @@ device-bound proof on deletion requests would not close the gap: anyone who can 
 a newer event into any of its slots, which replaces that slot's KeyPackage just as completely. Telling a device's own
 publications apart from other publications under the same account is left to features that track the account's
 devices.
+
+### Deleting one publication
+
+A device that deletes one publication in its own slot by its identifier
+([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make") uses a NIP-09
+deletion request: a kind `5` event authored by the account, carrying exactly one `e` tag and exactly one `k` tag, each
+with exactly one value. The `e` value is the publication's event id in lowercase hex, with no relay hint. The `k` value
+is `30443`. The request's `created_at` is the device's current time: NIP-09 deletes the event an `e` tag names whatever
+that event's `created_at`, which a slot deletion cannot do for an event dated after the request. The request is
+published to the same write-capable relay set as the account's KeyPackages.
+
+The request asks relays to drop that event and nothing else. A receiver selecting KeyPackages ignores its `e` tag, as
+"Slot deletion" above says, so the request never covers another publication in the slot.
 
 ### Migration from kind 10051
 

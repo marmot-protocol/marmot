@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t7-crash-incomplete-recovery-and-rollback-of-externally-visible-work).
+
 This document defines the implementation-neutral durability contract for Marmot group processing. It specifies which
 protocol facts and effects survive process interruption, and the safe behavior when recovery is incomplete. It does
 not define a database, snapshot format, transaction mechanism, scheduler, or serialization beyond existing Marmot and

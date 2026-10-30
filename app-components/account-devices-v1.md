@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t5-malicious-members-administrators-and-same-account-devices).
+
 `marmot.group.account-devices.v1` lets a member add and remove leaves of its own account in a group without admin
 authority. A device can then add another device of the same account to a group it is in, or remove one, for example
 when that device signs out. A group turns this on by requiring the component.
@@ -167,10 +169,11 @@ validation rules above are the only receiver checks this component adds.
   inviter adds another account's. A KeyPackage published by someone holding the account's key can then join the new
   group, which is the risk every inviter of a new group already accepts; the rule above protects groups that already
   have members and history.
-- A client SHOULD commit a same-account Remove only to carry out its user's decision to remove that device, or a request
+- A client SHOULD commit a same-account Remove only to carry out its user's decision to remove that device, a request
   from the device being removed, such as signing out
   ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Removal by another device of the same
-  account").
+  account"), or the removal of a leaf that its account's device group ties to a rejection
+  ([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection").
 - Before committing same-account operations without admin authority, a client checks that the current canonical state
   requires `0x800d`. Before any Commit in such a group, it checks that the resulting state stays within the leaf limit.
 
