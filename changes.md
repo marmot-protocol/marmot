@@ -49,7 +49,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   never publishes an unannounced KeyPackage. The founding roster announces both devices' KeyPackages. A client should
   tell its user while a refresh is held back for want of an announcement.
 - Every device, in a device group or not, now reads its own slot at start and about daily. A current publication
-  there that it did not make, valid or not, is replaced by a newer KeyPackage of its own.
+  there other than its own latest, valid or not, is replaced by a newer KeyPackage of its own.
 - Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
   sibling's add; until sibling adds are specified, a device rejects any Welcome that consumes one. A device tops a
   sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off (kind `460`), both new, travel
