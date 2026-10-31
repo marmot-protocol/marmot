@@ -89,6 +89,10 @@ of the past. History is read-only content.
 **The device that adds the laptop to a chat also sends that chat's history.** At link time that is the approving
 iPhone. Later it is whichever sibling fills a gap. There is exactly one adder per chat, so nothing needs coordinating.
 
+The spec covers only this rule so far ([../features/account-sync.md](../features/account-sync.md), "History
+deliveries"). The offers below, filling in after a known loss, and confirmations are set aside; MDK tracks them in
+[mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799).
+
 **Filling in what's missing.** Say Alice got her iPhone last month, but her iPad has two years of Book club. The
 iPhone can only give a month, so the laptop shows "History from March". A device's history can also have holes in the
 middle: a device that was offline too long can miss messages for good
@@ -332,10 +336,11 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 
 1. **Roster additions.** Each device's history key, the backup writer, and the recovery key's public half join the
    roster component defined with the multi-device device group.
-2. **History transfer.** History keys and the bundle format are specified in
-   [../features/account-sync.md](../features/account-sync.md). Still to come there: device-group message kinds for
-   transfer offers, older-history offers, sealed bundle keys, manifests, and confirmations. Large bundles reuse
-   encrypted-media locators and Blossom storage.
+2. **History transfer.** History keys, the bundle format and inline history deliveries from the adder are specified
+   in [../features/account-sync.md](../features/account-sync.md). Still to come there: Blossom locators for large
+   bundles, which reuse encrypted-media locators and Blossom storage, and then transfer offers, older-history offers,
+   manifests and confirmations (kinds `470` to `472` stay reserved for them; see
+   [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
    holds it) is specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: the
