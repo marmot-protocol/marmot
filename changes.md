@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#480](https://github.com/marmot-protocol/marmot/pull/480) changes
 [features/device-group.md](./features/device-group.md),
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
