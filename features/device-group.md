@@ -214,12 +214,10 @@ If the link is not made by then, the approving device first processes the input 
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
 acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
-link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
-selection keeps the new device's first Commit and drops that removal, the link is made after all, as the approving
-device and its siblings see it. The new device may have realized the removal before that, as the next paragraph says,
-and does not take that back: it has discarded its copy and does not run on that slot again. Its entry then stays as a
-device that never commits, which its siblings come to show as inactive ([Inactive devices](#inactive-devices)) and the
-user can remove ([Removing a device](#removing-a-device)).
+link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. The
+failure stands: if branch selection drops that removal, the approving device commits it again, even when the new
+device's first Commit is then on the selected branch, since the new device may already have realized the removal and
+discarded its copy, as the next paragraph says.
 
 A device whose leaf a Commit on the selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
@@ -507,9 +505,9 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 
 ### On the removed device
 
-A device that its device group removes after its link was made, or after it created the group, is unlinked from the
-account ([A link that is not taken up](#a-link-that-is-not-taken-up) covers a link that was never made). It realizes
-that removal as soon as the removing Commit is on the selected branch
+A device that its device group removes is unlinked from the account, unless the removal undid a failed link, which the
+roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). It realizes that
+removal as soon as the removing Commit is on the selected branch
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
 anything more, and then:
 
