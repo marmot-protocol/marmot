@@ -149,8 +149,8 @@ The approving device treats the link as made once the new device's first Commit 
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
 group, and it holds no unprocessed input for the group. Neither the approving Commit's publication nor its Welcome's
 delivery shows that the new device joined; only a Commit from the new device's own leaf does. Once made, a link stays
-made. Until then, anything that acts on the new device as a member of the account waits, and the link can still fail
-("A link that is not taken up").
+made, and once failed, it stays failed. Until then, anything that acts on the new device as a member of the account
+waits, and the link can still fail ("A link that is not taken up").
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
 a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
@@ -215,9 +215,9 @@ device's first Commit is still not on the selected branch after that, the link h
 acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
 link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. The
-failure stands: if branch selection drops that removal, the approving device commits it again, even when the new
-device's first Commit is then on the selected branch, since the new device may already have realized the removal and
-discarded its copy, as the next paragraph says.
+failure stands: the approving device keeps it across restarts and, whenever branch selection drops that removal, commits
+it again, even when the new device's first Commit is then on the selected branch, since the new device may already have
+realized the removal and discarded its copy, as the next paragraph says.
 
 A device whose leaf a Commit on the selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
