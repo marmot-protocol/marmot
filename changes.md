@@ -13,6 +13,23 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device signs out through its siblings
+
+[#484](https://github.com/marmot-protocol/marmot/pull/484) changes
+[features/device-group.md](./features/device-group.md).
+
+- A device in a device group signs out through its siblings when its roster entry has its `tag_signature_key` and the
+  roster lists another device that is not `leaving`. It commits its own entry with status `leaving`. Once that Commit
+  is confirmed, it leaves itself every group except the device group and the groups that require `0x800d` and hold a
+  leaf tagged as such a sibling, then deletes its slot and its local state. If the `leaving` Commit is not confirmed
+  within about 30 seconds, it leaves every chat itself and tells its user. A device never sets another device's entry
+  to `leaving`.
+- A device that finds a sibling `leaving` on its selected branch, with its `tag_signature_key`, removes it as if its
+  user had decided to, and SHOULD first wait a random delay of up to 30 seconds.
+- A device that its device group removes while it is signing out is not unlinked: it finishes signing out.
+- A device that signs out on its own cannot leave its device group, where its account is the admin, and its leaf there
+  stays until a sibling removes it. An unlinked device's sign-out leaves no group and deletes no slot.
+
 ## 2026-10-31: A device its device group removes is unlinked
 
 [#479](https://github.com/marmot-protocol/marmot/pull/479) changes
