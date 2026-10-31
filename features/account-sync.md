@@ -373,7 +373,8 @@ is dropped. The label keeps a value sealed for a backup from opening as history 
 the other way round.
 
 Devices keep only the public half. A device derives the private half only while the user's words are in hand, to open
-a backup. It MUST NOT store the words, the entropy or the private half, and MUST NOT send them anywhere.
+a backup. It MUST NOT write the words, the entropy or the private half to persistent storage of any kind, MUST NOT hold
+them in memory longer than the steps below allow, and MUST NOT send them anywhere.
 
 ### The account's recovery key
 
@@ -393,7 +394,10 @@ A device turns backups on, or replaces the words, in four steps:
    none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
 4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half. If
    it cannot commit the update, because the account entry is no longer the one it read or the device group cannot
-   take a commit from it yet, it keeps them in memory, never on disk, for the user to try again.
+   take a commit from it yet, it holds them in memory for the user to try again. A retry uses the same words, makes no
+   new ones, and computes a new update from the account entry as the device reads it then. Words the device forgets
+   before their update is committed or their public half kept, because the user gives up or the device restarts,
+   never become the account's recovery key; the user starts again at step 1.
 
 A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself,
 across restarts, as the account's recovery key; new words replace it, and none of the rules below for roster updates
@@ -418,10 +422,10 @@ and never because the roster does not hold what the user chose: a roster with no
 turned on and after they were turned off again, so committing a change again on what the roster holds could undo another
 device's turn-off. A device shows backups as the roster's account entry holds them now. A device keeps each update it
 makes to the account entry, with the entry it was computed from, across restarts, until branch selection can no longer
-drop it. While one is not yet confirmed, or was dropped and is neither committed again nor refused, the device makes no
-other change to the account entry. An update whose publication fails is published again or discarded as
-[../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md) allows; that is not committing it again,
-and a discarded update is lost as a refused one is.
+drop it. While one's publication has no outcome yet, or it was dropped and is neither committed again nor refused, the
+device makes no other change to the account entry. An update whose publication fails is published again or discarded as
+[../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md) allows; that is not committing it again.
+A discarded update is lost as a refused one is: the device stops keeping it, and it holds back no other change.
 
 Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
 dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
