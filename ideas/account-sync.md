@@ -23,10 +23,10 @@ state such as read positions and mutes, and backups for when every device is gon
 
 | Term | Meaning |
 | --- | --- |
-| History | The messages one device has for one chat: text, tags, reactions, edits and deletions already applied, and attachment keys. |
-| History bundle | One chat's history, packed and encrypted for a single receiving device. |
+| History | The events one device has for one chat, as it received or sent them: messages, reactions, edits and deletions, plus attachment keys. |
+| History bundle | One stretch of one chat's history, packed and encrypted for a single receiving device. |
 | History key | A public key a device puts in its roster entry so siblings can seal history to it. |
-| Manifest | The small list that describes a large bundle: its chunks, where each is stored, and each chunk's hash. |
+| Manifest | The small list that describes bundles too large to send inline: where each is stored and its hash. |
 | Small state | Per-chat settings and positions that follow Alice: read position, pins, mutes, archived chats. |
 | Backup | An encrypted archive of history and small state, written by one of Alice's devices. |
 | Backup writer | The one device the roster names to write backups. |
@@ -65,13 +65,17 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 
 ## Scene 1: What history is
 
-When the laptop joins Book club, the iPhone sends it a record of what the iPhone has for that chat: each message's
-sender, time, text and tags, its reactions, and any edits and deletions already applied.
+When the laptop joins Book club, the iPhone sends it the events it holds for that chat, as it received or sent them:
+messages, reactions, edits and deletions. The laptop applies them the way it applies live events, so it ends up showing
+what the iPhone shows. A message that was deleted, or removed by an admin, doesn't travel, and neither does an edit,
+reaction or report that names it, such as an edit carrying its new text; a reply to it still does. The deletion itself does travel, so a later transfer from a
+sibling that missed it can't bring the message back.
 
 **Attachments travel as keys, not files.** In Marmot, an attachment's key comes from the MLS epoch its message was sent
 in ([../features/encrypted-media.md](../features/encrypted-media.md)). The laptop can't derive keys for epochs before
-it joined, so the record carries each attachment's key, locator, and hashes. The laptop fetches the encrypted file from
-the Blossom server when Alice opens it, the same way it fetches any new attachment.
+it joined, so next to each message, which already names the file's locator and hashes, the iPhone sends that one
+file's key, never the epoch's secret. The laptop fetches the encrypted file from the Blossom server when Alice opens
+it, the same way it fetches any new attachment.
 
 **Disappearing messages:** expired messages are never sent. The rest arrive with their original expiry
 ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) and vanish on the laptop at
@@ -84,6 +88,10 @@ of the past. History is read-only content.
 
 **The device that adds the laptop to a chat also sends that chat's history.** At link time that is the approving
 iPhone. Later it is whichever sibling fills a gap. There is exactly one adder per chat, so nothing needs coordinating.
+
+The spec covers only this rule so far ([../features/account-sync.md](../features/account-sync.md), "History
+deliveries"). The offers below, filling in after a known loss, and confirmations are set aside; MDK tracks them in
+[mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799).
 
 **Filling in what's missing.** Say Alice got her iPhone last month, but her iPad has two years of Book club. The
 iPhone can only give a month, so the laptop shows "History from March". A device's history can also have holes in the
@@ -125,16 +133,17 @@ them.
 2. The iPhone packs Book club's history into a bundle and encrypts it with a fresh random key.
 3. **A small bundle goes straight through the device group**, if it fits in one message of about 32 KiB once sealed.
    That stays well under the event sizes relays commonly accept.
-4. **A large bundle is split into chunks of about 8 MiB.** Each chunk is uploaded to a Blossom server as its own
-   opaque encrypted blob. A small **manifest** listing every chunk, where it is, and its hash goes through the device
+4. **A long history is split into bundles of at most 8 MiB**, each covering the next stretch of the chat in chat
+   order, and each encrypted with its own key. A bundle too large for one message is uploaded to a Blossom server as
+   one opaque encrypted blob. A small **manifest** listing each blob, where it is, and its hash goes through the device
    group instead.
 5. The bundle's key, and the manifest if there is one, go through the device group **sealed to the laptop's history
    key**. Other siblings can see that a transfer happened, but can't read it.
-6. The laptop fetches, checks each chunk against the manifest, imports, and confirms chunk by chunk. The iPhone deletes
-   each Blossom blob once it is confirmed.
+6. The laptop fetches, checks each blob against the manifest, imports, and confirms bundle by bundle. The iPhone
+   deletes each Blossom blob once it is confirmed.
 
-**Interruptions:** the laptop resumes by fetching only the chunks it hasn't confirmed. If the iPhone is the one
-interrupted, it re-uploads only the missing chunks, or builds a fresh bundle if its copy is gone.
+**Interruptions:** the laptop resumes by fetching only the bundles it hasn't confirmed. If the iPhone is the one
+interrupted, it re-uploads only the missing blobs, or builds fresh bundles if its copy is gone.
 
 **If the sealed key or manifest is lost** on the way, the laptop's recorded stretches for that chat don't change, so
 the iPhone's offer is still open and it sends again. This is the same "no visible effect, send again" rule multi-device
@@ -154,6 +163,9 @@ progress from multi-device Scene 5.
 The laptop marks imported messages internally. The UI shows a subtle divider, such as "Imported from iPhone", where its
 own live history begins.
 
+Review labels and admin removals need the author to have been an admin at the time. The laptop holds nothing from those
+epochs to check that, so the iPhone sends its own verdict with each one and the laptop takes it.
+
 Within Alice's own devices, the trust is the point: she linked the sending device herself. The limit is the one
 multi-device already states. A stolen linked device is inside the circle, and it could send invented history along
 with real history.
@@ -162,7 +174,9 @@ with real history.
 
 What matches across her devices:
 
-- **Read position per chat.** Read it on her phone, and the laptop doesn't show it as unread.
+- **Read position per chat.** Read it on her phone, and the laptop doesn't show it as unread. Importing history is not
+  reading it: imported messages never show as unread on the laptop, and an import never moves a read position, so it
+  never marks anything read on her other devices.
 - **Pins.**
 - **Mute and notification settings per chat.**
 - **Archived or hidden chats.**
@@ -299,7 +313,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Number | Value |
 | --- | --- |
 | History bundle sent inline | up to about 32 KiB once sealed |
-| Blossom chunk size for larger bundles | about 8 MiB |
+| Largest history bundle | 8 MiB, one Blossom blob when it can't go inline |
 | Backup frequency | daily |
 | Backup writer takeover | when the latest backup is more than 7 days old |
 | Backups kept | the latest 2, plus any that are the last to hold some messages; replacing the words deletes old ones only after Alice confirms |
@@ -321,9 +335,11 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 
 1. **Roster additions.** Each device's history key, the backup writer, and the recovery key's public half join the
    roster component defined with the multi-device device group.
-2. **History transfer.** A feature document for account sync, with device-group message kinds for transfer offers,
-   older-history offers, sealed bundle keys, manifests, and confirmations, plus the bundle format. Large bundles reuse
-   encrypted-media locators and Blossom storage.
+2. **History transfer.** History keys, the bundle format and inline history deliveries from the adder are specified
+   in [../features/account-sync.md](../features/account-sync.md). Still to come there: Blossom locators for large
+   bundles, which reuse encrypted-media locators and Blossom storage, and then transfer offers, older-history offers,
+   manifests and confirmations, whose kinds [../foundation/registries.md](../foundation/registries.md) holds for them
+   (see [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
    the backup pointer's address derivation and encrypted content in the Nostr transport, and the restore flow.

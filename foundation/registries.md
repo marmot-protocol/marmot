@@ -118,6 +118,7 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `459`   | Private KeyPackage request          | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `460`   | Private KeyPackage hand-off         | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `461`   | Sibling Welcome                     | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `473`   | History delivery                    | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -160,7 +161,8 @@ Kinds `452` to `456` are device pairing messages. They are never MLS application
 rumor gift-wrapped from an account to itself ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
 
 Kinds `457` to `489` are reserved for multi-device accounts: `457` to `462` for device-group messages, `463` to `469`
-spare, and `470` to `489` for later multi-device work. Any new use claims its kind in this table first.
+spare, `470` to `472` for history transfer messages not specified yet, and `474` and `477` to `489` for later
+multi-device work. Any new use claims its kind in this table first.
 
 Kind `1210` is reserved for durable group system rows, such as membership, name, avatar, or other group-lifecycle
 notices that clients render separately from human chat.
