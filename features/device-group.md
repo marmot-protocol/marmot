@@ -501,8 +501,8 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 A device in a device group names each KeyPackage in its own roster entry before that KeyPackage reaches its slot
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and publication slots"). The entry's
 `announced_key_package` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) holds the
-`KeyPackageRef` of the KeyPackage the device publishes there. Its siblings can then tell a refresh, which the roster
-names, from a publication in the slot that the device did not make.
+`KeyPackageRef` of the KeyPackage the device publishes there, so its siblings can read which KeyPackage the device
+publishes in its slot.
 
 - Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
   own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
@@ -551,8 +551,9 @@ whether or not the device has a device group.
 ## Rejections
 
 A `not_me` rejected slot records that someone holding the account's signing key may have published where the account's
-devices did not: a sign-in the user rejected ([Answers](#answers)). A KeyPackage a device finds in its own slot that it
-did not make shows the same ([A KeyPackage the device did not make](#a-keypackage-the-device-did-not-make)). Neither the
+devices did not: a sign-in the user rejected ([Answers](#answers)). A valid current-profile KeyPackage of the account
+that a device finds in its own slot and did not make shows the same ([A KeyPackage the device did not
+make](#a-keypackage-the-device-did-not-make)). Neither the
 rejection nor the device's replacement stops them. Other accounts' inviters read only published KeyPackages, never the
 roster, so they can still add whoever holds the key to new groups; and whoever holds it can still send as the account,
 remove the account's devices, and publish more KeyPackages. A stolen account signing key is out of scope: Marmot builds
@@ -562,8 +563,9 @@ this sense.
 ### The warning
 
 A device warns its user when it rejects a sign-in itself ([Answers](#answers)); when the roster of its trusted device
-group gains a `not_me` rejected slot, whichever device recorded it; and when it finds in its own slot a KeyPackage it
-did not make ([A KeyPackage the device did not make](#a-keypackage-the-device-did-not-make)).
+group gains a `not_me` rejected slot, whichever device recorded it; and when it finds in its own slot a valid
+current-profile KeyPackage of the account that it did not make ([A KeyPackage the device did not
+make](#a-keypackage-the-device-did-not-make)).
 
 - The warning says that the account's signing access may be in someone else's hands: the account's signing key, or a
   session with a remote signer. It MUST NOT claim that the account's devices stopped whoever holds it. For a signing

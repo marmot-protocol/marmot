@@ -510,9 +510,10 @@ signer session. The figure shows the case where the nsec itself is stolen. The w
 nsec, the only complete fix is moving to a new account, and for a signer, which session to revoke. It doesn't claim to
 know which one was taken.
 
-**What her devices do:** they mark the slot rejected so no device prompts about it again while the roster keeps that,
-and never add it to existing chats or send it history. A device that finds a KeyPackage it didn't make in its own slot
-replaces it with its own. Each device shows one warning for everything new, and Alice dismisses it on each device.
+**What her devices do:** after This wasn't me, they mark the slot rejected so no device prompts about it again while the
+roster keeps that, and never add it to existing chats or send it history. A device that finds a KeyPackage it didn't
+make in its own slot records nothing in the roster: it replaces the KeyPackage with its own and warns on that device.
+Each device shows one warning for everything new, and Alice dismisses it on each device.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
 devices, and publish more KeyPackages. Nothing takes them out of chats other people's inviters added them to. The
