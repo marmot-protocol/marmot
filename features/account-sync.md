@@ -402,12 +402,25 @@ device MUST NOT commit it on a roster whose account entry is not the one it read
 again after branch selection dropped it ([../protocol-core/convergence.md](../protocol-core/convergence.md)). Otherwise
 an update from a stale read would undo newer words another device wrote.
 
-Until the roster holds its key, a device that wrote new words remembers that key and the `recovery_public_key` the
-entry held when the user confirmed. While the roster still holds that earlier key, the device commits its key again,
-as in step 3: its update was dropped, or never went out, and nothing has changed the words since. Once the roster
-holds any other key, other words won; the device stops and SHOULD tell the user that the words they confirmed on this
-device are not in use. Two devices that turn backups on at once thus settle on one key, and the user of the other one
-learns that their words are not in use.
+A device turns backups off with an update that sets the account entry to hold neither `recovery_public_key` nor
+`backup_writer`, under the same rule. No device writes backups while they are off, and turning them on again takes new
+words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
+group turns backups off by forgetting the key it keeps.
+
+Until the roster holds its change, a device that turned backups on or off, or replaced the words, remembers the change
+and the `recovery_public_key` the entry held when the user made it. While the roster still holds that earlier key, or
+still holds none for a change made over none, the device commits the change again: its update was dropped, or never
+went out, and nothing has changed the words since. Once the roster holds the change, the device never commits it
+again, so a later change from any device stands. Once the roster holds any other key, another change won,
+and the device stops. When its change was new words, it SHOULD tell the user that the words they confirmed on this
+device are not in use, as it SHOULD when the roster comes to hold another key after it held the words confirmed on
+this device, since branch selection can still drop a change the device saw. Two devices that turn backups on at once
+thus settle on one key, and the user of the other one learns that their words are not in use.
+
+A roster that holds no key looks the same whether a device's update turning backups on was dropped or another device
+turned backups off after it landed. A device that has not yet seen its key in the roster commits it again, which undoes
+such a turn-off. A device SHOULD check whether the roster holds its change as soon as its update goes out, which keeps
+that window short.
 
 ## Convergence and retained history
 
@@ -448,6 +461,8 @@ so no device moves it back; a later position moves it again once that one is fur
 - Any device of the account can replace the recovery key and name itself as `backup_writer`, including a stolen linked
   device until it is removed. Backups written after that are sealed to words its holder chose, until a device of the
   user replaces the words again. Backups already written stay sealed to the words they were sealed to.
+- Any device of the account can turn backups off, including a stolen linked device until it is removed. No backups are
+  written until a device of the user turns them on again.
 - The recovery key's public half is in the roster, so every device ever in the device group, a removed one included,
   can seal a value to it. Only the words open one.
 - The words are the one secret that opens backups. Anyone who sees them can open every backup sealed to them, so a
