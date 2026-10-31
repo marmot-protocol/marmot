@@ -7,15 +7,18 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 ([device-group.md](./device-group.md)), so it never reaches a chat, a relay or another account.
 
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
-small state. History transfer, backups and invite decisions are not specified yet.
+small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
+that carry them from the device that adds a sibling to a chat. Backups and invite decisions are not specified yet.
 
 ## Surfaces
 
 - Feature: [device-group.md](./device-group.md), which defines the device group, when a device trusts one, and its
   roster.
-- Marmot app events: kind `475` (small-state update) and kind `476` (broadcast request), sent only in a device group
-  ([Messages](#messages)). Their kinds are registered in
-  [../foundation/registries.md](../foundation/registries.md).
+- App component: [../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), whose device entries
+  carry each device's history key ([History keys](#history-keys)).
+- Marmot app events: kind `475` (small-state update), kind `476` (broadcast request) and kind `473` (history delivery),
+  sent only in a device group ([Messages](#messages), [History deliveries](#history-deliveries)). Their kinds are
+  registered in [../foundation/registries.md](../foundation/registries.md).
 - Protocol core: [../protocol-core/convergence.md](../protocol-core/convergence.md) and
   [../protocol-core/retained-history.md](../protocol-core/retained-history.md), which decide when a device-group message
   is delivered, withdrawn or lost.
@@ -43,8 +46,9 @@ update; a device holds, sends and merges no item for another chat.
 | `archive` | whether the chat is archived                    | the highest version, then the tie-break |
 
 **Read positions.** A read position names one message of the chat: a Marmot app event
-([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, other than an
-edit (kind `1009`), whose epoch and `created_at` are each at most 9007199254740991. A read position carries no version
+([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, or imported from
+a sibling's history ([History bundles](#history-bundles)) with the epoch its bundle gives it, other than an edit (kind
+`1009`), whose epoch and `created_at` are each at most 9007199254740991. A read position carries no version
 or change id. Positions are in chat order, which compares, in this order:
 
 1. the MLS epoch the message was sent in;
@@ -65,8 +69,8 @@ merges positions by the rules here, so two clients need not judge the same readi
 A receiver cannot tell what a position names before it holds that message, so it takes any position whose encoding is
 valid, whatever the message turns out to be, and never reconsiders it. A read position only moves forward: a device
 takes a received position when it holds none for that chat, or when the received one is further than the one it holds. A
-device marks as read every delivered message of the chat at or before the position it holds, including ones that reach
-it later; the position changes nothing else, so a message that never counts as unread, such as an edit, stays that way
+device marks as read every message of the chat, delivered or imported, at or before the position it holds, including
+ones that reach it later; the position changes nothing else, so a message that never counts as unread, such as an edit, stays that way
 after it. A device may hold a position before it holds the message the position names.
 
 **Versioned items.** `pin`, `mute` and `archive` each carry a version and a change id:
@@ -203,6 +207,248 @@ devices, so any member's message counts; a device does not need to tell which si
 
 A device reads small state from its device group whether or not it is in the chat an item names.
 
+## History
+
+A device that joins a chat cannot read the chat's earlier messages: they were encrypted for epochs it was never part
+of. The sibling whose Commit adds it to the chat sends them to it ([History deliveries](#history-deliveries)), sealed so
+that only that device can read them, even though they travel through the device group that every sibling reads.
+
+### History keys
+
+Each device has one history key: an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under the KEM of
+the device group's ciphersuite. It generates the key pair from a cryptographically secure random source, keeps the
+private half on the device, and never sends it anywhere. The public half goes in its own entry in the device group's
+roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as that entry's
+`history_key`.
+
+A device writes its history key in a roster update it already makes, so the key costs no commit of its own:
+
+- the device that creates the device group puts it in its own entry in the founding roster;
+- a device that joins the device group puts it in the update that first sets its own `tag_signature_key`
+  ([device-group.md](./device-group.md));
+- a device whose entry has no history key, or another one, writes its own in an update of its own entry, which MAY
+  carry other changes to that entry, such as its next KeyPackage announcement.
+
+A device MUST NOT change the `history_key` of another device's entry; an update that replaces another device's entry
+for another reason, such as a rename, carries that entry's `history_key` as it was. This binds senders only: a roster
+update that changes another device's `history_key` is still valid ([Security considerations](#security-considerations)).
+A device does not rotate its key in this version; it replaces it only when it loses the private half, by generating a
+new key pair and writing the new public half the same way.
+
+To seal a value to a device, a sibling uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+section 5.1.3) with that device's history key as the public key, the label `"Marmot History"`, and the context the
+message carrying the value defines, under the HPKE of the device group's ciphersuite. The sealed value is the
+`HPKECiphertext` that `EncryptWithLabel` returns, encoded as in RFC 9420. The context binds a sealed value to its
+purpose, so a value sealed for one purpose never opens for another. The device opens it with `DecryptWithLabel`, the
+same label and context, and the private half of its history key. A sealed value that has bytes after its
+`HPKECiphertext`, or that does not open, is dropped.
+
+A sibling sends history only to a device whose roster entry has a history key it can seal to. A `history_key` that is
+not a public key of the KEM is not an error ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md));
+that device gets no history.
+
+### History bundles
+
+A device sends history as bundles. A bundle holds one stretch of one chat's history, as the sending device holds it,
+for one receiving device.
+
+**Stretches.** Chat order puts every app event of the chat in the order read positions use ([Items](#items)): the epoch
+it was sent in, then its `created_at`, then its `id`. A position names one event by those three values, encoded as a
+read position's value: `{"epoch":e,"at":t,"id":"<id>"}`. Unlike a read position, it may name any event, an edit
+included. A stretch is every event from one position to another in chat order, both included. A position may name an
+event the receiver does not hold, or one the bundle leaves out.
+
+**What a bundle carries.** Every Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+of the chat that the sender holds in the stretch, as the inner event it received, sent or imported from a sibling's
+history, except:
+
+- an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
+  expired; a retention of `0`, disappearing messages off, never expires;
+- an event whose epoch, `created_at` or retention is larger than 9007199254740991, which no bundle number can hold;
+- an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
+  the sender sent and no relay accepted;
+- a message removed by an admin (kind `4891`) with the authority the sender holds for it, or deleted in any other way
+  the sender's client applies, and every event that names such a message in its `e` tag to change or answer for it,
+  such as a reaction (kind `7`), an edit (kind `1009`) or a report (kind `1984`). A chat message that replies to it is
+  not one of these. The removal itself is carried, so a later bundle from a sibling that missed it does not bring the
+  message back once the receiver holds the removal's authority.
+
+A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
+
+**Encoding.** A bundle is one UTF-8 JSON object, and no object in it repeats a member name. Every number in it is a
+decimal integer from 0 to 9007199254740991, without leading zeros. Its encoding is at most 8,388,608 bytes long. The
+sender writes it without whitespace, with its members in the order shown.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `chat`   | the chat's MLS group id: its raw bytes, one to 256 of them, every one, as lowercase hexadecimal with no prefix, so 2 to 512 characters |
+| `from`   | the position the stretch starts at |
+| `to`     | the position the stretch ends at, at or after `from` |
+| `events` | the events, each one object below, in chat order |
+
+| Member      | Value |
+| ----------- | ----- |
+| `event`     | the inner event, as a JSON object with exactly the members [../foundation/application-messages.md](../foundation/application-messages.md) gives it |
+| `epoch`     | the MLS epoch the event was sent in |
+| `retention` | the event's retention in seconds, from the retention decision the sender holds for it, with `0` for disappearing messages off as in [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md); absent when the sender holds none |
+| `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender holds that the event's author had the authority the kind needs at the event's epoch, `false` when it holds they did not, whether it found that itself or imported it with the event; absent when the sender has not decided |
+| `keys`      | for an event with encrypted-media attachments only: one or more attachment keys, below; absent when the sender can give none |
+
+An attachment key is `{"ciphertext_sha256":"<hash>","key":"<key>"}`: the `ciphertext_sha256` of one of the event's
+media references ([encrypted-media.md](./encrypted-media.md)) and that file's `file_key`, each as 64 lowercase
+hexadecimal characters.
+
+**Splitting.** A history longer than one bundle allows is split into bundles over consecutive stretches: each bundle's
+`from` is the previous bundle's `to`, and an event at that shared position travels in either bundle.
+
+**Encryption.** The sender encrypts each bundle with ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439))
+under a fresh 32-byte key from a cryptographically secure random source, a nonce of 12 zero bytes, and the 24 ASCII
+bytes of `marmot history bundle v1` as associated data. It uses each key for one bundle only, so the fixed nonce never
+repeats under a key. The key and the SHA-256 of the ciphertext reach the receiving device sealed to its history key
+([History keys](#history-keys)) in the message that carries the bundle. No compression is applied.
+
+**Importing.** A device that receives a bundle:
+
+- drops the whole bundle if it does not decrypt, has a `v` other than `1`, names a chat other than the one its carrying
+  message names, has a `from` after its `to`, or breaks the encoding above other than in layout: it is longer than
+  8,388,608 bytes, an object in it lacks a member it must have, has one not shown or repeats one, a member holds the
+  wrong kind of value (`null` included), a number is out of range or not written as a decimal integer without leading
+  zeros (such as `9.0` or `9e0`), hexadecimal is not lowercase or not the length shown,
+  or `keys` is empty. It does not check whitespace or member order, which only the sender's rule fixes;
+- checks each event on its own, and drops one whose `id` does not match its content
+  ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
+  bundle's stretch, that has `grant` on another kind, or whose retention has expired;
+- adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
+  newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
+- takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
+  event reaches it live, when it judges that copy's authority as for any live event;
+- drops each attachment key whose `ciphertext_sha256` names none of the event's media references, and imports the event
+  without it;
+- keeps every other attachment key, and opens the file it names with it, as that file's `file_key`, when it does not
+  hold the media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
+- has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
+  does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
+
+An imported event did not reach the receiver as an MLS message in the chat. Where a rule checks the account of an
+event's MLS sender, such as an edit's authorship ([../foundation/application-messages.md](../foundation/application-messages.md)),
+the receiver checks the account the event's `pubkey` names. Where a rule checks that sender's authority at the event's
+epoch, such as an admin's ([content-moderation.md](./content-moderation.md)), the event's `grant` is that authority's
+recorded verdict. An imported event is no payload of a branch the receiver holds, so a later branch selection in the
+chat never withdraws it there.
+
+The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
+Imported history is as trustworthy as the sibling that sent it ([Security considerations](#security-considerations)).
+A client MAY show which device a message was imported from.
+
+Importing history is not reading it. It never moves the device's read position, so the device never sends a read
+position for a message only because it was imported. A client SHOULD NOT count imported messages as unread.
+
+### History deliveries
+
+History comes from the device that adds a sibling to a chat, and from no other. When a device's own Commit adds a
+sibling's leaf to a chat, the device sends that sibling the chat's history as history deliveries, one bundle each,
+through the device group.
+
+**Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
+object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long. `v`
+is a JSON number, written `1`; the other members are JSON strings whose hexadecimal or base64 characters are each
+written as themselves, never as a JSON escape (`\/` included). Unlike a bundle's layout, this one binds receivers too.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `from`   | the sending device's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
+| `to`     | the receiving device's slot, the same way |
+| `chat`   | the chat's MLS group id, as in a bundle: its raw bytes, one to 256 of them, as lowercase hexadecimal with no prefix |
+| `sealed` | the sealed bundle key and hash, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
+| `bundle` | the bundle's ciphertext ([History bundles](#history-bundles)), non-empty, in standard base64 with padding |
+
+`sealed` is the bundle's 32-byte key followed by the 32-byte SHA-256 of its ciphertext, 64 bytes in all, sealed to the
+history key of `to`'s roster entry ([History keys](#history-keys)) with the context
+
+```text
+struct {
+  opaque purpose<V>;
+  opaque from<V>;
+  opaque to<V>;
+  opaque chat<V>;
+} HistoryDeliveryContextV1;
+```
+
+in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
+the 26 ASCII bytes of `marmot history delivery v1`, `from` and `to` are the two slots' 32 bytes, and `chat` is the chat's
+MLS group id. The context binds a sealed value to its sender, receiver and chat, so it never opens for another. Under
+ciphersuite `0x0001`, `sealed` is 115 bytes: the 32-byte KEM output with a one-byte length, then the 80-byte ciphertext
+with a two-byte length, as RFC 9420's variable-length vectors encode them. A bundle whose plaintext is at most 23,552
+bytes always fits a delivery.
+
+**Sending.**
+
+- After the publish obligation of a device's own Commit succeeds
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), the device owes the chat's history to
+  each sibling whose leaf that Commit adds: a leaf of its own account whose device tag, read against its trusted roster,
+  names a device in that roster ([device-group.md](./device-group.md), "Matching leaves to devices"). It records that it
+  owes the history before it sends any of it. A Commit that adds a sibling to the device group itself owes nothing.
+- It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
+  on and a history key it can seal to, and only while the device still holds the chat. It checks these when it would
+  send, and forgets the history as soon as one fails; it does not wait for a history key to appear. A sibling it can
+  add carries a tag, and a device writes its history key in the same update that sets its `tag_signature_key`
+  ([History keys](#history-keys)), so a sibling whose client supports history has one by then.
+- It sends only while its own leaf in the device group carries a device tag that reads as its slot, as for heartbeats
+  ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
+- It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, split so that each bundle
+  fits one delivery. An event too large to fit a bundle that fits one delivery is left out; the rest of the history is
+  sent. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more, sending
+  none of it.
+- A delivery whose publication fails without reaching any relay leaves the history owed, to be sent again. When branch
+  selection withdraws a delivery the device sent ([../protocol-core/convergence.md](../protocol-core/convergence.md)),
+  the history is owed again. A device forgets a history 7 days after the Commit that made it owed, sent or not.
+- A device sends no other history. There are no receipts and no requests for history.
+
+**Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
+"Trust"), and ignores kind `473` in any other group. It drops one unless:
+
+- its content is exactly the encoding above, byte for byte: another member order, whitespace, an escaped character, or
+  a repeated, missing or extra member drops it;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as
+  `from`'s ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), as a heartbeat's
+  sender must ([device-group.md](./device-group.md#heartbeats)). A delivery from an earlier epoch has no readable sender
+  and is dropped;
+- `sealed` opens with its history key and the context above to exactly 64 bytes.
+
+It then base64-decodes `bundle`, checks that the SHA-256 of those bytes is the hash it opened, decrypts them with the
+key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A delivery for a chat the device
+does not hold yet, such as one read before the chat's Welcome, is kept until the device joins that chat, and imported
+then if `from` is still a device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it
+keeps this way. A branch selection in the device group that later withdraws a delivery neither undoes its import nor
+drops it while it is kept, as it does not undo small state a device merged
+([Convergence and retained history](#convergence-and-retained-history)); only the sender owes the history again.
+
+**Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
+more:
+
+- Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
+- There are no receipts. A delivery accepted by a relay but never read, or read only after a later Commit in the device
+  group, is lost, and so is that history. A sender owes a withdrawn delivery's history again only when it learns of the
+  withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the withdrawal, loses
+  that history too.
+- A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
+  off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
+  which no bundle or delivery can name; small state covers none longer than 256 bytes either.
+- Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
+  deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out, as is
+  one whose epoch, `created_at` or retention is larger than a bundle number can hold.
+- An imported attachment key is used only when the device does not hold the media exporter secret of the event's epoch.
+  A device that holds a secret for that epoch from another branch of the chat than the event's opens the file with that
+  secret, not the imported key, and the file does not open.
+- History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
+  Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
+  reading it otherwise.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -221,8 +467,9 @@ so no device moves it back; a later position moves it again once that one is fur
 
 - Small state names the account's chats by their MLS group id, which is private group security state. It travels only
   inside the device group. Every device in the device group learns the group id and small state of every chat any
-  sibling syncs, including a chat it is not in, such as an older chat it was not added to when it was linked. A device
-  MUST NOT publish a group id it learned this way through a transport envelope, and an item is not evidence that the
+  sibling syncs, including a chat it is not in, such as an older chat it was not added to when it was linked. It also
+  learns the group id of every chat any sibling sends history for, from that delivery's `chat`. A device MUST NOT publish
+  a group id it learned either way through a transport envelope, and an item or a delivery is not evidence that the
   device is, or may become, a member of that chat.
 - Any device of the account can set any item, including a stolen linked device until it is removed. A device that sends
   an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good: no
@@ -233,3 +480,19 @@ so no device moves it back; a later position moves it again once that one is fur
   each. A linked device can already read and send in the account's chats; these let it also fix or change their
   settings.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
+- Any device of the account can rewrite another device's `history_key`, including a stolen linked device until it is
+  removed. Siblings then seal history meant for that device to a key the stolen device chose, until that device writes
+  its own key back. That history can include chats the stolen device is not in, such as a chat the user kept off a
+  device linked with "add to all my chats" off.
+- A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
+  value sealed to it, past and future, until it writes a new key.
+- Every sibling reads every history delivery: it sees that the sender sent the receiver history, which chat it was for,
+  and how large it is, but cannot open it. The rule above against publishing a group id learned this way applies.
+- Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
+  alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
+  them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
+  receiving device, and on each device that device later sends that history to. An attachment key opens only the one
+  file it names, never the rest of that epoch's media.
+- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in a
+  roster entry that any device can rewrite. A stolen linked device can make its deliveries read as another sibling's,
+  so which device a message was imported from, as a client may show it, is only as trustworthy as the roster.

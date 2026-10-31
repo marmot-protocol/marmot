@@ -13,6 +13,46 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: History keys and history deliveries for an account's devices (draft)
+
+[#467](https://github.com/marmot-protocol/marmot/pull/467) gives the device roster's `history_key` its meaning in
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "History" section of
+[features/account-sync.md](./features/account-sync.md). Each device has one history key, an HPKE key pair under the
+device group's ciphersuite, and writes its public half into its own roster entry in a roster update it already makes:
+the founder in the founding roster, a joining device in the update that first sets its `tag_signature_key`, and a device
+whose entry lacks its key, or holds another, in a later update of its own entry. A device never changes another device's
+`history_key`. Siblings seal to it with `EncryptWithLabel` under the label `"Marmot History"` and a context the carrying
+message defines. A `history_key` that is not a public key of the KEM still leaves the roster valid; that device gets no
+history. `history_key` adds nothing to the roster's encoding: it was already a reserved field of `DeviceEntryV1`. It
+also adds "History bundles": one stretch of one chat's history as a UTF-8 JSON object (`v`, `chat`, `from`, `to`,
+`events`) of at most 8,388,608 bytes, each event the raw inner event with its epoch, its retention, a moderation `grant`
+for kinds `1985` and `4891`, and per-file attachment `keys`, each named by the encrypted file's `ciphertext_sha256`.
+Deleted and admin-removed messages and every event that targets them stay out; the deletions themselves go in. Each
+bundle is encrypted with ChaCha20-Poly1305 under a fresh one-use key and a zero nonce, longer histories split into
+bundles over consecutive stretches, and a receiver checks a bundle's content but not its layout, only adds events it
+lacks, never moves its read position for them, and should not count them as unread.
+[features/encrypted-media.md](./features/encrypted-media.md) and
+[features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
+exporter secret, to its own account's devices in a bundle, and forbid logging a `file_key` or exposing it in
+diagnostics. A receiver drops an attachment key that names none of its event's media references, and keeps the event. It
+also adds "History deliveries": the device whose own Commit adds a sibling's leaf to a chat, and no other, owes that
+sibling the chat's history once the Commit's publish obligation succeeds, while the sibling's entry has "bring chat
+history" on and a history key. It sends each bundle as a kind `473` device-group message (`v`, `from`, `to`, `chat`,
+`sealed`, `bundle`) of at most 32,768 bytes: the bundle inline, and its key and ciphertext SHA-256 sealed to the
+receiver's history key under a context binding both slots and the chat. A delivery that reached no relay, or that branch
+selection withdraws, is owed again, for at most 7 days. The receiver reads one only in its trusted device group,
+addressed to it, from a sibling whose leaf's tag reads as `from` in the tree it holds, and opening with its history key;
+it keeps one for a chat it has not joined yet for up to 7 days. A withdrawal by branch selection neither undoes an
+import nor drops a kept delivery.
+An event too large for one delivery is left out. An imported event is judged by its `pubkey` and `grant`, not by an
+MLS sender, as [features/content-moderation.md](./features/content-moderation.md) and
+[foundation/application-messages.md](./foundation/application-messages.md) now note. A bundle's `retention` of `0` means disappearing messages were off,
+so the imported event does not expire. [features/device-group.md](./features/device-group.md) lets a slot announcement
+also set the device's own `history_key`. There are no offers, receipts or requests: kinds `470` to `472` stay
+reserved, and
+[foundation/registries.md](./foundation/registries.md) registers `473`. Clients that do not support device groups change
+nothing.
+
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 
 [#480](https://github.com/marmot-protocol/marmot/pull/480) changes

@@ -69,7 +69,9 @@ branch. The current admin list and event timestamp do not determine that authori
 an already authorized action. Unproven authority MUST NOT be treated as permission to dismiss or delete.
 Clients MUST retain sufficient evidence of established authorization for as long as its effects are needed. A recorded
 verdict bound to the event and its authenticated branch is sufficient; pruning source-epoch state MUST NOT undo an
-authorized dismissal or deletion.
+authorized dismissal or deletion. An event imported from a sibling's history ([account-sync.md](./account-sync.md),
+"History bundles") has no MLS sender in the chat: its `grant` is that recorded verdict, and one without a `grant` has no
+authority until a copy arrives live.
 
 References identify app events in the same group. Receivers apply dismissal labels to each referenced report
 independently when the report and admin authority can be established; unrelated or cross-group references have no
