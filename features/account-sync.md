@@ -259,6 +259,7 @@ delivered in the chat that the sender holds in the stretch, as the inner event i
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
   expired; a retention of `0`, disappearing messages off, never expires;
+- an event whose retention is longer than 9007199254740991 seconds, which no bundle number can hold;
 - an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
   the sender sent and no relay accepted;
 - a message removed by an admin (kind `4891`) with the authority the sender holds for it, or deleted in any other way
@@ -418,7 +419,8 @@ more:
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history.
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
-  deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out.
+  deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out, as is
+  one whose retention is longer than a bundle number can hold.
 - History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
   Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
   reading it otherwise.
