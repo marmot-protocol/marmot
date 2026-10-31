@@ -1136,6 +1136,10 @@ status, and removing a device after a longer absence, are not specified yet.
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
+- Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It still holds the
+  account's signing key, so its siblings cannot stop what it publishes: they remove its leaves and delete its slot. A
+  removed device that misses its removal as it processes the removing Commit, for example because a local read fails at
+  that moment, keeps acting for the account until it next notices the removal.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
