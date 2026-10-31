@@ -13,6 +13,24 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device its device group removes is unlinked
+
+[#479](https://github.com/marmot-protocol/marmot/pull/479) changes
+[features/device-group.md](./features/device-group.md).
+
+- A device that its device group removes is unlinked, unless the removal undid a failed link. The roster the removal
+  leaves tells the two apart: only a removal leaves a `removed` rejected slot for the device's slot. It realizes the
+  removal once the removing Commit is on the selected branch, records that durably before discarding its copy, then
+  stops acting for the account: no Commits, messages, Welcomes accepted, publications or pairing answers, until it
+  deletes its local state for the account. It tells its user it was unlinked, and neither leaves its chats nor deletes
+  its slot: its siblings remove its leaves where they can, and the device that decided the removal deletes its slot. It
+  runs the account again only as a new sign-in: it deletes its local state for the account and links again with a new
+  slot, even if branch selection later drops the removal. A failed link stays failed: while the approving device's
+  roster lists the entry that link added, it commits the undo again, whether its Commit failed or branch selection
+  dropped it, even if the new device's first Commit is then selected. A slot recorded as `removed` needs no undo.
+  Unlinking is the removed device's own work: it can still sign as the account, and one that misses its removal keeps
+  acting for the account until it next notices it.
+
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 
 [#480](https://github.com/marmot-protocol/marmot/pull/480) changes
