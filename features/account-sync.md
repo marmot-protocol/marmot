@@ -349,7 +349,8 @@ through the device group.
 **Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
 of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
 object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long. `v`
-is a JSON number; the other members are JSON strings. Unlike a bundle's layout, this one binds receivers too.
+is a JSON number, written `1`; the other members are JSON strings whose hexadecimal or base64 characters are each
+written as themselves, never as a JSON escape (`\/` included). Unlike a bundle's layout, this one binds receivers too.
 
 | Member   | Value |
 | -------- | ----- |
@@ -400,8 +401,8 @@ bytes always fits a delivery.
 **Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
 "Trust"), and ignores kind `473` in any other group. It drops one unless:
 
-- its content is exactly the encoding above, byte for byte: another member order, whitespace, or a repeated, missing or
-  extra member drops it;
+- its content is exactly the encoding above, byte for byte: another member order, whitespace, an escaped character, or
+  a repeated, missing or extra member drops it;
 - `to` is its own slot;
 - `from` is another device in its current roster;
 - the leaf that sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as
