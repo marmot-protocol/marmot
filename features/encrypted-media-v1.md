@@ -90,12 +90,12 @@ own hash, as MLS defines. The info bytes are exactly the concatenation shown: fi
 bytes, with no length prefixes.
 
 `media_secret` is key material. Clients MUST NOT publish, transmit, log, or expose it in diagnostics. A `file_key` is
-key material too. A client MAY send a `file_key`, never `media_secret`, to the devices of its own account in a history
-bundle ([account-sync.md](./account-sync.md), "History bundles"), so a device that joined after the epoch can open that
-one file; it MUST NOT send it anywhere else. Clients SHOULD protect cached source-epoch media secrets at rest with
-confidentiality controls appropriate to the platform. Clients SHOULD retain recent epoch media secrets long enough to
-decrypt delayed media references according to local retention policy. If a past-epoch media secret is no longer
-available, media from that epoch cannot be decrypted.
+key material too: clients MUST NOT log it or expose it in diagnostics. A client MAY send a `file_key`, never
+`media_secret`, to the devices of its own account in a history bundle ([account-sync.md](./account-sync.md), "History
+bundles"), so a device that joined after the epoch can open that one file; it MUST NOT send it anywhere else. Clients
+SHOULD protect cached source-epoch media secrets at rest with confidentiality controls appropriate to the platform.
+Clients SHOULD retain recent epoch media secrets long enough to decrypt delayed media references according to local
+retention policy. If a past-epoch media secret is no longer available, media from that epoch cannot be decrypted.
 
 ## Encryption
 

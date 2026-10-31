@@ -323,8 +323,10 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
 - takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
   event reaches it live, when it judges that copy's authority as for any live event;
-- keeps each attachment key, and opens the file it names with it, as that file's `file_key`, when it does not hold the
-  media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
+- drops each attachment key whose `ciphertext_sha256` names none of the event's media references, and imports the event
+  without it;
+- keeps every other attachment key, and opens the file it names with it, as that file's `file_key`, when it does not
+  hold the media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
 - has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
   does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
 
@@ -419,11 +421,12 @@ bytes always fits a delivery.
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
 It then base64-decodes `bundle`, checks that the SHA-256 of those bytes is the hash it opened, decrypts them with the
-key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A branch selection in the device
-group that later withdraws the delivery does not undo that import, as it does not undo small state a device merged
-([Convergence and retained history](#convergence-and-retained-history)); only the sender owes the history again. A delivery for a chat the device does not hold yet, such
-as one read before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a
-device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way.
+key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A delivery for a chat the device
+does not hold yet, such as one read before the chat's Welcome, is kept until the device joins that chat, and imported
+then if `from` is still a device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it
+keeps this way. A branch selection in the device group that later withdraws a delivery neither undoes its import nor
+drops it while it is kept, as it does not undo small state a device merged
+([Convergence and retained history](#convergence-and-retained-history)); only the sender owes the history again.
 
 **Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
 more:
@@ -439,6 +442,9 @@ more:
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
   deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out, as is
   one whose epoch, `created_at` or retention is larger than a bundle number can hold.
+- An imported attachment key is used only when the device does not hold the media exporter secret of the event's epoch.
+  A device that holds a secret for that epoch from another branch of the chat than the event's opens the file with that
+  secret, not the imported key, and the file does not open.
 - History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
   Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
   reading it otherwise.
