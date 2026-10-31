@@ -23,15 +23,17 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 section gives test vectors. Values are sealed to it with `EncryptWithLabel` under the label `"Marmot Backup"`. Devices
 keep only the public half, in the account entry's `recovery_public_key`, and never store the words or the private half.
 A device turns backups on, or replaces the words, after the user types two of them back, in an update that sets the
-account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off
-clears the account entry the same way; backups already written stay until they are deleted. A device commits such an
-update only on the account entry it read, and commits new words or a turn-off again while the roster still holds the
-key they replaced. An update that turned backups on is committed again only when branch selection drops it, since a
-roster with no key looks the same before backups are turned on and after a later turn-off. A device with no device
-group keeps the key itself and founds its device group with it; one that joins a device group instead leaves the
-group's settings as they are. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no listed
-slot, leaves the roster valid. The account entry's encoding does not change. Clients that do not support device
-groups change nothing.
+account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off clears
+the account entry the same way; backups already written stay until they are deleted. A device commits such an update
+only on the account entry it read, and commits new words or a turn-off again while the roster still holds the key they
+replaced and branch selection could still pick a branch with one of its updates. An update that turned backups on is
+committed again only when branch selection drops it, since a roster with no key looks the same before backups are turned
+on and after a later turn-off. A device MUST NOT tell the user their words are not in use while any branch that branch
+selection can still pick would make them the account's; until then it shows the change as pending. A device with no
+device group keeps the key itself and founds its device group with it; one that joins a device group instead leaves the
+group's settings as they are, and the key it kept is retired. A `recovery_public_key` that is not an X25519 key, or a
+`backup_writer` naming no listed slot, leaves the roster valid. The account entry's encoding does not change. Clients
+that do not support device groups change nothing.
 
 ## 2026-10-30: History keys for an account's devices (draft)
 
