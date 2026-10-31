@@ -13,6 +13,44 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+[foundation/key-packages.md](./foundation/key-packages.md),
+[foundation/registries.md](./foundation/registries.md) and [ideas/multi-device.md](./ideas/multi-device.md).
+
+- A stolen account signing key is out of scope: nothing evicts whoever holds it, and the warning only tells the user.
+  `not_me` rejected slots, sign-in classification, starting fresh and slot announcements are unchanged.
+- A device that finds, in its own slot, a valid current-profile KeyPackage of the account that it did not make still
+  replaces it, and now only warns its user, on that device only: it records nothing in the roster and tells no sibling.
+  It replaces anything else there, an invalid or legacy publication or a copy of one of its own KeyPackages, without a
+  warning. Whether a device made a KeyPackage is now decided by the signature key of the KeyPackage's LeafNode
+  ([features/device-group.md](./features/device-group.md#a-keypackage-the-device-did-not-make)), so a device no longer
+  keeps the `KeyPackageRef` of every KeyPackage it publishes for this.
+- Siblings no longer act on a KeyPackage the roster does not announce. The anomaly alert is gone and kind `462` is
+  unassigned; no device alerts, settles an alert or rejects a sibling's KeyPackage, and no device keeps each announced
+  `KeyPackageRef` for 7,261,200 seconds.
+- Rejected KeyPackages are gone. `DeviceRosterV1` drops `rejected_key_packages`, with `RejectedKeyPackageV1`,
+  `LeafSignatureKeyV1` and their ordering and eight-per-slot rules, and `RosterOperationType` drops
+  `set_rejected_key_package(4)` and `remove_rejected_key_package(5)`. Values 4 and 5 are reserved, never reused, and
+  invalid to a decoder; `set_account` stays 6. This changes the roster's encoding under the same id `0x800e`, so
+  existing device-group rosters must be recreated. The test vectors drop the `rejected_key_packages<V>` byte and the
+  rejected-KeyPackage update, and gain an update that announces a KeyPackage. A complete check no longer rejects the
+  KeyPackages it finds in `not_me` slots, and a device with no device group carries no rejected KeyPackages into the
+  device group it creates or joins.
+- Leaves tied to a rejection are gone: a device no longer records which KeyPackage each of its account's leaves joined
+  with, and no longer removes leaves for a rejection, by same-account Remove or as an admin. The same-account Remove
+  sender rule of `marmot.group.account-devices.v1` no longer names that case. A device still never warns about or
+  removes a leaf only because no device claims it.
+- A device warns its user when it rejects a sign-in itself, when its roster gains a `not_me` rejected slot, and when it
+  finds a KeyPackage it did not make in its own slot. One warning stays open per account, it never claims the key holder
+  was stopped, and dismissing it marks what it gathers as seen on that device only; a seen own-slot KeyPackage is kept
+  by `KeyPackageRef` for 7,261,200 seconds after it was found.
+
 ## 2026-10-31: A device removed from a group its account stays in
 
 [#475](https://github.com/marmot-protocol/marmot/pull/475) changes
