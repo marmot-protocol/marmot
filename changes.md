@@ -26,12 +26,13 @@ A device turns backups on, or replaces the words, after the user types two of th
 account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off clears
 the account entry the same way; backups already written stay until they are deleted. A device commits such an update
 only on the account entry it read, and commits it again only when branch selection drops it, under the same rule, never
-because the roster does not hold what the user chose. After a fork that rule may commit an earlier change again and
-refuse a later one, which then stays lost until the user makes it again; a device shows backups as the branch selected
-now holds them. A device with no device group keeps the key itself and founds its device group with it; one that joins a
-device group instead leaves the group's settings as they are, and forgets the key it kept. A `recovery_public_key` that
-is not an X25519 key, or a `backup_writer` naming no listed slot, leaves the roster valid. The account entry's encoding
-does not change. Clients that do not support device groups change nothing.
+because the roster does not hold what the user chose, and makes no other change to the account entry while one of its
+updates is unconfirmed or owed a recommit. After a fork that rule may commit an earlier change again and refuse a later
+one, which then stays lost until the user makes it again; a device shows backups as the branch selected now holds them.
+A device with no device group keeps the key itself and founds its device group with it; one that joins a device group
+instead leaves the group's settings as they are, and forgets the key it kept. A `recovery_public_key` that is not an
+X25519 key, or a `backup_writer` naming no listed slot, leaves the roster valid. The account entry's encoding does not
+change. Clients that do not support device groups change nothing.
 
 ## 2026-10-30: History keys for an account's devices (draft)
 

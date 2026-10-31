@@ -387,13 +387,15 @@ A device turns backups on, or replaces the words, in four steps:
 1. It generates new words and shows them to the user once.
 2. The user types back at least two of them, at positions the device picks, to show they were written down. The device
    goes on only if they match.
-3. It derives the public half and writes it as the account entry's `recovery_public_key`, in a roster update that sets
-   the account entry. When the entry has no `recovery_public_key`, the update also names this device as
-   `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names none.
+3. It derives the public half and writes it as the account entry's `recovery_public_key`, in a roster update whose
+   only operation sets the account entry. When the entry has no `recovery_public_key`, the update also names this
+   device as `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names
+   none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
 4. It forgets the words, the entropy and the private half.
 
 A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself as
-the account's recovery key. When it creates a device group, the founding roster's account entry holds that key and
+the account's recovery key; new words replace it, and none of the rules below for roster updates apply until the
+device trusts a device group. When it creates a device group, the founding roster's account entry holds that key and
 names this device as `backup_writer`. When it joins one instead, the roster's account entry stands, whatever it holds,
 since a roster with no key may be one whose backups the user turned off. Either way, once the device trusts the device
 group it forgets the key it kept, and the roster's account entry is the account's recovery key from then on.
@@ -408,10 +410,12 @@ A device turns backups off with an update that sets the account entry to hold ne
 words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
 group turns backups off by forgetting the key it keeps.
 
-A device commits an update that sets the account entry again only when branch selection drops it, under the rule
-above, and never because the roster does not hold what the user chose: a roster with no key looks the same before
-backups were turned on and after they were turned off again, so committing a change again on what the roster holds
-could undo another device's turn-off. A device shows backups as the roster's account entry holds them now.
+A device commits an update that sets the account entry again only when branch selection drops it, under the rule above,
+and never because the roster does not hold what the user chose: a roster with no key looks the same before backups were
+turned on and after they were turned off again, so committing a change again on what the roster holds could undo another
+device's turn-off. A device shows backups as the roster's account entry holds them now. While an update of its own to
+the account entry is not yet confirmed, or was dropped and is neither committed again nor refused, a device makes no
+other change to the account entry, and it keeps that update, with the entry it was computed from, across restarts.
 
 Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
 dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
