@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: The recovery key backups are sealed to (draft)
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) gives the device roster's account entry its meaning in
+[#476](https://github.com/marmot-protocol/marmot/pull/476) gives the device roster's account entry its meaning in
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "Backups" section of
 [features/account-sync.md](./features/account-sync.md). An account's recovery key is 12 BIP-39 English words carrying
 128 bits of entropy, which derive an HPKE key pair under DHKEM(X25519, HKDF-SHA256) through HKDF-SHA256 with the salt
