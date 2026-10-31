@@ -24,9 +24,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - Starting fresh answers Not now only for the first check's slots that the user has not answered.
 - A device that joins a device group counts the rejections already in the first roster it trusts as seen, except ones
   it keeps itself, which still warn. A device that creates one counts none as seen.
-- A device MAY bound the warning's seen marks for items the warning no longer gathers, dropping the earliest recorded
-  first, even before a seen rejected KeyPackage's 7,261,200 seconds end; such an item warns again only if it is
-  recorded again.
+- A device MAY bound the warning's seen marks, dropping the earliest recorded first, even before a seen rejected
+  KeyPackage's 7,261,200 seconds end. An item whose mark it dropped counts as one its user has not seen.
 
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 
