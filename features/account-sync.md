@@ -420,12 +420,23 @@ group turns backups off by forgetting the key it keeps.
 A device commits an update that sets the account entry again only when branch selection drops it, under the rule above,
 and never because the roster does not hold what the user chose: a roster with no key looks the same before backups were
 turned on and after they were turned off again, so committing a change again on what the roster holds could undo another
-device's turn-off. A device shows backups as the roster's account entry holds them now. A device keeps each update it
-makes to the account entry, with the entry it was computed from, across restarts, until branch selection can no longer
-drop it. While one's publication has no outcome yet, or it was dropped and is neither committed again nor refused, the
-device makes no other change to the account entry. An update whose publication fails is published again or discarded as
-[../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md) allows; that is not committing it again.
-A discarded update is lost as a refused one is: the device stops keeping it, and it holds back no other change.
+device's turn-off. A device shows backups as the roster's account entry holds them now.
+
+A device keeps each update it makes to the account entry, with the entry it was computed from, across restarts, until
+one of these ends it:
+
+- Its publication fails and the device discards it
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Failure"). Publishing the same
+  Commit again while its publication is uncertain, as that document allows, is neither a failure nor committing it
+  again.
+- Branch selection drops it, and the account entry on the branch selected then is not the one it was computed from.
+  The update is refused.
+- Branch selection can no longer drop it.
+
+When branch selection drops it and the account entry is still the one it was computed from, the device commits it again
+and keeps it as before. A discarded or refused update is lost: the user makes the change again, as a new update. While a
+kept update's publication has no outcome yet, or from a drop until it is committed again or refused, the device makes no
+other change to the account entry.
 
 Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
 dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
