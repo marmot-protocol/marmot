@@ -462,9 +462,10 @@ more:
 
 - Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
 - There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer retains
-  the member state of the epoch it was sent in or after the sender's `tag_signature_key` changed, is lost, and so is
-  that history. A sender owes a withdrawn delivery's history again only when it learns of the withdrawal, so one whose
-  record of the delivery is already gone, or that stops before it acts on the withdrawal, loses that history too.
+  the member state of the epoch it was sent in or once the sender's `tag_signature_key` in the current roster no longer
+  verifies its tag, is lost, and so is that history. A sender owes a withdrawn delivery's history again only when it
+  learns of the withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the
+  withdrawal, loses that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
   which no bundle or delivery can name; small state covers none longer than 256 bytes either.

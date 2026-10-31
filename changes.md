@@ -30,9 +30,9 @@ when it was uploaded and fetched until the server expires it, and every sibling 
 considerations" says so. The receiver also reads a delivery's sender as that leaf was in the epoch the delivery was sent
 in, from the member state it retains for that epoch, against its current roster, not in the tree of the epoch it holds.
 A delivery read after a later device-group Commit is no longer dropped while the device still retains the member state
-of the epoch it was sent in and the sender's `tag_signature_key` has not changed since. A receiver that predates this
-change drops a delivery that names Blossom servers, as it drops any content that is not exactly the encoding. Clients
-that do not support device groups change nothing.
+of the epoch it was sent in and the sender's `tag_signature_key` in the current roster still verifies its tag. A
+receiver that predates this change drops a delivery that names Blossom servers, as it drops any content that is not
+exactly the encoding. Clients that do not support device groups change nothing.
 
 ## 2026-10-31: A device its device group removes is unlinked
 
