@@ -409,9 +409,11 @@ words, in the four steps above. Backups already written stay until they are dele
 group turns backups off by forgetting the key it keeps.
 
 A device that replaced the words or turned backups off remembers the change and the `recovery_public_key` the entry
-held when the user made it. While the roster still holds that earlier key, the device commits the change again: no
-device writes a key again once it is replaced, so its update was dropped, or never went out, and nothing has changed
-the words since. Once the roster holds any other key, or none, the change stands or another won, and the device stops.
+held when the user made it. While the roster still holds that earlier key, the device commits the change again. Only
+these changes are committed again this way: the key they were made over comes from fresh random words, so no device
+writes it again once it is replaced, and a roster that still holds it means the update was dropped, or never went out,
+and nothing has changed the words since. Once the roster holds any other key, or none, the change stands or another
+won, and the device stops.
 
 An update made on an entry with no key turns backups on, and a device MUST NOT commit it again because the roster still
 holds no key: a roster that holds no key looks the same before backups were turned on and after they were turned off
@@ -421,9 +423,10 @@ device, whether because another device changed them, turned backups off, or the 
 reached the roster, the device SHOULD tell the user that those words are not in use. Two devices that turn backups on
 at once thus settle on one key, and the user of the other one learns that their words are not in use.
 
-The rule against committing on an entry that is not the one the device read compares values. When branch selection
-drops an update turning backups on, and the winning branch turns backups on with other words and off again before the
-device reads it, the entry holds no key, as it did when the device read it, and the update is committed again.
+This leaves one known limitation. The rule against committing on an entry that is not the one the device read
+compares values. When branch selection drops an update turning backups on, and the winning branch turns backups on
+with other words and off again before the device reads it, the entry holds no key, as it did when the device read it,
+and the update is committed again.
 
 ## Convergence and retained history
 
