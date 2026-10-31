@@ -26,10 +26,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   Nostr a `since` taken from processed events can skip a Commit that a slow clock dated earlier. Unlike a check, a
   catch-up may page.
 - Starting fresh answers Not now only for the first check's slots that the user has not answered.
-- A device that newly trusts a device group counts the rejections already in the first roster it trusts as seen; ones
-  it kept itself before it joined still warn.
-- A device MAY bound the warning's seen marks, dropping the oldest seen first; an item whose mark it dropped warns
-  again if it comes back.
+- A device that joins a device group counts the rejections already in the first roster it trusts as seen, except ones
+  it keeps itself, which still warn. A device that creates one counts none as seen.
+- A device MAY bound the warning's seen marks for items the warning no longer gathers, dropping the earliest recorded
+  first; such an item warns again if it is recorded again.
 
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 

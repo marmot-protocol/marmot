@@ -618,14 +618,14 @@ device keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot fo
 
 A device MUST NOT reject a KeyPackage that it made, that any roster of its trusted device group announced for any
 device, or whose LeafNode carries a device tag that reads as a device's
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), even where a rule above says
-to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot, or into the
-same device's slot as a new publication, and rejecting the copy would reject the KeyPackage of the device that made it.
-A device with no device group has no roster to announce its own KeyPackages and no tag on them, so only the
-`KeyPackageRef`s it keeps (above) tell it a copy of one is its own. The slot's device replaces the copy like any other
-publication it did not make. Since the tag is on the KeyPackage's LeafNode, each rule that rejects a KeyPackage is
-applied while the device holds the KeyPackage: by the slot's own device when it finds the publication in its slot, by a
-sibling before it alerts, and by a complete check on what it found ([KeyPackages in a rejected sign-in's
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), even where another rule in
+this document says to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's
+slot, or into the same device's slot as a new publication, and rejecting the copy would reject the KeyPackage of the
+device that made it. A device with no device group has no roster to announce its own KeyPackages and no tag on them, so
+only the `KeyPackageRef`s it keeps (above) tell it a copy of one is its own. The slot's device replaces the copy like
+any other publication it did not make. Since the tag is on the KeyPackage's LeafNode, each rule that rejects a
+KeyPackage is applied while the device holds the KeyPackage: by the slot's own device when it finds the publication in
+its slot, by a sibling before it alerts, and by a complete check on what it found ([KeyPackages in a rejected sign-in's
 slot](#keypackages-in-a-rejected-sign-ins-slot)). A sibling settling an alert relies on the tag it read before it
 alerted.
 
@@ -673,6 +673,7 @@ rejections it keeps itself ([Answers](#answers)). It records the KeyPackage's `K
 key of its LeafNode and the time, and keeps and commits the rejection as for one in its own slot ([A KeyPackage the
 roster does not announce](#a-keypackage-the-roster-does-not-announce)), unless:
 
+- this device made it;
 - the roster already rejects it;
 - in the same check, it is also the current publication of a slot that is not rejected as `not_me`;
 - a roster of its trusted device group has announced it for any device; or
@@ -714,10 +715,13 @@ rejection; and when it finds such a leaf in a group where it can remove it by ne
   restarts, each of them its user has seen, and does not warn about one again when a branch selection drops and restores
   it. It keeps a seen rejected KeyPackage, by its `KeyPackageRef`, for 7,261,200 seconds, the longest a KeyPackage can
   be valid, so that one dropped and recorded again ([How long a rejected KeyPackage
-  lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either. A device MAY bound the seen marks it keeps,
-  dropping the oldest seen first; an item whose mark it dropped warns again if it comes back.
-- A device that newly trusts a device group counts the rejections already in the first roster it trusts as seen: the
-  user saw the warning on the devices that were there. Rejections it kept itself before it joined still warn.
+  lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either. A device MAY bound the seen marks it keeps
+  for items the warning no longer gathers, dropping first the mark it recorded earliest; such an item warns again if it
+  is recorded again.
+- A device that joins a device group counts the rejections already in the first roster it trusts as seen, since the
+  user saw the warning on the devices that were there, but not one it keeps itself: those still warn until its user
+  sees them. A device that creates a device group counts none of its founding roster's rejections as seen, since they
+  are all its own.
 - Dismissing the warning on a device marks every rejection, removal and group the warning then gathers as seen on that
   device, so the warning stays closed there until something it has not seen arrives. It dismisses it there only: another
   device's warning is unchanged.
@@ -771,9 +775,9 @@ This has limits:
   their device has not yet replaced with tagged ones
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags") are then removed.
 - A device that is not linked shows a KeyPackage it has replaced in no slot, so whoever holds the account's signing key
-  can copy that KeyPackage into a rejected sign-in's slot and have it rejected. The device's leaves that joined with it
-  are then removed, unless they read as a device's. Whoever holds the key can remove the account's leaves anyway
-  ([Rejections](#rejections)).
+  can copy that KeyPackage into a rejected sign-in's slot and have the account's other devices reject it. The device's
+  leaves that joined with it are then removed, unless they read as a device's. Whoever holds the key can remove the
+  account's leaves anyway ([Rejections](#rejections)).
 - A rejected KeyPackage lasts 30 days, or less once eight newer ones are recorded for its slot ([How long a rejected
   KeyPackage lasts](#how-long-a-rejected-keypackage-lasts)), and whoever holds the account's signing key can push it out
   sooner by publishing more into that slot. Once it is dropped, a leaf that joined with it stays in a group where no
