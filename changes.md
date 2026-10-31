@@ -24,13 +24,14 @@ section gives test vectors. Values are sealed to it with `EncryptWithLabel` unde
 keep only the public half, in the account entry's `recovery_public_key`, and never store the words or the private half.
 A device turns backups on, or replaces the words, after the user types two of them back, in an update that sets the
 account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off clears
-the account entry the same way; backups already written stay until they are deleted. A device commits such an update
-only on the account entry it read, and commits it again only when branch selection drops it, under the same rule, never
-because the roster does not hold what the user chose, keeps each update until branch selection can no longer drop it,
-and makes no other change to the account entry while one of its updates is unconfirmed or owed a recommit. It forgets
-the words once the update is committed, and keeps them in memory for another try when it cannot commit it. After a fork
-that rule may commit an earlier change again and refuse a later one, which then stays lost until the user makes it
-again; a device shows backups as the branch selected now holds them. A device with no device group keeps the key itself
+the account entry the same way; backups already written stay until they are deleted. The account entry changes only by
+compare-and-set: a device commits such an update only on the account entry it read, at the tip of the selected branch,
+and commits it again only when branch selection drops the Commit that carried it, under the same compare-and-set, never
+because the roster does not hold what the user chose. It forgets the words once the update is committed; how it holds
+them until then, retries, and holds back its other changes to the account entry is local. A dropped update the
+compare-and-set refuses, or one whose publication fails, stays lost until the user makes the change again, and after a
+fork the rule may commit an earlier change again and refuse a later one; a device shows backups as the branch selected
+now holds them. A device with no device group keeps the key itself
 and founds its device group with it; one that joins a device group instead leaves the group's settings as they are, and
 forgets the key it kept. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no listed slot,
 leaves the roster valid. The account entry's encoding does not change. Clients that do not support device groups change
