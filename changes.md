@@ -13,6 +13,27 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device its device group removes is unlinked
+
+[#479](https://github.com/marmot-protocol/marmot/pull/479) changes
+[features/device-group.md](./features/device-group.md).
+
+- A device that its device group removes is unlinked, unless the removal undid a failed link. The roster the removal
+  leaves tells the two apart: only a removal leaves a `removed` rejected slot for the device's slot. It realizes the
+  removal once the removing Commit is on the selected branch, records that durably before discarding its copy, then
+  stops acting for the account: no Commits, messages, Welcomes accepted, publications or pairing answers, until it
+  deletes its local state for the account. It tells its user it was unlinked, and neither leaves its chats nor deletes
+  its slot: its siblings remove its leaves where they can, and the device that decided the removal deletes its slot. It
+  runs the account again only as a new sign-in: it deletes its local state for the account and links again with a new
+  slot, even if branch selection later drops the removal. A failed link stays failed: until it approves a later link of
+  the slot, the approving device commits the undo whenever the roster on its selected branch lists the slot as a device
+  it linked, again if that Commit failed or branch selection dropped it, even if the new device's first Commit is then
+  selected. A slot recorded as `removed` needs no undo, and a later link of the slot is not undone. One case is left
+  open ([#482](https://github.com/marmot-protocol/marmot/issues/482)): once the approving device's later link of the
+  slot is made, a failed link's entry that branch selection brings back is not undone, and holds its slot. Unlinking is
+  the removed device's own work: it can still sign as the account, and one that misses its removal keeps acting for the
+  account until it next notices it.
+
 ## 2026-10-31: The recovery key backups are sealed to (draft)
 
 [#476](https://github.com/marmot-protocol/marmot/pull/476) gives the device roster's account entry its meaning in

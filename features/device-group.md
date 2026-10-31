@@ -11,10 +11,10 @@ the device group itself: what makes a group one, how it is created, when a devic
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what a device does when its own slot holds a KeyPackage it did not make, how devices hand
 each other private KeyPackages, how the Welcome for an add that uses one reaches its sibling, how the user removes a
-device, and how each device shows its siblings to its user.
+device and what the removed device does, and how each device shows its siblings to its user.
 [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group, and the history
-deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add, what a device removed
-from its device group does next, and signing out through a sibling are not specified yet.
+deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add and signing out
+through a sibling are not specified yet.
 
 ## Surfaces
 
@@ -148,10 +148,10 @@ Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
-group, and it holds no unprocessed input for the group. Neither the approving Commit's publication nor its Welcome's
-delivery shows that the new device joined; only a Commit from the new device's own leaf does. Once made, a link stays
-made. Until then, anything that acts on the new device as a member of the account waits, and the link can still fail
-("A link that is not taken up").
+group, and it holds no unprocessed input for the group, unless the link has already failed. Neither the approving
+Commit's publication nor its Welcome's delivery shows that the new device joined; only a Commit from the new device's
+own leaf does. Once made, a link stays made, and once failed, it stays failed. Until then, anything that acts on the new
+device as a member of the account waits, and the link can still fail ("A link that is not taken up").
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
 a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
@@ -213,18 +213,43 @@ is a device in the roster, so a new request from it is not answered ("Before ans
 
 If the link is not made by then, the approving device first processes the input it holds for the group. If the new
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
-acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
-link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
-selection keeps the new device's first Commit and drops that removal, the link is made after all.
+acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
+restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
+lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
+and, with `remove_device`, that entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Update"): the first time, and again whenever such a Commit failed or branch selection dropped it. Rewriting the entry's
+other fields does not change that. The failure stands even when the new device's first Commit later reaches the selected
+branch, since the new device may already have realized the removal and discarded its copy, as the next paragraph says. A
+slot the roster records as `removed` holds no device entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
+user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
+removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again. A later link
+of the slot adds an entry of its own, which this does not undo.
 
-A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
-group. It stops trusting the group and MUST discard the active state of its copy, which a removed member may do
-([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
-group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
+A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
+longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
+member may do ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it
+MAY keep the group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
-refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
-failed, and links again only through a new pairing session.
+refuse. The roster the removing Commit leaves alone decides why it was removed, not whether the device ever saw its own
+first Commit selected. When that roster has no entry for the device's slot, and the device joined the group rather than
+creating it, the removal undid a failed link: the device was not linked, tells its user that linking failed, and links
+again only through a new pairing session. Otherwise the user removed it ([On the removed
+device](#on-the-removed-device)): a removal leaves a `removed` rejected slot for the device's slot ([The removal
+Commit](#the-removal-commit)). This holds even when the device processes its first Commit and its removal together, and
+when it had selected its first Commit on a branch that the undo then superseded. A device that cannot read that roster
+treats its removal as the user's.
+
+Keeping a failed link failed leaves one case open ([#482](https://github.com/marmot-protocol/marmot/issues/482)). The
+approving device keeps one failure record per slot, and approving a later link of the slot ends it. If that later link
+is made and branch selection then drops it, together with the undo, and brings back the failed link's entry, the device
+no longer undoes that entry: the later link stays made, so the device records no new failure. That takes a branch that
+forks before the undo, the later link's Add and its new device's first Commit. If that branch does not also bring back
+the failed link's first Commit, the entry has no `tag_signature_key`, so no device may remove it ([The removal
+Commit](#the-removal-commit)), and while the roster lists it, no device answers a pairing request from its slot ("Before
+answering"). Nothing in this specification frees that slot then: removing a device after a longer absence is not
+specified yet ([Inactive devices](#inactive-devices)). If it does, the entry has its `tag_signature_key`, and the user
+can remove that device like any other.
 
 ## Keeping it out of sight
 
@@ -391,8 +416,8 @@ cover what this discloses.
 - A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
   its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
   it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
-  joined, and removes it if it has not made it in time ("A link that is not taken up"). That Commit also replaces its
-  leaf in the device group with one tagged under that key
+  joined, unless the link has already failed, and removes it if it has not made it in time ("A link that is not taken
+  up"). That Commit also replaces its leaf in the device group with one tagged under that key
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
   there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
   leaf later.
@@ -496,6 +521,33 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
   this device to a group;
 - those the slot handed it, so that it never adds the removed device with one.
 
+### On the removed device
+
+A device that its device group removes is unlinked from the account, unless the removal undid a failed link, which the
+roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). It realizes that
+removal as soon as the removing Commit is on the selected branch
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
+anything more, and then:
+
+1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
+   again;
+2. discards the active state of its copy of the device group, as any device its device group removes does;
+3. stops acting for the account until it deletes its local state for it (below): it makes no Commit and sends no
+   message in any group, accepts no Welcome, answers no pairing request, and publishes nothing, its slot included,
+   whatever [../foundation/key-packages.md](../foundation/key-packages.md) would otherwise have it publish;
+4. tells its user, durably, that this device was unlinked from the account.
+
+It neither leaves its chats nor deletes its slot. Its siblings remove its leaves where they can and leave the rest
+([Removing it from chats](#removing-it-from-chats)), and the device that decided the removal deletes its slot ([The
+removed device's slot](#the-removed-devices-slot)). A chat whose leaf for this device a sibling removed before the
+device group's removal reached it already reads as no longer active on this device, not as one the account was removed
+from ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
+
+The device runs the account again only as a new sign-in: it deletes its local state for the account, then links again
+through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
+record any other way, even when branch selection later drops the removal that unlinked it; the device that decided the
+removal then commits it again ([The removal Commit](#the-removal-commit)).
+
 ## Slot announcements
 
 A device in a device group names each KeyPackage in its own roster entry before that KeyPackage reaches its slot
@@ -521,7 +573,8 @@ publishes in its slot.
 - The founding state announces the KeyPackage the creating device last published, if any, and the founding Add the one
   the link confirmed ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before
   it publishes one of those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
-- A device with no device group publishes as before.
+- A device with no device group publishes as before, unless its device group unlinked it ([On the removed
+  device](#on-the-removed-device)).
 
 The roster keeps one announcement per device. Between an announcement and its publication, while some relays still serve
 the previous publication, and after branch selection drops an announcement whose KeyPackage the device had already
@@ -920,6 +973,11 @@ status, and removing a device after a longer absence, are not specified yet.
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
+- Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the
+  account, with the account's signing key or a session with a remote signer, so its siblings cannot stop what it
+  publishes: they remove its leaves where they can, and the device that decided the removal deletes its slot. A removed
+  device that does not realize its removal when the removing Commit reaches it, for example because a local failure
+  interrupts that, keeps acting for the account until it next does.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
