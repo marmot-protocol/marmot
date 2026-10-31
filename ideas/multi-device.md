@@ -58,9 +58,9 @@ have, without a server that controls the device list.
   siblings only add each other with private KeyPackages handed over inside the device group, someone with the nsec
   can't get into your existing chats by replacing a linked device's public KeyPackage.
 - **Detection is the mitigation.** A KeyPackage in a slot your devices don't know about produces a visible prompt once
-  they see it. Either you skipped linking, or someone else has your key and you now know. A KeyPackage in a known slot
-  that its device never announced produces a warning the same way. Detection is not guaranteed: a relay can hide a
-  KeyPackage from your devices while showing it to other people.
+  they see it. Either you skipped linking, or someone else has your key and you now know. A KeyPackage in a device's
+  own slot that the device didn't make produces a warning on that device. Detection is not guaranteed: a relay can hide
+  a KeyPackage from your devices while showing it to other people.
 - **A stolen linked device is inside the circle.** Any device can remove any other, and no device is primary. Someone
   holding Alice's unlocked, linked phone can read what that phone can read, and can remove her other devices before
   she removes it. App lock is what stands in the way. Nothing in this design lets one device overrule another.
@@ -256,9 +256,9 @@ the laptop into a device group they control. Without the laptop's own confirmati
 - a Welcome sent to the account for a KeyPackage no roster device announced. Every device can open gift wraps addressed
   to the account, so any of them can notice this.
 
-A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Its siblings ask
-that device first, and reject the KeyPackage if it doesn't answer within a day (Scene 6, "Refreshing a slot"); a
-rejection goes to the warning in Scene 8.
+A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Only that device
+acts on it: if it didn't make the KeyPackage, it replaces it and shows the warning in Scene 8 (Scene 6, "Refreshing a
+slot").
 
 **Only checked evidence counts.** Before anything raises a prompt, a device validates what it saw under the existing
 KeyPackage and Nostr transport rules; this idea adds no checks of its own. A Welcome that names an unfamiliar KeyPackage
@@ -403,21 +403,11 @@ There is no "Alice added a device" notice.
   **Add to all my chats** is off, it leaves alone the chats Alice's devices were already in when that sibling was
   linked. A device that was offline during the link reads the same settings when it comes back, so it doesn't undo
   Alice's choice.
-- **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. A sibling that
-  sees a new KeyPackage in a known slot catches up on the device group before deciding. If the roster has it, it is a
-  quiet refresh. If not, the sibling asks the slot's device, which is the only one that knows: an anomaly alert through
-  the device group. That device either announces the KeyPackage again, because its announcement was lost or undone by a
-  fork, or, while its slot still holds it, rejects it as someone else's (Scene 8). If it doesn't answer within a day,
-  for example because it is lost or the KeyPackage has left its slot, the sibling rejects the KeyPackage itself, even if
-  the slot has moved on to another KeyPackage by then. The device itself also notices a KeyPackage it didn't publish in
-  its own slot, republishes its own, and rejects the other. Keeping this in the roster rather than in a message means a
-  device linked later can read every sibling's current KeyPackage straight away.
-- **Checking chats for leaves tied to a rejection.** Each device remembers which KeyPackage each of the account's leaves
-  joined with, and reads the device tags on them (see Under the hood). A leaf that joined with a rejected KeyPackage,
-  and that no sibling claims, is removed and goes to the warning in Scene 8. This catches a replaced KeyPackage that an
-  outside inviter used. A leaf that no sibling claims is not enough on its own: a device's leaves from before it was
-  linked, and those of a sign-in Alice hasn't answered yet, are unclaimed too, so flagging every unclaimed leaf would
-  warn her about her own devices. Extra leaves a stolen device added before it was removed are Scene 7's.
+- **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. Keeping this in
+  the roster rather than in a message means a device linked later can read every sibling's current KeyPackage straight
+  away. Each device also checks its own slot. A KeyPackage there that it didn't make, which only someone holding the
+  nsec could have published, it replaces with its own, and it warns Alice on that device (Scene 8). Siblings don't act
+  on each other's slots.
 
 **Trade-offs:** device counts are visible to chat members and, roughly, to anyone reading relays. We accept that and
 show it plainly rather than hiding it behind a notice.
@@ -507,46 +497,42 @@ account").
 
 ## Scene 8: "This wasn't me"
 
-![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
-chats and history, and remove it from chats they share with it. The key holder can still be invited to new chats, send
-as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not-me.svg)
+![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in and keep it out of
+existing chats and history. The key holder can still be invited to new chats, send as Alice, remove her devices, and
+publish KeyPackages.](multi-device/scene-8-not-me.svg)
 
-**Two ways in:** Alice taps **This wasn't me** on a new sign-in, or her devices find a KeyPackage in a linked device's
-slot that the device never announced. The second needs no tap. A linked device always announces before it publishes,
-but its siblings may not have caught up, or a fork may have undone the announcement, so the slot's own device decides
-(Scene 6, "Refreshing a slot"), and its siblings decide by themselves only after it has had a day to answer. The
-warning then appears on its own, on every device.
+**Two ways in:** Alice taps **This wasn't me** on a new sign-in, or one of her devices finds a KeyPackage in its own
+slot that it didn't make (Scene 6, "Refreshing a slot"). The second needs no tap, and the warning appears on that
+device only.
 
 **What Alice sees:** a full-screen warning that her account's signing access may be compromised: either her nsec, or a
 signer session. The figure shows the case where the nsec itself is stolen. The warning says plainly that for a stolen
 nsec, the only complete fix is moving to a new account, and for a signer, which session to revoke. It doesn't claim to
 know which one was taken.
 
-**What her devices do:** they mark the slot rejected so no device prompts about it again while the roster keeps that,
-reject the KeyPackage it published unless another slot shows it too, never add it to existing chats or send it history,
-and remove its leaf from any chat they share with it. For a replaced KeyPackage in a linked device's slot, they reject
-that KeyPackage, not the slot, and the roster keeps pointing at the device's own. If other people's inviters have
-already added the replacement to a chat, Alice's devices know which leaf joined with it, and remove that leaf. They can
-remove a leaf only in a chat that lets devices remove their own account's leaves, or where Alice is an admin; the
-warning lists the other chats. Each device shows one warning for everything new, and Alice dismisses it on each device.
+**What her devices do:** after This wasn't me, they mark the slot rejected so no device prompts about it again while the
+roster keeps that, and never add it to existing chats or send it history. A device that finds a KeyPackage it didn't
+make in its own slot records nothing in the roster: it replaces the KeyPackage with its own and warns on that device.
+Each device shows one warning for everything new, and Alice dismisses it on each device.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
-devices, and publish more KeyPackages. The warning must not promise more protection than that.
+devices, and publish more KeyPackages. Nothing takes them out of chats other people's inviters added them to. The
+warning must not promise more protection than that.
 
 ## Under the hood
 
 These pieces sit behind the scenes above. They are settled in direction; their exact encodings come with the spec.
 
-**The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
-details, settings, status, current public KeyPackage, tag signature key and history key, plus the account's rejected
-slots and KeyPackages, the key that seals device tags, and its backup details: the backup writer and the recovery key's
-public half ([account-sync.md](./account-sync.md)).
+**The roster** is a group app component in the device group. It holds each device's slot, label, platform, link details,
+settings, status, current public KeyPackage, tag signature key and history key, plus the account's rejected slots, the
+key that seals device tags, and its backup details: the backup writer and the recovery key's public half
+([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
 **Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
-private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. Invite decisions travel as
-small state ([account-sync.md](./account-sync.md)), which has its own versions and recovery
+private KeyPackage requests and hand-offs, and Welcomes for sibling adds. Invite decisions travel as small state
+([account-sync.md](./account-sync.md)), which has its own versions and recovery
 ([../features/account-sync.md](../features/account-sync.md)). The sender is already identified by its leaf in the
 device group, so messages need no device identifier tag. The rule for roster versus message: anything a device linked
 later needs to know goes in the roster, except small state, which every device sends again from time to time.
@@ -565,16 +551,15 @@ that effect once the receiver is back online sends again:
 - **History** recovers the same way ([account-sync.md](./account-sync.md)). Small state does not: every device sends
   everything it holds again from time to time ([../features/account-sync.md](../features/account-sync.md)).
 
-**Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
-account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
-puts a device tag in every leaf it creates, including the leaf in each of its KeyPackages. The tag names the device's
-slot, is signed by that device's own key, and is sealed under a key that only the account's devices hold. A removed
-device keeps that key, so in a chat it is still in it can still tell which leaf is whose. A sibling opens the tags on
-the account's leaves in each chat it is in. Other chat members see bytes they cannot read, different in every
-KeyPackage. No roster commit records anything about the chats, so joining a chat, leaving one, or rotating a key there
-never commits to the device group; small-state messages do name chats
-([../features/account-sync.md](../features/account-sync.md)). A leaf created before its device was linked has no tag;
-the device tags it with its next update in that chat.
+**Matching leaves to devices.** Gap filling and sibling removal need to know which of the account's leaves in a chat
+belongs to which sibling. Labels don't help, because they never appear in chats. Each device puts a device tag in every
+leaf it creates, including the leaf in each of its KeyPackages. The tag names the device's slot, is signed by that
+device's own key, and is sealed under a key that only the account's devices hold. A removed device keeps that key, so in
+a chat it is still in it can still tell which leaf is whose. A sibling opens the tags on the account's leaves in each
+chat it is in. Other chat members see bytes they cannot read, different in every KeyPackage. No roster commit records
+anything about the chats, so joining a chat, leaving one, or rotating a key there never commits to the device group;
+small-state messages do name chats ([../features/account-sync.md](../features/account-sync.md)). A leaf created before
+its device was linked has no tag; the device tags it with its next update in that chat.
 
 **Private KeyPackage upkeep.** Private KeyPackages expire like public ones. A device replaces a sibling's allocation
 when it is halfway to expiry, and expired private KeyPackages are simply discarded. A device coming back after a long
@@ -610,6 +595,12 @@ when every device is lost are in [account-sync.md](./account-sync.md).
 new chats" setting is not planned, because other people's inviters add every fresh device before Alice accepts, so a
 private setting couldn't stop it.
 
+## Further ideas
+
+Ideas set aside when the response to a stolen nsec was narrowed to the warning in Scene 8, such as siblings checking
+each other's slots, recording rejected KeyPackages in the roster, and removing the leaves that joined with them, are
+collected in [mdk#2794](https://github.com/marmot-protocol/mdk/issues/2794).
+
 ## Path into the spec
 
 Parts of this can become spec text before others are settled:
@@ -625,7 +616,7 @@ Parts of this can become spec text before others are settled:
    rules in [../protocol-core/joining.md](../protocol-core/joining.md) and
    [../protocol-core/member-departure.md](../protocol-core/member-departure.md).
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
-   delivery, gap filling, anomaly signals, and merging.
+   delivery, gap filling, and merging.
 4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
 
 Details to pick while writing the spec, rather than product questions:
