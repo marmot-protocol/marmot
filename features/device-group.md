@@ -212,14 +212,18 @@ is a device in the roster, so a new request from it is not answered ("Before ans
 
 If the link is not made by then, the approving device first processes the input it holds for the group. If the new
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
-acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
-link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. The
-failure stands: the approving device keeps it across restarts and, whenever branch selection drops that removal, commits
-it again, even when the new device's first Commit is then on the selected branch, since the new device may already have
-realized the removal and discarded its copy, as the next paragraph says.
+acts on that: it stops delivering the link's Welcome, records the failure, which it keeps across restarts, and makes one
+Commit that removes the new device's leaf and, with `remove_device`, its roster entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"). The slot is then a sign-in
+again ("Any one device's answer"), and the user can link it again. The failure stands even when the new device's first
+Commit later reaches the selected branch, since the new device may already have realized the removal and discarded its
+copy, as the next paragraph says. So the approving device commits that removal again whenever the roster on its selected
+branch lists the entry that link added, the one with the `linked_by` and `linked_at` it wrote, whether its Commit failed
+or branch selection dropped it, and stops once that entry is gone. A slot the roster records as `removed` holds no
+device entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs
+no undo: a user's removal has taken the device out, and the approving device makes no `remove_device` for it.
 
-A device whose leaf a Commit on the selected branch removes from its device group, whenever that Commit reaches it, no
+A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
 member may do ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it
 MAY keep the group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
@@ -398,8 +402,8 @@ cover what this discloses.
 - A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
   its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
   it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
-  joined, and removes it if it has not made it in time ("A link that is not taken up"). That Commit also replaces its
-  leaf in the device group with one tagged under that key
+  joined, unless the link has already failed, and removes it if it has not made it in time ("A link that is not taken
+  up"). That Commit also replaces its leaf in the device group with one tagged under that key
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
   there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
   leaf later.
