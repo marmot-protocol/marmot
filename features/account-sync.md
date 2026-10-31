@@ -414,7 +414,7 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
   ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
 - It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, each bundle in one
   delivery: inline, split so that each bundle fits a delivery, or through Blossom. It uploads a bundle it sends through
-  Blossom to servers of its own choosing, such as the chat's encrypted-media endpoints
+  Blossom to servers of its own choosing, such as the chat's `blossom-v1` encrypted-media endpoints
   ([encrypted-media.md](./encrypted-media.md), "Locator Kinds"), and sends the delivery only once the upload to each
   server it names has succeeded. It does not delete a blob it uploaded: the receiver may fetch it until it drops the
   delivery, and nothing tells the sender when that is. An event too large to fit any bundle it can send is left out; the
@@ -422,42 +422,48 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
 - A device MAY bound how many deliveries one history takes. When a history needs more, the device either sends the
   deliveries of its newest bundles, as many as the bound allows, and leaves the older history out, or forgets the
   history, sending none of it.
-- A delivery whose publication fails without reaching any relay leaves the history owed, to be sent again. When branch
-  selection withdraws a delivery the device sent ([../protocol-core/convergence.md](../protocol-core/convergence.md)),
-  the history is owed again. A device forgets a history 7 days after the Commit that made it owed, sent or not.
+- A bundle whose upload fails, or a delivery whose publication fails without reaching any relay, leaves the history
+  owed, to be sent again. When branch selection withdraws a delivery the device sent
+  ([../protocol-core/convergence.md](../protocol-core/convergence.md)), the history is owed again. A device forgets a
+  history 7 days after the Commit that made it owed, sent or not.
 - A device sends no other history. There are no receipts and no requests for history.
 
 **Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
 "Trust"), and ignores kind `473` in any other group. It drops one unless:
 
-- its content is exactly the encoding above, byte for byte: another member order, whitespace, an escaped character, or
-  a repeated, missing or extra member drops it;
+- its content is exactly the encoding above, byte for byte, each member holding a value the table allows: another member
+  order, whitespace, an escaped character, a repeated, missing or extra member, or a value the table does not allow,
+  such as an empty `blossom`, a fifth server, a URL named twice or one that is not normalized, drops it;
 - `to` is its own slot;
 - `from` is another device in its current roster;
-- the leaf that sent it, in the tree of the epoch the delivery was sent in, carries a device tag that reads as `from`'s
-  against its current roster ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading
-  tags"). A delivery from an epoch whose tree the device no longer keeps has no readable sender and is dropped;
+- the leaf that sent it, as that leaf was in the epoch the delivery was sent in, carries a device tag that reads as
+  `from`'s against its current roster ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
+  "Reading tags"). The device reads that leaf from the member state it retains for that epoch
+  ([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "Retained cryptographic material"); a
+  delivery from an epoch whose member state it no longer retains has no readable sender and is dropped;
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
 It then takes the bundle's ciphertext: it base64-decodes `bundle`, or fetches the blob from one of the `blossom`
-servers, reading no more than the longest ciphertext a bundle can have (8,388,608 bytes and the 16-byte tag). It checks
+servers, reading no more than 8,388,624 bytes, the longest bundle's 8,388,608 bytes and its 16-byte tag. It checks
 that the SHA-256 of the ciphertext is the hash it opened, decrypts it with the key it opened, and imports the bundle as
-[History bundles](#history-bundles) gives it. A fetch that fails, or that returns other bytes, is tried again, from any
-of the servers, until the delivery is dropped. A delivery for a chat the device does not hold yet, such as one read
-before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a device in
-its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way, and it MAY fetch a
-kept delivery's blob before or after it joins. A branch selection in the device group that later withdraws a delivery
-neither undoes its import nor drops it while it is kept, as it does not undo small state a device merged ([Convergence
-and retained history](#convergence-and-retained-history)); only the sender owes the history again.
+[History bundles](#history-bundles) gives it. A delivery the device cannot import yet is kept: one for a chat it does
+not hold yet, such as one read before the chat's Welcome, until it joins that chat, and one whose blob it has not
+fetched, until a fetch succeeds. A fetch that fails, or that returns other bytes, is tried again, from any of the
+servers. A kept delivery is imported once it can be if `from` is still a device in the roster then. Every kept delivery,
+whether it waits for its chat or its blob, is dropped 7 days after the device read it, and with it any fetch still to
+try. A device MAY bound how many deliveries it keeps this way, and it MAY fetch a kept delivery's blob before or after
+it joins. A branch selection in the device group that later withdraws a delivery neither undoes its import nor drops it
+while it is kept, as it does not undo small state a device merged ([Convergence and retained
+history](#convergence-and-retained-history)); only the sender owes the history again.
 
 **Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
 more:
 
 - Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
-- There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer keeps the
-  tree of the epoch it was sent in, is lost, and so is that history. A sender owes a withdrawn delivery's history again
-  only when it learns of the withdrawal, so one whose record of the delivery is already gone, or that stops before it
-  acts on the withdrawal, loses that history too.
+- There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer retains
+  the member state of the epoch it was sent in, is lost, and so is that history. A sender owes a withdrawn delivery's
+  history again only when it learns of the withdrawal, so one whose record of the delivery is already gone, or that
+  stops before it acts on the withdrawal, loses that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
   which no bundle or delivery can name; small state covers none longer than 256 bytes either.
@@ -466,9 +472,8 @@ more:
   fits the inline deliveries it will send. An event too large for any bundle is left out, as is one whose epoch,
   `created_at` or retention is larger than a bundle number can hold.
 - Blobs are not deleted. A Blossom server keeps each blob it holds, with its size and when it was uploaded and fetched,
-  until the server expires it, and learns what the upload's authorization says of the uploader and where each request
-  came from. A receiver that fetches a blob after its server expired it gets no history from that delivery. A blob
-  opens only with the key sealed to its receiver.
+  until the server expires it ([Security considerations](#security-considerations)). A receiver that fetches a blob
+  after its server expired it gets no history from that delivery.
 - An imported attachment key is used only when the device does not hold the media exporter secret of the event's epoch.
   A device that holds a secret for that epoch from another branch of the chat than the event's opens the file with that
   secret, not the imported key, and the file does not open.
@@ -619,8 +624,14 @@ so no device moves it back; a later position moves it again once that one is fur
   device linked with "add to all my chats" off.
 - A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
   value sealed to it, past and future, until it writes a new key.
-- Every sibling reads every history delivery: it sees that the sender sent the receiver history, which chat it was for,
-  and how large it is, but cannot open it. The rule above against publishing a group id learned this way applies.
+- Every sibling reads every history delivery: it sees that the sender sent the receiver history and which chat it was
+  for, but cannot open it. It sees how large an inline bundle is, and can fetch a Blossom delivery's blob as the
+  receiver does, learning its size, and keep it for as long as a server holds it. The rule above against publishing a
+  group id learned this way applies.
+- A Blossom server that holds a history blob learns what the upload's authorization says of the uploader, the blob's
+  size, when it was uploaded and fetched, and where each request came from, and keeps the blob until it expires it. The
+  receiver fetches from servers the sender chose, which may be a chat's encrypted-media endpoints that another account's
+  admins set. Only the receiver's history key opens the blob's key.
 - Any device of the account can replace the recovery key and name itself as `backup_writer`, including a stolen linked
   device until it is removed. Backups written after that are sealed to words its holder chose, until a device of the
   user replaces the words again. Backups already written stay sealed to the words they were sealed to.

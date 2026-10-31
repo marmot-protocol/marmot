@@ -20,15 +20,18 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 `bundle`, the ciphertext inline as before, and `blossom`, a JSON array of one to four Blossom servers that hold the
 ciphertext as one blob. Each is a base URL valid as an encrypted-media endpoint's is, and none appears twice. The sender
 uploads the ciphertext to `server_root || "/upload"` with BUD-02, sends the delivery only once each upload it names has
-succeeded, and does not delete the blob. The receiver fetches `server_root || "/" || hash_hex` with BUD-01, reads no
-more than 8,388,608 bytes and the 16-byte tag, checks the SHA-256 it opened, and tries a failed fetch again, from any of
-the servers, until it drops the delivery. A bundle sent this way may be as long as any bundle. A sender that bounds a
-history's deliveries now sends its newest bundles and leaves the older history out, or sends none of it. A Blossom
-server keeps a blob, its size and when it was uploaded and fetched until the server expires it. The receiver also reads
-a delivery's sender in the tree of the epoch the delivery was sent in, against its current roster, not in the tree of
-the epoch it holds, so a delivery read after a later device-group Commit is no longer dropped. A receiver that predates
-this change drops a delivery that names Blossom servers, as it drops any content that is not exactly the encoding.
-Clients that do not support device groups change nothing.
+succeeded, still owes the history after a failed upload, and does not delete the blob. The receiver checks the `blossom`
+values as it checks the rest of the encoding, fetches `server_root || "/" || hash_hex` with BUD-01, reads no more than
+8,388,624 bytes, checks the SHA-256 it opened, and tries a failed fetch again, from any of the servers. It keeps a
+delivery whose blob it has not fetched, as it keeps one for a chat it has not joined, and drops either 7 days after
+reading it. A bundle sent this way may be as long as any bundle. A sender that bounds a history's deliveries now sends
+its newest bundles and leaves the older history out, or sends none of it. A Blossom server keeps a blob, its size and
+when it was uploaded and fetched until the server expires it, and every sibling can fetch the blob; "Security
+considerations" says so. The receiver also reads a delivery's sender as that leaf was in the epoch the delivery was sent
+in, from the member state it retains for that epoch, against its current roster, not in the tree of the epoch it holds.
+A delivery read after a later device-group Commit is no longer dropped while the device still retains the member state
+of the epoch it was sent in. A receiver that predates this change drops a delivery that names Blossom servers, as it
+drops any content that is not exactly the encoding. Clients that do not support device groups change nothing.
 
 ## 2026-10-31: A device its device group removes is unlinked
 

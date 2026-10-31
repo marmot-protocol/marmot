@@ -313,8 +313,6 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 
 | Number | Value |
 | --- | --- |
-| History bundle sent inline | up to about 32 KiB once sealed |
-| Largest history bundle | 8 MiB, one Blossom blob when it can't go inline |
 | Backup frequency | daily |
 | Backup writer takeover | when the latest backup is more than 7 days old |
 | Backups kept | the latest 2, plus any that are the last to hold some messages; replacing the words deletes old ones only after Alice confirms |
@@ -336,11 +334,11 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 
 1. **Roster additions.** Each device's history key, the backup writer, and the recovery key's public half join the
    roster component defined with the multi-device device group.
-2. **History transfer.** History keys, the bundle format and inline history deliveries from the adder are specified
-   in [../features/account-sync.md](../features/account-sync.md). Still to come there: Blossom locators for large
-   bundles, which reuse encrypted-media locators and Blossom storage, and then transfer offers, older-history offers,
-   manifests and confirmations, whose kinds [../foundation/registries.md](../foundation/registries.md) holds for them
-   (see [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
+2. **History transfer.** History keys, the bundle format and history deliveries from the adder, inline or through
+   Blossom, are specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: transfer
+   offers, older-history offers, manifests and confirmations, whose kinds
+   [../foundation/registries.md](../foundation/registries.md) holds for them (see
+   [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
    holds it) is specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: the
