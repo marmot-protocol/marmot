@@ -26,8 +26,8 @@ A device turns backups on, or replaces the words, after the user types two of th
 account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off
 clears the account entry the same way; backups already written stay until they are deleted. A device commits such an
 update only on the account entry it read, commits it again while the roster still holds the key it replaced, and
-stops once the roster holds its change or any other key. A device with no device group keeps the key itself and
-founds its device group with it. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no
+stops for good once the roster holds its change or any other key. A device with no device group keeps the key itself
+and founds its device group with it; one that joins a device group instead leaves the group's settings as they are. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no
 listed slot, leaves the roster valid. The account entry's encoding does not change. Clients that do not support device
 groups change nothing.
 
