@@ -147,10 +147,10 @@ Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
-group, and it holds no unprocessed input for the group. Neither the approving Commit's publication nor its Welcome's
-delivery shows that the new device joined; only a Commit from the new device's own leaf does. Once made, a link stays
-made, and once failed, it stays failed. Until then, anything that acts on the new device as a member of the account
-waits, and the link can still fail ("A link that is not taken up").
+group, and it holds no unprocessed input for the group, unless the link has already failed. Neither the approving
+Commit's publication nor its Welcome's delivery shows that the new device joined; only a Commit from the new device's
+own leaf does. Once made, a link stays made, and once failed, it stays failed. Until then, anything that acts on the new
+device as a member of the account waits, and the link can still fail ("A link that is not taken up").
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
 a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
@@ -212,16 +212,18 @@ is a device in the roster, so a new request from it is not answered ("Before ans
 
 If the link is not made by then, the approving device first processes the input it holds for the group. If the new
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
-acts on that: it stops delivering the link's Welcome, records the failure, which it keeps across restarts, and makes one
-Commit that removes the new device's leaf and, with `remove_device`, its roster entry
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"). The slot is then a sign-in
-again ("Any one device's answer"), and the user can link it again. The failure stands even when the new device's first
-Commit later reaches the selected branch, since the new device may already have realized the removal and discarded its
-copy, as the next paragraph says. So the approving device commits that removal again whenever the roster on its selected
-branch lists the entry that link added, the one with the `linked_by` and `linked_at` it wrote, whether its Commit failed
-or branch selection dropped it, and stops once that entry is gone. A slot the roster records as `removed` holds no
-device entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs
-no undo: a user's removal has taken the device out, and the approving device makes no `remove_device` for it.
+acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
+restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
+lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
+and, with `remove_device`, that entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Update"): the first time, and again whenever such a Commit failed or branch selection dropped it. Rewriting the entry's
+other fields does not change that. The failure stands even when the new device's first Commit later reaches the selected
+branch, since the new device may already have realized the removal and discarded its copy, as the next paragraph says. A
+slot the roster records as `removed` holds no device entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
+user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
+removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again. A later link
+of the slot adds an entry of its own, which this does not undo.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed

@@ -25,11 +25,12 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   deletes its local state for the account. It tells its user it was unlinked, and neither leaves its chats nor deletes
   its slot: its siblings remove its leaves where they can, and the device that decided the removal deletes its slot. It
   runs the account again only as a new sign-in: it deletes its local state for the account and links again with a new
-  slot, even if branch selection later drops the removal. A failed link stays failed: while the approving device's
-  roster lists the entry that link added, it commits the undo again, whether its Commit failed or branch selection
-  dropped it, even if the new device's first Commit is then selected. A slot recorded as `removed` needs no undo.
-  Unlinking is the removed device's own work: it can still sign as the account, and one that misses its removal keeps
-  acting for the account until it next notices it.
+  slot, even if branch selection later drops the removal. A failed link stays failed: until it approves a later link of
+  the slot, the approving device commits the undo whenever the roster on its selected branch lists the slot as a device
+  it linked, again if that Commit failed or branch selection dropped it, even if the new device's first Commit is then
+  selected. A slot recorded as `removed` needs no undo, and a later link of the slot is not undone. Unlinking is the
+  removed device's own work: it can still sign as the account, and one that misses its removal keeps acting for the
+  account until it next notices it.
 
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 
