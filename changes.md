@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: History bundles through Blossom (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#483](https://github.com/marmot-protocol/marmot/pull/483) changes
 [features/account-sync.md](./features/account-sync.md). A kind `473` history delivery now carries exactly one of
 `bundle`, the ciphertext inline as before, and `blossom`, a JSON array of one to four Blossom servers that hold the
 ciphertext as one blob. Each is a base URL valid as an encrypted-media endpoint's is, and none appears twice. The sender
