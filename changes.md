@@ -16,15 +16,18 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-10-31: Rejected KeyPackages: never one a device made, and the catch-up's success rule
 
 [#478](https://github.com/marmot-protocol/marmot/pull/478) changes
-[features/device-group.md](./features/device-group.md).
+[features/device-group.md](./features/device-group.md) and [transports/nostr.md](./transports/nostr.md).
 
 - A device MUST NOT reject a KeyPackage it made, whether the copy is in another slot or in its own slot as a new
   publication. With no device group, the `KeyPackageRef`s it keeps of what it published are what tell it.
-- Before alerting or settling, a sibling's catch-up of its device group succeeds when at least one relay showed it every
-  event it holds for the group: by pages, followed until a page holds fewer events than asked for, or by a comparison
-  that no limit cut short and whose every missing event the relay sent. The read covers all the relay holds, since on
-  Nostr a `since` taken from processed events can skip a Commit that a slow clock dated earlier. Unlike a check, a
-  catch-up may page.
+- Before alerting or settling, a sibling's catch-up of its device group succeeds only on a complete read, made for
+  that catch-up, of everything one relay holds for the group. A read from where processed history ends, or one made
+  earlier, does not count, since on Nostr a slow clock can date a Commit into a range already read. A read that fails
+  or is cut short never alerts or settles. Unlike a check, a catch-up may take many answers.
+- The Nostr binding defines that read ("Reading everything a relay holds"): `created_at` slices that together cover
+  every timestamp, each proven in the read by an answer below what the client asked for (asking no more than the
+  advertised `max_limit`), a full answer split, a full one-second slice proven only by a NIP-77 comparison and an id
+  fetch, or one comparison of the whole filter. An unproven slice cuts the read short.
 - Starting fresh answers Not now only for the first check's slots that the user has not answered.
 - A device that joins a device group counts the rejections already in the first roster it trusts as seen, except ones
   it keeps itself, which still warn. A device that creates one counts none as seen.

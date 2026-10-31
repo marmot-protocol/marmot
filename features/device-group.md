@@ -574,20 +574,19 @@ than any the roster already rejects, once it trusts that group. Leaving out a sl
 
 1. brings its trusted device group up to date first: it fetches the group's messages and processes every Commit for the
    group that it fetched, until it holds no unprocessed input for the group. This counts only when the fetch succeeded:
-   at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
-   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") answered without failing or
-   timing out, and showed the device every event it holds for the group. A read in pages shows that when the device
-   follows each page that holds as many events as it asked for with a further page, until a page holds fewer, counting
-   every event the relay sent. A read that compares the device's events with the relay's shows it when the comparison
-   covers the whole range without a limit cutting it short, and the relay sends every event it found the device
-   lacking. Either read covers all the relay holds for the group, not only what came after the history the device has
-   processed: on the Nostr binding `created_at` is a fetch hint only, and a sender whose clock runs behind can date a
-   Commit before one the device has already processed, so a read from a `since` shows nothing about the events dated
-   before it. Unlike a check ([Evidence](#evidence)), a catch-up may page, since a group's history outgrows one answer.
-   A fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
-   one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the KeyPackage
-   is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's (below), or
-   the slot is no longer a device in its roster, it does nothing more;
+   for at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
+   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules"), a complete read made for this
+   catch-up showed the device every event that relay holds for the group (on the Nostr binding,
+   [../transports/nostr.md](../transports/nostr.md), "Reading everything a relay holds"). A read covers all the relay
+   holds, not only what came after the history the device has processed, and a read made earlier does not count: a
+   sender whose clock runs behind can date a Commit before one the device has already processed. Unlike a check
+   ([Evidence](#evidence)), a catch-up may take many answers, since a group's history outgrows one, but each answer is
+   proven as a check's is: a device SHOULD ask a relay for no more events than it advertises, and a relay that cuts an
+   answer at a lower limit it does not advertise makes a read look complete when it is not. A read that failed, timed
+   out or was cut short is not complete. It also leaves no unprocessed input, so an empty queue alone shows nothing:
+   after one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the
+   KeyPackage is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's
+   (below), or the slot is no longer a device in its roster, it does nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
    alert for each KeyPackage, and keeps each alert it sent, with the slot, the KeyPackage's `KeyPackageRef`, the
    signature key of its LeafNode and the time it sent it, across restarts, until it settles it;
