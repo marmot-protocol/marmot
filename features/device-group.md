@@ -360,7 +360,8 @@ announce](#a-keypackage-the-roster-does-not-announce)).
 
 A client MAY let a device whose first check found sign-ins ([Already signed in, or new](#already-signed-in-or-new))
 start without them, in groups it is invited to from then on. Starting that way answers Not now for every slot that first
-check returned, including one that does not count then and is listed only when it counts later. It MUST NOT reject them:
+check returned and the user has not answered, including one that does not count then and is listed only when it counts
+later. It MUST NOT reject them:
 one of them may be a device the user still has somewhere, which can link this one later, and a rejection would block
 that link and warn the user about a device they only lost.
 
@@ -574,9 +575,14 @@ than any the roster already rejects, once it trusts that group. Leaving out a sl
 1. brings its trusted device group up to date first: it fetches the group's messages and processes every Commit for the
    group that it fetched, until it holds no unprocessed input for the group. This counts only when the fetch succeeded:
    at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
-   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") ended its answer without failing
-   or timing out, and with fewer events than the device asked for, as for a check's answers ([Evidence](#evidence)). A
-   fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
+   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") answered without failing or
+   timing out, and showed the device every event it holds for the group from where the read started. A read in pages
+   shows that when the device follows each page that holds as many events as it asked for with a further page, until a
+   page holds fewer, counting every event the relay sent. A read that compares the device's events with the relay's
+   shows it when the comparison covers the whole range without a limit cutting it short, and the relay sends every
+   event it found the device lacking. The read may start where history the device has already processed ends, but not
+   past input it has fetched and not processed. Unlike a check ([Evidence](#evidence)), a catch-up may page and resume,
+   since a group's history outgrows one answer. A fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
    one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the KeyPackage
    is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's (below), or
    the slot is no longer a device in its roster, it does nothing more;
@@ -608,11 +614,13 @@ rejected by the reading above, which announces the replacement first. It makes e
 fails or a branch selection drops it. So that it can tell which KeyPackages it made after it deletes their `init_key`, a
 device keeps the `KeyPackageRef` of every KeyPackage it publishes to its slot for as long as it keeps the slot.
 
-A device MUST NOT reject a KeyPackage that any roster of its trusted device group announced for any device, or whose
-LeafNode carries a device tag that reads as a device's
+A device MUST NOT reject a KeyPackage that it made, that any roster of its trusted device group announced for any
+device, or whose LeafNode carries a device tag that reads as a device's
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), even where a rule above says
-to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot, and rejecting
-the copy would reject the KeyPackage of the device that made it. The slot's device replaces the copy like any other
+to. Whoever holds the account's signing key can copy one device's KeyPackage into another device's slot, or into the
+same device's slot as a new publication, and rejecting the copy would reject the KeyPackage of the device that made it.
+A device with no device group has no roster to announce its own KeyPackages and no tag on them, so only the
+`KeyPackageRef`s it keeps (above) tell it a copy of one is its own. The slot's device replaces the copy like any other
 publication it did not make. Since the tag is on the KeyPackage's LeafNode, each rule that rejects a KeyPackage is
 applied while the device holds the KeyPackage: by the slot's own device when it finds the publication in its slot, by a
 sibling before it alerts, and by a complete check on what it found ([KeyPackages in a rejected sign-in's
@@ -704,7 +712,10 @@ rejection; and when it finds such a leaf in a group where it can remove it by ne
   restarts, each of them its user has seen, and does not warn about one again when a branch selection drops and restores
   it. It keeps a seen rejected KeyPackage, by its `KeyPackageRef`, for 7,261,200 seconds, the longest a KeyPackage can
   be valid, so that one dropped and recorded again ([How long a rejected KeyPackage
-  lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either.
+  lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either. A device MAY bound the seen marks it keeps,
+  dropping the oldest seen first; an item whose mark it dropped warns again if it comes back.
+- A device that newly trusts a device group counts the rejections already in the first roster it trusts as seen: the
+  user saw the warning on the devices that were there. Rejections it kept itself before it joined still warn.
 - Dismissing the warning on a device marks every rejection, removal and group the warning then gathers as seen on that
   device, so the warning stays closed there until something it has not seen arrives. It dismisses it there only: another
   device's warning is unchanged.
