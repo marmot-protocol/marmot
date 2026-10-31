@@ -373,8 +373,8 @@ is dropped. The label keeps a value sealed for a backup from opening as history 
 the other way round.
 
 Devices keep only the public half. A device derives the private half only while the user's words are in hand, to open
-a backup. It MUST NOT write the words, the entropy or the private half to persistent storage of any kind, MUST NOT hold
-them in memory longer than the steps below allow, and MUST NOT send them anywhere.
+a backup. It MUST NOT write the words, the entropy or the private half to persistent storage of any kind, and MUST NOT
+send them anywhere.
 
 ### The account's recovery key
 
@@ -392,12 +392,7 @@ A device turns backups on, or replaces the words, in four steps:
    only operation sets the account entry. When the entry has no `recovery_public_key`, the update also names this
    device as `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names
    none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
-4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half. If
-   it cannot commit the update, because the account entry is no longer the one it read or the device group cannot
-   take a commit from it yet, it holds them in memory for the user to try again. A retry uses the same words, makes no
-   new ones, and computes a new update from the account entry as the device reads it then. Words the device forgets
-   before their update is committed or their public half kept, because the user gives up or the device restarts,
-   never become the account's recovery key; the user starts again at step 1.
+4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half.
 
 A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself,
 across restarts, as the account's recovery key; new words replace it, and none of the rules below for roster updates
@@ -407,43 +402,30 @@ whatever it holds, since a roster with no key may be one whose backups the user 
 trusts the device group it forgets the key it kept, and the roster's account entry is the account's recovery key from
 then on.
 
-An update that sets the account entry replaces it whole, so it is computed from the entry as the device read it. A
-device MUST NOT commit it on a roster whose account entry is not the one it read, including when it commits the update
-again after branch selection dropped it ([../protocol-core/convergence.md](../protocol-core/convergence.md)). Otherwise
-an update from a stale read would undo newer words another device wrote.
+An update that sets the account entry replaces it whole, so the account entry changes only by compare-and-set: the
+update is computed from the entry as the device read it, and a device MUST NOT commit it on a roster whose account
+entry, at the tip of the selected branch ([../protocol-core/convergence.md](../protocol-core/convergence.md)), is not
+the one it read. Otherwise an update from a stale read would undo newer words another device wrote.
 
 A device turns backups off with an update that sets the account entry to hold neither `recovery_public_key` nor
 `backup_writer`, under the same rule. No device writes backups while they are off, and turning them on again takes new
 words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
 group turns backups off by forgetting the key it keeps.
 
-A device commits an update that sets the account entry again only when branch selection drops it, under the rule above,
-and never because the roster does not hold what the user chose: a roster with no key looks the same before backups were
-turned on and after they were turned off again, so committing a change again on what the roster holds could undo another
-device's turn-off. A device shows backups as the roster's account entry holds them now.
+A device commits an update that sets the account entry again only when branch selection drops the Commit that carried
+it, and only under the same compare-and-set; never because the roster does not hold what the user chose: a roster with
+no key looks the same before backups were turned on and after they were turned off again, so committing a change again
+on what the roster holds could undo another device's turn-off. A device shows backups as the account entry of the
+selected roster holds them now. How a device holds the words while it cannot commit their update, retries, and holds
+back its other changes to the account entry while one of its updates is unsettled is local to it.
 
-A device keeps each update it makes to the account entry, with the entry it was computed from, across restarts, until
-one of these ends it:
-
-- Its publication fails and the device discards it
-  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Failure"). Publishing the same
-  Commit again while its publication is uncertain, as that document allows, is neither a failure nor committing it
-  again.
-- Branch selection drops it, and the account entry on the branch selected then is not the one it was computed from.
-  The update is refused.
-- Branch selection can no longer drop it.
-
-When branch selection drops it and the account entry is still the one it was computed from, the device commits it again
-and keeps it as before. A discarded or refused update is lost: the user makes the change again, as a new update. While a
-kept update's publication has no outcome yet, or from a drop until it is committed again or refused, the device makes no
-other change to the account entry.
-
-Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
-dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
-could still pick another, and the user makes a lost change again. And the rule against committing on an entry that is
-not the one the device read compares values: when branch selection drops an update turning backups on, and the winning
-branch turns backups on with other words and off again before the device reads it, the entry holds no key, as it did
-when the device read it, and the update is committed again.
+Two limitations are known. An update that branch selection drops and the compare-and-set then refuses, or whose
+publication fails ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), is lost, and the
+user makes the change again: after a fork the rule above may commit an earlier change again and refuse a later one,
+and a device shows the account entry of the branch selected now, even while branch selection could still pick
+another. And the compare-and-set compares values: when branch selection drops an update turning
+backups on, and the winning branch turns backups on with other words and off again before the device reads it, the
+entry holds no key, as it did when the device read it, and the update is committed again.
 
 ## Convergence and retained history
 
