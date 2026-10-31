@@ -226,7 +226,10 @@ group's history and a removal tombstone. A later link's Welcome into the same gr
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
 refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
 failed, and links again only through a new pairing session. Otherwise the user removed it ([On the removed
-device](#on-the-removed-device)).
+device](#on-the-removed-device)). The roster the removing Commit leaves tells the two apart, even when the device
+processes its first Commit and its removal together: a removal leaves a `removed` rejected slot for the device's slot
+([The removal Commit](#the-removal-commit)), while the undo of a failed link leaves no entry for it. A device that
+cannot read that roster treats its removal as the user's.
 
 ## Keeping it out of sight
 
@@ -508,8 +511,8 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 ### On the removed device
 
 A device that its device group removes after its link was made, or after it created the group, is unlinked from the
-account ([A link that is not taken up](#a-link-that-is-not-taken-up) covers a link that was never made). When it
-realizes that removal, it:
+account ([A link that is not taken up](#a-link-that-is-not-taken-up) covers a link that was never made). It realizes
+that removal as it processes the removing Commit, before it sends anything more, and then:
 
 1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
    again;
