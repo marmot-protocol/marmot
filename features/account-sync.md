@@ -354,9 +354,10 @@ through the device group.
 
 **Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
 of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
-object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long. `v`
-is a JSON number, written `1`; the other members are JSON strings whose hexadecimal or base64 characters are each
-written as themselves, never as a JSON escape (`\/` included). Unlike a bundle's layout, this one binds receivers too.
+object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long:
+`v`, `from`, `to`, `chat`, `sealed`, then exactly one of `bundle` and `blossom`. `v` is a JSON number, written `1`;
+`blossom` is a JSON array of strings; the other members are JSON strings. Every character in a string is written as
+itself, never as a JSON escape (`\/` included). Unlike a bundle's layout, this one binds receivers too.
 
 | Member   | Value |
 | -------- | ----- |
@@ -365,7 +366,8 @@ written as themselves, never as a JSON escape (`\/` included). Unlike a bundle's
 | `to`     | the receiving device's slot, the same way |
 | `chat`   | the chat's MLS group id, as in a bundle: its raw bytes, one to 256 of them, as lowercase hexadecimal with no prefix |
 | `sealed` | the sealed bundle key and hash, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
-| `bundle` | the bundle's ciphertext ([History bundles](#history-bundles)), non-empty, in standard base64 with padding |
+| `bundle`  | the bundle's ciphertext ([History bundles](#history-bundles)), non-empty, in standard base64 with padding |
+| `blossom` | one to four Blossom servers that hold the bundle's ciphertext as one blob, each as its base URL: an `http` or `https` URL of 1 to 1,024 printable ASCII characters other than `"` and `\`, with no query or fragment; no URL appears twice |
 
 `sealed` is the bundle's 32-byte key followed by the 32-byte SHA-256 of its ciphertext, 64 bytes in all, sealed to the
 history key of `to`'s roster entry ([History keys](#history-keys)) with the context
@@ -384,7 +386,17 @@ the 26 ASCII bytes of `marmot history delivery v1`, `from` and `to` are the two 
 MLS group id. The context binds a sealed value to its sender, receiver and chat, so it never opens for another. Under
 ciphersuite `0x0001`, `sealed` is 115 bytes: the 32-byte KEM output with a one-byte length, then the 80-byte ciphertext
 with a two-byte length, as RFC 9420's variable-length vectors encode them. A bundle whose plaintext is at most 23,552
-bytes always fits a delivery.
+bytes always fits a delivery inline. A delivery that names Blossom servers carries no bundle, so its bundle may be as
+long as [History bundles](#history-bundles) allows.
+
+**Blossom.** A bundle's blob is its ciphertext, at the address its SHA-256 gives it, which `sealed` already carries. For
+each server, let `server_root` be its base URL with all trailing `/` bytes removed and `hash_hex` the 64-character
+lowercase hexadecimal encoding of that SHA-256. The sender uploads the ciphertext to `server_root || "/upload"` with the
+[Blossom BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation; the receiver fetches
+`server_root || "/" || hash_hex` with the [Blossom BUD-01](https://github.com/hzrd149/blossom/blob/master/buds/01.md)
+`GET` operation and adds no extension, query, or fragment, as [encrypted-media.md](./encrypted-media.md) ("Locator
+Kinds") does for its fallback fetch URLs. Whether a device contacts a server is its own policy; non-normative guidance
+is in [../implementation-model.md](../implementation-model.md) ("Network destination safety").
 
 **Sending.**
 
@@ -400,10 +412,11 @@ bytes always fits a delivery.
   ([History keys](#history-keys)), so a sibling whose client supports history has one by then.
 - It sends only while its own leaf in the device group carries a device tag that reads as its slot, as for heartbeats
   ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
-- It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, split so that each bundle
-  fits one delivery. An event too large to fit a bundle that fits one delivery is left out; the rest of the history is
-  sent. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more, sending
-  none of it.
+- It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, each bundle in one
+  delivery: inline, split so that each bundle fits a delivery, or through Blossom. It sends a delivery that names
+  Blossom servers only once the upload of its bundle's ciphertext to each server it names has succeeded. An event too
+  large to fit any bundle it can send is left out; the rest of the history is sent. A device MAY bound how many
+  deliveries one history takes, and MAY forget a history that needs more, sending none of it.
 - A delivery whose publication fails without reaching any relay leaves the history owed, to be sent again. When branch
   selection withdraws a delivery the device sent ([../protocol-core/convergence.md](../protocol-core/convergence.md)),
   the history is owed again. A device forgets a history 7 days after the Commit that made it owed, sent or not.
@@ -422,13 +435,16 @@ bytes always fits a delivery.
   and is dropped;
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
-It then base64-decodes `bundle`, checks that the SHA-256 of those bytes is the hash it opened, decrypts them with the
-key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A delivery for a chat the device
-does not hold yet, such as one read before the chat's Welcome, is kept until the device joins that chat, and imported
-then if `from` is still a device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it
-keeps this way. A branch selection in the device group that later withdraws a delivery neither undoes its import nor
-drops it while it is kept, as it does not undo small state a device merged
-([Convergence and retained history](#convergence-and-retained-history)); only the sender owes the history again.
+It then takes the bundle's ciphertext: it base64-decodes `bundle`, or fetches the blob from one of the `blossom`
+servers, reading no more than the longest ciphertext a bundle can have (8,388,608 bytes and the 16-byte tag). It checks
+that the SHA-256 of the ciphertext is the hash it opened, decrypts it with the key it opened, and imports the bundle as
+[History bundles](#history-bundles) gives it. A fetch that fails, or that returns other bytes, is tried again, from any
+of the servers, until the delivery is dropped. A delivery for a chat the device does not hold yet, such as one read
+before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a device in
+its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way, and it MAY fetch a
+kept delivery's blob before or after it joins. A branch selection in the device group that later withdraws a delivery
+neither undoes its import nor drops it while it is kept, as it does not undo small state a device merged ([Convergence
+and retained history](#convergence-and-retained-history)); only the sender owes the history again.
 
 **Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
 more:
@@ -441,9 +457,12 @@ more:
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
   which no bundle or delivery can name; small state covers none longer than 256 bytes either.
-- Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
-  deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out, as is
-  one whose epoch, `created_at` or retention is larger than a bundle number can hold.
+<!-- 4.2c draft: this bullet, the cap on Blossom bundles and the blobs' lifetime wait on Jeff's answers. -->
+- A history needs as many deliveries as it has bundles. A history that needs more deliveries than the sender will send
+  is not sent at all, and an event too large for any bundle is left out, as is one whose epoch, `created_at` or
+  retention is larger than a bundle number can hold.
+- A Blossom server that holds a blob learns its size, when it was uploaded and fetched, and from where. A blob opens
+  only with the key sealed to its receiver.
 - An imported attachment key is used only when the device does not hold the media exporter secret of the event's epoch.
   A device that holds a secret for that epoch from another branch of the chat than the event's opens the file with that
   secret, not the imported key, and the file does not open.
