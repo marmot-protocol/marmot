@@ -395,9 +395,8 @@ A device turns backups on, or replaces the words, in four steps:
 A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself as
 the account's recovery key. When it creates a device group, the founding roster's account entry holds that key and
 names this device as `backup_writer`. When it joins one instead, the roster's account entry stands, whatever it holds,
-since a roster with no key may be one whose backups the user turned off. The key the device kept is then retired: the
-device never commits it to the roster and never founds a device group with it, and the words that derive it are not
-in use ("Words in use", below).
+since a roster with no key may be one whose backups the user turned off. Either way, once the device trusts the device
+group it forgets the key it kept, and the roster's account entry is the account's recovery key from then on.
 
 An update that sets the account entry replaces it whole, so it is computed from the entry as the device read it. A
 device MUST NOT commit it on a roster whose account entry is not the one it read, including when it commits the update
@@ -409,41 +408,16 @@ A device turns backups off with an update that sets the account entry to hold ne
 words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
 group turns backups off by forgetting the key it keeps.
 
-A device that replaced the words or turned backups off remembers the change and the `recovery_public_key` the entry
-held when the user made it, until the user makes another change. Whenever the roster holds that earlier key while
-branch selection could still pick a branch that holds one of this device's updates to the account entry, the device
-commits the change again. Only these changes are committed again this way: the key they were made over comes from
-fresh random words, so no device writes it again once it is replaced, and a roster that still holds it means the
-update was dropped, or never went out, and nothing has changed the words since. While the roster holds any other key,
-or none, the change stands or another won, and the device commits nothing. A change that stands is not settled
-either: if branch selection later drops the update that made it and the roster holds the earlier key again, the device
-commits it again under the same rule. Once no branch inside the rollback horizon holds an update of this device's to
-the account entry, nothing can bring one back, and the device stops for good.
+A device commits an update that sets the account entry again only when branch selection drops it, under the rule
+above, and never because the roster does not hold what the user chose: a roster with no key looks the same before
+backups were turned on and after they were turned off again, so committing a change again on what the roster holds
+could undo another device's turn-off. A device shows backups as the roster's account entry holds them now.
 
-An update made on an entry with no key turns backups on, and a device MUST NOT commit it again because the roster still
-holds no key: a roster that holds no key looks the same before backups were turned on and after they were turned off
-again, so committing it again could undo another device's turn-off. The device commits it again only when branch
-selection drops that update, under the rule above.
-
-#### Words in use
-
-Words confirmed on a device are in use while the roster's account entry holds the key they derive. A device reads this
-from the roster each time it shows it, since branch selection can change the roster in either direction. A device MUST
-NOT tell the user their words are not in use while any branch that branch selection can still pick would make those
-words the account's. Until then it shows the change as pending. Once none could, and the roster holds anything else,
-whether because another device changed the words, turned backups off, the update never reached the roster, or the
-device joined a device group with a key it kept, the device SHOULD tell the user that those words are not in use.
-Nothing brings them back after that. Two devices that turn backups on or replace the words at once thus settle on one
-key, and the user of the other one learns, once branch selection can no longer reverse it, that their words are not in
-use.
-
-A turn-off that another device's change beat leaves backups on, with the words the roster holds. The device shows
-backups as the roster has them, and shows the turn-off as pending only while the device could still commit it again.
-
-This leaves one known limitation. The rule against committing on an entry that is not the one the device read
-compares values. When branch selection drops an update turning backups on, and the winning branch turns backups on
-with other words and off again before the device reads it, the entry holds no key, as it did when the device read it,
-and the update is committed again.
+Two limitations are known. A change that branch selection drops and the rule above refuses to commit again stays lost,
+and shows as not made, until the user makes it again. And the rule against committing on an entry that is not the one
+the device read compares values: when branch selection drops an update turning backups on, and the winning branch
+turns backups on with other words and off again before the device reads it, the entry holds no key, as it did when the
+device read it, and the update is committed again.
 
 ## Convergence and retained history
 

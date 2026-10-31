@@ -203,7 +203,8 @@ linked with **Add to all my chats** off isn't in her older chats.
    has saved them by typing two of them back.
 3. The words derive a key pair. The device keeps only its **public half**, then forgets the words and the private
    half. No device can open a backup; only the words can. The public half lives in the roster. With only one device
-   there is no device group yet, so that device keeps it locally and copies it into the roster when a group starts.
+   there is no device group yet, so that device keeps it locally and the roster it founds carries it. If it joins
+   another device's group instead, that group's backup settings stand and it forgets the key it kept.
 
 **Writing a backup:**
 
@@ -336,6 +337,8 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
    transfer offers, older-history offers, sealed bundle keys, manifests, and confirmations. Large bundles reuse
    encrypted-media locators and Blossom storage.
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
-4. **Backups.** The archive format, how the 12 words derive the recovery key pair, how an archive key is sealed to it,
-   the backup pointer's address derivation and encrypted content in the Nostr transport, and the restore flow.
+4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
+   holds it) is specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: the
+   archive format, how an archive key is sealed to the recovery key, the backup pointer's address derivation and
+   encrypted content in the Nostr transport, and the restore flow.
 5. **Re-add requests**, when they are picked up.
