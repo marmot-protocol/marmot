@@ -599,7 +599,10 @@ device group, then deletes its slot and its local state for the account. It cann
 account is that group's admin ([Creating the device group](#creating-the-device-group)), and an active admin's
 SelfRemove is invalid. Its leaf there stays until a sibling removes it: the approving device, if its link fails ([A
 link that is not taken up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after
-all; otherwise the user, from another device.
+all; otherwise the user, from another device. When the roster lists no other device whose status is not `leaving`, no
+device runs the device group once this one has signed out, and its leaf stays there. The account's next link founds a
+new device group, since the device that approves it trusts none ([Creating the device
+group](#creating-the-device-group)).
 
 A device that was unlinked ([On the removed device](#on-the-removed-device)) leaves no group and deletes no slot when it
 signs out. It deletes only its local state for the account.
