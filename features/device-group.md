@@ -234,7 +234,8 @@ MAY keep the group's history and a removal tombstone. A later link's Welcome int
 refuse. The roster the removing Commit leaves alone decides why it was removed, not whether the device ever saw its own
 first Commit selected. When that roster has no entry for the device's slot, and the device joined the group rather than
 creating it, the removal undid a failed link: the device was not linked, tells its user that linking failed, and links
-again only through a new pairing session. Otherwise the user removed it ([On the removed
+again only through a new pairing session, unless it had started signing out ([Removed while signing
+out](#removed-while-signing-out)). Otherwise the user removed it ([On the removed
 device](#on-the-removed-device)): a removal leaves a `removed` rejected slot for the device's slot ([The removal
 Commit](#the-removal-commit)). This holds even when the device processes its first Commit and its removal together, and
 when it had selected its first Commit on a branch that the undo then superseded. A device that cannot read that roster
@@ -523,10 +524,10 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 
 ### On the removed device
 
-A device that its device group removes is unlinked from the account, unless the removal undid a failed link, which the
-roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)), or the device had
-started signing out before the removal reached it ([Removed while signing out](#removed-while-signing-out)). It
-realizes that removal as soon as the removing Commit is on the selected branch
+A device that its device group removes is unlinked from the account, unless it had started signing out before the
+removal reached it ([Removed while signing out](#removed-while-signing-out)), or the removal undid a failed link, which
+the roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). An unlinked
+device realizes that removal as soon as the removing Commit is on the selected branch
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
 anything more, and then:
 
@@ -555,6 +556,11 @@ A device that signs out leaves the account's groups, deletes its slot
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication"), then deletes its local state
 for the account. In a device group, its siblings can take it out of its chats and of the device group instead, so its
 departure completes after it has deleted everything.
+
+Leaving a chat where its account is an active admin takes an admin-policy update before the SelfRemove
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Behavior"). A chat the device cannot
+leave, for example because its account is the chat's last active admin, keeps its leaf, and the device tells its user
+which chats it could not leave.
 
 ### Through its siblings
 
@@ -591,10 +597,9 @@ A device that does not sign out through its siblings leaves itself, as
 [../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than its
 device group, then deletes its slot and its local state for the account. It cannot leave its device group that way: its
 account is that group's admin ([Creating the device group](#creating-the-device-group)), and an active admin's
-SelfRemove is invalid. Its leaf there stays until a
-sibling removes it: the approving device, if its link fails ([A link that is not taken
-up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after all; otherwise the user,
-from another device.
+SelfRemove is invalid. Its leaf there stays until a sibling removes it: the approving device, if its link fails ([A
+link that is not taken up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after
+all; otherwise the user, from another device.
 
 A device that was unlinked ([On the removed device](#on-the-removed-device)) leaves no group and deletes no slot when it
 signs out. It deletes only its local state for the account.
@@ -612,23 +617,25 @@ held the `leaving` Commit.
 
 A chat keeps the signed-out device's leaf when no sibling removes it there: when each sibling it relied on there signs
 out or is removed before removing it, or when branch selection drops the `leaving` Commit before any sibling decided the
-removal.
-The device has deleted its state by then and cannot leave that chat itself. In the second case the roster lists it
-again, and the user can remove it from another device.
+removal. The device has deleted its state by then and cannot leave that chat itself. In the second case the roster
+lists it again, and the user can remove it from another device.
 
 ### Removed while signing out
 
 A device that had started signing out before its device group's removal of it reached it is not unlinked ([On the
-removed device](#on-the-removed-device)). It realizes the removal and discards the active state of its copy of the
+removed device](#on-the-removed-device)), whatever the removal was: a user's, its siblings' after its `leaving` Commit,
+or the undo of a failed link ([A link that is not taken up](#a-link-that-is-not-taken-up)). It tells its user neither
+that it was unlinked nor that linking failed. It realizes the removal and discards the active state of its copy of the
 device group, as any removed device does. It then sends only what its sign-out still has to send:
 
 - a SelfRemove in each chat its sign-out leaves to it ([Through its siblings](#through-its-siblings), [On its
   own](#on-its-own)) and that it has not left yet;
 - the deletion of its own slot.
 
-It sends nothing in the device group, and no application message, other proposal or Commit in any group. Then it
-deletes its local state for the account. A device that its device group removes before it starts signing out is
-unlinked, and stops as [On the removed device](#on-the-removed-device) says.
+It sends nothing in the device group, and no application message, other proposal or Commit in any group, so a chat
+whose SelfRemove needs an admin-policy update first keeps its leaf ([Signing out](#signing-out)). Then it deletes its
+local state for the account. A removal that reaches a device before it starts signing out is handled as [On the
+removed device](#on-the-removed-device) says.
 
 ## Slot announcements
 

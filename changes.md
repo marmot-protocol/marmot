@@ -26,9 +26,14 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   never sets another device's entry to `leaving`.
 - A device that finds a sibling `leaving` on its selected branch, with its `tag_signature_key`, removes it as if its
   user had decided to, and SHOULD first wait a random delay of up to 30 seconds.
-- A device that started signing out before its device group's removal of it reached it is not unlinked. It sends only
-  what its sign-out still has to send, a SelfRemove in each chat it was to leave and the deletion of its own slot, and
-  then deletes its local state. A device removed before it starts signing out is unlinked, as before.
+- A device that started signing out before its device group's removal of it reached it is not unlinked, whatever the
+  removal was, the undo of a failed link included, and tells its user neither that it was unlinked nor that linking
+  failed. It sends only what its sign-out still has to send, a SelfRemove in each chat it was to leave and the deletion
+  of its own slot, and then deletes its local state. A removal that reaches a device before it starts signing out is
+  handled as before.
+- A chat a signing-out device cannot leave, for example because its account is the chat's last active admin, keeps its
+  leaf, and the device tells its user. A device removed while signing out makes no admin-policy update, so a chat whose
+  SelfRemove needs one keeps its leaf too.
 - A device that signs out on its own cannot leave its device group, where its account is the admin, and its leaf there
   stays until a sibling removes it. An unlinked device's sign-out leaves no group and deletes no slot.
 
