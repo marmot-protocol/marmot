@@ -440,7 +440,8 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
   `from`'s against its current roster ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
   "Reading tags"). The device reads that leaf from the member state it retains for that epoch
   ([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "Retained cryptographic material"); a
-  delivery from an epoch whose member state it no longer retains has no readable sender and is dropped;
+  delivery from an epoch whose member state it no longer retains has no readable sender and is dropped, as is one whose
+  sender's `tag_signature_key` in the current roster no longer verifies the tag;
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
 It then takes the bundle's ciphertext: it base64-decodes `bundle`, or fetches the blob from one of the `blossom`
@@ -461,15 +462,15 @@ more:
 
 - Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
 - There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer retains
-  the member state of the epoch it was sent in, is lost, and so is that history. A sender owes a withdrawn delivery's
-  history again only when it learns of the withdrawal, so one whose record of the delivery is already gone, or that
-  stops before it acts on the withdrawal, loses that history too.
+  the member state of the epoch it was sent in or after the sender's `tag_signature_key` changed, is lost, and so is
+  that history. A sender owes a withdrawn delivery's history again only when it learns of the withdrawal, so one whose
+  record of the delivery is already gone, or that stops before it acts on the withdrawal, loses that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
   which no bundle or delivery can name; small state covers none longer than 256 bytes either.
 - A history needs as many deliveries as it has bundles, and the sender may bound them, so a long history can arrive
-  without its oldest messages, or not at all. A sender with no Blossom server to upload to sends only a history that
-  fits the inline deliveries it will send. An event too large for any bundle is left out, as is one whose epoch,
+  without its oldest messages, or not at all. A sender with no Blossom server to upload to sends no more of a history
+  than fits the inline deliveries it will send. An event too large for any bundle is left out, as is one whose epoch,
   `created_at` or retention is larger than a bundle number can hold.
 - Blobs are not deleted. A Blossom server keeps each blob it holds, with its size and when it was uploaded and fetched,
   until the server expires it ([Security considerations](#security-considerations)). A receiver that fetches a blob
@@ -625,9 +626,9 @@ so no device moves it back; a later position moves it again once that one is fur
 - A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
   value sealed to it, past and future, until it writes a new key.
 - Every sibling reads every history delivery: it sees that the sender sent the receiver history and which chat it was
-  for, but cannot open it. It sees how large an inline bundle is, and can fetch a Blossom delivery's blob as the
-  receiver does, learning its size, and keep it for as long as a server holds it. The rule above against publishing a
-  group id learned this way applies.
+  for, but cannot open it. It sees how large an inline bundle is. Of a delivery that names Blossom servers it sees the
+  servers but not the blob's hash, which is sealed with its key; a server that lists the blobs an uploader stored can
+  still show it the blob and its size. The rule above against publishing a group id learned this way applies.
 - A Blossom server that holds a history blob learns what the upload's authorization says of the uploader, the blob's
   size, when it was uploaded and fetched, and where each request came from, and keeps the blob until it expires it. The
   receiver fetches from servers the sender chose, which may be a chat's encrypted-media endpoints that another account's
