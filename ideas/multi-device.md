@@ -476,9 +476,9 @@ Letting siblings do the removing means the departure still completes after the d
 in [../features/device-group.md](../features/device-group.md#signing-out) ("Signing out").
 
 Signing out on the **last** device has no siblings to do this, so it leaves each chat itself, which needs another
-member of the chat to commit the departure. It publishes its departures, then wipes, and the next sign-in starts a new
-device group. Once an account's last leaf leaves a chat, the account is no longer in that chat. The warning says so:
-signing back in won't bring those chats back.
+member of the chat to commit the departure. It publishes its departures, then wipes. Its device group is left with no
+device running it, and the account's next link founds a new one. Once an account's last leaf leaves a chat, the account
+is no longer in that chat. The warning says so: signing back in won't bring those chats back.
 
 Locking the app with a PIN, face, or fingerprint is not signing out. It protects local access and changes nothing on
 the network.
