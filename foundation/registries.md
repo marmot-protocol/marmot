@@ -118,7 +118,6 @@ seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `1
 | `459`   | Private KeyPackage request          | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `460`   | Private KeyPackage hand-off         | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `461`   | Sibling Welcome                     | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
-| `462`   | Anomaly alert                       | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |

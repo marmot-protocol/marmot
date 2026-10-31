@@ -154,6 +154,10 @@ time.
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
 
+Whatever a device does about a publication it finds in its own slot, whether it outranks it, deletes it or leaves it,
+a device whose client supports `0x800e` decides from what it found whether to warn its user, as
+[../features/device-group.md](../features/device-group.md), "A KeyPackage the device did not make", says.
+
 ### Stopping publication
 
 When a device signs out, it SHOULD delete the publication in its own slot using the active transport binding's
