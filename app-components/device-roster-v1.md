@@ -120,7 +120,7 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `history_key` is the device's history key: the public key its siblings seal chat history to
   ([../features/account-sync.md](../features/account-sync.md), "History keys"). It is a public key of the HPKE KEM of
   the device group's ciphersuite, as that KEM serializes it: 32 bytes for X25519 under ciphersuite `0x0001`. It is
-  absent until the device sets it, and only the device itself sets it.
+  absent until the device sets it, and only the device itself sets it; receivers do not check who set it.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
 `rejected_at` is when the rejection was recorded, as the recording device wrote it. A `removed` record keeps the

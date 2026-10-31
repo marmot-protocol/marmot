@@ -67,8 +67,8 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 
 When the laptop joins Book club, the iPhone sends it the events it holds for that chat, as it received or sent them:
 messages, reactions, edits and deletions. The laptop applies them the way it applies live events, so it ends up showing
-what the iPhone shows. A message that was deleted, or removed by an admin, doesn't travel, and neither does anything
-that refers to it, such as an edit carrying its new text. The deletion itself does travel, so a later transfer from a
+what the iPhone shows. A message that was deleted, or removed by an admin, doesn't travel, and neither does an edit,
+reaction or report that names it, such as an edit carrying its new text; a reply to it still does. The deletion itself does travel, so a later transfer from a
 sibling that missed it can't bring the message back.
 
 **Attachments travel as keys, not files.** In Marmot, an attachment's key comes from the MLS epoch its message was sent
@@ -339,8 +339,8 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 2. **History transfer.** History keys, the bundle format and inline history deliveries from the adder are specified
    in [../features/account-sync.md](../features/account-sync.md). Still to come there: Blossom locators for large
    bundles, which reuse encrypted-media locators and Blossom storage, and then transfer offers, older-history offers,
-   manifests and confirmations (kinds `470` to `472` stay reserved for them; see
-   [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
+   manifests and confirmations, whose kinds [../foundation/registries.md](../foundation/registries.md) holds for them
+   (see [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
    holds it) is specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: the
