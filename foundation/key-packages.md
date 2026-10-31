@@ -158,7 +158,8 @@ A device in a device group announces that KeyPackage first, like any other
 
 When a device signs out, it SHOULD delete the publication in its own slot using the active transport binding's
 deletion mechanism. It deletes only its own slot. Signing out starts when the device decides to sign out, before it
-deletes its slot, and ends when the sign-out finishes, after which the device is signed out, or is abandoned.
+deletes its slot. It ends when the sign-out finishes, after which the device is signed out, or when the device abandons
+it, after which it is neither signing out nor signed out.
 
 Deletion asks the transport to stop serving the KeyPackage. It does not revoke it: a copy that a transport keeps serving
 remains a valid candidate until its `Lifetime.not_after`. A device that has signed out no longer accepts Welcomes, so it
