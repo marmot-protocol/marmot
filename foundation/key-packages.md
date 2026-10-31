@@ -127,10 +127,7 @@ the device SHOULD publish a new KeyPackage of its own into the slot, with a late
 publication. That includes an earlier KeyPackage of the device's own that someone published again: the device may no
 longer hold its `init_key`. The publication's transport authentication is enough to count it: one whose content is not a
 valid KeyPackage still occupies the slot. The device reads the slot itself, not a page of the account's publications, so
-that the account's other slots cannot crowd its own out. When what it replaces is a valid current-profile KeyPackage of
-the account whose LeafNode signature key the device does not hold and has never held, a device whose client supports
-`0x800e` also warns its user ([../features/device-group.md](../features/device-group.md), "A KeyPackage the device did
-not make"). Replacing anything else, an earlier KeyPackage of the device's own included, raises no warning.
+that the account's other slots cannot crowd its own out.
 
 A publication dated further ahead of the device's clock than the device would date its own cannot be outranked: a later
 publication time would put the device's own just as far ahead. The device does not try. It MAY instead ask the transport
@@ -156,6 +153,10 @@ time.
 
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
+
+Whatever a device does about a publication it finds in its own slot, whether it outranks it, deletes it or leaves it,
+a device whose client supports `0x800e` decides from what it found whether to warn its user, as
+[../features/device-group.md](../features/device-group.md), "A KeyPackage the device did not make", says.
 
 ### Stopping publication
 

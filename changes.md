@@ -26,9 +26,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A stolen account signing key is out of scope: nothing evicts whoever holds it, and the warning only tells the user.
   `not_me` rejected slots, sign-in classification, starting fresh and slot announcements are unchanged.
 - A device that finds, in its own slot, a valid current-profile KeyPackage of the account that it did not make still
-  replaces it, and now only warns its user, on that device only: it records nothing in the roster and tells no sibling.
-  It replaces anything else there, an invalid or legacy publication or a copy of one of its own KeyPackages, without a
-  warning. Whether a device made a KeyPackage is now decided by the signature key of the KeyPackage's LeafNode
+  replaces it, and now only warns its user, on that device only, however it handles the publication: it records nothing
+  in the roster and tells no sibling. Anything else there, an invalid or legacy publication or a copy of one of its own
+  KeyPackages, raises no warning. Whether a device made a KeyPackage is now decided by the signature key of the KeyPackage's LeafNode
   ([features/device-group.md](./features/device-group.md#a-keypackage-the-device-did-not-make)), so a device no longer
   keeps the `KeyPackageRef` of every KeyPackage it publishes for this.
 - Siblings no longer act on a KeyPackage the roster does not announce. The anomaly alert is gone and kind `462` is

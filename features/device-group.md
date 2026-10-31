@@ -543,10 +543,10 @@ A device that finds a publication in its own slot that it did not make replaces 
 ([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"), announcing
 the replacement first as in [Slot announcements](#slot-announcements). When that publication holds a valid
 current-profile KeyPackage of the account ([../foundation/key-packages.md](../foundation/key-packages.md)), fresh or
-not, that the device did not make, the device also warns its user ([The warning](#the-warning)), on that device only: it
-records nothing in the roster and tells no sibling. Anything else it replaces without a warning: a publication that is
-not such a KeyPackage, such as an invalid or legacy one, and a copy of one of the device's own KeyPackages. This applies
-whether or not the device has a device group.
+not, that the device did not make, the device also warns its user ([The warning](#the-warning)), on that device only,
+whether it outranks that publication, deletes it or leaves it: it records nothing in the roster and tells no sibling.
+Anything else raises no warning: a publication that is not such a KeyPackage, such as an invalid or legacy one, and a
+copy of one of the device's own KeyPackages. This applies whether or not the device has a device group.
 
 ## Rejections
 
