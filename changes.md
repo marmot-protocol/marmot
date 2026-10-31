@@ -13,6 +13,16 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device its device group removes is unlinked
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes [features/device-group.md](./features/device-group.md).
+
+- A device that its device group removes after its link was made, or after it created the group, is unlinked. It
+  records that durably before discarding its copy, then stops acting for the account: no Commits, messages,
+  publications or pairing answers. It tells its user it was unlinked, and neither leaves its chats nor deletes its slot,
+  since its siblings do both. It runs the account again only as a new sign-in: it deletes its local state for the
+  account and links again with a new slot.
+
 ## 2026-10-31: A device removed from a group its account stays in
 
 [#475](https://github.com/marmot-protocol/marmot/pull/475) changes

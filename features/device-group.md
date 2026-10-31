@@ -11,10 +11,9 @@ the device group itself: what makes a group one, how it is created, when a devic
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what the devices do when someone else publishes under the account's key where they did
 not expect it, how devices hand each other private KeyPackages, how the Welcome for an add that uses one reaches its
-sibling, how the user removes a device, and how each device shows its siblings to its user.
-[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a device
-adds a sibling to a chat, the group's other messages, what a device removed from its device group does next, and
-signing out through a sibling are not specified yet.
+sibling, how the user removes a device and what the removed device does, and how each device shows its siblings to its
+user. [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a
+device adds a sibling to a chat, the group's other messages, and signing out through a sibling are not specified yet.
 
 ## Surfaces
 
@@ -226,7 +225,8 @@ group. It stops trusting the group and MUST discard the active state of its copy
 group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
 refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
-failed, and links again only through a new pairing session.
+failed, and links again only through a new pairing session. Otherwise the user removed it ([On the removed
+device](#on-the-removed-device)).
 
 ## Keeping it out of sight
 
@@ -504,6 +504,29 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 - those it issued to the slot, with their private keys, so that a Welcome the removed device makes from one cannot add
   this device to a group;
 - those the slot handed it, so that it never adds the removed device with one.
+
+### On the removed device
+
+A device that its device group removes after its link was made, or after it created the group, is unlinked from the
+account ([A link that is not taken up](#a-link-that-is-not-taken-up) covers a link that was never made). When it
+realizes that removal, it:
+
+1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
+   again;
+2. discards the active state of its copy of the device group, as any device its device group removes does;
+3. stops acting for the account: it makes no Commit and sends no message in any group, publishes nothing, its slot
+   included, and answers no pairing request;
+4. tells its user, durably, that this device was unlinked from the account.
+
+It neither leaves its chats nor deletes its slot. Its siblings remove its leaves ([Removing it from
+chats](#removing-it-from-chats)), and the device that decided the removal deletes its slot ([The removed device's
+slot](#the-removed-devices-slot)). A chat whose leaf for this device a sibling removed before the device group's
+removal reached it already reads as no longer active on this device, not as one the account was removed from
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
+
+The device runs the account again only as a new sign-in: it deletes its local state for the account, then links again
+through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
+record any other way.
 
 ## Slot announcements
 
