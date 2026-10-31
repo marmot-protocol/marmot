@@ -28,9 +28,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device that finds, in its own slot, a valid current-profile KeyPackage of the account that it did not make still
   replaces it, and now only warns its user, on that device only, however it handles the publication: it records nothing
   in the roster and tells no sibling. Anything else there, an invalid or legacy publication or a copy of one of its own
-  KeyPackages, raises no warning. Whether a device made a KeyPackage is now decided by the signature key of the KeyPackage's LeafNode
-  ([features/device-group.md](./features/device-group.md#a-keypackage-the-device-did-not-make)), so a device no longer
-  keeps the `KeyPackageRef` of every KeyPackage it publishes for this.
+  KeyPackages, raises no warning. Whether a device made a KeyPackage is now decided by the signature key of the
+  KeyPackage's LeafNode ([features/device-group.md](./features/device-group.md#a-keypackage-the-device-did-not-make)),
+  so a device no longer keeps the `KeyPackageRef` of every KeyPackage it publishes for this.
 - Siblings no longer act on a KeyPackage the roster does not announce. The anomaly alert is gone and kind `462` is
   unassigned; no device alerts, settles an alert or rejects a sibling's KeyPackage, and no device keeps each announced
   `KeyPackageRef` for 7,261,200 seconds.
