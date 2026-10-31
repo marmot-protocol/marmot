@@ -217,7 +217,11 @@ device's first Commit is still not on the selected branch after that, the link h
 acts on that: it makes one Commit that removes the new device's leaf and, with `remove_device`, its roster entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"), and stops delivering the
 link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
-selection keeps the new device's first Commit and drops that removal, the link is made after all.
+selection keeps the new device's first Commit and drops that removal, the link is made after all, as the approving
+device and its siblings see it. The new device may have realized the removal before that, as the next paragraph says,
+and does not take that back: it has discarded its copy and does not run on that slot again. Its entry then stays as a
+device that never commits, which its siblings come to show as inactive ([Inactive devices](#inactive-devices)) and the
+user can remove ([Removing a device](#removing-a-device)).
 
 A device whose leaf a Commit on the selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
@@ -521,16 +525,16 @@ anything more, and then:
 1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
    again;
 2. discards the active state of its copy of the device group, as any device its device group removes does;
-3. stops acting for the account: it makes no Commit and sends no message in any group, accepts no Welcome, answers no
-   pairing request, and publishes nothing, its slot included, whatever
-   [../foundation/key-packages.md](../foundation/key-packages.md) would otherwise have it publish;
+3. stops acting for the account until it deletes its local state for it (below): it makes no Commit and sends no
+   message in any group, accepts no Welcome, answers no pairing request, and publishes nothing, its slot included,
+   whatever [../foundation/key-packages.md](../foundation/key-packages.md) would otherwise have it publish;
 4. tells its user, durably, that this device was unlinked from the account.
 
-It neither leaves its chats nor deletes its slot. Its siblings remove its leaves ([Removing it from
-chats](#removing-it-from-chats)), and the device that decided the removal deletes its slot ([The removed device's
-slot](#the-removed-devices-slot)). A chat whose leaf for this device a sibling removed before the device group's
-removal reached it already reads as no longer active on this device, not as one the account was removed from
-([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
+It neither leaves its chats nor deletes its slot. Its siblings remove its leaves where they can and leave the rest
+([Removing it from chats](#removing-it-from-chats)), and the device that decided the removal deletes its slot ([The
+removed device's slot](#the-removed-devices-slot)). A chat whose leaf for this device a sibling removed before the
+device group's removal reached it already reads as no longer active on this device, not as one the account was removed
+from ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
 
 The device runs the account again only as a new sign-in: it deletes its local state for the account, then links again
 through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
@@ -1145,9 +1149,9 @@ status, and removing a device after a longer absence, are not specified yet.
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the
   account, with the account's signing key or a session with a remote signer, so its siblings cannot stop what it
-  publishes: they remove its leaves, and the device that decided the removal deletes its slot. A removed device that
-  does not realize its removal when the removing Commit reaches it, for example because a local failure interrupts that,
-  keeps acting for the account until it next does.
+  publishes: they remove its leaves where they can, and the device that decided the removal deletes its slot. A removed
+  device that does not realize its removal when the removing Commit reaches it, for example because a local failure
+  interrupts that, keeps acting for the account until it next does.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
