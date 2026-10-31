@@ -163,14 +163,17 @@ an older rejected KeyPackage joins new groups only through an inviter that fetch
 protects an older record from someone who keeps publishing into the slot: each KeyPackage the account's devices find and
 reject pushes the oldest out ([../features/device-group.md](../features/device-group.md), "Leaves tied to a rejection").
 
-`AccountEntryV1` is reserved for account sync: `backup_writer` names a device by slot, and `recovery_public_key` is the
-public half of the recovery key. Neither has a meaning in this version.
+`AccountEntryV1` holds the account's backup settings ([../features/account-sync.md](../features/account-sync.md),
+"Backups"): `recovery_public_key` is the public half of the account's recovery key, an X25519 public key under the KEM
+of ciphersuite `0x0001` whatever the device group's ciphersuite, absent while backups are off; and `backup_writer`
+names, by slot, the device that writes the account's backups.
 
 Receivers never compare `linked_at` or `rejected_at` with their own clocks. `history_key` and the account entry's fields
 are opaque hints in the sense of [../foundation/canonical-encoding.md](../foundation/canonical-encoding.md) ("Canonical
 decoding"): a receiver checks only their stated bounds, and the document that gives them a meaning MUST NOT make
 bytes within those bounds invalid. A `history_key` that is not a public key of the KEM never makes the roster invalid;
-that device gets no history.
+that device gets no history. Nor does a `recovery_public_key` that is not an X25519 public key, to which nothing is
+sealed, or a `backup_writer` that names a slot the roster does not list.
 
 ## Validation
 

@@ -13,6 +13,22 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: The recovery key backups are sealed to (draft)
+
+[#PR](https://github.com/marmot-protocol/marmot/pull/PR) gives the device roster's account entry its meaning in
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "Backups" section of
+[features/account-sync.md](./features/account-sync.md). An account's recovery key is 12 BIP-39 English words carrying
+128 bits of entropy, which derive an HPKE key pair under DHKEM(X25519, HKDF-SHA256) through HKDF-SHA256 with the salt
+`"marmot recovery key v1"` and the info `"marmot recovery key pair"`, whatever the device group's ciphersuite; the
+section gives test vectors. Values are sealed to it with `EncryptWithLabel` under the label `"Marmot Backup"`. Devices
+keep only the public half, in the account entry's `recovery_public_key`, and never store the words or the private half.
+A device turns backups on, or replaces the words, after the user types two of them back, in an update that sets the
+account entry: turning backups on names it as `backup_writer`, and new words keep the writer. It commits that update
+only on the account entry it read, commits it again while the roster still holds the key it replaced, and stops once
+the roster holds any other key. A device with no device group keeps the key itself and founds its device group with
+it. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no listed slot, leaves the roster
+valid. The account entry's encoding does not change. Clients that do not support device groups change nothing.
+
 ## 2026-10-30: History keys for an account's devices (draft)
 
 [#467](https://github.com/marmot-protocol/marmot/pull/467) gives the device roster's `history_key` its meaning in
