@@ -13,19 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-10-31: Rejected KeyPackages: never one a device made, and the warning's seen marks
+## 2026-10-31: Rejected KeyPackages: never one a device made
 
 [#478](https://github.com/marmot-protocol/marmot/pull/478) changes
 [features/device-group.md](./features/device-group.md).
 
 - A device MUST NOT reject a KeyPackage it made, under any rejection rule: not a copy in another slot, a rejected
-  sign-in's slot included, and not one in its own slot as a new publication. With no device group, the
-  `KeyPackageRef`s it keeps of what it published are what tell it.
-- Starting fresh answers Not now only for the first check's slots that the user has not answered.
-- A device that joins a device group counts the rejections already in the first roster it trusts as seen, except ones
-  it keeps itself, which still warn. A device that creates one counts none as seen.
-- A device MAY bound the warning's seen marks, dropping the earliest recorded first, even before a seen rejected
-  KeyPackage's 7,261,200 seconds end. An item whose mark it dropped counts as one its user has not seen.
+  sign-in's slot included, and not one in its own slot as a new publication. The own-slot rule, the rejected-slot
+  check, the sibling's catch-up and its settle each name this exception, as does the security note on a rarely opened
+  device's slot.
+- The KeyPackages a device made are the ones it published to its own slot, by the `KeyPackageRef`s it already keeps of
+  them for as long as it keeps the slot, whether or not it has a device group. Every rule that asks whether a device
+  made a KeyPackage reads these, never the `KeyPackageRef`s it keeps of announcements.
 
 ## 2026-10-31: A device removed from a group its account stays in
 
