@@ -41,7 +41,9 @@ inline, and its key and ciphertext SHA-256 sealed to the receiver's history key 
 the chat. A delivery that reached no relay, or that branch selection withdraws, is owed again, for at most 7 days. The
 receiver reads one only in its trusted device group, addressed to it, from a sibling whose leaf's tag reads as `from`
 in the tree it holds, and opening with its history key; it keeps one for a chat it has not joined yet for up to 7 days.
-An event too large for one delivery is left out. A bundle's `retention` of `0` means disappearing messages were off,
+An event too large for one delivery is left out. An imported event is judged by its `pubkey` and `grant`, not by an
+MLS sender, as [features/content-moderation.md](./features/content-moderation.md) and
+[foundation/application-messages.md](./foundation/application-messages.md) now note. A bundle's `retention` of `0` means disappearing messages were off,
 so the imported event does not expire. [features/device-group.md](./features/device-group.md) lets a slot announcement
 also set the device's own `history_key`. There are no offers, receipts or requests: kinds `470` to `472` stay
 reserved, and

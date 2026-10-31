@@ -258,12 +258,14 @@ included. A position may name a message the receiver does not hold, or one the b
 delivered in the chat that the sender holds in the stretch, as the inner event it received or sent, except:
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
-  expired;
+  expired; a retention of `0`, disappearing messages off, never expires;
 - an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
   the sender sent and no relay accepted;
-- a message deleted by its author or removed by an admin, and every event that targets one, such as a reaction, an
-  edit or a report. The deletion or removal itself is carried, so a later bundle from a sibling that missed it does not
-  bring the message back.
+- a message removed by an admin (kind `4891`) with the authority the sender holds for it, or deleted in any other way
+  the sender's client applies, and every event that names such a message in its `e` tag to change or answer for it,
+  such as a reaction (kind `7`), an edit (kind `1009`) or a report (kind `1984`). A chat message that replies to it is
+  not one of these. The removal itself is carried, so a later bundle from a sibling that missed it does not bring the
+  message back once the receiver holds the removal's authority.
 
 A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
 
@@ -284,7 +286,7 @@ sender writes it without whitespace, with its members in the order shown.
 | `event`     | the inner event, as a JSON object with exactly the members [../foundation/application-messages.md](../foundation/application-messages.md) gives it |
 | `epoch`     | the MLS epoch the event was sent in |
 | `retention` | the event's retention in seconds, from the retention decision the sender holds for it, with `0` for disappearing messages off as in [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md); absent when the sender holds none |
-| `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender found that the event's author had the authority the kind needs at the event's epoch, `false` when it found they did not; absent when the sender has not decided |
+| `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender holds that the event's author had the authority the kind needs at the event's epoch, `false` when it holds they did not, whether it found that itself or imported it with the event; absent when the sender has not decided |
 | `keys`      | for an event with encrypted-media attachments only: one or more attachment keys, below; absent when the sender can give none |
 
 An attachment key is `{"ciphertext_sha256":"<hash>","key":"<key>"}`: the `ciphertext_sha256` of one of the event's
@@ -314,8 +316,17 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
 - takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
   event reaches it live, when it judges that copy's authority as for any live event;
+- keeps each attachment key, and opens the file it names with it, as that file's `file_key`, when it does not hold the
+  media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
 - has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
   does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
+
+An imported event did not reach the receiver as an MLS message in the chat. Where a rule checks the account of an
+event's MLS sender, such as an edit's authorship ([../foundation/application-messages.md](../foundation/application-messages.md)),
+the receiver checks the account the event's `pubkey` names. Where a rule checks that sender's authority at the event's
+epoch, such as an admin's ([content-moderation.md](./content-moderation.md)), the event's `grant` is that authority's
+recorded verdict. An imported event is no payload of a branch the receiver holds, so a later branch selection in the
+chat never withdraws it there.
 
 The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
 Imported history is as trustworthy as the sibling that sent it ([Security considerations](#security-considerations)).
@@ -359,7 +370,9 @@ struct {
 in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
 the 26 ASCII bytes of `marmot history delivery v1`, `from` and `to` are the two slots' 32 bytes, and `chat` is the chat's
 MLS group id. The context binds a sealed value to its sender, receiver and chat, so it never opens for another. Under
-ciphersuite `0x0001`, `sealed` is 114 bytes. A bundle whose plaintext is at most 23,552 bytes always fits a delivery.
+ciphersuite `0x0001`, `sealed` is 115 bytes: the 32-byte KEM output with a one-byte length, then the 80-byte ciphertext
+with a two-byte length, as RFC 9420's variable-length vectors encode them. A bundle whose plaintext is at most 23,552
+bytes always fits a delivery.
 
 **Sending.**
 
@@ -391,8 +404,8 @@ ciphersuite `0x0001`, `sealed` is 114 bytes. A bundle whose plaintext is at most
   and is dropped;
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
-It then imports the bundle as [History bundles](#history-bundles) gives it, after checking that the SHA-256 of `bundle`
-is the hash it opened and decrypting with the key it opened. A delivery for a chat the device does not hold yet, such
+It then base64-decodes `bundle`, checks that the SHA-256 of those bytes is the hash it opened, decrypts them with the
+key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A delivery for a chat the device does not hold yet, such
 as one read before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a
 device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way.
 
@@ -406,6 +419,9 @@ more:
   off when the history is sent, gets no history.
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
   deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out.
+- History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
+  Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
+  reading it otherwise.
 
 ## Convergence and retained history
 
@@ -448,4 +464,4 @@ so no device moves it back; a later position moves it again once that one is fur
 - Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
   alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
-  receiving device only. An attachment key opens only the one file it names, never the rest of that epoch's media.
+  receiving device, and on each device that device later sends that history to. An attachment key opens only the one file it names, never the rest of that epoch's media.
