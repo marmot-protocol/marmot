@@ -8,14 +8,16 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
 small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
-that carry them from the device that adds a sibling to a chat. Backups and invite decisions are not specified yet.
+that carry them from the device that adds a sibling to a chat; and the recovery key that backups are sealed to.
+Writing and restoring backups, and invite decisions, are not specified yet.
 
 ## Surfaces
 
 - Feature: [device-group.md](./device-group.md), which defines the device group, when a device trusts one, and its
   roster.
 - App component: [../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), whose device entries
-  carry each device's history key ([History keys](#history-keys)).
+  carry each device's history key ([History keys](#history-keys)) and whose account entry carries the account's
+  recovery key and backup writer ([The account's recovery key](#the-accounts-recovery-key)).
 - Marmot app events: kind `475` (small-state update), kind `476` (broadcast request) and kind `473` (history delivery),
   sent only in a device group ([Messages](#messages), [History deliveries](#history-deliveries)). Their kinds are
   registered in [../foundation/registries.md](../foundation/registries.md).
@@ -449,6 +451,112 @@ more:
   Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
   reading it otherwise.
 
+## Backups
+
+A backup keeps an account's history for when every device that holds it is gone. Backups are sealed to the account's
+recovery key, which is separate from the account's signing key: holding the signing key, or being a linked device, does
+not open a backup. This version specifies the recovery key and how the account's devices keep it. Writing, finding and
+restoring backups are not specified yet.
+
+### Recovery key
+
+The recovery key is 12 words from the English word list of
+[BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki): 128 bits of entropy and their 4-bit checksum,
+encoded as BIP-39 encodes them. A device generates the entropy from a cryptographically secure random source. The user
+never chooses it: a password the user chose would be too weak to protect a backup that anyone can download and attack
+offline.
+
+The words derive an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under DHKEM(X25519,
+HKDF-SHA256), the KEM of ciphersuite `0x0001`, whatever ciphersuite the device group uses, because a device that
+restores a backup may hold no group:
+
+```text
+prk      = HKDF-Extract(salt = "marmot recovery key v1", IKM = entropy)
+ikm      = HKDF-Expand(prk, info = "marmot recovery key pair", L = 32)
+(sk, pk) = DeriveKeyPair(ikm)
+```
+
+HKDF is HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)), and the salt and info are their ASCII bytes.
+`entropy` is the 16 bytes the words encode, not BIP-39's seed, and there is no passphrase. `DeriveKeyPair` is that
+KEM's (RFC 9180, section 7.1.3). Test vectors:
+
+```text
+words:   abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+entropy: 00000000000000000000000000000000
+ikm:     f2b851179e27ff0fa2a197b538c8e525aac11fcf3d8570bc8afb3e5dd48aea28
+sk:      f99da3bd75751479570bd7d7a807bebb49c8da68aed12e813862cccdff5a577d
+pk:      aed5608fc1960f7992decafb36786d19508dce48e02288785cf24e557d58a368
+
+words:   legal winner thank year wave sausage worth useful legal winner thank yellow
+entropy: 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+ikm:     20d2dc269edddf61ef7859324c9459eb96ae0d34ffbace54b404d63862bba855
+sk:      8570ead0cc10c1ae63c6357959fdb15996475dabe3b781c4ebecdacb2015ef83
+pk:      9076c238afd9311184e7dda595f7d42f5c73b48bff561e88482c4435d5cb5f10
+```
+
+To seal a value to the recovery key, a device uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+section 5.1.3) with the recovery key's public half as the public key, the label `"Marmot Backup"`, and the context the
+format carrying the value defines, under the HPKE of ciphersuite `0x0001`. The sealed value is the `HPKECiphertext`
+that `EncryptWithLabel` returns, encoded as in RFC 9420. It opens with `DecryptWithLabel`, the same label and context,
+and the private half the words derive. A sealed value that has bytes after its `HPKECiphertext`, or that does not open,
+is dropped. The label keeps a value sealed for a backup from opening as history ([History keys](#history-keys)), and
+the other way round.
+
+Devices keep only the public half. A device derives the private half only while the user's words are in hand, to open
+a backup. It MUST NOT write the words, the entropy or the private half to persistent storage of any kind, and MUST NOT
+send them anywhere.
+
+### The account's recovery key
+
+The account's recovery key is the `recovery_public_key` of the account entry in its device group's roster
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), and `backup_writer` names, by slot,
+the one device that writes the account's backups. While the account entry has no `recovery_public_key`, backups are
+off.
+
+A device turns backups on, or replaces the words, in four steps:
+
+1. It generates new words and shows them to the user once.
+2. The user types back at least two of them, at positions the device picks, to show they were written down. The device
+   goes on only if they match.
+3. It derives the public half and writes it as the account entry's `recovery_public_key`, in a roster update whose
+   only operation sets the account entry. When the entry has no `recovery_public_key`, the update also names this
+   device as `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names
+   none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
+4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half.
+
+A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself,
+across restarts, as the account's recovery key; new words replace it, and none of the rules below for roster updates
+apply until the device trusts a device group. When it creates a device group, the founding roster's account entry holds
+that key and names this device as `backup_writer`. When it joins one instead, the roster's account entry stands,
+whatever it holds, since a roster with no key may be one whose backups the user turned off. Either way, once the device
+trusts the device group it forgets the key it kept, and the roster's account entry is the account's recovery key from
+then on.
+
+An update that sets the account entry replaces it whole, so the account entry changes only by compare-and-set: the
+update is computed from the entry as the device read it, and a device MUST NOT commit it on a roster whose account
+entry, at the tip of the selected branch ([../protocol-core/convergence.md](../protocol-core/convergence.md)), is not
+the one it read. Otherwise an update from a stale read would undo newer words another device wrote.
+
+A device turns backups off with an update that sets the account entry to hold neither `recovery_public_key` nor
+`backup_writer`, under the same rule. No device writes backups while they are off, and turning them on again takes new
+words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
+group turns backups off by forgetting the key it keeps.
+
+A device commits an update that sets the account entry again only when branch selection drops the Commit that carried
+it, and only under the same compare-and-set; never because the roster does not hold what the user chose: a roster with
+no key looks the same before backups were turned on and after they were turned off again, so committing a change again
+on what the roster holds could undo another device's turn-off. A device shows backups as the account entry of the
+selected roster holds them now. How a device holds the words while it cannot commit their update, retries, and holds
+back its other changes to the account entry while one of its updates is unsettled is local to it.
+
+Two limitations are known. An update that branch selection drops and the compare-and-set then refuses, or whose
+publication fails ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), is lost, and the
+user makes the change again: after a fork the rule above may commit an earlier change again and refuse a later one,
+and a device shows the account entry of the branch selected now, even while branch selection could still pick
+another. And the compare-and-set compares values: when branch selection drops an update turning
+backups on, and the winning branch turns backups on with other words and off again before the device reads it, the
+entry holds no key, as it did when the device read it, and the update is committed again.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -488,6 +596,16 @@ so no device moves it back; a later position moves it again once that one is fur
   value sealed to it, past and future, until it writes a new key.
 - Every sibling reads every history delivery: it sees that the sender sent the receiver history, which chat it was for,
   and how large it is, but cannot open it. The rule above against publishing a group id learned this way applies.
+- Any device of the account can replace the recovery key and name itself as `backup_writer`, including a stolen linked
+  device until it is removed. Backups written after that are sealed to words its holder chose, until a device of the
+  user replaces the words again. Backups already written stay sealed to the words they were sealed to.
+- Any device of the account can turn backups off, including a stolen linked device until it is removed. No backups are
+  written until a device of the user turns them on again.
+- The recovery key's public half is in the roster, so every device ever in the device group, a removed one included,
+  can seal a value to it. Only the words open one.
+- The words are the one secret that opens backups. Anyone who sees them can open every backup sealed to them, so a
+  device shows them only while the user writes them down, and never stores them. 128 bits of entropy put an offline
+  search out of reach.
 - Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
   alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
