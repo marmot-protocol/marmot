@@ -18,16 +18,18 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [#477](https://github.com/marmot-protocol/marmot/pull/477) changes
 [foundation/key-packages.md](./foundation/key-packages.md).
 
-- When a device reads its own slot from a place that accepted its latest publication, reaches the end of what that place
-  serves, and finds nothing in the slot, it SHOULD publish a new KeyPackage into the slot. This covers a deletion the
-  device never saw acknowledged and a slot deletion by someone else holding the account key. A read that failed or
-  stopped short does not count.
+- A device keeps, with its latest KeyPackage publication and across restarts, the places that accepted it.
+- When a read of its own slot from one of those places, with no time bound, reaches the end of what that place serves
+  and finds nothing in the slot, the device SHOULD publish a new KeyPackage into the slot. This covers a deletion the
+  device never saw acknowledged and a slot deletion by someone else holding the account key. A read that failed,
+  stopped short or was bounded in time does not count.
 - The device publishes a new KeyPackage, not its latest one again, since a slot deletion covers every publication in the
   slot up to its time.
 - It SHOULD NOT publish one this way before its latest publication is a day old, so that a place that accepts
   publications and keeps none costs one KeyPackage a day.
-- A device its device group removed SHOULD NOT publish one this way, since the device that decided the removal deleted
-  the slot.
+- A device that has applied the Commit removing it from its device group SHOULD NOT publish one this way, since the
+  device that decided the removal deleted the slot. What a removed device does with its own slot otherwise is still not
+  specified.
 
 ## 2026-10-30: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
 

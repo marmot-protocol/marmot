@@ -135,14 +135,18 @@ to delete that one publication by its identifier, using the active transport bin
 ([../transports/nostr.md](../transports/nostr.md), "Deleting one publication"), and then publish a new KeyPackage of
 its own into the slot, later than every other publication it found there. It deletes publications this way only in its
 own slot. A transport that ignores the request keeps serving the publication, and the device's next read of the slot
-finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it. When a read
-of a place that accepted the device's latest publication reaches the end of what that place serves and finds nothing in
-the slot, the device SHOULD publish a new KeyPackage of its own into the slot, not the latest one again: a deletion of
-the whole slot also covers the latest publication. It SHOULD NOT publish one this way before its latest publication is a
-day old, so that a place that accepts publications and keeps none costs one KeyPackage a day. A device its device group
-removed SHOULD NOT publish one this way at all: the device that decided the removal deleted the slot
-([../features/device-group.md](../features/device-group.md), "The removed device's slot"). A read that failed or
-stopped short shows nothing.
+finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it.
+
+To notice a slot emptied that way, or by a deletion of the whole slot, the device keeps, with its latest publication and
+across restarts, the places that accepted it. When a read of the slot from one of those places, with no time bound,
+reaches the end of what that place serves and finds nothing there, the device SHOULD publish a new KeyPackage of its own
+into the slot, not the latest one again: a deletion of the whole slot also covers the latest publication. A read that
+failed, stopped short or was bounded in time shows nothing. The device SHOULD NOT publish one this way before its latest
+publication is a day old, so that a place that accepts publications and keeps none costs one KeyPackage a day. A device
+that has applied the Commit removing it from its device group SHOULD NOT publish one this way at all, since the device
+that decided the removal deleted the slot. One that has not applied that Commit yet can still publish one, as it can
+for any other reason to refresh the slot: what a removed device does with its own slot is not specified yet
+([../features/device-group.md](../features/device-group.md), "The removed device's slot").
 
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
