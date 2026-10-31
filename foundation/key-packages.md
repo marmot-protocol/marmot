@@ -135,9 +135,21 @@ to delete that one publication by its identifier, using the active transport bin
 ([../transports/nostr.md](../transports/nostr.md), "Deleting one publication"), and then publish a new KeyPackage of
 its own into the slot, later than every other publication it found there. It deletes publications this way only in its
 own slot. A transport that ignores the request keeps serving the publication, and the device's next read of the slot
-finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it. Reading the
-slot does not show that gap, since an empty slot holds no publication the device did not make, so a device that loses
-track of the owed KeyPackage leaves the slot empty there until its next refresh.
+finds it again. A transport that honors it serves nothing in the slot until the new KeyPackage reaches it.
+
+To notice a slot emptied that way, or by a deletion of the whole slot, the device keeps, with its latest publication and
+across restarts, the places that accepted it. It SHOULD keep sending that publication to a place that has not accepted
+it yet, so a place that honored the deletion but not the new KeyPackage receives it. When a read of the slot from
+a place that accepted the latest publication, with no time bound, reaches the end of what that place serves and finds
+nothing there, the device SHOULD publish a new KeyPackage of its own into the slot, not the latest one again: a deletion
+of the whole slot also covers the latest publication. A read that failed, stopped short or was bounded in time shows
+nothing. The device SHOULD NOT publish one this way before its latest publication is a day old, so that a place that
+accepts publications and keeps none costs one KeyPackage a day. The device makes this publication only while it is
+neither signing out nor signed out ("Stopping publication" below) and, in a device group, only while its trusted roster
+lists its own slot as a device ([../features/device-group.md](../features/device-group.md), "Trust"). A deletion of
+the whole slot dated ahead of the device's clock also covers a KeyPackage published this way before that time: a place
+that honored the deletion refuses it and serves nothing in the slot until the device publishes there again after that
+time.
 
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").
@@ -145,7 +157,9 @@ A device in a device group announces that KeyPackage first, like any other
 ### Stopping publication
 
 When a device signs out, it SHOULD delete the publication in its own slot using the active transport binding's
-deletion mechanism. It deletes only its own slot.
+deletion mechanism. It deletes only its own slot. Signing out starts when the device decides to sign out, before it
+deletes its slot. It ends when the sign-out finishes, after which the device is signed out, or when the device abandons
+it, after which it is neither signing out nor signed out.
 
 Deletion asks the transport to stop serving the KeyPackage. It does not revoke it: a copy that a transport keeps serving
 remains a valid candidate until its `Lifetime.not_after`. A device that has signed out no longer accepts Welcomes, so it
