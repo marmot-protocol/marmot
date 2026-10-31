@@ -13,8 +13,8 @@ the KeyPackages it publishes, what the devices do when someone else publishes un
 not expect it, how devices hand each other private KeyPackages, how the Welcome for an add that uses one reaches its
 sibling, how the user removes a device, and how each device shows its siblings to its user.
 [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a device
-adds a sibling to a chat, the group's other messages, a removed device's own side, and signing out through a sibling
-are not specified yet.
+adds a sibling to a chat, the group's other messages, what a device removed from its device group does next, and
+signing out through a sibling are not specified yet.
 
 ## Surfaces
 
@@ -487,6 +487,10 @@ the removal.
   in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
 - A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
   there: no device of the account can see it.
+
+The removed device realizes each such removal in that group. The account stays a member there through the device that
+committed it, so the removed device does not tell its user the account was removed from the group
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
 
 The removed device's leaves stay readable as its old slot until the roster drops the `removed` record
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A leaf left in a group after
