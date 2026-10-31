@@ -11,10 +11,10 @@ the device group itself: what makes a group one, how it is created, when a devic
 into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
 the KeyPackages it publishes, what a device does when its own slot holds a KeyPackage it did not make, how devices hand
 each other private KeyPackages, how the Welcome for an add that uses one reaches its sibling, how the user removes a
-device and what the removed device does, and how each device shows its siblings to its user.
+device and what the removed device does, how a device signs out, and how each device shows its siblings to its user.
 [account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group, and the history
-deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add and signing out
-through a sibling are not specified yet.
+deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add are not specified
+yet.
 
 ## Surfaces
 
@@ -432,7 +432,7 @@ yet.
 ## Removing a device
 
 The user removes a linked device from any other device of the account. A device never removes itself this way: a
-device the user is done with signs out.
+device the user is done with signs out ([Signing out](#signing-out)).
 
 ### The removal Commit
 
@@ -524,7 +524,8 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 ### On the removed device
 
 A device that its device group removes is unlinked from the account, unless the removal undid a failed link, which the
-roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). It realizes that
+roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)), or the device is
+signing out ([Removed while signing out](#removed-while-signing-out)). It realizes that
 removal as soon as the removing Commit is on the selected branch
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
 anything more, and then:
@@ -547,6 +548,80 @@ The device runs the account again only as a new sign-in: it deletes its local st
 through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
 record any other way, even when branch selection later drops the removal that unlinked it; the device that decided the
 removal then commits it again ([The removal Commit](#the-removal-commit)).
+
+## Signing out
+
+A device that signs out leaves the account's groups, deletes its slot
+([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication"), then deletes its local state
+for the account. In a device group, its siblings can take it out of its chats and of the device group instead, so its
+departure completes after it has deleted everything.
+
+### Through its siblings
+
+A device signs out through its siblings only when all of these hold, and otherwise signs out on its own ([On its
+own](#on-its-own)):
+
+- it trusts a device group ([Trust](#trust));
+- its own entry in that group's roster has its `tag_signature_key`, since no device may remove an entry that has none
+  ([The removal Commit](#the-removal-commit));
+- the roster lists another device whose status is not `leaving`.
+
+It then:
+
+1. commits, in its device group, a roster update that sets its own entry with status `leaving` and every other field
+   unchanged ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update");
+2. once that Commit is confirmed, leaves itself, as
+   [../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than
+   the device group, except one that requires `0x800d` and holds a leaf whose device tag reads as a device the roster
+   lists with a status other than `leaving` ([Matching leaves to devices](#matching-leaves-to-devices)). A sibling
+   removes it from those groups with a same-account Remove ([Removing it from chats](#removing-it-from-chats)), and from
+   the device group ([Its siblings](#its-siblings));
+3. deletes its slot, then its local state for the account.
+
+It does not wait for its siblings to remove it. If the `leaving` Commit is not confirmed within about 30 seconds, the
+device leaves every chat itself instead, as on its own, and tells its user that it could not ask its siblings to take it
+out.
+
+A device MUST NOT set another device's entry to `leaving`.
+
+### On its own
+
+A device that does not sign out through its siblings leaves itself, as
+[../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than its
+device group, then deletes its slot and its local state for the account. It cannot leave its device group that way: its
+account is that group's admin ([Creating the device group](#creating-the-device-group)), and an active admin's
+SelfRemove is invalid. Its leaf there stays until a
+sibling removes it: the approving device, if its link fails ([A link that is not taken
+up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after all; otherwise the user,
+from another device.
+
+A device that was unlinked ([On the removed device](#on-the-removed-device)) leaves no group and deletes no slot when it
+signs out. It deletes only its local state for the account.
+
+### Its siblings
+
+When the roster on a device's selected branch lists a sibling with status `leaving`, and that entry has its
+`tag_signature_key`, the device removes that sibling as if its user had decided to ([Removing a
+device](#removing-a-device)): it records the decision, makes the removal Commit with `rejected_at` the time it decided,
+removes the sibling's leaves from its chats, deletes the private KeyPackages it exchanged with it, and deletes its slot.
+It SHOULD first wait a random delay of up to 30 seconds, so that the siblings do not all commit at once. Branch
+selection keeps one removal either way, and the others then find nothing left to remove. The decision stands like a
+user's: if branch selection later drops the removal, the device commits it again, even when the dropped branch also
+held the `leaving` Commit.
+
+A chat keeps the signed-out device's leaf when no sibling removes it there: when each sibling it relied on there signs
+out or is removed before removing it, or when branch selection drops the `leaving` Commit before any sibling decided the
+removal.
+The device has deleted its state by then and cannot leave that chat itself. In the second case the roster lists it
+again, and the user can remove it from another device.
+
+### Removed while signing out
+
+A device that its device group removes while it is signing out is not unlinked ([On the removed
+device](#on-the-removed-device)). It realizes the removal and discards the active state of its copy of the device group,
+as any removed device does, then finishes signing out: it still leaves itself the chats its sign-out leaves to it
+([Through its siblings](#through-its-siblings), [On its own](#on-its-own)), deletes its slot, then deletes its local
+state for the account.
 
 ## Slot announcements
 
@@ -978,6 +1053,9 @@ status, and removing a device after a longer absence, are not specified yet.
   publishes: they remove its leaves where they can, and the device that decided the removal deletes its slot. A removed
   device that does not realize its removal when the removing Commit reaches it, for example because a local failure
   interrupts that, keeps acting for the account until it next does.
+- Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
+  siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
+  outright.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
