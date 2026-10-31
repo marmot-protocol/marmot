@@ -263,7 +263,7 @@ history, except:
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
   expired; a retention of `0`, disappearing messages off, never expires;
-- an event whose retention is longer than 9007199254740991 seconds, which no bundle number can hold;
+- an event whose epoch, `created_at` or retention is larger than 9007199254740991, which no bundle number can hold;
 - an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
   the sender sent and no relay accepted;
 - a message removed by an admin (kind `4891`) with the authority the sender holds for it, or deleted in any other way
@@ -388,7 +388,12 @@ bytes always fits a delivery.
   names a device in that roster ([device-group.md](./device-group.md), "Matching leaves to devices"). It records that it
   owes the history before it sends any of it. A Commit that adds a sibling to the device group itself owes nothing.
 - It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
-  on and a history key it can seal to, and only while the device still holds the chat. Otherwise it forgets the history.
+  on and a history key it can seal to, and only while the device still holds the chat. It checks these when it would
+  send, and forgets the history as soon as one fails; it does not wait for a history key to appear. A sibling it can
+  add carries a tag, and a device writes its history key in the same update that sets its `tag_signature_key`
+  ([History keys](#history-keys)), so a sibling whose client supports history has one by then.
+- It sends only while its own leaf in the device group carries a device tag that reads as its slot, as for heartbeats
+  ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
 - It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, split so that each bundle
   fits one delivery. An event too large to fit a bundle that fits one delivery is left out; the rest of the history is
   sent. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more, sending
@@ -412,7 +417,9 @@ bytes always fits a delivery.
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
 It then base64-decodes `bundle`, checks that the SHA-256 of those bytes is the hash it opened, decrypts them with the
-key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A delivery for a chat the device does not hold yet, such
+key it opened, and imports the bundle as [History bundles](#history-bundles) gives it. A branch selection in the device
+group that later withdraws the delivery does not undo that import, as it does not undo small state a device merged
+([Convergence and retained history](#convergence-and-retained-history)); only the sender owes the history again. A delivery for a chat the device does not hold yet, such
 as one read before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a
 device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way.
 
@@ -425,10 +432,11 @@ more:
   withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the withdrawal, loses
   that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
-  off when the history is sent, gets no history.
+  off when the history is sent, gets no history. Neither does a chat whose MLS group id is longer than 256 bytes, which
+  no bundle or delivery can name, as small state covers no such chat either.
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
   deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out, as is
-  one whose retention is longer than a bundle number can hold.
+  one whose epoch, `created_at` or retention is larger than a bundle number can hold.
 - History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
   Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
   reading it otherwise.
