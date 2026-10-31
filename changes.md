@@ -15,7 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: A device its device group removes is unlinked
 
-[#479](https://github.com/marmot-protocol/marmot/pull/479) changes [features/device-group.md](./features/device-group.md).
+[#479](https://github.com/marmot-protocol/marmot/pull/479) changes
+[features/device-group.md](./features/device-group.md).
 
 - A device that its device group removes after its link was made, or after it created the group, is unlinked. It
   records that durably before discarding its copy, then stops acting for the account: no Commits, messages,
