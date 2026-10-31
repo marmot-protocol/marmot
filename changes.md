@@ -13,6 +13,24 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: Rejected KeyPackages: never one a device made, and the catch-up's success rule
+
+[#478](https://github.com/marmot-protocol/marmot/pull/478) changes
+[features/device-group.md](./features/device-group.md).
+
+- A device MUST NOT reject a KeyPackage it made, whether the copy is in another slot or in its own slot as a new
+  publication. With no device group, the `KeyPackageRef`s it keeps of what it published are what tell it.
+- Before alerting or settling, a sibling's catch-up of its device group succeeds when at least one relay showed it every
+  event for the group from where the read started: by pages, followed until a page holds fewer events than asked for,
+  or by a comparison that no limit cut short and whose every missing event the relay sent. The read may start where
+  processed history ends, but not past fetched input it has not processed. Unlike a check, a catch-up may page and
+  resume.
+- Starting fresh answers Not now only for the first check's slots that the user has not answered.
+- A device that newly trusts a device group counts the rejections already in the first roster it trusts as seen; ones
+  it kept itself before it joined still warn.
+- A device MAY bound the warning's seen marks, dropping the oldest seen first; an item whose mark it dropped warns
+  again if it comes back.
+
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 
 [#477](https://github.com/marmot-protocol/marmot/pull/477) changes
