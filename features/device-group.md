@@ -524,9 +524,9 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 ### On the removed device
 
 A device that its device group removes is unlinked from the account, unless the removal undid a failed link, which the
-roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)), or the device is
-signing out ([Removed while signing out](#removed-while-signing-out)). It realizes that
-removal as soon as the removing Commit is on the selected branch
+roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)), or the device had
+started signing out before the removal reached it ([Removed while signing out](#removed-while-signing-out)). It
+realizes that removal as soon as the removing Commit is on the selected branch
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
 anything more, and then:
 
@@ -572,10 +572,11 @@ It then:
    unchanged ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update");
 2. once that Commit is confirmed, leaves itself, as
    [../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than
-   the device group, except one that requires `0x800d` and holds a leaf whose device tag reads as a device the roster
-   lists with a status other than `leaving` ([Matching leaves to devices](#matching-leaves-to-devices)). A sibling
-   removes it from those groups with a same-account Remove ([Removing it from chats](#removing-it-from-chats)), and from
-   the device group ([Its siblings](#its-siblings));
+   the device group, except one that requires `0x800d` in which its own leaf carries a device tag that reads as its
+   slot and another leaf carries one that reads as a device the roster lists with a status other than `leaving`
+   ([Matching leaves to devices](#matching-leaves-to-devices)). A sibling removes it from those groups with a
+   same-account Remove ([Removing it from chats](#removing-it-from-chats)), since only a leaf whose tag reads as its
+   slot is removed there, and from the device group ([Its siblings](#its-siblings));
 3. deletes its slot, then its local state for the account.
 
 It does not wait for its siblings to remove it. If the `leaving` Commit is not confirmed within about 30 seconds, the
@@ -617,11 +618,17 @@ again, and the user can remove it from another device.
 
 ### Removed while signing out
 
-A device that its device group removes while it is signing out is not unlinked ([On the removed
-device](#on-the-removed-device)). It realizes the removal and discards the active state of its copy of the device group,
-as any removed device does, then finishes signing out: it still leaves itself the chats its sign-out leaves to it
-([Through its siblings](#through-its-siblings), [On its own](#on-its-own)), deletes its slot, then deletes its local
-state for the account.
+A device that had started signing out before its device group's removal of it reached it is not unlinked ([On the
+removed device](#on-the-removed-device)). It realizes the removal and discards the active state of its copy of the
+device group, as any removed device does. It then sends only what its sign-out still has to send:
+
+- a SelfRemove in each chat its sign-out leaves to it ([Through its siblings](#through-its-siblings), [On its
+  own](#on-its-own)) and that it has not left yet;
+- the deletion of its own slot.
+
+It sends nothing in the device group, and no application message, other proposal or Commit in any group. Then it
+deletes its local state for the account. A device that its device group removes before it starts signing out is
+unlinked, and stops as [On the removed device](#on-the-removed-device) says.
 
 ## Slot announcements
 

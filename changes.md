@@ -20,13 +20,15 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - A device in a device group signs out through its siblings when its roster entry has its `tag_signature_key` and the
   roster lists another device that is not `leaving`. It commits its own entry with status `leaving`. Once that Commit
-  is confirmed, it leaves itself every group except the device group and the groups that require `0x800d` and hold a
-  leaf tagged as such a sibling, then deletes its slot and its local state. If the `leaving` Commit is not confirmed
-  within about 30 seconds, it leaves every chat itself and tells its user. A device never sets another device's entry
-  to `leaving`.
+  is confirmed, it leaves itself every group except the device group and the groups that require `0x800d` where its
+  own leaf is tagged as its slot and another leaf as such a sibling, then deletes its slot and its local state. If the
+  `leaving` Commit is not confirmed within about 30 seconds, it leaves every chat itself and tells its user. A device
+  never sets another device's entry to `leaving`.
 - A device that finds a sibling `leaving` on its selected branch, with its `tag_signature_key`, removes it as if its
   user had decided to, and SHOULD first wait a random delay of up to 30 seconds.
-- A device that its device group removes while it is signing out is not unlinked: it finishes signing out.
+- A device that started signing out before its device group's removal of it reached it is not unlinked. It sends only
+  what its sign-out still has to send, a SelfRemove in each chat it was to leave and the deletion of its own slot, and
+  then deletes its local state. A device removed before it starts signing out is unlinked, as before.
 - A device that signs out on its own cannot leave its device group, where its account is the admin, and its leaf there
   stays until a sibling removes it. An unlinked device's sign-out leaves no group and deletes no slot.
 
