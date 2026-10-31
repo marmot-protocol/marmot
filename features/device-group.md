@@ -224,12 +224,14 @@ group. It stops trusting the group and MUST discard the active state of its copy
 ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
 group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
-refuse. If its first Commit there was never on the selected branch, it was not linked: it tells its user that linking
-failed, and links again only through a new pairing session. Otherwise the user removed it ([On the removed
-device](#on-the-removed-device)). The roster the removing Commit leaves tells the two apart, even when the device
-processes its first Commit and its removal together: a removal leaves a `removed` rejected slot for the device's slot
-([The removal Commit](#the-removal-commit)), while the undo of a failed link leaves no entry for it. A device that
-cannot read that roster treats its removal as the user's.
+refuse. The roster the removing Commit leaves alone decides why it was removed, not whether the device ever saw its own
+first Commit selected. When that roster has no entry for the device's slot, and the device joined the group rather than
+creating it, the removal undid a failed link: the device was not linked, tells its user that linking failed, and links
+again only through a new pairing session. Otherwise the user removed it ([On the removed
+device](#on-the-removed-device)): a removal leaves a `removed` rejected slot for the device's slot ([The removal
+Commit](#the-removal-commit)). This holds even when the device processes its first Commit and its removal together, and
+when it had selected its first Commit on a branch that the undo then superseded. A device that cannot read that roster
+treats its removal as the user's.
 
 ## Keeping it out of sight
 
