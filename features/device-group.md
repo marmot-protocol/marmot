@@ -243,10 +243,12 @@ Keeping a failed link failed leaves one case open ([#482](https://github.com/mar
 approving device keeps one failure record per slot, and approving a later link of the slot ends it. If that later link
 is made and branch selection then drops it, together with the undo, and brings back the failed link's entry, the device
 no longer undoes that entry: the later link stays made, so the device records no new failure. That takes a branch that
-forks before the undo, the later link's Add and its new device's first Commit. The entry has no `tag_signature_key`, so
-no device may remove it ([The removal Commit](#the-removal-commit)), and while the roster lists it, no device answers a
-pairing request from its slot ("Before answering"). Nothing in this specification frees that slot then: removing a
-device after a longer absence is not specified yet ([Inactive devices](#inactive-devices)).
+forks before the undo, the later link's Add and its new device's first Commit. If that branch does not also bring back
+the failed link's first Commit, the entry has no `tag_signature_key`, so no device may remove it ([The removal
+Commit](#the-removal-commit)), and while the roster lists it, no device answers a pairing request from its slot ("Before
+answering"). Nothing in this specification frees that slot then: removing a device after a longer absence is not
+specified yet ([Inactive devices](#inactive-devices)). If it does, the entry has its `tag_signature_key`, and the user
+can remove that device like any other.
 
 ## Keeping it out of sight
 
