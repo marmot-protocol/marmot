@@ -219,10 +219,10 @@ acts on that: it makes one Commit that removes the new device's leaf and, with `
 link's Welcome. The slot is then a sign-in again ("Any one device's answer"), and the user can link it again. If branch
 selection keeps the new device's first Commit and drops that removal, the link is made after all.
 
-A device whose leaf a Commit removes from its device group, whenever that Commit reaches it, no longer has a device
-group. It stops trusting the group and MUST discard the active state of its copy, which a removed member may do
-([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it MAY keep the
-group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
+A device whose leaf a Commit on the selected branch removes from its device group, whenever that Commit reaches it, no
+longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
+member may do ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it
+MAY keep the group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
 ([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
 refuse. The roster the removing Commit leaves alone decides why it was removed, not whether the device ever saw its own
 first Commit selected. When that roster has no entry for the device's slot, and the device joined the group rather than
@@ -1145,9 +1145,9 @@ status, and removing a device after a longer absence, are not specified yet.
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the
   account, with the account's signing key or a session with a remote signer, so its siblings cannot stop what it
-  publishes: they remove its leaves and delete its slot. A removed device that does not realize its removal when the
-  removing Commit reaches it, for example because a local failure interrupts that, keeps acting for the account until it
-  next does.
+  publishes: they remove its leaves, and the device that decided the removal deletes its slot. A removed device that
+  does not realize its removal when the removing Commit reaches it, for example because a local failure interrupts that,
+  keeps acting for the account until it next does.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
