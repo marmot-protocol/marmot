@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#477](https://github.com/marmot-protocol/marmot/pull/477) changes
 [foundation/key-packages.md](./foundation/key-packages.md).
 
 - When a device reads its own slot from a place that accepted its latest publication, reaches the end of what that place
