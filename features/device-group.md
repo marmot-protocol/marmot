@@ -239,6 +239,15 @@ Commit](#the-removal-commit)). This holds even when the device processes its fir
 when it had selected its first Commit on a branch that the undo then superseded. A device that cannot read that roster
 treats its removal as the user's.
 
+Keeping a failed link failed leaves one case open ([#482](https://github.com/marmot-protocol/marmot/issues/482)). The
+approving device keeps one failure record per slot, and approving a later link of the slot ends it. If that later link
+is made and branch selection then drops it, together with the undo, and brings back the failed link's entry, the device
+no longer undoes that entry: the later link stays made, so the device records no new failure. That takes a branch that
+forks before the undo, the later link's Add and its new device's first Commit. The entry has no `tag_signature_key`, so
+no device may remove it ([The removal Commit](#the-removal-commit)), and while the roster lists it, no device answers a
+pairing request from its slot ("Before answering"). Nothing in this specification frees that slot then: removing a
+device after a longer absence is not specified yet ([Inactive devices](#inactive-devices)).
+
 ## Keeping it out of sight
 
 A device group is not a chat:

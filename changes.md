@@ -28,9 +28,11 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   slot, even if branch selection later drops the removal. A failed link stays failed: until it approves a later link of
   the slot, the approving device commits the undo whenever the roster on its selected branch lists the slot as a device
   it linked, again if that Commit failed or branch selection dropped it, even if the new device's first Commit is then
-  selected. A slot recorded as `removed` needs no undo, and a later link of the slot is not undone. Unlinking is the
-  removed device's own work: it can still sign as the account, and one that misses its removal keeps acting for the
-  account until it next notices it.
+  selected. A slot recorded as `removed` needs no undo, and a later link of the slot is not undone. One case is left
+  open ([#482](https://github.com/marmot-protocol/marmot/issues/482)): once a later link of the slot is made, a failed
+  link's entry that branch selection brings back is not undone, and holds its slot. Unlinking is the removed device's
+  own work: it can still sign as the account, and one that misses its removal keeps acting for the account until it next
+  notices it.
 
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 
