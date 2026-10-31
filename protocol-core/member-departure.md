@@ -189,11 +189,13 @@ single `group_disbanded` row is the only presentation row for the Commit.
 Suppressing the duplicate row MUST NOT discard the local membership outcome or
 its evidence.
 
-When the state that results from the removing commit still holds a leaf with the local member's account identity, only
-this device left the group, and the account stays a member through another of its devices ("Accounts with several
-devices" above). The client still completes the leaf-scoped realization above, but MUST NOT present the group to its
-user as one the account was removed from: it presents the group as no longer active on this device, with no
-member-removal row for the local member.
+When the removing Commit does not disband the group and the state that results from it still holds a leaf with the
+local member's account identity, the account is still a member ("Accounts with several devices" above). The client
+still completes the leaf-scoped realization above, but MUST NOT present the group to its user as one the account was
+removed from: it presents the group as no longer active on this device, with no member-removal row for the local
+member. It does not say whose that remaining leaf is: it may be another device of the account, or a leaf no device of
+the account claims. Other members the same Commit removed are presented as usual. A disband keeps the rule above, even
+when the leaf it keeps has the local member's account identity: its `group_disbanded` row is the only presentation row.
 
 The removed condition is terminal for that local leaf. The client does not retain old epoch secrets or run convergence
 in order to resurrect it if continuing members later select another branch. Rejoining requires explicitly discarding
