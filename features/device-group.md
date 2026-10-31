@@ -576,13 +576,15 @@ than any the roster already rejects, once it trusts that group. Leaving out a sl
    group that it fetched, until it holds no unprocessed input for the group. This counts only when the fetch succeeded:
    at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
    [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") answered without failing or
-   timing out, and showed the device every event it holds for the group from where the read started. A read in pages
-   shows that when the device follows each page that holds as many events as it asked for with a further page, until a
-   page holds fewer, counting every event the relay sent. A read that compares the device's events with the relay's
-   shows it when the comparison covers the whole range without a limit cutting it short, and the relay sends every
-   event it found the device lacking. The read may start where history the device has already processed ends, but not
-   past input it has fetched and not processed. Unlike a check ([Evidence](#evidence)), a catch-up may page and resume,
-   since a group's history outgrows one answer. A fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
+   timing out, and showed the device every event it holds for the group. A read in pages shows that when the device
+   follows each page that holds as many events as it asked for with a further page, until a page holds fewer, counting
+   every event the relay sent. A read that compares the device's events with the relay's shows it when the comparison
+   covers the whole range without a limit cutting it short, and the relay sends every event it found the device
+   lacking. Either read covers all the relay holds for the group, not only what came after the history the device has
+   processed: on the Nostr binding `created_at` is a fetch hint only, and a sender whose clock runs behind can date a
+   Commit before one the device has already processed, so a read from a `since` shows nothing about the events dated
+   before it. Unlike a check ([Evidence](#evidence)), a catch-up may page, since a group's history outgrows one answer.
+   A fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
    one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the KeyPackage
    is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's (below), or
    the slot is no longer a device in its roster, it does nothing more;

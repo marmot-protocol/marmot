@@ -21,10 +21,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device MUST NOT reject a KeyPackage it made, whether the copy is in another slot or in its own slot as a new
   publication. With no device group, the `KeyPackageRef`s it keeps of what it published are what tell it.
 - Before alerting or settling, a sibling's catch-up of its device group succeeds when at least one relay showed it every
-  event for the group from where the read started: by pages, followed until a page holds fewer events than asked for,
-  or by a comparison that no limit cut short and whose every missing event the relay sent. The read may start where
-  processed history ends, but not past fetched input it has not processed. Unlike a check, a catch-up may page and
-  resume.
+  event it holds for the group: by pages, followed until a page holds fewer events than asked for, or by a comparison
+  that no limit cut short and whose every missing event the relay sent. The read covers all the relay holds, since on
+  Nostr a `since` taken from processed events can skip a Commit that a slow clock dated earlier. Unlike a check, a
+  catch-up may page.
 - Starting fresh answers Not now only for the first check's slots that the user has not answered.
 - A device that newly trusts a device group counts the rejections already in the first roster it trusts as seen; ones
   it kept itself before it joined still warn.
