@@ -13,7 +13,7 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-10-30: History keys for an account's devices (draft)
+## 2026-10-31: History keys and history deliveries for an account's devices (draft)
 
 [#467](https://github.com/marmot-protocol/marmot/pull/467) gives the device roster's `history_key` its meaning in
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "History" section of
@@ -33,8 +33,17 @@ bundles over consecutive stretches, and a receiver checks a bundle's content but
 lacks, never moves its read position for them, and should not count them as unread.
 [features/encrypted-media.md](./features/encrypted-media.md) and
 [features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
-exporter secret, to its own account's devices in a bundle. Clients that do not support device groups change nothing.
-
+exporter secret, to its own account's devices in a bundle. It also adds "History deliveries": the device whose own
+Commit adds a sibling's leaf to a chat, and no other, owes that sibling the chat's history once the Commit's publish
+obligation succeeds, while the sibling's entry has "bring chat history" on and a history key. It sends each bundle as a
+kind `473` device-group message (`v`, `from`, `to`, `chat`, `sealed`, `bundle`) of at most 32,768 bytes: the bundle
+inline, and its key and ciphertext SHA-256 sealed to the receiver's history key under a context binding both slots and
+the chat. A delivery that reached no relay, or that branch selection withdraws, is owed again, for at most 7 days. The
+receiver reads one only in its trusted device group, addressed to it, from a sibling whose leaf's tag reads as `from`
+in the tree it holds, and opening with its history key; it keeps one for a chat it has not joined yet for up to 7 days.
+There are no offers, receipts or requests: kinds `470` to `472` stay reserved, and
+[foundation/registries.md](./foundation/registries.md) registers `473`. Clients that do not support device groups change
+nothing.
 
 ## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
 

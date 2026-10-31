@@ -7,8 +7,8 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 ([device-group.md](./device-group.md)), so it never reaches a chat, a relay or another account.
 
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
-small state and the history keys that chat history is sealed to. History transfer, backups and invite decisions are not
-specified yet.
+small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
+that carry them from the device that adds a sibling to a chat. Backups and invite decisions are not specified yet.
 
 ## Surfaces
 
@@ -16,9 +16,9 @@ specified yet.
   roster.
 - App component: [../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), whose device entries
   carry each device's history key ([History keys](#history-keys)).
-- Marmot app events: kind `475` (small-state update) and kind `476` (broadcast request), sent only in a device group
-  ([Messages](#messages)). Their kinds are registered in
-  [../foundation/registries.md](../foundation/registries.md).
+- Marmot app events: kind `475` (small-state update), kind `476` (broadcast request) and kind `473` (history delivery),
+  sent only in a device group ([Messages](#messages), [History deliveries](#history-deliveries)). Their kinds are
+  registered in [../foundation/registries.md](../foundation/registries.md).
 - Protocol core: [../protocol-core/convergence.md](../protocol-core/convergence.md) and
   [../protocol-core/retained-history.md](../protocol-core/retained-history.md), which decide when a device-group message
   is delivered, withdrawn or lost.
@@ -323,6 +323,88 @@ A client MAY show which device a message was imported from.
 Importing history is not reading it. It never moves the device's read position, so the device never sends a read
 position for a message only because it was imported. A client SHOULD NOT count imported messages as unread.
 
+### History deliveries
+
+History comes from the device that adds a sibling to a chat, and from no other. When a device's own Commit adds a
+sibling's leaf to a chat, the device sends that sibling the chat's history as history deliveries, one bundle each,
+through the device group.
+
+**Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
+object with exactly these members, written in this order without whitespace, at most 32,768 bytes long. `v` is a JSON
+number; the other members are JSON strings.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `from`   | the sending device's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
+| `to`     | the receiving device's slot, the same way |
+| `chat`   | the chat's MLS group id, as in a bundle: its raw bytes, one to 256 of them, as lowercase hexadecimal with no prefix |
+| `sealed` | the sealed bundle key and hash, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
+| `bundle` | the bundle's ciphertext ([History bundles](#history-bundles)), non-empty, in standard base64 with padding |
+
+`sealed` is the bundle's 32-byte key followed by the 32-byte SHA-256 of its ciphertext, 64 bytes in all, sealed to the
+history key of `to`'s roster entry ([History keys](#history-keys)) with the context
+
+```text
+struct {
+  opaque purpose<V>;
+  opaque from<V>;
+  opaque to<V>;
+  opaque chat<V>;
+} HistoryDeliveryContextV1;
+```
+
+in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
+the 26 ASCII bytes of `marmot history delivery v1`, `from` and `to` are the two slots' 32 bytes, and `chat` is the chat's
+MLS group id. The context binds a sealed value to its sender, receiver and chat, so it never opens for another. Under
+ciphersuite `0x0001`, `sealed` is 114 bytes. A bundle whose plaintext is at most 23,552 bytes always fits a delivery.
+
+**Sending.**
+
+- After the publish obligation of a device's own Commit succeeds
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), the device owes the chat's history to
+  each sibling whose leaf that Commit adds: a leaf of its own account whose device tag, read against its trusted roster,
+  names a device in that roster ([device-group.md](./device-group.md), "Matching leaves to devices"). It records that it
+  owes the history before it sends any of it. A Commit that adds a sibling to the device group itself owes nothing.
+- It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
+  on and a history key it can seal to, and only while the device still holds the chat. Otherwise it forgets the history.
+- It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, split so that each bundle
+  fits one delivery. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more,
+  sending none of it.
+- A delivery whose publication fails without reaching any relay leaves the history owed, to be sent again. When branch
+  selection withdraws a delivery the device sent ([../protocol-core/convergence.md](../protocol-core/convergence.md)),
+  the history is owed again. A device forgets a history 7 days after the Commit that made it owed, sent or not.
+- A device sends no other history. There are no receipts and no requests for history.
+
+**Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
+"Trust"), and ignores kind `473` in any other group. It drops one unless:
+
+- its content decodes exactly as the message above gives it;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as
+  `from`'s ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), as a heartbeat's
+  sender must ([device-group.md](./device-group.md#heartbeats)). A delivery from an earlier epoch has no readable sender
+  and is dropped;
+- `sealed` opens with its history key and the context above to exactly 64 bytes.
+
+It then imports the bundle as [History bundles](#history-bundles) gives it, after checking that the SHA-256 of `bundle`
+is the hash it opened and decrypting with the key it opened. A delivery for a chat the device does not hold yet, such
+as one read before the chat's Welcome, is kept until the device joins that chat, and imported then if `from` is still a
+device in its roster; one kept 7 days is dropped. A device MAY bound how many deliveries it keeps this way.
+
+**Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
+more:
+
+- Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
+- There are no receipts. A delivery accepted by a relay but never read, or read only after a later Commit in the device
+  group, is lost, and so is that history.
+- A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
+  off when the history is sent, gets no history.
+- Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
+  deliveries than the sender will send is not sent at all.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -359,6 +441,8 @@ so no device moves it back; a later position moves it again once that one is fur
   device linked with "add to all my chats" off.
 - A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
   value sealed to it, past and future, until it writes a new key.
+- Every sibling reads every history delivery: it sees that the sender sent the receiver history, which chat it was for,
+  and how large it is, but cannot open it. Siblings already learn their account's chats through small state.
 - Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
   alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
