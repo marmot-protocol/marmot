@@ -283,7 +283,7 @@ sender writes it without whitespace, with its members in the order shown.
 | ----------- | ----- |
 | `event`     | the inner event, as a JSON object with exactly the members [../foundation/application-messages.md](../foundation/application-messages.md) gives it |
 | `epoch`     | the MLS epoch the event was sent in |
-| `retention` | the event's retention in seconds, from the retention decision the sender holds for it; absent when the sender holds none |
+| `retention` | the event's retention in seconds, from the retention decision the sender holds for it, with `0` for disappearing messages off as in [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md); absent when the sender holds none |
 | `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender found that the event's author had the authority the kind needs at the event's epoch, `false` when it found they did not; absent when the sender has not decided |
 | `keys`      | for an event with encrypted-media attachments only: one or more attachment keys, below; absent when the sender can give none |
 
@@ -314,7 +314,8 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
 - takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
   event reaches it live, when it judges that copy's authority as for any live event;
-- has each event expire at its `created_at` plus its `retention`, as message retention does for live messages.
+- has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
+  does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
 
 The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
 Imported history is as trustworthy as the sibling that sent it ([Security considerations](#security-considerations)).
@@ -370,8 +371,9 @@ ciphersuite `0x0001`, `sealed` is 114 bytes. A bundle whose plaintext is at most
 - It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
   on and a history key it can seal to, and only while the device still holds the chat. Otherwise it forgets the history.
 - It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, split so that each bundle
-  fits one delivery. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more,
-  sending none of it.
+  fits one delivery. An event too large to fit a bundle that fits one delivery is left out; the rest of the history is
+  sent. A device MAY bound how many deliveries one history takes, and MAY forget a history that needs more, sending
+  none of it.
 - A delivery whose publication fails without reaching any relay leaves the history owed, to be sent again. When branch
   selection withdraws a delivery the device sent ([../protocol-core/convergence.md](../protocol-core/convergence.md)),
   the history is owed again. A device forgets a history 7 days after the Commit that made it owed, sent or not.
@@ -403,7 +405,7 @@ more:
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history.
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
-  deliveries than the sender will send is not sent at all.
+  deliveries than the sender will send is not sent at all, and an event too large for one delivery is left out.
 
 ## Convergence and retained history
 

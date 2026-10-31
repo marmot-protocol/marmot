@@ -507,8 +507,9 @@ publishes in its slot.
 - Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
   own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
   first commits an AppDataUpdate that sets its own entry, with every other field unchanged and `announced_key_package`
-  naming the KeyPackage. The one exception: that update MAY also bring the device's own `client` and `platform`
-  current ([Labels, clients and platforms](#labels-clients-and-platforms)).
+  naming the KeyPackage. The exceptions: that update MAY also bring the device's own `client` and `platform` current
+  ([Labels, clients and platforms](#labels-clients-and-platforms)), and MAY set the device's own `history_key`
+  ([account-sync.md](./account-sync.md), "History keys").
 - The device publishes only once that Commit is part of the group state it holds. A Commit that fails, or that a
   branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
 - A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
