@@ -574,19 +574,13 @@ than any the roster already rejects, once it trusts that group. Leaving out a sl
 
 1. brings its trusted device group up to date first: it fetches the group's messages and processes every Commit for the
    group that it fetched, until it holds no unprocessed input for the group. This counts only when the fetch succeeded:
-   for at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
-   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules"), a complete read made for this
-   catch-up showed the device every event that relay holds for the group (on the Nostr binding,
-   [../transports/nostr.md](../transports/nostr.md), "Reading everything a relay holds"). A read covers all the relay
-   holds, not only what came after the history the device has processed, and a read made earlier does not count: a
-   sender whose clock runs behind can date a Commit before one the device has already processed. Unlike a check
-   ([Evidence](#evidence)), a catch-up may take many answers, since a group's history outgrows one, but each answer is
-   proven as a check's is: a device SHOULD ask a relay for no more events than it advertises, and a relay that cuts an
-   answer at a lower limit it does not advertise makes a read look complete when it is not. A read that failed, timed
-   out or was cut short is not complete. It also leaves no unprocessed input, so an empty queue alone shows nothing:
-   after one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the
-   KeyPackage is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's
-   (below), or the slot is no longer a device in its roster, it does nothing more;
+   at least one relay it read for the group (on the Nostr binding, a relay of the group's routing state,
+   [../transports/nostr.md](../transports/nostr.md), "Subscriptions and fetch rules") ended its answer without failing
+   or timing out, and with fewer events than the device asked for, as for a check's answers ([Evidence](#evidence)). A
+   fetch that failed or was cut short also leaves no unprocessed input, so an empty queue alone shows nothing: after
+   one, the device neither alerts nor settles, and tries again later. If, after a fetch that succeeded, the KeyPackage
+   is announced for that slot, or rejected, or its LeafNode carries a device tag that reads as a device's (below), or
+   the slot is no longer a device in its roster, it does nothing more;
 2. sends the slot's device an anomaly alert naming the KeyPackage ([Anomaly alerts](#anomaly-alerts)). It sends one
    alert for each KeyPackage, and keeps each alert it sent, with the slot, the KeyPackage's `KeyPackageRef`, the
    signature key of its LeafNode and the time it sent it, across restarts, until it settles it;
@@ -715,8 +709,9 @@ rejection; and when it finds such a leaf in a group where it can remove it by ne
   it. It keeps a seen rejected KeyPackage, by its `KeyPackageRef`, for 7,261,200 seconds, the longest a KeyPackage can
   be valid, so that one dropped and recorded again ([How long a rejected KeyPackage
   lasts](#how-long-a-rejected-keypackage-lasts)) does not warn again either. A device MAY bound the seen marks it keeps
-  for items the warning no longer gathers, dropping first the mark it recorded earliest; such an item warns again if it
-  is recorded again.
+  for items the warning no longer gathers, dropping first the mark it recorded earliest, even before the 7,261,200
+  seconds above end; this bound is the one exception to that keep. Such an item warns again only if it is recorded
+  again.
 - A device that joins a device group counts the rejections already in the first roster it trusts as seen, since the
   user saw the warning on the devices that were there, but not one it keeps itself: those still warn until its user
   sees them. A device that creates a device group counts none of its founding roster's rejections as seen, since they

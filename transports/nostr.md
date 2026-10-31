@@ -505,33 +505,6 @@ A Nostr transport client subscribes to:
 Clients SHOULD use a `since` value when resubscribing if they have a retained transport timestamp. The timestamp is a
 fetch hint only.
 
-### Reading everything a relay holds
-
-Some rules need a read that shows the client every event one relay holds for a filter, such as a device group's
-catch-up before an anomaly alert ([../features/device-group.md](../features/device-group.md), "A KeyPackage the roster
-does not announce"). A relay answers with at most a limit of events, and each event's `created_at` is whatever its
-author chose, so such a read is proven by `created_at` range, never by the history the client has processed:
-
-- The client reads the filter in slices, each an inclusive `since`..`until` range, and the slices together cover
-  every `created_at`. It proves each slice in this read: a slice proven by an earlier read says nothing about events
-  that reached the relay since, which their authors can date into it.
-- A slice is proven when the relay's answer ends with `EOSE`, without a `CLOSED` or a timeout first, and holds fewer
-  events than the client asked for, counting every event the relay sent, valid or not. A client SHOULD ask for no
-  more events than the relay advertises as the `max_limit` in its NIP-11 relay information document, since a relay
-  that cuts its answer at a lower limit of its own looks whole.
-- An answer that holds as many events as the client asked for proves nothing about its slice. The client splits the
-  slice and proves each part.
-- A one-second slice cannot be split, and relays order the events of one second as they choose, so paging within it
-  can skip some. When its answer is full, the client proves that second by comparing its events with the relay's for
-  it (NIP-77), and the comparison counts only when no limit cut it short and the client then fetched, by id, every
-  event the comparison found it lacking. A relay without NIP-77 leaves that second unproven.
-- A comparison of the whole filter that no limit cut short, followed by fetching every event it found the client
-  lacking, proves every slice at once.
-
-A read with a slice it could not prove is cut short. It shows the events it fetched, but proves nothing missing, and a
-rule that needs a complete read treats it as one that failed. A relay that cuts an answer at a lower limit it does not
-advertise makes a slice look proven when it is not, so a read from it can look complete without being complete.
-
 ## Publish targets and acknowledgements
 
 Group messages are published to the relay list in `marmot.transport.nostr.routing.v1`, after applying any local safety

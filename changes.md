@@ -13,26 +13,20 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-10-31: Rejected KeyPackages: never one a device made, and the catch-up's success rule
+## 2026-10-31: Rejected KeyPackages: never one a device made, and the warning's seen marks
 
 [#478](https://github.com/marmot-protocol/marmot/pull/478) changes
-[features/device-group.md](./features/device-group.md) and [transports/nostr.md](./transports/nostr.md).
+[features/device-group.md](./features/device-group.md).
 
-- A device MUST NOT reject a KeyPackage it made, whether the copy is in another slot or in its own slot as a new
-  publication. With no device group, the `KeyPackageRef`s it keeps of what it published are what tell it.
-- Before alerting or settling, a sibling's catch-up of its device group succeeds only on a complete read, made for
-  that catch-up, of everything one relay holds for the group. A read from where processed history ends, or one made
-  earlier, does not count, since on Nostr a slow clock can date a Commit into a range already read. A read that fails
-  or is cut short never alerts or settles. Unlike a check, a catch-up may take many answers.
-- The Nostr binding defines that read ("Reading everything a relay holds"): `created_at` slices that together cover
-  every timestamp, each proven in the read by an answer below what the client asked for (asking no more than the
-  advertised `max_limit`), a full answer split, a full one-second slice proven only by a NIP-77 comparison and an id
-  fetch, or one comparison of the whole filter. An unproven slice cuts the read short.
+- A device MUST NOT reject a KeyPackage it made, under any rejection rule: not a copy in another slot, a rejected
+  sign-in's slot included, and not one in its own slot as a new publication. With no device group, the
+  `KeyPackageRef`s it keeps of what it published are what tell it.
 - Starting fresh answers Not now only for the first check's slots that the user has not answered.
 - A device that joins a device group counts the rejections already in the first roster it trusts as seen, except ones
   it keeps itself, which still warn. A device that creates one counts none as seen.
 - A device MAY bound the warning's seen marks for items the warning no longer gathers, dropping the earliest recorded
-  first; such an item warns again if it is recorded again.
+  first, even before a seen rejected KeyPackage's 7,261,200 seconds end; such an item warns again only if it is
+  recorded again.
 
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 
