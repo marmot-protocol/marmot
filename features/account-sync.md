@@ -429,10 +429,9 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
   a repeated, missing or extra member drops it;
 - `to` is its own slot;
 - `from` is another device in its current roster;
-- the leaf that sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as
-  `from`'s ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), as a heartbeat's
-  sender must ([device-group.md](./device-group.md#heartbeats)). A delivery from an earlier epoch has no readable sender
-  and is dropped;
+- the leaf that sent it, in the tree of the epoch the delivery was sent in, carries a device tag that reads as `from`'s
+  against its current roster ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading
+  tags"). A delivery from an epoch whose tree the device no longer keeps has no readable sender and is dropped;
 - `sealed` opens with its history key and the context above to exactly 64 bytes.
 
 It then takes the bundle's ciphertext: it base64-decodes `bundle`, or fetches the blob from one of the `blossom`
@@ -450,10 +449,10 @@ and retained history](#convergence-and-retained-history)); only the sender owes 
 more:
 
 - Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
-- There are no receipts. A delivery accepted by a relay but never read, or read only after a later Commit in the device
-  group, is lost, and so is that history. A sender owes a withdrawn delivery's history again only when it learns of the
-  withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the withdrawal, loses
-  that history too.
+- There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer keeps the
+  tree of the epoch it was sent in, is lost, and so is that history. A sender owes a withdrawn delivery's history again
+  only when it learns of the withdrawal, so one whose record of the delivery is already gone, or that stops before it
+  acts on the withdrawal, loses that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
   which no bundle or delivery can name; small state covers none longer than 256 bytes either.
