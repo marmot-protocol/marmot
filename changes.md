@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-10-31: A device removed from a group its account stays in
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#475](https://github.com/marmot-protocol/marmot/pull/475) changes
 [protocol-core/member-departure.md](./protocol-core/member-departure.md) and
 [features/device-group.md](./features/device-group.md).
 
