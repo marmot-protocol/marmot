@@ -13,6 +13,29 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: Refilling a device's emptied KeyPackage slot
+
+[#477](https://github.com/marmot-protocol/marmot/pull/477) changes
+[foundation/key-packages.md](./foundation/key-packages.md).
+
+- A device keeps, with its latest KeyPackage publication and across restarts, the places that accepted it, and SHOULD
+  keep sending that publication to a place that has not accepted it yet.
+- When a read of its own slot from a place that accepted the latest publication, with no time bound, reaches the end of
+  what that place serves and finds nothing in the slot, the device SHOULD publish a new KeyPackage into the slot. This
+  covers a deletion the device never saw acknowledged and a slot deletion by someone else holding the account key. A
+  read that failed, stopped short or was bounded in time does not count.
+- The device publishes a new KeyPackage, not its latest one again, since a slot deletion covers every publication in the
+  slot up to its time.
+- It SHOULD NOT publish one this way before its latest publication is a day old, so that a place that accepts
+  publications and keeps none costs one KeyPackage a day.
+- The device makes this publication only while it is neither signing out nor signed out and, in a device group, only
+  while its trusted roster lists its own slot as a device.
+- "Stopping publication" now defines signing out: it starts when the device decides to sign out, before it deletes its
+  slot. It ends when the sign-out finishes, after which the device is signed out, or when the device abandons it, after
+  which it is neither signing out nor signed out.
+- A slot deletion dated ahead of the device's clock also covers a KeyPackage published this way before that time; a
+  place that honored it serves nothing in the slot until the device publishes there again after that time.
+
 ## 2026-10-30: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
 
 [#462](https://github.com/marmot-protocol/marmot/pull/462) changes
