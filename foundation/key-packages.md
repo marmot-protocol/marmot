@@ -144,9 +144,11 @@ a place that accepted the latest publication, with no time bound, reaches the en
 nothing there, the device SHOULD publish a new KeyPackage of its own into the slot, not the latest one again: a deletion
 of the whole slot also covers the latest publication. A read that failed, stopped short or was bounded in time shows
 nothing. The device SHOULD NOT publish one this way before its latest publication is a day old, so that a place that
-accepts publications and keeps none costs one KeyPackage a day. What a removed device does with its own slot, this
-publication included, is not specified yet ([../features/device-group.md](../features/device-group.md), "The removed
-device's slot").
+accepts publications and keeps none costs one KeyPackage a day. This applies only while the device is not signing out
+or signed out ("Stopping publication" below) and, in a device group, only while its trusted roster lists its own slot
+as a device ([../features/device-group.md](../features/device-group.md), "Trust"). A deletion of the whole slot
+dated ahead of the device's clock also covers a KeyPackage published this way before that time: a place that honored
+the deletion refuses it and serves nothing in the slot until the device publishes there again after that time.
 
 A device in a device group announces that KeyPackage first, like any other
 ([../features/device-group.md](../features/device-group.md), "Slot announcements").

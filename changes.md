@@ -28,7 +28,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   slot up to its time.
 - It SHOULD NOT publish one this way before its latest publication is a day old, so that a place that accepts
   publications and keeps none costs one KeyPackage a day.
-- What a removed device does with its own slot, this publication included, is still not specified.
+- This applies only while the device is not signing out or signed out and, in a device group, only while its trusted
+  roster lists its own slot as a device.
+- A slot deletion dated ahead of the device's clock also covers a KeyPackage published this way before that time; a
+  place that honored it serves nothing in the slot until the device publishes there again after that time.
 
 ## 2026-10-30: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
 
