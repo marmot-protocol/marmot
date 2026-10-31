@@ -20,12 +20,13 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - A device that its device group removes after its link was made, or after it created the group, is unlinked. The roster
   the removal leaves tells this apart from a failed link's undo: only a removal leaves a `removed` rejected slot for the
-  device's slot. It realizes the removal as it processes the removing Commit, records that durably before discarding its
-  copy, then stops acting for the account: no Commits, messages, publications or pairing answers. It tells its user it
-  was unlinked, and neither leaves its chats nor deletes its slot, since its siblings do both. It runs the account again
-  only as a new sign-in: it deletes its local state for the account and links again with a new slot. Unlinking is the
-  removed device's own work: it still holds the account's signing key, and one that misses its removal keeps acting for
-  the account until it next notices it.
+  device's slot. It realizes the removal once the removing Commit is on the selected branch, records that durably before
+  discarding its copy, then stops acting for the account: no Commits, messages, Welcomes accepted, publications or
+  pairing answers. It tells its user it was unlinked, and neither leaves its chats nor deletes its slot: its siblings
+  remove its leaves, and the device that decided the removal deletes its slot. It runs the account again only as a new
+  sign-in: it deletes its local state for the account and links again with a new slot, even if branch selection later
+  drops the removal. Unlinking is the removed device's own work: it can still sign as the account, and one that misses
+  its removal keeps acting for the account until it next notices it.
 
 ## 2026-10-31: A device removed from a group its account stays in
 

@@ -512,13 +512,16 @@ exchanged with that slot ([Private KeyPackages](#private-keypackages)):
 
 A device that its device group removes after its link was made, or after it created the group, is unlinked from the
 account ([A link that is not taken up](#a-link-that-is-not-taken-up) covers a link that was never made). It realizes
-that removal as it processes the removing Commit, before it sends anything more, and then:
+that removal as soon as the removing Commit is on the selected branch
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
+anything more, and then:
 
 1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
    again;
 2. discards the active state of its copy of the device group, as any device its device group removes does;
-3. stops acting for the account: it makes no Commit and sends no message in any group, publishes nothing, its slot
-   included, and answers no pairing request;
+3. stops acting for the account: it makes no Commit and sends no message in any group, accepts no Welcome, answers no
+   pairing request, and publishes nothing, its slot included, whatever
+   [../foundation/key-packages.md](../foundation/key-packages.md) would otherwise have it publish;
 4. tells its user, durably, that this device was unlinked from the account.
 
 It neither leaves its chats nor deletes its slot. Its siblings remove its leaves ([Removing it from
@@ -529,7 +532,8 @@ removal reached it already reads as no longer active on this device, not as one 
 
 The device runs the account again only as a new sign-in: it deletes its local state for the account, then links again
 through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
-record any other way.
+record any other way, even when branch selection later drops the removal that unlinked it; the device that decided the
+removal then commits it again ([The removal Commit](#the-removal-commit)).
 
 ## Slot announcements
 
@@ -555,7 +559,8 @@ names, from a publication in the slot that the device did not make.
 - The founding state announces the KeyPackage the creating device last published, if any, and the founding Add the one
   the link confirmed ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before
   it publishes one of those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
-- A device with no device group publishes as before.
+- A device with no device group publishes as before, unless its device group unlinked it ([On the removed
+  device](#on-the-removed-device)).
 
 The roster keeps one announcement per device. Between an announcement and its publication, while some relays still serve
 the previous publication, and after branch selection drops an announcement whose KeyPackage the device had already
@@ -1136,10 +1141,11 @@ status, and removing a device after a longer absence, are not specified yet.
 
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
-- Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It still holds the
-  account's signing key, so its siblings cannot stop what it publishes: they remove its leaves and delete its slot. A
-  removed device that misses its removal as it processes the removing Commit, for example because a local read fails at
-  that moment, keeps acting for the account until it next notices the removal.
+- Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the
+  account, with the account's signing key or a session with a remote signer, so its siblings cannot stop what it
+  publishes: they remove its leaves and delete its slot. A removed device that does not realize its removal when the
+  removing Commit reaches it, for example because a local failure interrupts that, keeps acting for the account until it
+  next does.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
