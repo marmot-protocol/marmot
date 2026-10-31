@@ -229,8 +229,10 @@ A device writes its history key in a roster update it already makes, so the key 
   carry other changes to that entry, such as its next KeyPackage announcement.
 
 A device MUST NOT change the `history_key` of another device's entry; an update that replaces another device's entry
-for another reason, such as a rename, carries that entry's `history_key` as it was. A key never rotates in this
-version. A device that loses the private half generates a new key pair and writes the new public half the same way.
+for another reason, such as a rename, carries that entry's `history_key` as it was. This binds senders only: a roster
+update that changes another device's `history_key` is still valid ([Security considerations](#security-considerations)).
+A device does not rotate its key in this version; it replaces it only when it loses the private half, by generating a
+new key pair and writing the new public half the same way.
 
 To seal a value to a device, a sibling uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
 section 5.1.3) with that device's history key as the public key, the label `"Marmot History"`, and the context the
@@ -249,13 +251,15 @@ that device gets no history.
 A device sends history as bundles. A bundle holds one stretch of one chat's history, as the sending device holds it,
 for one receiving device.
 
-**Stretches.** Chat order is the order of read positions ([Items](#items)): the epoch a message was sent in, then its
-`created_at`, then its `id`. A position names one message by those three values, encoded as a read position's value:
-`{"epoch":e,"at":t,"id":"<id>"}`. A stretch is every message from one position to another in chat order, both
-included. A position may name a message the receiver does not hold, or one the bundle leaves out.
+**Stretches.** Chat order puts every app event of the chat in the order read positions use ([Items](#items)): the epoch
+it was sent in, then its `created_at`, then its `id`. A position names one event by those three values, encoded as a
+read position's value: `{"epoch":e,"at":t,"id":"<id>"}`. Unlike a read position, it may name any event, an edit
+included. A stretch is every event from one position to another in chat order, both included. A position may name an
+event the receiver does not hold, or one the bundle leaves out.
 
 **What a bundle carries.** Every Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
-delivered in the chat that the sender holds in the stretch, as the inner event it received or sent, except:
+of the chat that the sender holds in the stretch, as the inner event it received, sent or imported from a sibling's
+history, except:
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
   expired; a retention of `0`, disappearing messages off, never expires;
@@ -344,8 +348,8 @@ through the device group.
 
 **Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
 of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
-object with exactly these members, written in this order without whitespace, at most 32,768 bytes long. `v` is a JSON
-number; the other members are JSON strings.
+object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long. `v`
+is a JSON number; the other members are JSON strings. Unlike a bundle's layout, this one binds receivers too.
 
 | Member   | Value |
 | -------- | ----- |
@@ -396,7 +400,8 @@ bytes always fits a delivery.
 **Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
 "Trust"), and ignores kind `473` in any other group. It drops one unless:
 
-- its content decodes exactly as the message above gives it;
+- its content is exactly the encoding above, byte for byte: another member order, whitespace, or a repeated, missing or
+  extra member drops it;
 - `to` is its own slot;
 - `from` is another device in its current roster;
 - the leaf that sent it, in the tree of the epoch the device holds when it reads it, carries a device tag that reads as

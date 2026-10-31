@@ -12,9 +12,9 @@ into it, how clients keep it out of sight, how the account's devices notice a ne
 the KeyPackages it publishes, what a device does when its own slot holds a KeyPackage it did not make, how devices hand
 each other private KeyPackages, how the Welcome for an add that uses one reaches its sibling, how the user removes a
 device, and how each device shows its siblings to its user.
-[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group. When a device
-adds a sibling to a chat, the group's other messages, what a device removed from its device group does next, and
-signing out through a sibling are not specified yet.
+[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group, and the history
+deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add, what a device removed
+from its device group does next, and signing out through a sibling are not specified yet.
 
 ## Surfaces
 
