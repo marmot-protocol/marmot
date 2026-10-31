@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device removed from a group its account stays in
+
+[#475](https://github.com/marmot-protocol/marmot/pull/475) changes
+[protocol-core/member-departure.md](./protocol-core/member-departure.md) and
+[features/device-group.md](./features/device-group.md).
+
+- When a removing commit that does not disband the group leaves a state that still holds a leaf with the removed
+  device's account identity, the device still realizes its removal, but must not present the group as one its account
+  was removed from, and shows no member-removal row for itself. It presents the group as no longer active on this
+  device, without saying whose the remaining leaf is, and presents other members the commit removed as usual. A
+  disband still shows only its `group_disbanded` row. This covers a sibling removing a removed device's leaves from the
+  account's chats.
+
 ## 2026-10-31: Refilling a device's emptied KeyPackage slot
 
 [#477](https://github.com/marmot-protocol/marmot/pull/477) changes
