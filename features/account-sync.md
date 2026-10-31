@@ -415,7 +415,9 @@ more:
 
 - Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
 - There are no receipts. A delivery accepted by a relay but never read, or read only after a later Commit in the device
-  group, is lost, and so is that history.
+  group, is lost, and so is that history. A sender owes a withdrawn delivery's history again only when it learns of the
+  withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the withdrawal, loses
+  that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history.
 - Bundles travel inline only, so a history needs as many deliveries as it has bundles. A history that needs more
