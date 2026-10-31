@@ -391,14 +391,17 @@ A device turns backups on, or replaces the words, in four steps:
    only operation sets the account entry. When the entry has no `recovery_public_key`, the update also names this
    device as `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names
    none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
-4. It forgets the words, the entropy and the private half.
+4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half. If
+   it cannot commit the update, because the account entry is no longer the one it read or the device group cannot
+   take a commit from it yet, it keeps them in memory, never on disk, for the user to try again.
 
-A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself as
-the account's recovery key; new words replace it, and none of the rules below for roster updates apply until the
-device trusts a device group. When it creates a device group, the founding roster's account entry holds that key and
-names this device as `backup_writer`. When it joins one instead, the roster's account entry stands, whatever it holds,
-since a roster with no key may be one whose backups the user turned off. Either way, once the device trusts the device
-group it forgets the key it kept, and the roster's account entry is the account's recovery key from then on.
+A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself,
+across restarts, as the account's recovery key; new words replace it, and none of the rules below for roster updates
+apply until the device trusts a device group. When it creates a device group, the founding roster's account entry holds
+that key and names this device as `backup_writer`. When it joins one instead, the roster's account entry stands,
+whatever it holds, since a roster with no key may be one whose backups the user turned off. Either way, once the device
+trusts the device group it forgets the key it kept, and the roster's account entry is the account's recovery key from
+then on.
 
 An update that sets the account entry replaces it whole, so it is computed from the entry as the device read it. A
 device MUST NOT commit it on a roster whose account entry is not the one it read, including when it commits the update
@@ -413,9 +416,12 @@ group turns backups off by forgetting the key it keeps.
 A device commits an update that sets the account entry again only when branch selection drops it, under the rule above,
 and never because the roster does not hold what the user chose: a roster with no key looks the same before backups were
 turned on and after they were turned off again, so committing a change again on what the roster holds could undo another
-device's turn-off. A device shows backups as the roster's account entry holds them now. While an update of its own to
-the account entry is not yet confirmed, or was dropped and is neither committed again nor refused, a device makes no
-other change to the account entry, and it keeps that update, with the entry it was computed from, across restarts.
+device's turn-off. A device shows backups as the roster's account entry holds them now. A device keeps each update it
+makes to the account entry, with the entry it was computed from, across restarts, until branch selection can no longer
+drop it. While one is not yet confirmed, or was dropped and is neither committed again nor refused, the device makes no
+other change to the account entry. An update whose publication fails is published again or discarded as
+[../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md) allows; that is not committing it again,
+and a discarded update is lost as a refused one is.
 
 Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
 dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
