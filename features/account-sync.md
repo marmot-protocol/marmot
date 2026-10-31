@@ -413,11 +413,12 @@ above, and never because the roster does not hold what the user chose: a roster 
 backups were turned on and after they were turned off again, so committing a change again on what the roster holds
 could undo another device's turn-off. A device shows backups as the roster's account entry holds them now.
 
-Two limitations are known. A change that branch selection drops and the rule above refuses to commit again stays lost,
-and shows as not made, until the user makes it again. And the rule against committing on an entry that is not the one
-the device read compares values: when branch selection drops an update turning backups on, and the winning branch
-turns backups on with other words and off again before the device reads it, the entry holds no key, as it did when the
-device read it, and the update is committed again.
+Two limitations are known. After a fork, the rule above may commit an earlier change again and refuse a later one, so a
+dropped change can stay lost: a device shows the account entry of the branch selected now, even while branch selection
+could still pick another, and the user makes a lost change again. And the rule against committing on an entry that is
+not the one the device read compares values: when branch selection drops an update turning backups on, and the winning
+branch turns backups on with other words and off again before the device reads it, the entry holds no key, as it did
+when the device read it, and the update is committed again.
 
 ## Convergence and retained history
 
