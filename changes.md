@@ -13,6 +13,23 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-01: The approving device adds a new device to its chats
+
+[#485](https://github.com/marmot-protocol/marmot/pull/485) changes
+[features/device-group.md](./features/device-group.md).
+
+- Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device
+  to its chats while the roster lists the new device as `active` with "add to all my chats" on. No other device adds it
+  to a chat under the link.
+- Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
+  goes out as a sibling Welcome. A KeyPackage the new device published MUST NOT be used.
+- A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
+  `tag_signature_key`, gets no Add.
+- A chat that does not require `0x800d`, names no relay list a sibling Welcome may carry, or has requirements the new
+  device's KeyPackages do not meet is skipped, and the new device is added to it in no other way.
+- The approving device asks for as many private KeyPackages as the Adds need, and MAY spread the Adds over time.
+  Turning "add to all my chats" off stops further Adds and removes the device from no chat.
+
 ## 2026-10-31: A device signs out through its siblings
 
 [#484](https://github.com/marmot-protocol/marmot/pull/484) changes
