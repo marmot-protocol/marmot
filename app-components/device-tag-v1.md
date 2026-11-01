@@ -150,9 +150,9 @@ NOT be created, replaced or removed with `AppDataUpdate` ([README.md](./README.m
   KeyPackage into another leaf gives a leaf whose tag does not open, so that leaf is unclaimed.
 - Holding the account's signing key gives neither `leaf_tag_key` nor any device's tag signature key, so a leaf added
   that way is unclaimed.
-- A removed device still holds `leaf_tag_key` ([device-roster-v1.md](./device-roster-v1.md), "Security
-  considerations"). It can tag a leaf only with its own slot, which its siblings recognize as `removed` while they keep
-  that slot's record, and as gone while they keep the slot's tag signature key.
+- A removed device still holds `leaf_tag_key` ([device-roster-v1.md](./device-roster-v1.md), "Security considerations").
+  It can tag a leaf only with its own slot, which its siblings recognize as `removed` while they keep that slot's
+  record, and as gone while their settled roster lists no device in the slot and they keep the slot's tag signature key.
 
 ## Test vectors
 

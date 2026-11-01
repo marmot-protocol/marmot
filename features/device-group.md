@@ -23,8 +23,8 @@ yet.
 - App component: [marmot.member.device-tag.v1](../app-components/device-tag-v1.md) (`0x800f`), the LeafNode tag that
   tells the account's devices which of its leaves in any group belongs to which device.
 - App component: [marmot.group.account-devices.v1](../app-components/account-devices-v1.md) (`0x800d`), which a device
-  group requires under the ordinary creation rule, and whose same-account Remove takes a removed device's leaves out of
-  other groups ([Removing it from chats](#removing-it-from-chats)).
+  group requires under the ordinary creation rule, and whose same-account Remove takes the leaves of a removed or
+  otherwise gone device out of other groups ([Removing it from chats](#removing-it-from-chats)).
 - Feature: [device-pairing.md](./device-pairing.md), the exchange that authenticates a new device before it is
   linked.
 - Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
@@ -229,9 +229,10 @@ deciding device records the slot as `removed` while the decision is less than 30
 slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot is not a sign-in again, and a
 removed device comes back only as a new slot, as the decision already kept it from being linked again. The new device is
 not told; a pairing request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the
-slot, every device that applied the new device's first Commit cleans up after it as after a removed device: the slot is
-gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from
-before it was linked carry no tag and stay.
+slot, every device that applied the new device's first Commit cleans up after it as after a removed device, once its
+state for the device group is settled and its roster lists no device in the slot: the slot is then gone for it ([Devices
+the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked
+carry no tag and stay.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
@@ -514,9 +515,9 @@ listed them. It keeps those of every roster state it applies, including one that
 time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
 catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
 states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
-unclaimed for it. A slot's latest key, for a device, is the key that the roster state this device applied most recently
-listed for the slot; a state that listed the slot with no key lists none. What it keeps changes nothing about how it
-validates, applies or selects roster states.
+unclaimed for it. A slot's latest key, for a device, is the most recent key that a roster state this device applied
+listed for the slot; a state that listed the slot with no key does not change it. What it keeps changes nothing about
+how it validates, applies or selects roster states.
 
 A slot other than the device's own is gone for it:
 
@@ -904,9 +905,10 @@ It drops a whole hand-off unless every KeyPackage in it:
 The tag checks are the device group's rules for accepting a request or a hand-off, not validity rules: a KeyPackage or
 leaf without a tag stays valid everywhere else
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Validity"). The receiver keeps the
-KeyPackages it accepts by `from` until it uses one, discards them, or they expire. A device MUST NOT keep a private
-KeyPackage it has already used, even when a sibling hands it over again. It remembers each one it used until that
-KeyPackage's `not_after`, and keeps the rest of such a hand-off.
+KeyPackages it accepts by `from` until it uses one, discards them, `from`'s slot is gone for it ([Its private
+KeyPackages](#its-private-keypackages)), or they expire. A device MUST NOT keep a private KeyPackage it has already
+used, even when a sibling hands it over again. It remembers each one it used until that KeyPackage's `not_after`, and
+keeps the rest of such a hand-off.
 
 ## Sibling Welcomes
 
