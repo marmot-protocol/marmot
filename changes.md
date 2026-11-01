@@ -19,14 +19,17 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [features/device-group.md](./features/device-group.md) and
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md).
 
+- The link's Commit sets the new device's entry status to `active`.
 - Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device
-  to its chats while the roster lists the new device as `active` with "add to all my chats" on. No other device adds it
-  to a chat under the link.
+  to its chats, including ones it creates after the link, while the roster lists the new device as `active` with "add
+  to all my chats" on. No other device adds the new device, under the link, to a chat the approving device is in.
 - Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
   goes out as a sibling Welcome. A KeyPackage the new device published MUST NOT be used.
 - A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
   `tag_signature_key`, gets no Add. A leaf from before the link whose signature key is not that key is not found, so
-  such a chat can get a second leaf for the device; avoiding that is not specified yet.
+  such a chat can get a second leaf for the device, which counts toward `max_leaves_per_account` while it stays.
+  Avoiding that, whether the two leaves are then treated as key misuse, and who removes the extra leaf are not
+  specified yet.
 - A chat that does not require `0x800d`, names no relay list a sibling Welcome may carry, already holds
   `max_leaves_per_account` leaves of the account, or has requirements the new device's KeyPackages do not meet is
   skipped. The approving device removes no leaf to make room and adds the new device there in no other way; it adds it

@@ -140,11 +140,11 @@ Once the link is confirmed, the device adds the new device:
   roster entry; or
 - with no device group, by creating it under the group id its Confirm named ("Creating the device group").
 
-The new device's entry carries the label and settings the user chose, `linked_at`, `linked_by` set to the approving
-device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no `tag_signature_key`: the
-new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a fresh `rename_id`
-([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is the approval.
-Its Welcome is sent as for any other Add.
+The new device's entry carries the label and settings the user chose, status `active`, `linked_at`, `linked_by` set to
+the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no
+`tag_signature_key`: the new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a
+fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is
+the approval. Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which sets the
 `tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
@@ -255,8 +255,9 @@ can remove that device like any other.
 ### Adding the new device to chats
 
 Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device to
-the chats it is in, while the roster lists the new device as `active` with "add to all my chats" on. No other device
-adds it to a chat under the link.
+the chats it is in, while the roster lists the new device as `active` with "add to all my chats" on. These include a
+chat it creates after the link, once that chat exists. No other device adds the new device, under the link, to a chat
+the approving device is in.
 
 - It adds the new device to a chat by a same-account Add
   ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations") of
@@ -278,7 +279,8 @@ adds it to a chat under the link.
 - Turning "add to all my chats" off stops further Adds and takes the new device out of no chat.
 
 Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
-device's entry has "bring chat history" on. A chat the approving device skips gets the new device only if the chat can
+device's entry has "bring chat history" on. What the approving device shows its user about the chats it skips is not
+specified. A chat the approving device skips gets the new device only if the chat can
 take the Add later, while the approving device is still adding the new device to chats. A chat the approving device is
 not in gets the new device only from another sibling, which is not specified yet.
 
@@ -287,8 +289,9 @@ signature key is the one the device later set as its `tag_signature_key`. A devi
 signature keys can be added to a chat it is already in. It does not join from that sibling Welcome, as it already keeps
 the group ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 9). Once it tags its own
 leaf there ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), the chat holds
-two leaves that read as that device's, which "Reading tags" there counts as misuse of its keys. Avoiding this is not
-specified yet.
+two leaves that read as that device's, which "Reading tags" there counts as misuse of its keys. The extra leaf counts
+toward `max_leaves_per_account` while it stays. Avoiding this, whether the account's devices then treat the two leaves
+as misuse, and who removes the extra leaf are not specified yet.
 
 ## Keeping it out of sight
 
@@ -771,8 +774,9 @@ Devices in a device group are to add each other to chats only with private KeyPa
 device hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication.
 The Welcome for an add that uses one reaches its sibling only inside the device group ([Sibling
 Welcomes](#sibling-welcomes)). The device that approves a link adds the new device to its chats this way ([Adding the
-new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling to a group it creates is not
-specified yet; until it is, the founding exemption still applies ([Security considerations](#security-considerations)).
+new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling in the Commit that creates a group
+is not specified yet; until it is, the founding exemption still applies ([Security
+considerations](#security-considerations)).
 
 ### Issuing
 
@@ -1141,8 +1145,8 @@ status, and removing a device after a longer absence, are not specified yet.
 - Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
   joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
   sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. Until when a
-  device adds a sibling to a group it creates is specified, a device that creates a group may still add its account's
-  published KeyPackages under the founding exemption in
+  device adds a sibling in the Commit that creates a group is specified, a device that creates a group may still add
+  its account's published KeyPackages there under the founding exemption in
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), including one
   that someone holding that key published.
 - A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
