@@ -16,7 +16,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-01: Writing backups (draft)
 
 [#487](https://github.com/marmot-protocol/marmot/pull/487) changes
-[features/account-sync.md](./features/account-sync.md) and [transports/nostr.md](./transports/nostr.md).
+[features/account-sync.md](./features/account-sync.md), [transports/nostr.md](./transports/nostr.md),
+[foundation/registries.md](./foundation/registries.md) and
+[security-considerations.md](./security-considerations.md).
 
 - The device the account entry names as `backup_writer`, or a device that trusts no device group under the key it
   keeps, writes the account's backup once the newest one its backup pointer lists is a day old. A backup is Blossom
@@ -32,9 +34,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   to hold an unexpired stretch of some chat. A writer condemns the blobs of each backup a pointer it builds drops, and
   of each backup it abandons, and deletes a condemned blob with BUD-02 an hour later at the earliest, only while the
   pointer it fetched in that pass lists no backup the blob belongs to. Backups under other words are never deleted.
-- A device that is not the writer takes over, through the account entry's compare-and-set, at once when the writer has
-  left the roster or is `leaving`, and when the writer has listed nothing for 7 days since this device first saw it
-  named for the key.
+- A device that is not the writer takes over, through the account entry's compare-and-set, at once when no writer is
+  named or the writer has left the roster or is `leaving`, and when the writer has listed nothing for 7 days since this
+  device first saw it named for the key.
+- Kind `30078` joins the reused standard kinds in the registry, and SC-021 names backups' residual risk.
 
 ## 2026-10-31: A device signs out through its siblings
 

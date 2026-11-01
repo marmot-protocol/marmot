@@ -487,12 +487,14 @@ signed by the account identity. It has exactly one tag, `d`, whose value is the 
 lowercase hexadecimal characters, and its `content` is the pointer's encrypted content. Nothing in the event says it
 is a Marmot backup pointer: NIP-78 suggests a dedicated kind for a format other clients read, but a dedicated kind
 would tell every relay that the account keeps Marmot backups. The address and the content derive from the recovery
-key's public half, so only a device that holds it finds the pointer or reads it.
+key's public half, so only a device that holds it computes the address and reads the content. Anyone who asks relays
+for the account's kind `30078` events still sees the event, its address and its length.
 
 The writer publishes the pointer to the account's NIP-65 (kind `10002`) write relays, as it does KeyPackage events
 ("Publish targets and acknowledgements"). A pointer is accepted once one relay acknowledges it. Each new pointer under
-an address replaces the last, so the writer gives it a `created_at` later than any pointer it published before under
-that address.
+an address replaces the last, so the writer gives it a `created_at` later than the pointer it fetched to build it and
+than any pointer it published before under that address. A pointer dated no later than the fetched one would lose to
+it, for example after a takeover by a device whose clock is behind.
 
 A device fetches the pointer with a filter of kind `30078`, author equal to the account and `#d` equal to the address,
 from the same relays. Of the versions it receives, the one with the largest `created_at` stands, and of two with the

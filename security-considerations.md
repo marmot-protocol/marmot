@@ -721,10 +721,14 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Mitigations:** Follow protocol release conditions and use appropriate host/backup protection. Treat restore
   as a recovery boundary and retain uncertain publication facts consistently.
 - **Residual risk:** No SQLite setting, file deletion, or removal event guarantees erasure from snapshots,
-  storage hardware or hostile recipients.
+  storage hardware or hostile recipients. Account backups keep each chat's history on Blossom servers, sealed to the
+  recovery words, until a writer deletes them or the servers expire them; deletes are best effort, backups under
+  replaced words are never deleted, and anyone holding the recovery key's public half, a removed device included,
+  reads which chats and stretches each backup holds.
 - **Normative owners:** [Retained history](protocol-core/retained-history.md#retained-cryptographic-material),
   [Durability](protocol-core/durability.md#recoverable-protocol-facts), [Message
-  retention](app-components/message-retention-v1.md#validation).
+  retention](app-components/message-retention-v1.md#validation), [Writing
+  backups](features/account-sync.md#writing-backups).
 - **Verification status:** Unverified — candidate check: inventory backup contents and replay restored work
   against durability rules; physical erasure and backup confidentiality need platform evidence.
 

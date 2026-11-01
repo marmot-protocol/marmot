@@ -655,7 +655,7 @@ without whitespace, with its members in the order shown.
 | --------- | ----- |
 | `from`    | the bundle's `from` |
 | `to`      | the bundle's `to` |
-| `expires` | when every event in the bundle has expired: the latest `created_at` plus `retention` of its events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
 | `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
 | `size`    | the blob's length in bytes, from 1 to 8,388,624 |
 | `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
@@ -672,6 +672,8 @@ the index key with the 22 ASCII bytes of `marmot backup index v1` as associated 
 | `id`    | the backup id, as 32 lowercase hexadecimal characters |
 | `key`   | the archive key sealed to the recovery key, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
 | `index` | the encrypted index, in standard base64 with padding |
+
+A writer whose head would be longer writes no backup.
 
 `key` is the archive key sealed to the recovery key ([Recovery key](#recovery-key)) with the context
 
@@ -691,9 +693,11 @@ from another backup, or from another place in this one, does not decrypt.
 
 **Reading.** Anyone holding the public half derives the index key and reads the index: which chats a backup holds,
 their stretches, and where every blob is. Only the words open the archive key, and with it any blob. A device that
-reads a head or an index drops it if it does not decrypt or breaks the encoding above other than in layout, as a
-bundle's receiver does ([History bundles](#history-bundles)), and drops a head whose `id` is not the id its pointer
-entry names.
+fetches a head or a blob drops it unless its SHA-256 and length match its locator, as a history delivery's receiver
+does ([History deliveries](#history-deliveries)). It drops a head that breaks the encoding above other than in layout,
+whose `id` is not the id its pointer entry names, or whose index does not decrypt or breaks the encoding above other
+than in layout, as a bundle's receiver does ([History bundles](#history-bundles)). The head itself is not encrypted:
+its `key` is sealed and its `index` encrypted.
 
 ### Backup pointer
 
@@ -737,7 +741,8 @@ pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
 
 **The writer.** The device the account entry names as `backup_writer` writes the account's backups under its
 `recovery_public_key` ([The account's recovery key](#the-accounts-recovery-key)). A device that trusts no device group
-writes them under the key it keeps. No other device writes backups, and none does while backups are off.
+writes them under the key it keeps. No other device writes backups, and none does while backups are off. Under a key
+nothing can be sealed to ([Recovery key](#recovery-key)), the writer writes no backup.
 
 **When.** A backup is due once the newest backup the pointer lists is at least 24 hours old by its `written_at`, or the
 pointer lists none. The writer writes a due backup when it finds it convenient, such as on Wi-Fi and charging for a
@@ -758,17 +763,22 @@ id no bundle can name is left out.
    with the [BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation, as for a history
    delivery ([History deliveries](#history-deliveries), "Blossom"). Before it uploads a blob, it records the blob and
    the server, so a backup that never counts has its blobs deleted (below).
-3. It builds the new pointer: the new backup and the backups the fetched pointer lists, kept by retention (below).
+3. It builds the new pointer: the new backup and the other backups the fetched pointer lists, kept by retention
+   (below).
 4. Before it publishes, it condemns the blobs of each listed backup the new pointer drops (below).
 5. It checks that it is still the writer under the same key. If not, it abandons the backup and publishes nothing.
 6. It publishes the pointer. The backup counts only once a relay accepts it. Until one does, nothing is dropped, and
    the device publishes the same backup again in a later pass, building the pointer again from a new fetch, without
-   uploading it again. A backup no relay accepted within 24 hours of its `written_at` is abandoned.
+   uploading it again. A backup the fetched pointer already lists counts, since a relay accepted it though its
+   acknowledgement was lost, and the pass publishes nothing for it. A backup no relay accepted within 24 hours of its
+   `written_at` is abandoned.
 
-A device does not keep the archive key: when a backup is cut short, by a restart or otherwise, it is abandoned, and the
-next one starts again.
+While the writer holds a backup that no relay has accepted and it has not abandoned, it publishes that backup again in
+place of writing a new one. A device does not keep the archive key: when a backup is cut short before its head is
+uploaded, by a restart or otherwise, it is abandoned, and the next one starts again.
 
-**Retention.** Of the new backup and the backups the fetched pointer lists, the new pointer keeps, newest first:
+**Retention.** Of the new backup and the backups the fetched pointer lists, ordered newest first by `written_at` and,
+of two written at the same time, the one with the greater id first, the new pointer keeps:
 
 - the newest two;
 - each older one whose head the device cannot fetch or read;
@@ -794,10 +804,12 @@ until their servers expire them.
 
 **Takeover.** While backups are on, a device of the device group that is not the writer:
 
-- takes over at once when `backup_writer` names a slot the roster does not list, or one whose status is `leaving`;
-- fetches the pointer at most daily, and takes over when 7 days have passed since both the newest `written_at` the
-  pointer lists and the time this device first saw the account entry name this writer for this key. The second time
-  keeps a device from taking over before a new writer's first backup.
+- takes over at once when `backup_writer` names no slot, a slot the roster does not list, or one whose status is
+  `leaving`;
+- fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have
+  passed since the time this device first saw the account entry name this writer for this key and, when the pointer
+  lists any backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a
+  new writer's first backup.
 
 It takes over with a roster update that sets the account entry to the key it read with itself as `backup_writer`,
 under the compare-and-set rule of [The account's recovery key](#the-accounts-recovery-key), so of two devices that take
@@ -885,14 +897,17 @@ so no device moves it back; a later position moves it again once that one is fur
   a removed one included. Only the words open a bundle, the small state or the archive key. A device MUST NOT publish
   a group id it learned from an index, as for small state.
 - Only the account signs a pointer, but any device of the account can, a stolen or former one included while it holds
-  the account's signing key. It can publish a pointer that drops backups, so later writers stop listing them and their
-  blobs stay until their servers expire them; no device deletes a backup it did not condemn itself. It can also list a
-  backup it wrote, whose history a restore would import as it imports a sibling's.
+  the account's signing key. It can publish a pointer that drops backups, so later writers stop listing them. It can
+  also list a backup it wrote, whose history a restore would import as it imports a sibling's. Indexes and heads are
+  not authenticated to their writer: one that also holds the public half can list a backup whose index claims the
+  stretches real backups hold, so a writer's retention drops those and deletes their blobs. The account's signing key
+  alone already lets its holder delete the account's blobs from the servers.
 - Any device of the account can make itself the backup writer by taking over, including a stolen linked device until
   it is removed; it then decides what backups hold. A takeover needs no proof that the writer is gone: a device that
   claims the writer is quiet decides that itself.
 - A Blossom server that holds a backup's blobs learns what the upload's and the delete's authorization say of the
-  account, each blob's size, and when it was uploaded, fetched and deleted. A backup is written about once a day, so a
+  account, each blob's size, and when it was uploaded, fetched and deleted. It reads a head's backup id, which is
+  random. A backup is written about once a day, so a
   server sees a daily burst of uploads from the account, about as large as its history. It cannot open a blob, and it
   cannot read an index without the public half.
 - Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events

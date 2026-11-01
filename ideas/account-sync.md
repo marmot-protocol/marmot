@@ -47,14 +47,15 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 - **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
   As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
   because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
-- **A stolen nsec can find and replace the backup pointer, but can't open a backup.** The pointer is signed by and
-  encrypted to the account, so the nsec can list it, read it, and publish a new one. Reading it shows where the backups
-  are and which chats and stretches each holds, but not their content. Only the 12 words open a backup. A replaced
+- **A stolen nsec can replace the backup pointer, but can't open a backup.** The pointer is signed by the account and
+  encrypted under a key the recovery key's public half derives, so the nsec can list the account's app-data events and
+  publish a new pointer, but not read one. The public half reads it, and shows where the backups are and which chats
+  and stretches each holds, but not their content. Only the 12 words open a backup. A replaced
   pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the recovery key's
   public half: a current or former linked device, the same circle as a stolen device.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
-  can't open the writer's backup to read chats it was never sent, and a removed device can't read backups written
-  after it left.
+  can't open the writer's backup to read chats it was never sent, and a removed device can't open backups written
+  after it left. Until the words change, it can still read their indexes: which chats and stretches they hold.
 - **Replacing the words doesn't take back old copies.** Someone who already has an old backup and the old words can
   still read that old backup. New backups are sealed to the new words only.
 - **Lose the recovery key and every device, and the backup is gone.** Nobody can read it, Alice included.
@@ -316,7 +317,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | --- | --- |
 | Backup frequency | daily |
 | Backup writer takeover | when the latest backup is more than 7 days old |
-| Backups kept | the latest 2, plus any that are the last to hold some messages; backups under replaced words are never deleted by a device |
+| Backups kept | the latest 2, plus any that are the last to hold some messages, at most 16; backups under replaced words are never deleted by a device |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 
 ## Left for later
