@@ -265,9 +265,9 @@ in.
   ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations") of
   one of the private KeyPackages the new device handed it ([Private KeyPackages](#private-keypackages)), and sends that
   Add's Welcome as a sibling Welcome ([Sibling Welcomes](#sibling-welcomes)). It MUST NOT add the new device there with
-  a KeyPackage the new device published. The founding exemption
-  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules") never covers the
-  new device: no device adds it by a KeyPackage it published, in the Commit that creates a group or after it.
+  a KeyPackage the new device published. The account's devices do not use the founding exemption
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules") for the new
+  device: no device adds it to a chat by a KeyPackage it published, in the Commit that creates the chat or after it.
 - It does not add the new device to a chat that already holds it: one where a leaf of the account carries a device tag
   that reads as the new device's slot ([Matching leaves to devices](#matching-leaves-to-devices)), or has the new
   device's `tag_signature_key` as its signature key.
@@ -780,8 +780,8 @@ The Welcome for an add that uses one reaches its sibling only inside the device 
 Welcomes](#sibling-welcomes)). The device that approves a link adds the new device to its chats this way ([Adding the
 new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling in the Commit that creates a group
 is not specified yet. Until it is, the founding exemption still applies ([Security
-considerations](#security-considerations)), but never to a newly linked device ([Adding the new device to
-chats](#adding-the-new-device-to-chats)).
+considerations](#security-considerations)), but the account's devices do not use it for a newly linked device ([Adding
+the new device to chats](#adding-the-new-device-to-chats)).
 
 ### Issuing
 
@@ -1153,8 +1153,8 @@ status, and removing a device after a longer absence, are not specified yet.
   device adds a sibling in the Commit that creates a group is specified, a device that creates a group may still add
   its account's published KeyPackages there under the founding exemption in
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), including one
-  that someone holding that key published. The exemption never covers a newly linked device ([Adding the new device to
-  chats](#adding-the-new-device-to-chats)).
+  that someone holding that key published. The account's devices do not use it for a newly linked device ([Adding the
+  new device to chats](#adding-the-new-device-to-chats)).
 - A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
   another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
 - Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records
