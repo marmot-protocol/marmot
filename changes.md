@@ -34,8 +34,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   `removed`. What the cleanup removed stays removed if a later branch lists the slot again.
 - When a failed link's undo takes the entry of a device the user decided to remove, the deciding device commits the
   `removed` record alone, with the decision's time and the key it most recently applied a roster state listing for the
-  slot, while the decision is less than 30 days old. That slot is then `removed`, not a sign-in again, and its device
-  comes back only as a new slot. A `removed` record's `rejected_at` is when the removal was decided.
+  slot, while the decision is less than 30 days old, once its settled roster lists the slot neither as a device nor as a
+  rejected slot; with no key kept for the slot, it makes none. That slot is then `removed`, not a sign-in again, and its
+  device comes back only as a new slot. A `removed` record's `rejected_at` is when the removal was decided; a `not_me`
+  record's is unchanged.
 
 ## 2026-10-31: A device signs out through its siblings
 
