@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-01: Writing backups (draft)
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#487](https://github.com/marmot-protocol/marmot/pull/487) changes
 [features/account-sync.md](./features/account-sync.md) and [transports/nostr.md](./transports/nostr.md).
 
 - The device the account entry names as `backup_writer`, or a device that trusts no device group under the key it
