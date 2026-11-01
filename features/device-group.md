@@ -466,17 +466,20 @@ flight or settling only delays the removal. It also waits while the entry has no
 selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
 alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and the
-`tag_signature_key` it most recently applied a roster state listing for the slot ([Devices the roster no longer
-lists](#devices-the-roster-no-longer-lists)); if it keeps none, it makes no record. It does so once its state for the
-device group is settled and lists the slot neither as a device nor as a rejected slot, only while it can commit there,
-and only while the decision is less than 30 days old, since a record older than that is dropped at the next pass that
-drops old `removed` records. It SHOULD NOT make that record again after another device drops it. Devices that never
-applied a roster listing the device's key learn it from the record, while it lasts: a record made long after the
-decision lasts only until 30 days after the decision, like any `removed` record. When the removal's Commit fails, or
-branch selection drops the removal, even after the `removed` record has been dropped, the roster lists the slot again
-and the device commits the removal again. A removed device comes back only as a new slot. A removal committed again
-keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next pass that drops
-old `removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+newest `tag_signature_key` it keeps for the slot ([Devices the roster no longer
+lists](#devices-the-roster-no-longer-lists)): the key it most recently applied a roster state listing for the slot,
+where a state that lists the slot with no key does not count. If it keeps none, it makes no record. It does so once its
+state for the device group is settled and lists the slot neither as a device nor as a rejected slot, only while it can
+commit there, and only while the decision is less than 30 days old, since a record older than that is dropped at the
+next pass that drops old `removed` records. Once a roster state it applied has held the record, it SHOULD NOT make it
+again, whether another device dropped the record or branch selection did; the devices that applied that state keep the
+key it carried. Devices that never applied a roster listing the device's key learn it from the record, while it lasts: a
+record made long after the decision lasts only until 30 days after the decision, like any `removed` record. When a
+removal Commit that took the device's entry fails, or branch selection drops it, even after its `removed` record has
+been dropped, the roster lists the slot again and the device commits the removal again. A removed device comes back only
+as a new slot. A removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the
+record goes at the next pass that drops old `removed` records
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
 
 ### The removed device's slot
 
@@ -509,9 +512,11 @@ a `removed` record, across restarts, for 30 days by its own clock from the last 
 listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
 time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
 catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four it most recently
-applied a roster state listing: a device sets its own key once for each link of its slot, so only a device misusing the
-roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security considerations") lists
-more. What it keeps changes nothing about how it validates, applies or selects roster states.
+applied a roster state listing. A device sets its own key once for each link of its slot, so a slot lists more only when
+it is linked more than four times within 30 days or a device misuses the roster
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security considerations"); a leaf
+tagged under a key a device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it
+validates, applies or selects roster states.
 
 A slot other than the device's own is gone for it:
 
@@ -555,8 +560,8 @@ committed it, so the removed device does not tell its user the account was remov
 
 The removed device's leaves stay readable as its old slot while the roster records it as `removed`
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"), and, for a device that keeps
-its key, for 30 days after the last roster state that device applied listing it. A leaf left in a group after that
-reads as unclaimed.
+that slot's tag signature key, for 30 days after the last roster state that device applied listing the key. A leaf left
+in a group after that reads as unclaimed.
 
 ### Its private KeyPackages
 

@@ -127,7 +127,7 @@ Each device the account has linked has one `DeviceEntryV1`:
 removal was decided ([../features/device-group.md](../features/device-group.md), "The removal Commit"). A `removed`
 record keeps the `tag_signature_key` the device's entry had, if it had one, so that the account's devices can still
 recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A record made after a failed
-link's undo took the entry keeps the key a roster state listed for it
+link's undo took the entry keeps the newest key the recording device keeps for the slot
 ([../features/device-group.md](../features/device-group.md), "The removal Commit"). A `not_me` record has none: a
 rejected sign-in never had an entry. When a device writes a `not_me` record, and what it then stops asking about, is in
 [../features/device-group.md](../features/device-group.md) ("New sign-ins"), and what a rejection does beyond that is in
@@ -140,7 +140,7 @@ bounded recognition aid, not a guarantee. A KeyPackage can stay valid for up to 
 stale one when an account has no fresh candidate ([../foundation/key-packages.md](../foundation/key-packages.md),
 "Selection and lifecycle"), so the removed installation can still join a group after its record is gone. Its leaf then
 reads as unclaimed rather than as the removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"), except
-in the cleanup of a device that still keeps its tag signature key
+in the cleanup of a device that still keeps that slot's tag signature key
 ([../features/device-group.md](../features/device-group.md), "Devices the roster no longer lists").
 
 `AccountEntryV1` holds the account's backup settings ([../features/account-sync.md](../features/account-sync.md),
