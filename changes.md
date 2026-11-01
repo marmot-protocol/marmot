@@ -40,6 +40,33 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - The backup pointer's address is the second named exception to delivery addresses not derived from keys. Kind `30078`
   joins the reused standard kinds in the registry, and SC-020, SC-021 and SC-035 name backups.
 
+## 2026-11-01: The approving device adds a new device to its chats
+
+[#485](https://github.com/marmot-protocol/marmot/pull/485) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md).
+
+- The link's Commit sets the new device's entry status to `active`.
+- Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device
+  to the chats it is in while it is still adding, including ones it joins or creates after the link, while the roster
+  lists the new device as `active` with "add to all my chats" on. A chat it creates gets the new device by a
+  same-account Add after the creating Commit. No other device adds the new device, under the link, to a chat the
+  approving device is in.
+- Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
+  goes out as a sibling Welcome. The account's devices do not use the founding exemption for the new device: no device
+  adds it to a chat by a KeyPackage it published, in the Commit that creates the chat or after it.
+- A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
+  `tag_signature_key`, gets no Add. A leaf from before the link whose signature key is not that key is not found, so
+  such a chat can get a second leaf for the device, which counts toward `max_leaves_per_account` while it stays.
+  Avoiding that, whether the two leaves are then treated as key misuse, and who removes the extra leaf are not
+  specified yet.
+- A chat that does not require `0x800d`, names no relay list a sibling Welcome may carry, already holds
+  `max_leaves_per_account` leaves of the account, or has requirements the new device's KeyPackages do not meet is
+  skipped. The approving device removes no leaf to make room and adds the new device there in no other way; it adds it
+  if the chat can take the Add later, while it is still adding.
+- The approving device asks for as many private KeyPackages as the Adds need, and MAY spread the Adds over time.
+  Turning "add to all my chats" off stops further Adds and removes the device from no chat.
+
 ## 2026-10-31: A device signs out through its siblings
 
 [#484](https://github.com/marmot-protocol/marmot/pull/484) changes
