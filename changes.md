@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
-[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[#488](https://github.com/marmot-protocol/marmot/pull/488) changes
 [features/device-group.md](./features/device-group.md).
 
 - The approving device adds the new device to no chat while the new device's entry has no `tag_signature_key`, as
