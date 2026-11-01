@@ -22,8 +22,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   when branch selection drops the key after the link is made, since it cannot tell which chats already hold the device.
   It holds back every Add until the key is back, including one to a chat it creates meanwhile.
 - It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's
-  slot, even if branch selection later drops that record and the roster lists the device again. It keeps that fact
-  across restarts for as long as it goes on adding the device.
+  slot, even if branch selection later drops that record and the roster lists the device again. It keeps that fact as
+  long as it keeps the key that record carried, so a later link of the same slot gets no Add from it meanwhile.
 
 ## 2026-11-01: Writing backups (draft)
 
