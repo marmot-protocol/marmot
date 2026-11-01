@@ -484,11 +484,12 @@ lookup inputs; it does not make `D` a fallback destination.
 An account's backup pointer ([../features/account-sync.md](../features/account-sync.md#backup-pointer)) is a
 [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) application-data event: kind `30078`, authored and
 signed by the account identity. It has exactly one tag, `d`, whose value is the pointer's 32-byte address as 64
-lowercase hexadecimal characters, and its `content` is the pointer's encrypted content. Nothing in the event says it
-is a Marmot backup pointer: NIP-78 suggests a dedicated kind for a format other clients read, but a dedicated kind
-would tell every relay that the account keeps Marmot backups. The address and the content derive from the recovery
-key's public half, so only a device that holds it computes the address and reads the content. Anyone who asks relays
-for the account's kind `30078` events still sees the event, its address and its length.
+lowercase hexadecimal characters, and its `content` is the pointer's encrypted content. Nothing in the event says it is
+a Marmot backup pointer: NIP-78 suggests a dedicated kind for a format other clients read, but a dedicated kind would
+tell every relay that the account keeps Marmot backups. The address and the content derive from the recovery key's
+public half, as that section defines them; this document only carries them. Only a device that holds that half computes
+the address and reads the content. Anyone who asks relays for the account's kind `30078` events still sees the event,
+its address and its length.
 
 The writer publishes the pointer to the account's NIP-65 (kind `10002`) write relays, as it does KeyPackage events
 ("Publish targets and acknowledgements"). A pointer is accepted once one relay acknowledges it. Each new pointer under
@@ -501,8 +502,10 @@ from the same relays. Of the versions it receives, the one with the largest `cre
 same `created_at`, the one with the lowest `id`, as NIP-01 orders replaceable events. A device builds a new pointer only
 from a fetch that at least one relay answered in full, ending its stored events (`EOSE`) before any limit cut it short;
 a fetch that no relay finishes is not an empty pointer, and a device that took it for one would drop every listed
-backup. A relay that serves kind `30078` only to its author, as NIP-78 advises, answers only a device that authenticates
-as the account with [NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md).
+backup. The fetch a device builds a pointer from carries no `since`, even where it resubscribes ("Subscriptions and
+fetch rules"), so a relay that answers in full returns the pointer if it holds one. A relay that serves kind `30078`
+only to its author, as NIP-78 advises, answers only a device that authenticates as the account with
+[NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md).
 
 ## Subscriptions and fetch rules
 

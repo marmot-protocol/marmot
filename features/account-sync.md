@@ -838,6 +838,8 @@ over at once, one stands. A device that trusts no device group never takes over.
   later one, and the other writer's backup is not listed; its blobs stay until their server expires them.
 - A relay that holds a newer pointer but does not answer the fetch can let a device delete blobs that pointer lists.
   The hour between condemning and deleting narrows that window; it does not close it.
+- Replacing every write relay with relays that never received the pointer reads as no pointer: the next pointer lists
+  only the new backup, and the older backups, though not deleted, are no longer listed.
 - Deletes are best effort: a server that refuses one keeps the blob until it expires it.
 - New words, turning backups off, or a device that kept a key joining another device's group leave the old pointer and
   its backups where they are. No device deletes them.

@@ -106,7 +106,8 @@ computes the address and reads the pointer, and new words move it. Anyone can st
 address. It addresses the account's own records, never a group or a conversation.
 
 Examples of delivery addresses include a Nostr group `h` tag, an account inbox, a relay list, a topic, or an endpoint
-set. The owning transport document defines how those addresses are generated, updated, validated, and used.
+set. The owning transport document defines how those addresses are generated, updated, validated, and used, except the
+backup pointer's address, which the feature that owns the pointer defines and the transport only carries.
 
 ## Application content
 

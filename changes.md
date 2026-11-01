@@ -26,10 +26,10 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   that holds the archive key sealed to the recovery key and an index of the blobs. Every key derives from a fresh
   archive key or from the recovery key's public half, as "Backup archives" gives it, with test vectors.
 - The account's backup pointer lists the backups kept under one recovery key, at most 16, newest first. It is a kind
-  `30078` event signed by the account, at a `d` address the public half derives, with content encrypted under a key
-  the public half derives, published to the account's NIP-65 write relays. A backup counts only once a relay accepts
-  the pointer that lists it; until then the writer publishes it again for up to a day. A writer builds a pointer only
-  from a fetch that a relay answered in full.
+  `30078` event signed by the account, at a `d` address the public half derives, with content encrypted under a key the
+  public half derives, published to the account's NIP-65 write relays. A backup counts only once a relay accepts the
+  pointer that lists it; until then the writer publishes it again for up to a day. A writer builds a pointer only from a
+  fetch without `since` that a relay answered in full.
 - Retention keeps the newest two backups, any older one whose index cannot be read, and any older one that is the last
   to hold an unexpired stretch of some chat. A writer condemns the blobs of each backup a pointer it builds drops, and
   of each backup it abandons, and deletes a condemned blob with BUD-02 an hour later at the earliest, only while the
