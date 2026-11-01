@@ -284,9 +284,9 @@ in.
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"), so it cannot tell which
   chats already hold the device. It holds back every Add until the key is back, including one to a chat it creates
   meanwhile.
-- It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's slot,
-  even if branch selection later drops that record and the roster lists the device again. It keeps that fact, across
-  restarts, as long as it keeps the key that record carried
+- It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's
+  slot, even if branch selection later drops that record and the roster lists the device again. It keeps that fact,
+  across restarts, as long as it keeps the key that record carried
   ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). So a later link of the same slot, which
   the user can make once the record is gone ([The removal Commit](#the-removal-commit)), gets no Add from it while it
   keeps that key.
