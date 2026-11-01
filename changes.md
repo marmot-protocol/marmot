@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-01: Cleanup after every device the roster stops listing
 
-[#PR](https://github.com/marmot-protocol/marmot/pull/PR) changes
+[#486](https://github.com/marmot-protocol/marmot/pull/486) changes
 [features/device-group.md](./features/device-group.md) and
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md).
 
