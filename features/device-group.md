@@ -224,13 +224,14 @@ slot the roster records as `removed` holds no device entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
 user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
 removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again; a later link
-of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, its slot
-is not a sign-in again: while the decision is less than 30 days old, the deciding device records the slot as `removed`
-([The removal Commit](#the-removal-commit)), and a removed device comes back only as a new slot, as the decision already
-kept it from being linked again. The new device is not told; a pairing request from that slot is refused as a rejected
-slot ("Before answering"). Until a later link of the slot, every device that applied the new device's first Commit
-cleans up after it as after a removed device: the slot is gone for it ([Devices the roster no longer
-lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked carry no tag and stay.
+of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, the
+deciding device records the slot as `removed` while the decision is less than 30 days old and it keeps a key for the
+slot ([The removal Commit](#the-removal-commit)). The slot is then not a sign-in again, and a removed device comes back
+only as a new slot, as the decision already kept it from being linked again. The new device is not told; a pairing
+request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the slot, every device
+that applied the new device's first Commit cleans up after it as after a removed device: the slot is gone for it
+([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was
+linked carry no tag and stay.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
