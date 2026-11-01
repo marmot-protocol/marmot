@@ -471,8 +471,9 @@ alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_a
 If it keeps no key for the slot, it makes no record. It does so once its state for the device group is settled and lists
 the slot neither as a device nor as a rejected slot, only while it can commit there, and only while the decision is less
 than 30 days old, since a record older than that is dropped at the next pass that drops old `removed` records. Once a
-roster state it applied has held the record, it SHOULD NOT make it again, whether another device dropped the record or
-branch selection did; the devices that applied that state keep the key it carried. Until then, a record whose Commit
+roster state it applied has held the record, it SHOULD NOT make that lone record again, whether another device dropped
+the record or branch selection did; the devices that applied that state keep the key it carried. A removal Commit it
+makes again because the roster lists the slot again carries the record as before. Until then, a record whose Commit
 failed or went nowhere is made again. Once the record is gone, the slot reads as a sign-in again, as after any `removed`
 record goes; if the user links it again, the deciding device removes it again, since its decision stands. Devices that
 never applied a roster listing the device's key learn it from the record, while it lasts: a record made long after the
@@ -524,6 +525,8 @@ A slot other than the device's own is gone for it:
 - while its trusted roster records the slot as `removed`, read by the key that record keeps; and
 - while its state for the device group is settled and its roster lists no device in the slot, if it keeps a key for the
   slot, read by every key it keeps for the slot.
+
+A slot both cover is read by every key either names.
 
 The second covers a `removed` record dropped before the device acted on it, including while the device was away, a link
 that failed after the new device set its key ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made
