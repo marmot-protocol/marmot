@@ -17,7 +17,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 [#487](https://github.com/marmot-protocol/marmot/pull/487) changes
 [features/account-sync.md](./features/account-sync.md), [transports/nostr.md](./transports/nostr.md),
-[foundation/registries.md](./foundation/registries.md) and
+[foundation/identity.md](./foundation/identity.md), [foundation/registries.md](./foundation/registries.md) and
 [security-considerations.md](./security-considerations.md).
 
 - The device the account entry names as `backup_writer`, or a device that trusts no device group under the key it
@@ -37,7 +37,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device that is not the writer takes over, through the account entry's compare-and-set, at once when no writer is
   named or the writer has left the roster or is `leaving`, and when the writer has listed nothing for 7 days since this
   device first saw it named for the key.
-- Kind `30078` joins the reused standard kinds in the registry, and SC-021 names backups' residual risk.
+- The backup pointer's address is the second named exception to delivery addresses not derived from keys. Kind `30078`
+  joins the reused standard kinds in the registry, and SC-020, SC-021 and SC-035 name backups.
 
 ## 2026-10-31: A device signs out through its siblings
 

@@ -216,14 +216,14 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **One named writer.** The roster names a backup writer: by default the device where Alice turned backups on. She can
   change it on the Devices screen.
 - **Takeover.** If the writer's latest backup is more than 7 days old, any other device takes over with one roster
-  commit, and at once if the writer is leaving. Convergence settles it if two try at once. A device counts the week
-  from when it first saw that writer named too, so a writer just named gets a week to write its first backup.
+  commit, and at once if the writer is leaving or gone. Convergence settles it if two try at once. A device counts the
+  week from when it first saw that writer named too, so a writer just named gets a week to write its first backup.
 - **Daily**, when the device finds it convenient, for example on Wi-Fi and charging for a phone.
 - **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
   public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
 - **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
   previous backups is deleted, so the latest two are always kept, plus any kept so no history is lost (below). Backups
-  go to a Blossom server or to storage Alice chooses, and never contain MLS state or attachment files.
+  go to a Blossom server, and never contain MLS state or attachment files.
 - **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
   and a restore drops any that have expired since.
 - **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
@@ -232,8 +232,8 @@ linked with **Add to all my chats** off isn't in her older chats.
   lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it. That covers a
   whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat, after a
   takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages are
-  only in a backup from June 3." It is deleted only if Alice chooses to, or once newer backups hold those messages
-  again. Expired messages don't count.
+  only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
+  Expired messages don't count.
 - **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, listing
   every backup still kept under her current words and where each one's head is. It is an addressable event signed by
   her account, not a gift wrap: each new pointer replaces the last, and a device finds it with one query to her
@@ -316,7 +316,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Number | Value |
 | --- | --- |
 | Backup frequency | daily |
-| Backup writer takeover | when the latest backup is more than 7 days old |
+| Backup writer takeover | when the latest backup is more than 7 days old, or at once when the writer is leaving or gone |
 | Backups kept | the latest 2, plus any that are the last to hold some messages, at most 16; backups under replaced words are never deleted by a device |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 

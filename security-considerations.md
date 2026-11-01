@@ -703,7 +703,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   universal account-key revocation/rotation recovery flow.
 - **Normative owners:** [Identity](foundation/identity.md#account-identity-proof), [Account proof
   v2](app-components/account-identity-proof-v2.md), [Account
-  devices](app-components/account-devices-v1.md#sender-rules).
+  devices](app-components/account-devices-v1.md#sender-rules),
+  [Backups](features/account-sync.md#security-considerations).
 - **Verification status:** Unverified — candidate check: check that account-key possession alone is not
   described as approved-device proof, and document the distinct recovery authorities rather than assuming a leaf
   update repairs account theft.
@@ -727,8 +728,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   reads which chats and stretches each backup holds.
 - **Normative owners:** [Retained history](protocol-core/retained-history.md#retained-cryptographic-material),
   [Durability](protocol-core/durability.md#recoverable-protocol-facts), [Message
-  retention](app-components/message-retention-v1.md#validation), [Writing
-  backups](features/account-sync.md#writing-backups).
+  retention](app-components/message-retention-v1.md#validation), [Backups](features/account-sync.md#backups).
 - **Verification status:** Unverified — candidate check: inventory backup contents and replay restored work
   against durability rules; physical erasure and backup confidentiality need platform evidence.
 
@@ -1007,7 +1007,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Residual risk:** Hashing ciphertext does not prevent repeated-object or IP/timing correlation; an insider or
   stolen media key can reveal plaintext.
 - **Normative owners:** [Encrypted media v2](features/encrypted-media.md#validation), [Group
-  image](app-components/group-blossom-image-v1.md#image-bytes).
+  image](app-components/group-blossom-image-v1.md#image-bytes), [Backups](features/account-sync.md#writing-backups).
 - **Verification status:** Unverified — candidate check: replace, suppress and correlate blob responses in a
   declared observer model; functional hash checks are not a privacy proof.
 

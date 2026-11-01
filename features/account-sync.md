@@ -614,9 +614,10 @@ index key       = HKDF-Expand(index prk, info = backup id, L = 32)
 ```
 
 `pk` is the 32-byte public half the words derive ([Recovery key](#recovery-key)). The archive key and the id are fresh
-for each backup, so each key encrypts one value only, and every encryption below uses ChaCha20-Poly1305
-([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)) with a nonce of 12 zero bytes. Test vectors, for an archive key
-of 32 bytes `01`, the public half of the first recovery-key vector, and a backup id of 16 bytes `02`:
+for each backup, so each key encrypts one value only, and every encryption below other than the archive key's seal
+uses ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)) with a nonce of 12 zero bytes. Test
+vectors, for an archive key of `0x01` repeated 32 times, the public half of the first recovery-key vector, and a
+backup id of `0x02` repeated 16 times:
 
 ```text
 blob key 0:      b3491be68bcd1393f68892cf51e46650f231cd91bf118e0a62a7cfa974e51a73
@@ -644,7 +645,7 @@ without whitespace, with its members in the order shown.
 | `written_at`  | when the writer started the backup, in seconds since the Unix epoch |
 | `writer`      | the writer's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
 | `small_state` | the small-state blob's locator, below; absent when the backup has none |
-| `chats`       | one object below for each chat the backup holds, each chat once |
+| `chats`       | one object below for each chat the backup holds, each chat once, in any order |
 
 | Member  | Value |
 | ------- | ----- |
@@ -655,7 +656,7 @@ without whitespace, with its members in the order shown.
 | --------- | ----- |
 | `from`    | the bundle's `from` |
 | `to`      | the bundle's `to` |
-| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, at most 9007199254740991; absent when an event's `retention` is `0` or it has none, so the blob never expires |
 | `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
 | `size`    | the blob's length in bytes, from 1 to 8,388,624 |
 | `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
@@ -692,12 +693,13 @@ from another backup leaves the archive key sealed. Blob keys are derived per bac
 from another backup, or from another place in this one, does not decrypt.
 
 **Reading.** Anyone holding the public half derives the index key and reads the index: which chats a backup holds,
-their stretches, and where every blob is. Only the words open the archive key, and with it any blob. A device that
-fetches a head or a blob drops it unless its SHA-256 and length match its locator, as a history delivery's receiver
-does ([History deliveries](#history-deliveries)). It drops a head that breaks the encoding above other than in layout,
-whose `id` is not the id its pointer entry names, or whose index does not decrypt or breaks the encoding above other
-than in layout, as a bundle's receiver does ([History bundles](#history-bundles)). The head itself is not encrypted:
-its `key` is sealed and its `index` encrypted.
+their stretches, and where every blob is. Only the words open the archive key, and with it any blob. A device
+fetches a head or a blob from its locator's server, reading no more than the locator's `size`, and drops it unless its
+SHA-256 and length match its locator, as a history delivery's receiver fetches and checks a blob
+([History deliveries](#history-deliveries), "Blossom"). It drops a head that breaks the encoding above other than in
+layout, whose `id` is not the id its pointer entry names, or whose index does not decrypt or breaks the encoding above
+other than in layout, as a bundle's receiver does ([History bundles](#history-bundles)). The head itself is not
+encrypted: its `key` is sealed and its `index` encrypted.
 
 ### Backup pointer
 
@@ -714,7 +716,9 @@ most 16 entries, newest first by `written_at`, each id once:
 | `written_at` | the index's `written_at` |
 | `head`       | the head's locator, as the small-state blob's is in the index |
 
-A pointer's address and the key its content is encrypted under derive from the public half:
+A pointer's address and the key its content is encrypted under derive from the public half, an exception to the rule
+that delivery addresses are not derived from keys ([../foundation/identity.md](../foundation/identity.md), "Delivery
+addressing is separate"):
 
 ```text
 pointer prk = HKDF-Extract(salt = "marmot backup pointer v1", IKM = pk)
@@ -726,15 +730,17 @@ content     = base64(nonce || ChaCha20-Poly1305(pointer key, nonce = 12 zero byt
 `nonce` is 32 fresh bytes from a cryptographically secure random source for each pointer the writer encrypts, so
 each pointer key is used once. The associated data is the 24 ASCII bytes of `marmot backup pointer v1`, and `base64`
 is standard base64 with padding. The content is at most 57,344 bytes long, well under what a relay with default limits
-takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of 32 bytes `03`:
+takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of `0x03` repeated 32
+times:
 
 ```text
 address:     ca91082df78442521072c16b0ac389d309233ec3aaca978e900e0077f06c7c58
 pointer key: 6ff7b6daf27f4a3077211f77a649015e7b970dd3a181880df03248fffbb2829b
 ```
 
-A device drops a pointer whose content does not decrypt or breaks the encoding: more than 16 entries, an id listed
-twice, an entry listed before a newer one, or a head locator a backup may not name. The Nostr transport carries the
+A device drops a pointer whose content does not decrypt or breaks the encoding above other than in layout, as the
+index's reader does: among others, a `v` other than `1`, more than 16 entries, an id listed twice, an entry listed
+before a newer one, or a head locator that breaks the index's rules for a locator. The Nostr transport carries the
 pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
 
 ### Writing backups
@@ -751,7 +757,7 @@ phone. A writer that cannot write, for example with no Blossom server to upload 
 **A backup's content.** A backup holds every chat the writer holds other than its device group, each with the bundles
 [History bundles](#history-bundles) gives for it, and every small-state item the writer holds. The writer MAY bound how
 many bundles one chat takes; it then keeps the newest bundles and leaves the older history out. A chat whose MLS group
-id no bundle can name is left out.
+id no bundle can name, or for which History bundles gives no bundle, is left out.
 
 **Steps.** A device writes a backup in this order:
 
@@ -761,8 +767,10 @@ id no bundle can name is left out.
    ([Backup pointer](#backup-pointer)).
 2. It uploads each bundle blob, then the small-state blob, then the head, each to a Blossom server of its choosing
    with the [BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation, as for a history
-   delivery ([History deliveries](#history-deliveries), "Blossom"). Before it uploads a blob, it records the blob and
-   the server, so a backup that never counts has its blobs deleted (below).
+   delivery ([History deliveries](#history-deliveries), "Blossom"). It authorizes each upload, as each delete below,
+   with a [BUD-11](https://github.com/hzrd149/blossom/blob/master/buds/11.md) token signed by the account identity, so
+   a later writer can delete what an earlier one uploaded. Before it uploads a blob, it records the blob and the server,
+   so a backup that never counts has its blobs deleted (below).
 3. It builds the new pointer: the new backup and the other backups the fetched pointer lists, kept by retention
    (below).
 4. Before it publishes, it condemns the blobs of each listed backup the new pointer drops (below).
@@ -804,8 +812,8 @@ until their servers expire them.
 
 **Takeover.** While backups are on, a device of the device group that is not the writer:
 
-- takes over at once when `backup_writer` names no slot, a slot the roster does not list, or one whose status is
-  `leaving`;
+- takes over at once when `backup_writer` names no slot, a slot no device in the roster's `devices` holds, or one whose
+  status is `leaving`;
 - fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have
   passed since the time this device first saw the account entry name this writer for this key and, when the pointer
   lists any backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a

@@ -25,7 +25,7 @@ and deliberately.
 - Any new signed, hashed, replay-stored, equality-compared, or state-selecting byte surface MUST follow the Marmot
   binary profile in [`canonical-encoding.md`](canonical-encoding.md), or explicitly name the encoding it uses instead.
 - Never derive a delivery address from identity material (see [`identity.md`](identity.md), "Delivery addressing is
-  separate"). The account inbox is the one deliberate exception.
+  separate"). The account inbox and the account's backup pointer are the deliberate exceptions.
 - Keep transport specifics and darkmatter code names out of foundation; those belong in transport docs or
   [`../implementation-model.md`](../implementation-model.md).
 
