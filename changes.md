@@ -21,10 +21,13 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 - The link's Commit sets the new device's entry status to `active`.
 - Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device
-  to its chats, including ones it creates after the link, while the roster lists the new device as `active` with "add
-  to all my chats" on. No other device adds the new device, under the link, to a chat the approving device is in.
+  to the chats it is in while it is still adding, including ones it joins or creates after the link, while the roster
+  lists the new device as `active` with "add to all my chats" on. A chat it creates gets the new device by a
+  same-account Add after the creating Commit. No other device adds the new device, under the link, to a chat the
+  approving device is in.
 - Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
-  goes out as a sibling Welcome. A KeyPackage the new device published MUST NOT be used.
+  goes out as a sibling Welcome. A KeyPackage the new device published MUST NOT be used: the founding exemption never
+  covers the new device, in the Commit that creates a group or after it.
 - A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
   `tag_signature_key`, gets no Add. A leaf from before the link whose signature key is not that key is not found, so
   such a chat can get a second leaf for the device, which counts toward `max_leaves_per_account` while it stays.
