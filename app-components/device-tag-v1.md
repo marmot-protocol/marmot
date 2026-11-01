@@ -115,7 +115,8 @@ device's keys were misused.
 An unclaimed leaf is not evidence of anything by itself: a device's leaves from before it could tag, and the leaves of a
 sign-in nobody has linked, are unclaimed too. The account's devices neither warn about nor remove a leaf only because it
 is unclaimed ([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). What they do
-about a removed slot's leaves is in [../features/device-group.md](../features/device-group.md) ("Removing it from
+about the leaves of a removed slot, or of a slot the roster no longer lists, is in
+[../features/device-group.md](../features/device-group.md) ("Devices the roster no longer lists" and "Removing it from
 chats").
 What they do about a sibling missing from a group is not specified yet.
 
