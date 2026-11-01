@@ -190,13 +190,12 @@ approval decides which group survives.
 3. **The laptop brings the desktop in.** It already holds the desktop's private KeyPackages from their old group, so it
    adds the desktop to the surviving group with one of them, in a commit that also writes the desktop's roster entry.
    The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
-4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
-   rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why. If both groups had backups turned on, the surviving group's backup settings and recovery words are
-   used from then on. The absorbed group's backups are kept until the surviving group's backups hold the same
-   messages, and they still need the absorbed group's words, so Alice is told to keep those too
-   ([account-sync.md](./account-sync.md)). If the two groups together would have more
-   than 20 devices, Alice unchecks some before linking.
+4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot rejected
+   in either group stays rejected, and a device linked on one side but rejected on the other stays out, with Alice told
+   why. If both groups had backups turned on, the surviving group's backup settings and recovery words are used from
+   then on. The absorbed group's backups stay where they are, sealed to the absorbed group's words, and no device
+   deletes them, so Alice is told to keep those words too ([account-sync.md](./account-sync.md)). If the two groups
+   together would have more than 20 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
    are offline until they come back.

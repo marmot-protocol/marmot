@@ -793,10 +793,12 @@ of two written at the same time, the one with the greater id first, the new poin
 - the newest two;
 - each older one whose head the device cannot fetch or read;
 - each older one that holds, for some chat, a stretch not yet expired that starts earlier in chat order than every
-  stretch not yet expired that the newer backups it keeps hold for that chat, or a chat none of them holds. A stretch
-  has expired once the current time is past its `expires`.
+  stretch not yet expired that the newer backups it keeps hold for that chat; when they hold none, any stretch of that
+  chat not yet expired counts.
 
-It keeps at most 16 and drops the rest, oldest first. Retention compares indexes only, never what the blobs hold.
+A stretch has expired once the current time is past its `expires`. A newer backup whose head the device cannot read
+counts as holding no stretch, so it never lets an older one be dropped. The pointer keeps at most 16 and drops the
+rest, oldest first. Retention compares indexes only, never what the blobs hold.
 
 **Deleting.** A device deletes only blobs it condemned:
 
@@ -816,10 +818,11 @@ until their servers expire them.
 
 - takes over at once when `backup_writer` names no slot, a slot no device in the roster's `devices` holds, or one whose
   status is `leaving`;
-- fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have
-  passed since the time this device first saw the account entry name this writer for this key and, when the pointer
-  lists any backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a
-  new writer's first backup.
+- fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have passed
+  since the time this device first saw the account entry name this writer for this key and, when the pointer lists any
+  backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a new writer's
+  first backup. A device keeps that time across restarts, and starts it again whenever the entry names another writer or
+  key.
 
 It takes over with a roster update that sets the account entry to the key it read with itself as `backup_writer`,
 under the compare-and-set rule of [The account's recovery key](#the-accounts-recovery-key), so of two devices that take
@@ -909,10 +912,13 @@ so no device moves it back; a later position moves it again once that one is fur
   a group id it learned from an index, as for small state.
 - Only the account signs a pointer, but any device of the account can, a stolen or former one included while it holds
   the account's signing key. It can publish a pointer that drops backups, so later writers stop listing them. It can
-  also list a backup it wrote, whose history a restore would import as it imports a sibling's. Indexes and heads are
-  not authenticated to their writer: one that also holds the public half can list a backup whose index claims the
-  stretches real backups hold, so a writer's retention drops those and deletes their blobs. The account's signing key
-  alone already lets its holder delete the account's blobs from the servers.
+  also list a backup it wrote, whose history a restore would import as it imports a sibling's. Because the pointer's
+  address is public, the signing key alone also lets its holder publish a newer pointer there that no device can open:
+  devices drop it, and no backup is written under that key until the words are replaced ("Limits of this version" under
+  [Writing backups](#writing-backups)). It still cannot read an index or a backup. Indexes and heads are not
+  authenticated to their writer: one that also holds the public half can list a backup whose index claims the stretches
+  real backups hold, so a writer's retention drops those and deletes their blobs. The account's signing key alone
+  already lets its holder delete the account's blobs from the servers.
 - Any device of the account can make itself the backup writer by taking over, including a stolen linked device until
   it is removed; it then decides what backups hold. A takeover needs no proof that the writer is gone: a device that
   claims the writer is quiet decides that itself.

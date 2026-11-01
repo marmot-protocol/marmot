@@ -49,10 +49,11 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
   because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
 - **A stolen nsec can replace the backup pointer, but can't open a backup.** The pointer is signed by the account and
   encrypted under a key the recovery key's public half derives, so the nsec can list the account's app-data events and
-  publish a new pointer, but not read one. The public half reads it, and shows where the backups are and which chats
-  and stretches each holds, but not their content. Only the 12 words open a backup. A replaced
-  pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the recovery key's
-  public half: a current or former linked device, the same circle as a stolen device.
+  publish a new pointer, but not read one. The public half reads it, and shows where the backups are and which chats and
+  stretches each holds, but not their content. Only the 12 words open a backup. A replaced pointer could steer a restore
+  to a fake backup that opens normally, but only if its maker also has the recovery key's public half: a current or
+  former linked device, the same circle as a stolen device. A pointer published with the nsec alone opens on no device,
+  so it stops backups under those words until Alice replaces them.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
   can't open the writer's backup to read chats it was never sent, and a removed device can't open backups written
   after it left. Until the words change, it can still read their indexes: which chats and stretches they hold.
