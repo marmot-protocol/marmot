@@ -1121,6 +1121,14 @@ status, and removing a device after a longer absence, are not specified yet.
   publishes: they remove its leaves where they can, and the device that decided the removal deletes its slot. A removed
   device that does not realize its removal when the removing Commit reaches it, for example because a local failure
   interrupts that, keeps acting for the account until it next does.
+- The cleanup after a device the roster no longer lists reaches only the leaves a device can read: those tagged under a
+  key it still keeps from a roster state it applied (for 30 days, and perhaps only the four newest for one slot), or
+  under the key a `removed` record carries ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)).
+  A gone device's leaf that no remaining device reads stays in its groups and can still read them. The deciding device
+  makes the lone `removed` record after a failed link at most once ([The removal Commit](#the-removal-commit)), so a
+  device that never applied a state holding it, such as one on a branch that dropped it, does not learn the key from it.
+  Missing that key is the lesser failure: a record made again whenever it is dropped could be made against every pass
+  that drops old `removed` records.
 - Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
   siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
   outright.
