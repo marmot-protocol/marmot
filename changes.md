@@ -23,8 +23,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
   a `removed` record, for 30 days by its own clock from the last time it applied a roster state that listed them,
   including states a later Commit applied at the same time replaces and states on a branch that branch selection later
-  drops. It may keep fewer for one slot, but no fewer than the four most recent. Only the cleanup below reads with
-  them; every other tag reading is against the roster alone.
+  drops. It may keep fewer for one slot, but no fewer than the four that the roster states it applied listed most
+  recently. A slot's latest key is the key that the roster state it applied most recently listed for the slot. Only the
+  cleanup below reads with them; every other tag reading is against the roster alone.
 - A slot other than the device's own is gone for it while its roster records the slot as `removed`, as before, and now
   also while its state for the device group is settled, the roster lists no device in the slot and it keeps a key for
   the slot. The device removes that slot's tagged leaves from groups that require `0x800d` and deletes the private
@@ -34,12 +35,13 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   not only when it is recorded as `removed`. What the cleanup removed stays removed if a later branch lists the slot
   again.
 - When a failed link's undo takes the entry of a device the user decided to remove, the deciding device commits the
-  `removed` record alone, with the decision's time and the newest key it keeps for the slot, while the decision is less
-  than 30 days old, once its settled roster lists the slot neither as a device nor as a rejected slot; with no key kept
-  for the slot, it makes none. Once it does, that slot is `removed`, not a sign-in again, and its device comes back only
-  as a new slot. Once a roster state it applied has held the record, it SHOULD NOT make it again, whether another device
-  or branch selection dropped it. A `removed` record's `rejected_at` is when the removal was decided; a `not_me`
-  record's is unchanged.
+  `removed` record alone, with the decision's time and the slot's latest key, while the decision is less than 30 days
+  old, once its settled roster lists the slot neither as a device nor as a rejected slot; with no key kept for the slot,
+  it makes none. Once it does, that slot is `removed`, not a sign-in again, and its device comes back only as a new
+  slot. Once a roster state it applied has held the record, it SHOULD NOT make it again, whether another device or
+  branch selection dropped it; until then, a record whose Commit failed is made again. Once the record is gone, the slot
+  reads as a sign-in again, as after any `removed` record goes. A `removed` record's `rejected_at` is when the removal
+  was decided; a `not_me` record's is unchanged.
 
 ## 2026-10-31: A device signs out through its siblings
 

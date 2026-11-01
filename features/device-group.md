@@ -226,12 +226,12 @@ user's removal has taken the device out, and the approving device makes no `remo
 removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again; a later link
 of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, the
 deciding device records the slot as `removed` while the decision is less than 30 days old and it keeps a key for the
-slot ([The removal Commit](#the-removal-commit)). The slot is then not a sign-in again, and a removed device comes back
-only as a new slot, as the decision already kept it from being linked again. The new device is not told; a pairing
-request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the slot, every device
-that applied the new device's first Commit cleans up after it as after a removed device: the slot is gone for it
-([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was
-linked carry no tag and stay.
+slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot is not a sign-in again, and a
+removed device comes back only as a new slot, as the decision already kept it from being linked again. The new device is
+not told; a pairing request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the
+slot, every device that applied the new device's first Commit cleans up after it as after a removed device: the slot is
+gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from
+before it was linked carry no tag and stay.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
@@ -465,21 +465,22 @@ discarded it, the removal waits. It commits only while it can commit in the devi
 flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
 selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
-alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and the
-newest `tag_signature_key` it keeps for the slot ([Devices the roster no longer
-lists](#devices-the-roster-no-longer-lists)): the key it most recently applied a roster state listing for the slot,
-where a state that lists the slot with no key does not count. If it keeps none, it makes no record. It does so once its
-state for the device group is settled and lists the slot neither as a device nor as a rejected slot, only while it can
-commit there, and only while the decision is less than 30 days old, since a record older than that is dropped at the
-next pass that drops old `removed` records. Once a roster state it applied has held the record, it SHOULD NOT make it
-again, whether another device dropped the record or branch selection did; the devices that applied that state keep the
-key it carried. Devices that never applied a roster listing the device's key learn it from the record, while it lasts: a
-record made long after the decision lasts only until 30 days after the decision, like any `removed` record. When a
-removal Commit that took the device's entry fails, or branch selection drops it, even after its `removed` record has
-been dropped, the roster lists the slot again and the device commits the removal again. A removed device comes back only
-as a new slot. A removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the
-record goes at the next pass that drops old `removed` records
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and
+`tag_signature_key` the slot's latest key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)).
+If it keeps no key for the slot, it makes no record. It does so once its state for the device group is settled and lists
+the slot neither as a device nor as a rejected slot, only while it can commit there, and only while the decision is less
+than 30 days old, since a record older than that is dropped at the next pass that drops old `removed` records. Once a
+roster state it applied has held the record, it SHOULD NOT make it again, whether another device dropped the record or
+branch selection did; the devices that applied that state keep the key it carried. Until then, a record whose Commit
+failed or went nowhere is made again. Once the record is gone, the slot reads as a sign-in again, as after any `removed`
+record goes; if the user links it again, the deciding device removes it again, since its decision stands. Devices that
+never applied a roster listing the device's key learn it from the record, while it lasts: a record made long after the
+decision lasts only until 30 days after the decision, like any `removed` record. When a removal Commit that took the
+device's entry fails, or branch selection drops it, even after its `removed` record has been dropped, the roster lists
+the slot again and the device commits the removal again. A removed device comes back only as a new slot. A removal
+committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next
+pass that drops old `removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State").
 
 ### The removed device's slot
 
@@ -511,11 +512,10 @@ A device keeps each slot and `tag_signature_key` that a roster state of its devi
 a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
 listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
 time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
-catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four it most recently
-applied a roster state listing. A device sets its own key once for each link of its slot, so a slot lists more only when
-it is linked more than four times within 30 days or a device misuses the roster
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security considerations"); a leaf
-tagged under a key a device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it
+catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
+states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
+unclaimed for it. A slot's latest key, for a device, is the key that the roster state this device applied most recently
+listed for the slot; a state that listed the slot with no key lists none. What it keeps changes nothing about how it
 validates, applies or selects roster states.
 
 A slot other than the device's own is gone for it:
@@ -1122,13 +1122,14 @@ status, and removing a device after a longer absence, are not specified yet.
   device that does not realize its removal when the removing Commit reaches it, for example because a local failure
   interrupts that, keeps acting for the account until it next does.
 - The cleanup after a device the roster no longer lists reaches only the leaves a device can read: those tagged under a
-  key it still keeps from a roster state it applied (for 30 days, and perhaps only the four newest for one slot), or
-  under the key a `removed` record carries ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)).
-  A gone device's leaf that no remaining device reads stays in its groups and can still read them. The deciding device
-  makes the lone `removed` record after a failed link at most once ([The removal Commit](#the-removal-commit)), so a
-  device that never applied a state holding it, such as one on a branch that dropped it, does not learn the key from it.
-  Missing that key is the lesser failure: a record made again whenever it is dropped could be made against every pass
-  that drops old `removed` records.
+  key it still keeps from a roster state it applied (for 30 days, and perhaps only the four most recently listed for one
+  slot), or under the key a `removed` record carries ([Devices the roster no longer
+  lists](#devices-the-roster-no-longer-lists)). A gone device's leaf that no remaining device reads stays in its groups
+  and can still read them. Once a roster state the deciding device applied has held the lone `removed` record it made
+  after a failed link, it does not make that record again ([The removal Commit](#the-removal-commit)). A device that
+  never applied a state holding it, such as one on a branch that dropped it, does not learn the key from it, and once
+  the record is gone the slot reads as a sign-in again. Missing that key is the lesser failure: a record made again
+  whenever it is dropped could be made against every pass that drops old `removed` records.
 - Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
   siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
   outright.
