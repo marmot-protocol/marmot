@@ -32,7 +32,7 @@ state such as read positions and mutes, and backups for when every device is gon
 | Backup writer | The one device the roster names to write backups. |
 | Recovery key | 12 words that derive the key pair backups are sealed to. Devices keep only its public half. Separate from the nsec. |
 | Archive key | A fresh random key for one backup, sealed to the recovery key's public half. |
-| Backup pointer | A small record, encrypted to Alice's own account, listing her kept backups: where each is, which words it needs, and which stretches of each chat it holds. |
+| Backup pointer | A small record her account publishes, encrypted under a key the recovery key's public half derives, listing the backups kept under that key and where each one's head is. |
 
 Device, sibling, device group, and roster mean what they mean in [multi-device.md](./multi-device.md#words-used-here).
 
@@ -229,7 +229,8 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
   which chats they include. No device can open an old backup to see what is in it, so each backup carries an index of
   its stretches that the recovery key's public half opens, and later writers compare against that. If a new backup
-  lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it. That covers a
+  lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it, up to 16
+  backups. That covers a
   whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat, after a
   takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages are
   only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
@@ -246,9 +247,9 @@ linked with **Add to all my chats** off isn't in her older chats.
   - **It is ordinary private app data.** It uses NIP-78's general app-data event, and what the record is, a Marmot
     backup pointer, is stated only inside the encryption. NIP-78 describes that kind as one app's own storage and
     points shared formats to dedicated kinds. We use it anyway, as cover: a dedicated kind would tell every relay that
-    this account has Marmot backups. Any Marmot client can still read it, because the Nostr transport spec defines how
-    the address is derived and what the encrypted content looks like. Neither choice hides the pointer from someone
-    with the nsec.
+    this account has Marmot backups. Any Marmot client that holds the recovery key's public half can read it, because
+    the Nostr transport spec defines how the address is derived and what the encrypted content looks like. The nsec
+    alone can list the account's app-data events, but not read this one.
   - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. That is
     the same as any app saving its settings, so it says nothing about Marmot or backups. A relay that follows NIP-78's
     advice to serve these events only to their author adds to that; a restoring device can authenticate as Alice,

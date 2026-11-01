@@ -603,7 +603,8 @@ A backup is a set of blobs on [Blossom](https://github.com/hzrd149/blossom) serv
 **Keys.** The writer generates a fresh 16-byte backup id and a fresh 32-byte archive key for each backup, from a
 cryptographically secure random source. The blob keys derive from the archive key, and the index key from the
 recovery key's public half `pk` and the backup id, with HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)),
-salts and infos as their ASCII bytes, and `uint32(n)` as four big-endian bytes:
+quoted salts and infos as their ASCII bytes, the backup id and `nonce` as their raw bytes, and `uint32(n)` as four
+big-endian bytes:
 
 ```text
 archive prk     = HKDF-Extract(salt = "marmot backup v1", IKM = archive key)
@@ -633,7 +634,7 @@ lists them. A chat's bundles cover consecutive stretches, as splitting gives the
 **Small-state blob.** The small-state blob is `{"v":1,"items":[...]}`, written as an update's content is
 ([Messages](#messages)) but without its 32,768-byte limit, at most 8,388,608 bytes long. It is encrypted under the
 small-state key with the 28 ASCII bytes of `marmot backup small state v1` as associated data. A backup whose writer
-holds no item has none.
+holds no item has none, and a writer whose small-state blob would be longer writes no backup.
 
 **Index.** The index is one UTF-8 JSON object, encoded with the rules of a bundle's encoding: no object repeats a member
 name, every number is a decimal integer from 0 to 9007199254740991 without leading zeros, and the writer writes it
@@ -656,7 +657,7 @@ without whitespace, with its members in the order shown.
 | --------- | ----- |
 | `from`    | the bundle's `from` |
 | `to`      | the bundle's `to` |
-| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, at most 9007199254740991; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, capped at 9007199254740991, and `0` when it has no events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
 | `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
 | `size`    | the blob's length in bytes, from 1 to 8,388,624 |
 | `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
@@ -714,7 +715,7 @@ most 16 entries, newest first by `written_at`, each id once:
 | ------------ | ----- |
 | `id`         | the backup id, as 32 lowercase hexadecimal characters |
 | `written_at` | the index's `written_at` |
-| `head`       | the head's locator, as the small-state blob's is in the index |
+| `head`       | the head's locator, as the small-state blob's is in the index, with a `size` of at most 8,388,608 |
 
 A pointer's address and the key its content is encrypted under derive from the public half, an exception to the rule
 that delivery addresses are not derived from keys ([../foundation/identity.md](../foundation/identity.md), "Delivery
@@ -843,6 +844,7 @@ over at once, one stands. A device that trusts no device group never takes over.
 - Attachment files are not backed up, only their keys, so old media depends on its servers keeping the files.
 - Retention compares stretches, not messages: a message deleted since an older backup was written does not keep that
   backup.
+- Retention keeps at most 16 backups. Past that, the oldest is dropped even when it is the last to hold some stretch.
 
 ## Convergence and retained history
 

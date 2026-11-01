@@ -101,8 +101,9 @@ account's public key, because reaching a specific account is the purpose of an i
 the concrete inbox-addressing mechanism; the Nostr rule is defined in [../transports/nostr.md](../transports/nostr.md).
 
 An account's backup pointer is the other exception. Its address derives from the public half of the account's recovery
-key ([../features/account-sync.md](../features/account-sync.md), "Backup pointer"), so that only devices holding that
-half find it, and new words move it. It addresses the account's own records, never a group or a conversation.
+key ([../features/account-sync.md](../features/account-sync.md), "Backup pointer"), so that a device holding that half
+computes the address and reads the pointer, and new words move it. Anyone can still see the account's events at that
+address. It addresses the account's own records, never a group or a conversation.
 
 Examples of delivery addresses include a Nostr group `h` tag, an account inbox, a relay list, a topic, or an endpoint
 set. The owning transport document defines how those addresses are generated, updated, validated, and used.
