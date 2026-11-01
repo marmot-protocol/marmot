@@ -479,6 +479,34 @@ messages can use a separate group relay `G`; the inviter's own inbox and NIP-65 
 among these roles is required. The example assumes that the metadata is reachable through the inviter's configured
 lookup inputs; it does not make `D` a fallback destination.
 
+## Backup pointer
+
+An account's backup pointer ([../features/account-sync.md](../features/account-sync.md#backup-pointer)) is a
+[NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) application-data event: kind `30078`, authored and
+signed by the account identity. It has exactly one tag, `d`, whose value is the pointer's 32-byte address as 64
+lowercase hexadecimal characters, and its `content` is the pointer's encrypted content. Nothing in the event says it is
+a Marmot backup pointer: NIP-78 suggests a dedicated kind for a format other clients read, but a dedicated kind would
+tell every relay that the account keeps Marmot backups. The address and the content derive from the recovery key's
+public half, as that section defines them; this document only carries them. Only a device that holds that half computes
+the address and reads the content. Anyone who asks relays for the account's kind `30078` events still sees the event,
+its address and its length.
+
+The writer publishes the pointer to the account's NIP-65 (kind `10002`) write relays, as it does KeyPackage events
+("Publish targets and acknowledgements"). A pointer is accepted once one relay acknowledges it. Each new pointer under
+an address replaces the last, so the writer gives it a `created_at` later than the pointer it fetched to build it and
+than any pointer it published before under that address. A pointer dated no later than the fetched one would lose to
+it, for example after a takeover by a device whose clock is behind.
+
+A device fetches the pointer with a filter of kind `30078`, author equal to the account and `#d` equal to the address,
+from the same relays. Of the versions it receives, the one with the largest `created_at` stands, and of two with the
+same `created_at`, the one with the lowest `id`, as NIP-01 orders replaceable events. A device builds a new pointer only
+from a fetch that at least one relay answered in full, ending its stored events (`EOSE`) before any limit cut it short;
+a fetch that no relay finishes is not an empty pointer, and a device that took it for one would drop every listed
+backup. The fetch a device builds a pointer from carries no `since`, even where it resubscribes ("Subscriptions and
+fetch rules"), so a relay that answers in full returns the pointer if it holds one. A relay that serves kind `30078`
+only to its author, as NIP-78 advises, answers only a device that authenticates as the account with
+[NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md).
+
 ## Subscriptions and fetch rules
 
 A Nostr transport client subscribes to:
@@ -500,7 +528,9 @@ A Nostr transport client subscribes to:
   write-capable relay set as that account's KeyPackages ("Slot deletion" above). A client MAY narrow the fetch with a
   `#k` filter equal to `30443`, which conforming senders always include, or with `#a` filters naming the slots it
   found. Either filter is a fetch convenience only: a request the client holds applies under "Slot deletion" however it
-  was fetched.
+  was fetched;
+- the account's backup pointer: kind `30078`, author equal to the local account and `#d` equal to the pointer's
+  address, from the account's own NIP-65 write relays ("Backup pointer" above).
 
 Clients SHOULD use a `since` value when resubscribing if they have a retained transport timestamp. The timestamp is a
 fetch hint only.
@@ -523,8 +553,8 @@ attempt is transport or local policy.
 
 Welcome messages are published to the recipient's inbox relay set ("Account inbox relays" above).
 
-KeyPackage events and KeyPackage slot deletion requests are published to the account's NIP-65 (kind `10002`)
-write-capable relay set defined above.
+KeyPackage events, KeyPackage slot deletion requests and the backup pointer are published to the account's NIP-65
+(kind `10002`) write-capable relay set defined above.
 
 Push-notification gift wraps carrying a kind `446` rumor are published to the `relay_hint` values in the selected
 token records for that notification server. If none of those records carries a relay hint, they are published to the
@@ -552,6 +582,8 @@ set:
   carry no MLS bytes and are not peeler input. A client that links devices does not drop them as an unsupported kind;
 - kind `5` deletion requests carry no MLS bytes and are not peeler input. A client that fetched them for KeyPackage
   selection applies them under "Slot deletion" and does not drop them as an unsupported kind;
+- the kind `30078` backup pointer carries no MLS bytes and is not peeler input. A client that fetched it reads it
+  under "Backup pointer";
 - fields that claim to be hex or base64 MUST decode successfully;
 - unsupported Nostr kinds are ignored or reported as malformed transport input.
 
@@ -594,6 +626,10 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
   account has. An optional `client` tag also shows which client software a device runs.
 - kind `5` slot deletion requests are authored by the account identity and show that one of its devices stopped
   publishing.
+- the kind `30078` backup pointer is authored by the account identity. A relay sees an application-data event with a
+  random-looking address that the account replaces about once a day, and its size, which grows with the number of
+  backups listed. It shows neither the recovery key nor that the event is a backup pointer, though the account's daily
+  rhythm and its Blossom uploads around the same time may suggest it.
 
 The `client` tag is permitted only on kind `30443` KeyPackage events. A client MUST NOT add it to any other event shape
 in this binding, including gift wraps, seals, and rumors.

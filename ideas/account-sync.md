@@ -32,7 +32,7 @@ state such as read positions and mutes, and backups for when every device is gon
 | Backup writer | The one device the roster names to write backups. |
 | Recovery key | 12 words that derive the key pair backups are sealed to. Devices keep only its public half. Separate from the nsec. |
 | Archive key | A fresh random key for one backup, sealed to the recovery key's public half. |
-| Backup pointer | A small record, encrypted to Alice's own account, listing her kept backups: where each is, which words it needs, and which stretches of each chat it holds. |
+| Backup pointer | A small record her account publishes, encrypted under a key the recovery key's public half derives, listing the backups kept under that key and where each one's head is. |
 
 Device, sibling, device group, and roster mean what they mean in [multi-device.md](./multi-device.md#words-used-here).
 
@@ -47,14 +47,16 @@ Device, sibling, device group, and roster mean what they mean in [multi-device.m
 - **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
   As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
   because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
-- **A stolen nsec can find and replace the backup pointer, but can't open a backup.** The pointer is signed by and
-  encrypted to the account, so the nsec can list it, read it, and publish a new one. Reading it shows where the backups
-  are and which chats and stretches each holds, but not their content. Only the 12 words open a backup. A replaced
-  pointer could steer a restore to a fake backup that opens normally, but only if its maker also has the recovery key's
-  public half: a current or former linked device, the same circle as a stolen device.
+- **A stolen nsec can replace the backup pointer, but can't open a backup.** The pointer is signed by the account and
+  encrypted under a key the recovery key's public half derives, so the nsec can list the account's app-data events and
+  publish a new pointer, but not read one. The public half reads it, and shows where the backups are and which chats and
+  stretches each holds, but not their content. Only the 12 words open a backup. A replaced pointer could steer a restore
+  to a fake backup that opens normally, but only if its maker also has the recovery key's public half: a current or
+  former linked device, the same circle as a stolen device. A pointer published with the nsec alone opens on no device,
+  so it stops backups under those words until Alice replaces them.
 - **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
-  can't open the writer's backup to read chats it was never sent, and a removed device can't read backups written
-  after it left.
+  can't open the writer's backup to read chats it was never sent, and a removed device can't open backups written
+  after it left. Until the words change, it can still read their indexes: which chats and stretches they hold.
 - **Replacing the words doesn't take back old copies.** Someone who already has an old backup and the old words can
   still read that old backup. New backups are sealed to the new words only.
 - **Lose the recovery key and every device, and the backup is gone.** Nobody can read it, Alice included.
@@ -215,37 +217,40 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **One named writer.** The roster names a backup writer: by default the device where Alice turned backups on. She can
   change it on the Devices screen.
 - **Takeover.** If the writer's latest backup is more than 7 days old, any other device takes over with one roster
-  commit. Convergence settles it if two try at once.
+  commit, and at once if the writer is leaving or gone. Convergence settles it if two try at once. A device counts the
+  week from when it first saw that writer named too, so a writer just named gets a week to write its first backup.
 - **Daily**, when the device finds it convenient, for example on Wi-Fi and charging for a phone.
 - **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
   public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
-- **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
-  previous backups is deleted, so the latest two are always kept, plus any kept so no history is lost (below). Backups
-  go to a Blossom server or to storage Alice chooses, and never contain MLS state or attachment files.
+- **Two generations.** A new backup is uploaded alongside the existing one. Once a relay accepts the pointer that lists
+  it, the older of the two previous backups leaves the pointer, and a later pass deletes its blobs as far as the server
+  allows. So the latest two are always kept, plus any kept so no history is lost (below). Backups go to a Blossom
+  server, and never contain MLS state or attachment files.
 - **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
   and a restore drops any that have expired since.
 - **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
-  which chats they include. No device can open an old backup to see what is in it, so the writer records each backup's
-  stretches in the backup pointer when it writes the backup, and later writers compare against that. If a new backup
-  lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it. That covers a
-  whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat, after a
-  takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages are
-  only in a backup from June 3." It is deleted only if Alice chooses to, or once newer backups hold those messages
-  again. Expired messages don't count.
-- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, encrypted
-  to herself, listing every backup still kept: where it is, which recovery words it needs, and which stretches of each
-  chat it holds. It is an addressable event signed by her account, not a gift wrap: each new pointer replaces the last,
-  and a device finds it with one query to her relays.
-  - **Its address comes from the recovery key's public half**, so a restoring device that has the words finds it with
-    one query, and it never collides with another app's data. This is a deliberate exception to KeyPackage slots,
-    whose address is random: the pointer has to be found again from the words. The address doesn't hide it from
-    someone with the nsec, who can list the account's app-data events and decrypt them.
+  which chats they include. No device can open an old backup to see what is in it, so each backup carries an index of
+  its stretches that the recovery key's public half opens, and later writers compare against that. If a new backup lacks
+  messages an older one has, the last backup holding them is kept and the pointer keeps listing it, up to 16 backups.
+  That covers a whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat,
+  after a takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages
+  are only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
+  Expired messages don't count.
+- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, listing
+  every backup still kept under her current words and where each one's head is. It is an addressable event signed by
+  her account, not a gift wrap: each new pointer replaces the last, and a device finds it with one query to her
+  relays.
+  - **Its address and its key come from the recovery key's public half**, so a restoring device that has the words
+    finds it with one query and reads it, and it never collides with another app's data. This is a deliberate exception
+    to KeyPackage slots, whose address is random: the pointer has to be found again from the words. Every device Alice
+    ever linked holds the public half, so each reads the pointer without asking her signer to decrypt anything. Someone
+    with only the nsec can list her app-data events but not read this one.
   - **It is ordinary private app data.** It uses NIP-78's general app-data event, and what the record is, a Marmot
     backup pointer, is stated only inside the encryption. NIP-78 describes that kind as one app's own storage and
     points shared formats to dedicated kinds. We use it anyway, as cover: a dedicated kind would tell every relay that
-    this account has Marmot backups. Any Marmot client can still read it, because the Nostr transport spec defines how
-    the address is derived and what the encrypted content looks like. Neither choice hides the pointer from someone
-    with the nsec.
+    this account has Marmot backups. Any Marmot client that holds the recovery key's public half can read it, because
+    the Nostr transport spec defines how the address is derived and what the encrypted content looks like. The nsec
+    alone can list the account's app-data events, but not read this one.
   - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. That is
     the same as any app saving its settings, so it says nothing about Marmot or backups. A relay that follows NIP-78's
     advice to serve these events only to their author adds to that; a restoring device can authenticate as Alice,
@@ -253,23 +258,22 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, or lacks some of its history,
   the Devices screen says so, for example "Backup covers 14 of 15 chats."
 - **When two device groups merge** (multi-device Scene 3), the surviving group's backup settings and recovery words
-  are used for new backups. The absorbed group's backups are kept under the rule above, and they stay sealed to that
-  group's words: no device can re-seal them. So Alice is told to keep those words until the surviving group's backups
-  hold the same messages. The pointer lists those backups with a note that they need the other words, and a restore
-  asks for whichever words each backup needs.
+  are used for new backups. The absorbed group's backups stay sealed to that group's words, listed in that group's
+  pointer: no device can re-seal them. So Alice is told to keep those words until the surviving group's backups hold
+  the same messages, and a restore asks for whichever words each pointer needs.
 
 **Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes and the
-next backup is sealed to the new words. Older backups stay sealed to the old words, and no device can re-seal them. So
-before they are deleted, Alice sees which chats or older messages exist only in them, and confirms. If she still has
-her old words, she can keep those backups instead, and the pointer lists them as needing the old words. If she has lost
-her words but still has a device, replacing them is all she needs to do. Anyone who already copied an old backup and
-also has the old words can still read that old copy; nothing can take it back.
+next backup is sealed to the new words, under a new pointer. Older backups stay sealed to the old words, and no device
+can re-seal them. No device deletes them either: they stay listed under the old pointer until their servers expire
+them, so if she still has her old words, she can still restore them. If she has lost her words but still has a device,
+replacing them is all she needs to do. Anyone who already copied an old backup and also has the old words can still
+read that old copy; nothing can take it back.
 
 **Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
 **Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
-and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If a
-listed backup needs other words, the app asks for them. If the pointer is missing, she can point the app at where her
-backups are. Her
+and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If she
+also has older words, the app finds their pointer the same way and imports those backups as well. If the pointer is
+missing, she can point the app at where her backups are. Her
 old chats appear **read-only**, each with "Ask someone in this chat to add you back."
 
 A restore is a copy of what her kept backups held. Messages sent after the latest one are only recoverable from a
@@ -314,8 +318,8 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 | Number | Value |
 | --- | --- |
 | Backup frequency | daily |
-| Backup writer takeover | when the latest backup is more than 7 days old |
-| Backups kept | the latest 2, plus any that are the last to hold some messages; replacing the words deletes old ones only after Alice confirms |
+| Backup writer takeover | when the latest backup is more than 7 days old, or at once when the writer is leaving or gone |
+| Backups kept | the latest 2, plus any that are the last to hold some messages, at most 16; backups under replaced words are never deleted by a device |
 | Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
 
 ## Left for later
@@ -341,7 +345,7 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
    [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
 3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
 4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
-   holds it) is specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: the
-   archive format, how an archive key is sealed to the recovery key, the backup pointer's address derivation and
-   encrypted content in the Nostr transport, and the restore flow.
+   holds it) and writing backups (the archive format, the backup pointer, retention, deletion and takeover) are
+   specified in [../features/account-sync.md](../features/account-sync.md), and the pointer's Nostr event in
+   [../transports/nostr.md](../transports/nostr.md). Still to come: the restore flow.
 5. **Re-add requests**, when they are picked up.

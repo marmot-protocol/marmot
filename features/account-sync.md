@@ -8,8 +8,8 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
 small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
-that carry them from the device that adds a sibling to a chat; and the recovery key that backups are sealed to.
-Writing and restoring backups, and invite decisions, are not specified yet.
+that carry them from the device that adds a sibling to a chat; and backups: the recovery key they are sealed to, and
+how the account's backup writer writes them. Restoring backups, and invite decisions, are not specified yet.
 
 ## Surfaces
 
@@ -21,6 +21,8 @@ Writing and restoring backups, and invite decisions, are not specified yet.
 - Marmot app events: kind `475` (small-state update), kind `476` (broadcast request) and kind `473` (history delivery),
   sent only in a device group ([Messages](#messages), [History deliveries](#history-deliveries)). Their kinds are
   registered in [../foundation/registries.md](../foundation/registries.md).
+- Transport: [../transports/nostr.md](../transports/nostr.md) ("Backup pointer"), which carries the account's backup
+  pointer ([Backup pointer](#backup-pointer)).
 - Protocol core: [../protocol-core/convergence.md](../protocol-core/convergence.md) and
   [../protocol-core/retained-history.md](../protocol-core/retained-history.md), which decide when a device-group message
   is delivered, withdrawn or lost.
@@ -487,8 +489,8 @@ more:
 
 A backup keeps an account's history for when every device that holds it is gone. Backups are sealed to the account's
 recovery key, which is separate from the account's signing key: holding the signing key, or being a linked device, does
-not open a backup. This version specifies the recovery key and how the account's devices keep it. Writing, finding and
-restoring backups are not specified yet.
+not open a backup. This version specifies the recovery key, how the account's devices keep it, and how the account's
+backup writer writes backups and lists them in the account's backup pointer. Restoring backups is not specified yet.
 
 ### Recovery key
 
@@ -589,6 +591,267 @@ another. And the compare-and-set compares values: when branch selection drops an
 backups on, and the winning branch turns backups on with other words and off again before the device reads it, the
 entry holds no key, as it did when the device read it, and the update is committed again.
 
+### Backup archives
+
+A backup is a set of blobs on [Blossom](https://github.com/hzrd149/blossom) servers, each at the SHA-256 of its bytes:
+
+- one bundle blob for each history bundle ([History bundles](#history-bundles)) of each chat the backup holds;
+- at most one small-state blob, holding small-state items ([Items](#items));
+- one head, holding the backup's id, its archive key sealed to the recovery key, and its encrypted index, which lists
+  every other blob.
+
+**Keys.** The writer generates a fresh 16-byte backup id and a fresh 32-byte archive key for each backup, from a
+cryptographically secure random source. The blob keys derive from the archive key, and the index key from the
+recovery key's public half `pk` and the backup id, with HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)),
+quoted salts and infos as their ASCII bytes, the backup id and `nonce` as their raw bytes, and `uint32(n)` as four
+big-endian bytes:
+
+```text
+archive prk     = HKDF-Extract(salt = "marmot backup v1", IKM = archive key)
+blob key n      = HKDF-Expand(archive prk, info = "marmot backup blob" || uint32(n), L = 32)
+small-state key = HKDF-Expand(archive prk, info = "marmot backup small state", L = 32)
+index prk       = HKDF-Extract(salt = "marmot backup index v1", IKM = pk)
+index key       = HKDF-Expand(index prk, info = backup id, L = 32)
+```
+
+`pk` is the 32-byte public half the words derive ([Recovery key](#recovery-key)). The archive key and the id are fresh
+for each backup, so each key encrypts one value only, and every encryption below other than the archive key's seal
+uses ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)) with a nonce of 12 zero bytes. Test
+vectors, for an archive key of `0x01` repeated 32 times, the public half of the first recovery-key vector, and a
+backup id of `0x02` repeated 16 times:
+
+```text
+blob key 0:      b3491be68bcd1393f68892cf51e46650f231cd91bf118e0a62a7cfa974e51a73
+blob key 1:      7ffee8e8a3c2e1546c3a652dc8244be7410707500f706d808461372c2e51f0f7
+small-state key: 3f775330af21efc398c027d0fbc8775c6a0d521293c1be67bd73e1febb9dfc54
+index key:       18da5e74bcd81f43d7e6639dfcc464515f380d6ce016496e07597f2a78ff6ffa
+```
+
+**Bundle blobs.** Bundle blob `n` is one history bundle, encoded and encrypted as [History bundles](#history-bundles)
+gives it, but under blob key `n` in place of a fresh key. Bundle blobs are numbered from `0` in the order the index
+lists them. A chat's bundles cover consecutive stretches, as splitting gives them.
+
+**Small-state blob.** The small-state blob encrypts `{"v":1,"items":[...]}`, written as an update's content is
+([Messages](#messages)) but without its 32,768-byte limit, under the small-state key with the 28 ASCII bytes of
+`marmot backup small state v1` as associated data. That plaintext is at most 8,388,608 bytes long; a writer whose
+small state would be longer writes no backup. A backup whose writer holds no item has no small-state blob.
+
+**Index.** The index is one UTF-8 JSON object, encoded with the rules of a bundle's encoding: no object repeats a member
+name, every number is a decimal integer from 0 to 9007199254740991 without leading zeros, and the writer writes it
+without whitespace, with its members in the order shown.
+
+| Member        | Value |
+| ------------- | ----- |
+| `v`           | `1` |
+| `written_at`  | when the writer started the backup, in seconds since the Unix epoch |
+| `writer`      | the writer's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
+| `small_state` | the small-state blob's locator, below; absent when the backup has none |
+| `chats`       | one object below for each chat the backup holds, each chat once, in any order |
+
+| Member  | Value |
+| ------- | ----- |
+| `chat`  | the chat's MLS group id, as in a bundle |
+| `blobs` | one or more bundle blobs, each one object below, in chat order |
+
+| Member    | Value |
+| --------- | ----- |
+| `from`    | the bundle's `from` |
+| `to`      | the bundle's `to` |
+| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, capped at 9007199254740991, and `0` when it has no events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
+| `size`    | the blob's length in bytes, from 1 to 8,388,624 |
+| `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
+
+The small-state blob's locator is an object with the same `sha256`, `size` and `server`. The index is encrypted under
+the index key with the 22 ASCII bytes of `marmot backup index v1` as associated data. It has no length bound of its
+own: the head that carries it does.
+
+**Head.** The head is one UTF-8 JSON object with exactly these members, in this order, without whitespace, at most
+8,388,608 bytes long:
+
+| Member  | Value |
+| ------- | ----- |
+| `v`     | `1` |
+| `id`    | the backup id, as 32 lowercase hexadecimal characters |
+| `key`   | the archive key sealed to the recovery key, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
+| `index` | the encrypted index, in standard base64 with padding |
+
+A writer whose head would be longer writes no backup.
+
+`key` is the archive key sealed to the recovery key ([Recovery key](#recovery-key)) with the context
+
+```text
+struct {
+  opaque purpose<V>;
+  opaque id<V>;
+  opaque index_hash<V>;
+} BackupKeyContextV1;
+```
+
+in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
+the 16 ASCII bytes of `marmot backup v1`, `id` is the backup id's 16 bytes, and `index_hash` is the 32-byte SHA-256 of
+the encrypted index. The context binds the archive key to its head and its index, so an index that is altered or taken
+from another backup leaves the archive key sealed. Blob keys are derived per backup and per number, so a blob taken
+from another backup, or from another place in this one, does not decrypt.
+
+**Reading.** Anyone holding the public half derives the index key and reads the index: which chats a backup holds,
+their stretches, and where every blob is. Only the words open the archive key, and with it any blob. A device
+fetches a head or a blob from its locator's server, reading no more than the locator's `size`, and drops it unless its
+SHA-256 and length match its locator, as a history delivery's receiver fetches and checks a blob
+([History deliveries](#history-deliveries), "Blossom"). It drops a head that breaks the encoding above other than in
+layout, whose `id` is not the id its pointer entry names, or whose index does not decrypt or breaks the encoding above
+other than in layout, as a bundle's receiver does ([History bundles](#history-bundles)). The head itself is not
+encrypted: its `key` is sealed and its `index` encrypted.
+
+### Backup pointer
+
+The account's backup pointer under a recovery key lists the backups the account keeps under that key, so a device that
+holds the key's public half finds them. Each recovery key has its own pointer: new words start a new one, and the old
+pointer and its backups stay where they are.
+
+The pointer is one UTF-8 JSON object, `{"v":1,"backups":[...]}`, encoded with the index's rules. `backups` holds at
+most 16 entries, newest first by `written_at`, each id once:
+
+| Member       | Value |
+| ------------ | ----- |
+| `id`         | the backup id, as 32 lowercase hexadecimal characters |
+| `written_at` | the index's `written_at` |
+| `head`       | the head's locator, as the small-state blob's is in the index, with a `size` of at most 8,388,608 |
+
+A pointer's address and the key its content is encrypted under derive from the public half, an exception to the rule
+that delivery addresses are not derived from keys ([../foundation/identity.md](../foundation/identity.md), "Delivery
+addressing is separate"):
+
+```text
+pointer prk = HKDF-Extract(salt = "marmot backup pointer v1", IKM = pk)
+address     = HKDF-Expand(pointer prk, info = "marmot backup address", L = 32)
+pointer key = HKDF-Expand(pointer prk, info = "marmot backup pointer key" || nonce, L = 32)
+content     = base64(nonce || ChaCha20-Poly1305(pointer key, nonce = 12 zero bytes, pointer))
+```
+
+`nonce` is 32 fresh bytes from a cryptographically secure random source for each pointer the writer encrypts, so each
+pointer key is used once. The associated data is the 24 ASCII bytes of `marmot backup pointer v1`, and `base64` is
+standard base64 with padding. The content is at most 57,344 bytes long, which 16 entries always fit, and well under what
+a relay with default limits takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of
+`0x03` repeated 32 times:
+
+```text
+address:     ca91082df78442521072c16b0ac389d309233ec3aaca978e900e0077f06c7c58
+pointer key: 6ff7b6daf27f4a3077211f77a649015e7b970dd3a181880df03248fffbb2829b
+```
+
+A device drops a pointer whose content is longer than 57,344 bytes, does not decrypt, or breaks the encoding above other
+than in layout, as the index's reader does: among others, a `v` other than `1`, more than 16 entries, an id listed
+twice, an entry listed before a newer one, or a head locator that breaks the rules above for it. The Nostr transport
+carries the pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
+
+### Writing backups
+
+**The writer.** The device the account entry names as `backup_writer` writes the account's backups under its
+`recovery_public_key` ([The account's recovery key](#the-accounts-recovery-key)). A device that trusts no device group
+writes them under the key it keeps. No other device writes backups, and none does while backups are off. Under a key
+nothing can be sealed to ([Recovery key](#recovery-key)), the writer writes no backup.
+
+**When.** A backup is due once the newest backup the pointer lists is at least 24 hours old by its `written_at`, or the
+pointer lists none. The writer writes a due backup when it finds it convenient, such as on Wi-Fi and charging for a
+phone. A writer that cannot write, for example with no Blossom server to upload to, writes nothing.
+
+**A backup's content.** A backup holds every chat the writer holds other than its device group, each with the bundles
+[History bundles](#history-bundles) gives for it, and every small-state item the writer holds. The writer MAY bound how
+many bundles one chat takes; it then keeps the newest bundles and leaves the older history out. A chat whose MLS group
+id no bundle can name, or for which History bundles gives no bundle, is left out.
+
+**Steps.** A device writes a backup in this order:
+
+1. It fetches the pointer under the key. It stops when no relay answered the fetch in full
+   ([../transports/nostr.md](../transports/nostr.md), "Backup pointer"), since a pointer built without a full answer
+   would drop every backup listed in one it did not see, and when it drops the newest pointer it fetched
+   ([Backup pointer](#backup-pointer)).
+2. It uploads each bundle blob, then the small-state blob, then the head, each to a Blossom server of its choosing
+   with the [BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation, as for a history
+   delivery ([History deliveries](#history-deliveries), "Blossom"). It authorizes each upload, as each delete below,
+   with a [BUD-11](https://github.com/hzrd149/blossom/blob/master/buds/11.md) token signed by the account identity, so
+   a later writer can delete what an earlier one uploaded. Before it uploads a blob, it records the blob and the server,
+   so a backup that never counts has its blobs deleted (below).
+3. It builds the new pointer: the new backup and the other backups the fetched pointer lists, kept by retention
+   (below).
+4. Before it publishes, it condemns the blobs of each listed backup the new pointer drops (below).
+5. It checks that it is still the writer under the same key. If not, it abandons the backup and publishes nothing.
+6. It publishes the pointer. The backup counts only once a relay accepts it. Until one does, nothing is dropped, and
+   the device publishes the same backup again in a later pass, building the pointer again from a new fetch, without
+   uploading it again. A backup the fetched pointer already lists counts, since a relay accepted it though its
+   acknowledgement was lost, and the pass publishes nothing for it. A backup no relay accepted within 24 hours of its
+   `written_at` is abandoned.
+
+While the writer holds a backup that no relay has accepted and it has not abandoned, it publishes that backup again in
+place of writing a new one. A device does not keep the archive key: when a backup is cut short before its head is
+uploaded, by a restart or otherwise, it is abandoned, and the next one starts again.
+
+**Retention.** Of the new backup and the backups the fetched pointer lists, ordered newest first by `written_at` and,
+of two written at the same time, the one with the greater id first, the new pointer keeps:
+
+- the newest two;
+- each older one whose head the device cannot fetch or read;
+- each older one that holds, for some chat, a stretch not yet expired that starts earlier in chat order than every
+  stretch not yet expired that the newer backups it keeps hold for that chat; when they hold none, any stretch of that
+  chat not yet expired counts.
+
+A stretch has expired once the current time is past its `expires`. A newer backup whose head the device cannot read
+counts as holding no stretch, so it never lets an older one be dropped. The pointer keeps at most 16 and drops the
+rest, oldest first. Retention compares indexes only, never what the blobs hold.
+
+**Deleting.** A device deletes only blobs it condemned:
+
+- the blobs of a backup a pointer it builds drops: its head and, when it read the backup's index, every blob the index
+  names;
+- the blobs it recorded for a backup it abandons.
+
+It deletes a condemned blob with the BUD-02 delete operation, no sooner than an hour after condemning it, and only in a
+pass that fetched the pointer in full, as in step 1, when that pointer lists no backup the blob belongs to. A blob of a
+backup the fetched pointer lists, such as one another writer kept, is no longer condemned. A delete that fails is tried
+again, waiting longer each time, and given up 7 days after the blob was condemned. A device that stopped writing still
+deletes what it condemned, under the same rule. It forgets, without deleting, every blob it condemned under a key that
+is no longer the account's recovery key: backups under replaced words, or written before backups were turned off, stay
+until their servers expire them.
+
+**Takeover.** While backups are on, a device of the device group that is not the writer:
+
+- takes over at once when `backup_writer` names no slot, a slot no device in the roster's `devices` holds, or one whose
+  status is `leaving`;
+- fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have passed
+  since the time this device first saw the account entry name this writer for this key and, when the pointer lists any
+  backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a new writer's
+  first backup. A device keeps that time across restarts, and starts it again whenever the entry names another writer or
+  key.
+
+It takes over with a roster update that sets the account entry to the key it read with itself as `backup_writer`,
+under the compare-and-set rule of [The account's recovery key](#the-accounts-recovery-key), so of two devices that take
+over at once, one stands. A device that trusts no device group never takes over.
+
+**Limits of this version.**
+
+- Every backup holds everything again, up to the writer's bound per chat, uploaded in full each day.
+- Each blob is on one server. A server that loses a blob loses that stretch in that backup, though an older backup
+  kept for it may still hold it.
+- A backup cut short starts again from the beginning, so a device that never stays up long enough never finishes one.
+- While a takeover settles, the old writer may still write a backup. Of two writers' pointers, the relays keep the
+  later one, and the other writer's backup is not listed; its blobs stay until their server expires them.
+- A relay that holds a newer pointer but does not answer the fetch can let a device delete blobs that pointer lists.
+  The hour between condemning and deleting narrows that window; it does not close it.
+- Replacing every write relay with relays that never received the pointer reads as no pointer: the next pointer lists
+  only the new backup, and the older backups, though not deleted, are no longer listed.
+- Deletes are best effort: a server that refuses one keeps the blob until it expires it.
+- New words, turning backups off, or a device that kept a key joining another device's group leave the old pointer and
+  its backups where they are. No device deletes them.
+- A pointer this version cannot open stops writing under that key until the words are replaced.
+- A dropped backup whose index the device cannot read has only its head condemned; its other blobs stay until their
+  server expires them.
+- `written_at` is the writer's clock, and a takeover is judged by the deciding device's clock.
+- Attachment files are not backed up, only their keys, so old media depends on its servers keeping the files.
+- Retention compares stretches, not messages: a message deleted since an older backup was written does not keep that
+  backup.
+- Retention keeps at most 16 backups. Past that, the oldest is dropped even when it is the last to hold some stretch.
+
 ## Convergence and retained history
 
 Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
@@ -644,6 +907,28 @@ so no device moves it back; a later position moves it again once that one is fur
 - The words are the one secret that opens backups. Anyone who sees them can open every backup sealed to them, so a
   device shows them only while the user writes them down, and never stores them. 128 bits of entropy put an offline
   search out of reach.
+- Anyone who holds the recovery key's public half finds the account's backup pointer and reads it and every backup's
+  index: which chats the account's backups hold, by MLS group id, which stretches of each, when each backup was
+  written, by which device, how large each blob is and where it is. That is every device ever in the device group,
+  a removed one included. Only the words open a bundle, the small state or the archive key. A device MUST NOT publish
+  a group id it learned from an index, as for small state.
+- Only the account signs a pointer, but any device of the account can, a stolen or former one included while it holds
+  the account's signing key. It can publish a pointer that drops backups, so later writers stop listing them. It can
+  also list a backup it wrote, whose history a restore would import as it imports a sibling's. Because the pointer's
+  address is public, the signing key alone also lets its holder publish a newer pointer there that no device can open:
+  devices drop it, and no backup is written under that key until the words are replaced ("Limits of this version" under
+  [Writing backups](#writing-backups)). It still cannot read an index or a backup. Indexes and heads are not
+  authenticated to their writer: one that also holds the public half can list a backup whose index claims the stretches
+  real backups hold, so a writer's retention drops those and deletes their blobs. The account's signing key alone
+  already lets its holder delete the account's blobs from the servers.
+- Any device of the account can make itself the backup writer by taking over, including a stolen linked device until
+  it is removed; it then decides what backups hold. A takeover needs no proof that the writer is gone: a device that
+  claims the writer is quiet decides that itself.
+- A Blossom server that holds a backup's blobs learns what the upload's and the delete's authorization say of the
+  account, each blob's size, and when it was uploaded, fetched and deleted. It reads a head's backup id, which is
+  random. A backup is written about once a day, so a
+  server sees a daily burst of uploads from the account, about as large as its history. It cannot open a blob, and it
+  cannot read an index without the public half.
 - Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
   alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
