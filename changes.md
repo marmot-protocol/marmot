@@ -23,7 +23,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
   a `removed` record, for 30 days by its own clock from the last time it applied a roster state that listed them,
   including states a later Commit applied at the same time replaces and states on a branch that branch selection later
-  drops. Only the cleanup below reads with them; every other tag reading is against the roster alone.
+  drops. It may keep fewer for one slot, but no fewer than the four most recent. Only the cleanup below reads with
+  them; every other tag reading is against the roster alone.
 - Once its state for the device group is settled, a slot the roster lists no device in is gone for the device when it
   keeps a key for it, as a slot the roster records as `removed` already was. The device removes that slot's tagged
   leaves from groups that require `0x800d` and deletes the private KeyPackages it exchanged with the slot. This now

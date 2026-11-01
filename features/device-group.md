@@ -501,18 +501,20 @@ still be used until its `Lifetime` ends.
 
 ### Devices the roster no longer lists
 
-A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
-in a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
+A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
+a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
 listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
 time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
-catches up, so its 30 days start then. What it keeps changes nothing about how it validates, applies or selects roster
-states.
+catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four it most recently
+applied a roster state listing: a device sets its own key once for each link of its slot, so only a device misusing the
+roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security considerations") lists
+more. What it keeps changes nothing about how it validates, applies or selects roster states.
 
-A slot is gone for a device:
+A slot other than the device's own is gone for it:
 
 - while its trusted roster records the slot as `removed`, read by the key that record keeps; and
-- while its state for the device group is settled and its roster lists no device in the slot, if the slot is not its
-  own and it keeps a key for the slot, read by every key it keeps for the slot.
+- while its state for the device group is settled and its roster lists no device in the slot, if it keeps a key for the
+  slot, read by every key it keeps for the slot.
 
 The second covers a `removed` record dropped before the device acted on it, including while the device was away, a link
 that failed after the new device set its key ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made
