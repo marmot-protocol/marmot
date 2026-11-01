@@ -267,17 +267,28 @@ adds it to a chat under the link.
   that reads as the new device's slot ([Matching leaves to devices](#matching-leaves-to-devices)), or has the new
   device's `tag_signature_key` as its signature key.
 - It skips a chat that cannot take that Add: one that does not require `0x800d`, one whose routing names no relay list
-  that a sibling Welcome may carry ([Message](#message)), and one whose requirements the new device's KeyPackages do not
-  meet ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules"). It adds
-  the new device there in no other way.
+  that a sibling Welcome may carry ([Message](#message)), one where the account already has `max_leaves_per_account`
+  leaves ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Leaf limit"), and one
+  whose requirements the new device's KeyPackages do not meet
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules"). It removes no
+  leaf to make room, and adds the new device there in no other way.
 - It asks the new device for as many private KeyPackages as the Adds need, beyond the ones it keeps
   ([Messages](#messages)).
 - It MAY spread the Adds over time. How long it goes on adding them is not specified yet.
 - Turning "add to all my chats" off stops further Adds and takes the new device out of no chat.
 
 Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
-device's entry has "bring chat history" on. A chat the approving device is not in, or one it skips, gets the new device
-only from another sibling, which is not specified yet.
+device's entry has "bring chat history" on. A chat the approving device skips gets the new device only if the chat can
+take the Add later, while the approving device is still adding the new device to chats. A chat the approving device is
+not in gets the new device only from another sibling, which is not specified yet.
+
+The signature-key check finds a leaf the new device made before the link, which carries no tag, only when that leaf's
+signature key is the one the device later set as its `tag_signature_key`. A device whose earlier leaves have other
+signature keys can be added to a chat it is already in. It does not join from that sibling Welcome, as it already keeps
+the group ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 9). Once it tags its own
+leaf there ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), the chat holds
+two leaves that read as that device's, which "Reading tags" there counts as misuse of its keys. Avoiding this is not
+specified yet.
 
 ## Keeping it out of sight
 
@@ -759,8 +770,9 @@ make](#a-keypackage-the-device-did-not-make)).
 Devices in a device group are to add each other to chats only with private KeyPackages: single-use KeyPackages that one
 device hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication.
 The Welcome for an add that uses one reaches its sibling only inside the device group ([Sibling
-Welcomes](#sibling-welcomes)). When a device adds a sibling to a chat is not specified yet; until it is, the founding
-exemption still applies ([Security considerations](#security-considerations)).
+Welcomes](#sibling-welcomes)). The device that approves a link adds the new device to its chats this way ([Adding the
+new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling to a group it creates is not
+specified yet; until it is, the founding exemption still applies ([Security considerations](#security-considerations)).
 
 ### Issuing
 
@@ -1129,9 +1141,10 @@ status, and removing a device after a longer absence, are not specified yet.
 - Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
   joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
   sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. Until when a
-  device adds a sibling is specified, a device that creates a group may still add its account's published KeyPackages
-  under the founding exemption in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)
-  ("Sender rules"), including one that someone holding that key published.
+  device adds a sibling to a group it creates is specified, a device that creates a group may still add its account's
+  published KeyPackages under the founding exemption in
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), including one
+  that someone holding that key published.
 - A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
   another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
 - Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records

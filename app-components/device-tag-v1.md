@@ -117,7 +117,9 @@ sign-in nobody has linked, are unclaimed too. The account's devices neither warn
 is unclaimed ([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). What they do
 about a removed slot's leaves is in [../features/device-group.md](../features/device-group.md) ("Removing it from
 chats").
-What they do about a sibling missing from a group is not specified yet.
+The device that approved a sibling's link adds it to the chats it is in
+([../features/device-group.md](../features/device-group.md), "Adding the new device to chats"); what they do about a
+sibling missing from a group otherwise is not specified yet.
 
 ## Validity
 
