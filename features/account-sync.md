@@ -631,10 +631,10 @@ index key:       18da5e74bcd81f43d7e6639dfcc464515f380d6ce016496e07597f2a78ff6ff
 gives it, but under blob key `n` in place of a fresh key. Bundle blobs are numbered from `0` in the order the index
 lists them. A chat's bundles cover consecutive stretches, as splitting gives them.
 
-**Small-state blob.** The small-state blob is `{"v":1,"items":[...]}`, written as an update's content is
-([Messages](#messages)) but without its 32,768-byte limit, at most 8,388,608 bytes long. It is encrypted under the
-small-state key with the 28 ASCII bytes of `marmot backup small state v1` as associated data. A backup whose writer
-holds no item has none, and a writer whose small-state blob would be longer writes no backup.
+**Small-state blob.** The small-state blob encrypts `{"v":1,"items":[...]}`, written as an update's content is
+([Messages](#messages)) but without its 32,768-byte limit, under the small-state key with the 28 ASCII bytes of
+`marmot backup small state v1` as associated data. That plaintext is at most 8,388,608 bytes long; a writer whose
+small state would be longer writes no backup. A backup whose writer holds no item has no small-state blob.
 
 **Index.** The index is one UTF-8 JSON object, encoded with the rules of a bundle's encoding: no object repeats a member
 name, every number is a decimal integer from 0 to 9007199254740991 without leading zeros, and the writer writes it
@@ -663,7 +663,8 @@ without whitespace, with its members in the order shown.
 | `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
 
 The small-state blob's locator is an object with the same `sha256`, `size` and `server`. The index is encrypted under
-the index key with the 22 ASCII bytes of `marmot backup index v1` as associated data.
+the index key with the 22 ASCII bytes of `marmot backup index v1` as associated data. It has no length bound of its
+own: the head that carries it does.
 
 **Head.** The head is one UTF-8 JSON object with exactly these members, in this order, without whitespace, at most
 8,388,608 bytes long:
@@ -728,21 +729,21 @@ pointer key = HKDF-Expand(pointer prk, info = "marmot backup pointer key" || non
 content     = base64(nonce || ChaCha20-Poly1305(pointer key, nonce = 12 zero bytes, pointer))
 ```
 
-`nonce` is 32 fresh bytes from a cryptographically secure random source for each pointer the writer encrypts, so
-each pointer key is used once. The associated data is the 24 ASCII bytes of `marmot backup pointer v1`, and `base64`
-is standard base64 with padding. The content is at most 57,344 bytes long, well under what a relay with default limits
-takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of `0x03` repeated 32
-times:
+`nonce` is 32 fresh bytes from a cryptographically secure random source for each pointer the writer encrypts, so each
+pointer key is used once. The associated data is the 24 ASCII bytes of `marmot backup pointer v1`, and `base64` is
+standard base64 with padding. The content is at most 57,344 bytes long, which 16 entries always fit, and well under what
+a relay with default limits takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of
+`0x03` repeated 32 times:
 
 ```text
 address:     ca91082df78442521072c16b0ac389d309233ec3aaca978e900e0077f06c7c58
 pointer key: 6ff7b6daf27f4a3077211f77a649015e7b970dd3a181880df03248fffbb2829b
 ```
 
-A device drops a pointer whose content does not decrypt or breaks the encoding above other than in layout, as the
-index's reader does: among others, a `v` other than `1`, more than 16 entries, an id listed twice, an entry listed
-before a newer one, or a head locator that breaks the index's rules for a locator. The Nostr transport carries the
-pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
+A device drops a pointer whose content is longer than 57,344 bytes, does not decrypt, or breaks the encoding above other
+than in layout, as the index's reader does: among others, a `v` other than `1`, more than 16 entries, an id listed
+twice, an entry listed before a newer one, or a head locator that breaks the rules above for it. The Nostr transport
+carries the pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
 
 ### Writing backups
 

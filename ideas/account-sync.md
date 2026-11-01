@@ -221,19 +221,19 @@ linked with **Add to all my chats** off isn't in her older chats.
 - **Daily**, when the device finds it convenient, for example on Wi-Fi and charging for a phone.
 - **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
   public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
-- **Two generations.** A new backup is uploaded alongside the existing one. Once it is confirmed, the older of the two
-  previous backups is deleted, so the latest two are always kept, plus any kept so no history is lost (below). Backups
-  go to a Blossom server, and never contain MLS state or attachment files.
+- **Two generations.** A new backup is uploaded alongside the existing one. Once a relay accepts the pointer that lists
+  it, the older of the two previous backups leaves the pointer, and a later pass deletes its blobs as far as the server
+  allows. So the latest two are always kept, plus any kept so no history is lost (below). Backups go to a Blossom
+  server, and never contain MLS state or attachment files.
 - **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
   and a restore drops any that have expired since.
 - **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
   which chats they include. No device can open an old backup to see what is in it, so each backup carries an index of
-  its stretches that the recovery key's public half opens, and later writers compare against that. If a new backup
-  lacks messages an older one has, the last backup holding them is kept and the pointer keeps listing it, up to 16
-  backups. That covers a
-  whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat, after a
-  takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages are
-  only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
+  its stretches that the recovery key's public half opens, and later writers compare against that. If a new backup lacks
+  messages an older one has, the last backup holding them is kept and the pointer keeps listing it, up to 16 backups.
+  That covers a whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat,
+  after a takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages
+  are only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
   Expired messages don't count.
 - **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, listing
   every backup still kept under her current words and where each one's head is. It is an addressable event signed by
