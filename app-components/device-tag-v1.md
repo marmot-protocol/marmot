@@ -124,7 +124,9 @@ is unclaimed ([../features/device-group.md](../features/device-group.md), "Match
 about the leaves of a removed slot, or of a slot the roster no longer lists, is in
 [../features/device-group.md](../features/device-group.md) ("Devices the roster no longer lists" and "Removing it from
 chats").
-What they do about a sibling missing from a group is not specified yet.
+The device that approved a sibling's link adds it to the chats it is in
+([../features/device-group.md](../features/device-group.md), "Adding the new device to chats"); what they do about a
+sibling missing from a group otherwise is not specified yet.
 
 ## Validity
 
