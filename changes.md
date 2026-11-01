@@ -16,20 +16,25 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-01: Cleanup after every device the roster stops listing
 
 [#486](https://github.com/marmot-protocol/marmot/pull/486) changes
-[features/device-group.md](./features/device-group.md) and
-[app-components/device-tag-v1.md](./app-components/device-tag-v1.md).
+[features/device-group.md](./features/device-group.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md).
 
 - A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
-  a `removed` record, for 30 days after the last roster state it applied that listed them, including states a later
-  Commit applied at the same time replaces and states on a branch that branch selection later drops.
+  a `removed` record, for 30 days by its own clock from the last time it applied a roster state that listed them,
+  including states a later Commit applied at the same time replaces and states on a branch that branch selection later
+  drops. Only the cleanup below reads with them; every other tag reading is against the roster alone.
 - Once its state for the device group is settled, a slot the roster lists no device in is gone for the device when it
   keeps a key for it, as a slot the roster records as `removed` already was. The device removes that slot's tagged
   leaves from groups that require `0x800d` and deletes the private KeyPackages it exchanged with the slot. This now
   covers a `removed` record dropped before the device acted on it, a link that failed after the new device set its
-  key, and a made link that a later branch dropped, none of which got any cleanup before. Untagged leaves stay.
+  key, and a made link that a later branch dropped, none of which got any cleanup before. Untagged leaves stay. The
+  private KeyPackages exchanged with a sibling now end when its slot is gone, not only when it is recorded as
+  `removed`. What the cleanup removed stays removed if a later branch lists the slot again.
 - When a failed link's undo takes the entry of a device the user decided to remove, the deciding device commits the
-  `removed` record alone, with the decision's time and the latest key it keeps for the slot, while the decision is less
-  than 30 days old.
+  `removed` record alone, with the decision's time and the key it most recently applied a roster state listing for the
+  slot, while the decision is less than 30 days old. That slot is then `removed`, not a sign-in again, and its device
+  comes back only as a new slot. A `removed` record's `rejected_at` is when the removal was decided.
 
 ## 2026-10-31: A device signs out through its siblings
 

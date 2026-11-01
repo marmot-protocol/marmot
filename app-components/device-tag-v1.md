@@ -109,6 +109,12 @@ credential identity is its own account's, it:
 4. otherwise the leaf is unclaimed. This covers a leaf with no entry, an entry that does not decode or open, a
    signature that does not verify, a slot the roster holds no key for, and a slot the roster does not hold.
 
+A device also keeps the tag signature keys that roster states it applied listed, for a while after they leave the roster
+([../features/device-group.md](../features/device-group.md), "Devices the roster no longer lists"). Only its cleanup
+after devices the roster no longer lists reads with them: a leaf whose tag decodes and opens as in step 1, names a slot
+that is gone for the device, and verifies under a key it keeps for that slot belongs to that slot for the cleanup. Every
+other reading is against the roster alone.
+
 A device has at most one leaf in a group. Two leaves in one group that both belong to the same device show that
 device's keys were misused.
 
@@ -146,7 +152,7 @@ NOT be created, replaced or removed with `AppDataUpdate` ([README.md](./README.m
   that way is unclaimed.
 - A removed device still holds `leaf_tag_key` ([device-roster-v1.md](./device-roster-v1.md), "Security
   considerations"). It can tag a leaf only with its own slot, which its siblings recognize as `removed` while they keep
-  that slot's record.
+  that slot's record, and as gone while they keep the slot's tag signature key.
 
 ## Test vectors
 

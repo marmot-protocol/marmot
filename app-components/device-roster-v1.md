@@ -123,12 +123,13 @@ Each device the account has linked has one `DeviceEntryV1`:
   absent until the device sets it, and only the device itself sets it; receivers do not check who set it.
 
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
-`rejected_at` is when the rejection was recorded, as the recording device wrote it. A `removed` record keeps the
+`rejected_at` is when the rejection was decided, as the recording device wrote it. A `removed` record keeps the
 `tag_signature_key` the device's entry had, if it had one, so that the account's devices can still recognize that
-device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A `not_me` record has none: a rejected sign-in
-never had an entry. When a device writes a `not_me` record, and what it then stops asking about, is in
-[../features/device-group.md](../features/device-group.md) ("New sign-ins"), and what a rejection does beyond that is in
-its "Rejections".
+device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A record made after a failed link's undo took
+the entry keeps the key a roster state listed for it ([../features/device-group.md](../features/device-group.md), "The
+removal Commit"). A `not_me` record has none: a rejected sign-in never had an entry. When a device writes a `not_me`
+record, and what it then stops asking about, is in [../features/device-group.md](../features/device-group.md) ("New
+sign-ins"), and what a rejection does beyond that is in its "Rejections".
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot
 again or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its
@@ -137,7 +138,8 @@ The record is a bounded recognition aid, not a guarantee. A KeyPackage can stay 
 MAY select a stale one when an account has no fresh candidate
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), so the removed
 installation can still join a group after its record is gone. Its leaf then reads as unclaimed rather than as the
-removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags").
+removed device's ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"), except to a device that still keeps its tag
+signature key ([../features/device-group.md](../features/device-group.md), "Devices the roster no longer lists").
 
 `AccountEntryV1` holds the account's backup settings ([../features/account-sync.md](../features/account-sync.md),
 "Backups"): `recovery_public_key` is the public half of the account's recovery key, an X25519 public key under the KEM

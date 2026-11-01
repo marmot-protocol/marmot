@@ -223,9 +223,11 @@ branch, since the new device may already have realized the removal and discarded
 slot the roster records as `removed` holds no device entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
 user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
-removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again. A later link
-of the slot adds an entry of its own, which this does not undo. Until then, every device that applied the new device's
-first Commit cleans up after it as after a removed device: the slot is gone for it ([Devices the roster no longer
+removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again, unless the
+user had decided to remove that device: the deciding device then records the slot as `removed` ([The removal
+Commit](#the-removal-commit)), and a removed device comes back only as a new slot. A later link of the slot adds an
+entry of its own, which this does not undo. Until then, every device that applied the new device's first Commit cleans
+up after it as after a removed device: the slot is gone for it ([Devices the roster no longer
 lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked carry no tag and stay.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
@@ -461,15 +463,16 @@ flight or settling only delays the removal. It also waits while the entry has no
 selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
 alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and the
-latest `tag_signature_key` it keeps for the slot ([Devices the roster no longer
+`tag_signature_key` it most recently applied a roster state listing for the slot ([Devices the roster no longer
 lists](#devices-the-roster-no-longer-lists)). It does so once its state for the device group is settled and no longer
 lists the slot, only while it can commit there, and only while the decision is less than 30 days old, since a record
 older than that is dropped at the next pass that drops old `removed` records. It SHOULD NOT make that record again after
-another device drops it. Devices that never applied a roster listing the device's key learn it from the record. When the
-removal's Commit fails, or branch selection drops the removal, even after the `removed` record has been dropped, the
-roster lists the slot again and the device commits the removal again. A removed device comes back only as a new slot. A
-removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the
-next pass that drops old `removed` records
+another device drops it. Devices that never applied a roster listing the device's key learn it from the record, while it
+lasts: a record made long after the decision lasts only until 30 days after the decision, like any `removed` record.
+When the removal's Commit fails, or branch selection drops the removal, even after the `removed` record has been
+dropped, the roster lists the slot again and the device commits the removal again. A removed device comes back only as a
+new slot. A removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record
+goes at the next pass that drops old `removed` records
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
 
 ### The removed device's slot
@@ -499,9 +502,11 @@ still be used until its `Lifetime` ends.
 ### Devices the roster no longer lists
 
 A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
-in a `removed` record, for 30 days after the last roster state it applied that listed them, across restarts. It keeps
-those of every roster state it applies, including one that a later Commit it applies at the same time replaces and one
-on a branch that branch selection later drops. Nothing in the device group's state depends on what it keeps.
+in a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
+listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
+time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
+catches up, so its 30 days start then. What it keeps changes nothing about how it validates, applies or selects roster
+states.
 
 A slot is gone for a device:
 
@@ -512,11 +517,17 @@ A slot is gone for a device:
 The second covers a `removed` record dropped before the device acted on it, including while the device was away, a link
 that failed after the new device set its key ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made
 link that a later branch dropped. In each the slot's device is not linked: no device lists it, and no removal can reach
-it. A device cleans up after every slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and
-[Its private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened
-as in [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and
-its signature verifies under a key the slot is read by. A device that never applied a roster listing a key cannot read
-the leaves tagged under it, which then read as unclaimed for it.
+it. A device cleans up after every slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its
+private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
+[../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
+signature verifies under a key the slot is read by
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device that never applied
+a roster listing a key cannot read the leaves tagged under it, which then read as unclaimed for it.
+
+A later branch can list a gone slot again, as one can bring back a removed device ([The removal
+Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
+the cleanup removed stays removed: a device listed again is missing from the groups it was removed from, and adding a
+sibling to a group it is missing from is not specified yet.
 
 ### Removing it from chats
 
@@ -773,8 +784,8 @@ tag ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "
 private KeyPackages only once it can tag.
 
 - The issuer records which sibling, by slot, it handed each one to. It keeps the private key material until a Welcome
-  consumes the KeyPackage, until its `Lifetime.not_after`, or until its trusted roster records that sibling's slot as
-  `removed` ([Its private KeyPackages](#its-private-keypackages)), whichever comes first.
+  consumes the KeyPackage, until its `Lifetime.not_after`, or until that sibling's slot is gone for it ([Devices the
+  roster no longer lists](#devices-the-roster-no-longer-lists)), whichever comes first.
 - Only a sibling's add may consume a private KeyPackage. A device MUST reject every Welcome that consumes a private
   KeyPackage it issued unless it arrived as a sibling Welcome that passes [Receiving a sibling
   Welcome](#receiving-a-sibling-welcome). It decides that within the tentative validation of
@@ -793,8 +804,8 @@ private KeyPackages only once it can tag.
   over again private KeyPackages it already handed that sibling that no Welcome has consumed, the most recently issued
   first, so a sibling whose hand-offs were all lost still gets some. Handing one over again does not change its
   `Lifetime`: it counts toward the stock again only until it reaches halfway.
-- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage. A `removed` slot
-  ends both sooner ([Its private KeyPackages](#its-private-keypackages)).
+- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage. A gone slot ends
+  both sooner ([Its private KeyPackages](#its-private-keypackages)).
 
 ### Messages
 
@@ -844,8 +855,8 @@ as several hand-offs.
   `id` differs and the sibling answers it.
 - A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
   it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
-  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or its trusted roster
-  records the requester's slot as `removed`. A device at its cap answers as [Issuing](#issuing) allows. A device answers
+  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or the requester's slot
+  is gone for it. A device at its cap answers as [Issuing](#issuing) allows. A device answers
   each request, by its Marmot app event `id`, once.
 - There are no receipts. A lost hand-off is repaired by the requester's next request.
 
