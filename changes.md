@@ -35,8 +35,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   record dropped before the device acted on it, a link that failed after the new device set its key, and a made link
   that a later branch dropped, none of which got any cleanup before. Untagged leaves stay. The private KeyPackages
   exchanged with a sibling now end when its slot is gone, not only when it is recorded as `removed`. What the cleanup
-  removed stays removed if a later branch lists the slot again, apart from the approving device adding the device back
-  to its own chats while it is still adding it.
+  removed stays removed if a later branch lists the slot again; adding the device back follows only "Adding the new
+  device to chats".
 - When a failed link's undo takes the entry of a device the user decided to remove, the deciding device commits the
   `removed` record alone, with the decision's time and the slot's latest key, while the decision is less than 30 days
   old, once its settled roster lists the slot neither as a device nor as a rejected slot; with no key kept for the slot,

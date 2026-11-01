@@ -587,10 +587,9 @@ a roster listing a key cannot read the leaves tagged under it, which then read a
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
-the cleanup removed stays removed: a device listed again is missing from the groups it was removed from. The approving
-device adds it back to its own chats while it is still adding it
-([Adding the new device to chats](#adding-the-new-device-to-chats)); adding a sibling to a group it is missing from is
-otherwise not specified yet.
+the cleanup removed stays removed: a device listed again is missing from the groups it was removed from, and the cleanup
+adds it back to none of them. Adding it back to one of them is specified only in
+[Adding the new device to chats](#adding-the-new-device-to-chats), under that section's conditions.
 
 ### Removing it from chats
 
