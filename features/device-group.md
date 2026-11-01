@@ -7,14 +7,14 @@ The device group carries the account's device roster as group state, so every de
 linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
 
 The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
-the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked
-into it, how clients keep it out of sight, how the account's devices notice a new sign-in, how each device announces
-the KeyPackages it publishes, what a device does when its own slot holds a KeyPackage it did not make, how devices hand
-each other private KeyPackages, how the Welcome for an add that uses one reaches its sibling, how the user removes a
-device and what the removed device does, how a device signs out, and how each device shows its siblings to its user.
-[account-sync.md](./account-sync.md) specifies the small-state messages devices exchange in the group, and the history
-deliveries a device sends a sibling it adds to a chat. The group's other messages for such an add are not specified
-yet.
+the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked into
+it and which chats the device that linked it adds it to, how clients keep it out of sight, how the account's devices
+notice a new sign-in, how each device announces the KeyPackages it publishes, what a device does when its own slot holds
+a KeyPackage it did not make, how devices hand each other private KeyPackages, how the Welcome for an add that uses one
+reaches its sibling, how the user removes a device and what the removed device does, how a device signs out, and how
+each device shows its siblings to its user. [account-sync.md](./account-sync.md) specifies the small-state messages
+devices exchange in the group, and the history deliveries a device sends a sibling it adds to a chat. The group's other
+messages for such an add are not specified yet.
 
 ## Surfaces
 
@@ -252,6 +252,33 @@ answering"). Nothing in this specification frees that slot then: removing a devi
 specified yet ([Inactive devices](#inactive-devices)). If it does, the entry has its `tag_signature_key`, and the user
 can remove that device like any other.
 
+### Adding the new device to chats
+
+Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device to
+the chats it is in, while the roster lists the new device as `active` with "add to all my chats" on. No other device
+adds it to a chat under the link.
+
+- It adds the new device to a chat by a same-account Add
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations") of
+  one of the private KeyPackages the new device handed it ([Private KeyPackages](#private-keypackages)), and sends that
+  Add's Welcome as a sibling Welcome ([Sibling Welcomes](#sibling-welcomes)). It MUST NOT add the new device there with
+  a KeyPackage the new device published.
+- It does not add the new device to a chat that already holds it: one where a leaf of the account carries a device tag
+  that reads as the new device's slot ([Matching leaves to devices](#matching-leaves-to-devices)), or has the new
+  device's `tag_signature_key` as its signature key.
+- It skips a chat that cannot take that Add: one that does not require `0x800d`, one whose routing names no relay list
+  that a sibling Welcome may carry ([Message](#message)), and one whose requirements the new device's KeyPackages do not
+  meet ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules"). It adds
+  the new device there in no other way.
+- It asks the new device for as many private KeyPackages as the Adds need, beyond the ones it keeps
+  ([Messages](#messages)).
+- It MAY spread the Adds over time. How long it goes on adding them is not specified yet.
+- Turning "add to all my chats" off stops further Adds and takes the new device out of no chat.
+
+Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
+device's entry has "bring chat history" on. A chat the approving device is not in, or one it skips, gets the new device
+only from another sibling, which is not specified yet.
+
 ## Keeping it out of sight
 
 A device group is not a chat:
@@ -427,8 +454,9 @@ A leaf that no device claims is not evidence of anything by itself. A device's l
 unclaimed until it replaces them ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing
 tags"), and so do the leaves that other accounts' inviters gave a sign-in the user has not answered, or answered Not
 now. A device MUST NOT warn about a leaf, or remove one, only because no device claims it. Removing a removed device's
-leaves is under [Removing a device](#removing-a-device). Adding a sibling to a group it is missing from is not specified
-yet.
+leaves is under [Removing a device](#removing-a-device). The approving device adds a newly linked device to its chats
+([Adding the new device to chats](#adding-the-new-device-to-chats)); adding a sibling to a group it is missing from
+otherwise is not specified yet.
 
 ## Removing a device
 
