@@ -470,28 +470,24 @@ grace period: if it shows up at any point before 90 days, the mark is cleared an
 was alive but cut off for that long can still be removed this way: this is a cleanup rule Alice agrees to, not a
 finding that the device was lost.
 
-**Signing out on this device** removes that device completely. In order:
-
-1. It records in the roster that it is leaving. This goes first so siblings stop adding it to chats.
-2. Its siblings remove it from every chat and from the device group, exactly as in a removal from another device.
-   The signing-out device doesn't have to wait for that to finish.
-3. It deletes the KeyPackage in its own slot, and only its own.
-4. It deletes all of its local data.
-
-Letting siblings do the removing means the departure still completes after the device has wiped itself.
+**Signing out on this device** removes that device completely. Its siblings take it out of the device group and of
+the chats where they can, it leaves the other chats itself, and it deletes its KeyPackage and all of its local data.
+Letting siblings do the removing means the departure still completes after the device has wiped itself. The rules are
+in [../features/device-group.md](../features/device-group.md#signing-out) ("Signing out").
 
 Signing out on the **last** device has no siblings to do this, so it leaves each chat itself, which needs another
-member of the chat to commit the departure. It publishes its departures, then wipes. Once an account's last leaf
-leaves a chat, the account is no longer in that chat. The warning says so: signing back in won't bring those chats
-back.
+member of the chat to commit the departure. It publishes its departures, then wipes. Its device group is left with no
+device running it, and the account's next link founds a new one. Once an account's last leaf leaves a chat, the account
+is no longer in that chat. The warning says so: signing back in won't bring those chats back.
 
 Locking the app with a PIN, face, or fingerprint is not signing out. It protects local access and changes nothing on
 the network.
 
 **Admin chats:** if Alice is a chat admin, every one of her devices is an admin there, because admin rights belong to
-the account. An admin can't leave a chat by itself, but signing out doesn't need it to: a sibling removes the
-departing device, so the admin self-leave rule stays as it is. The last device of an admin account still has to give
-up admin first. The rules are in
+the account. An admin can't leave a chat by itself. Where a sibling takes the departing device out, signing out
+doesn't need it to, so the admin self-leave rule stays as it is. Elsewhere, and always on the last device, leaving
+means giving up admin first, and a chat where Alice is the last admin can't be left: the device tells her which chats
+it couldn't leave. The rules are in
 [../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Removal by another device of the same
 account").
 

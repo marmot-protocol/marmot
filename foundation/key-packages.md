@@ -160,10 +160,12 @@ a device whose client supports `0x800e` decides from what it found whether to wa
 
 ### Stopping publication
 
-When a device signs out, it SHOULD delete the publication in its own slot using the active transport binding's
-deletion mechanism. It deletes only its own slot. Signing out starts when the device decides to sign out, before it
-deletes its slot. It ends when the sign-out finishes, after which the device is signed out, or when the device abandons
-it, after which it is neither signing out nor signed out.
+When a device signs out, it SHOULD delete the publication in its own slot using the active transport binding's deletion
+mechanism. It deletes only its own slot. A device that its device group unlinked publishes nothing more and does not
+delete it: the device that decided its removal does ([../features/device-group.md](../features/device-group.md), "On the
+removed device"). Signing out starts when the device decides to sign out, before it deletes its slot. It ends when the
+sign-out finishes, after which the device is signed out, or when the device abandons it, after which it is neither
+signing out nor signed out.
 
 Deletion asks the transport to stop serving the KeyPackage. It does not revoke it: a copy that a transport keeps serving
 remains a valid candidate until its `Lifetime.not_after`. A device that has signed out no longer accepts Welcomes, so it

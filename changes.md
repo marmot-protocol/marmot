@@ -13,6 +13,34 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-10-31: A device signs out through its siblings
+
+[#484](https://github.com/marmot-protocol/marmot/pull/484) changes
+[features/device-group.md](./features/device-group.md) and [foundation/key-packages.md](./foundation/key-packages.md).
+
+- A device that trusts a device group signs out through its siblings when its own entry in that group's roster has its
+  `tag_signature_key` and the roster lists another device whose status is not `leaving`. It commits its own entry with
+  status `leaving`. Once that Commit is confirmed, it leaves itself every group except the device group and the groups
+  that require `0x800d` where its own leaf is tagged as its slot and another leaf as such a sibling, then deletes its
+  slot and its local state. If the `leaving` Commit is not confirmed within about 30 seconds, it leaves every chat
+  itself and tells its user. A device never sets another device's entry to `leaving`.
+- A device that finds a sibling `leaving` on its selected branch, with its `tag_signature_key`, removes it as if its
+  user had decided to, and SHOULD first wait a random delay of up to 30 seconds.
+- A device that started signing out before its device group's removal of it reached it is not unlinked, whatever the
+  removal was, the undo of a failed link included, and tells its user neither that it was unlinked nor that linking
+  failed. It sends only what its sign-out still has to send, a SelfRemove in each chat it was to leave and the deletion
+  of its own slot, and then deletes its local state. A removal that reaches a device before it starts signing out is
+  handled as before.
+- A chat a signing-out device cannot leave, for example because its account is the chat's last active admin, keeps its
+  leaf, and the device tells its user. A device removed while signing out makes no admin-policy update, so a chat whose
+  SelfRemove needs one keeps its leaf too.
+- A device that signs out on its own cannot leave its device group, where its account is the admin, and its leaf there
+  stays until a sibling removes it. When the roster lists no other device, or only `leaving` ones, no device runs that
+  device group any more, and the account's next link founds a new one.
+- An unlinked device's sign-out leaves no group and deletes no slot.
+  [foundation/key-packages.md](./foundation/key-packages.md) ("Stopping publication") makes that exception, since the
+  device that decided its removal deletes the slot.
+
 ## 2026-10-31: History bundles through Blossom (draft)
 
 [#483](https://github.com/marmot-protocol/marmot/pull/483) changes
