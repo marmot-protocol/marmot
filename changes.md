@@ -26,9 +26,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   same-account Add after the creating Commit. No other device adds the new device, under the link, to a chat the
   approving device is in.
 - Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
-  goes out as a sibling Welcome. A KeyPackage the new device published MUST NOT be used. The account's devices do not
-  use the founding exemption for the new device: no device adds it to a chat by a KeyPackage it published, in the
-  Commit that creates the chat or after it.
+  goes out as a sibling Welcome. The account's devices do not use the founding exemption for the new device: no device
+  adds it to a chat by a KeyPackage it published, in the Commit that creates the chat or after it.
 - A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
   `tag_signature_key`, gets no Add. A leaf from before the link whose signature key is not that key is not found, so
   such a chat can get a second leaf for the device, which counts toward `max_leaves_per_account` while it stays.

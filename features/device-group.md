@@ -778,7 +778,7 @@ Devices in a device group are to add each other to chats only with private KeyPa
 device hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication.
 The Welcome for an add that uses one reaches its sibling only inside the device group ([Sibling
 Welcomes](#sibling-welcomes)). The device that approves a link adds the new device to its chats this way ([Adding the
-new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling in the Commit that creates a group
+new device to chats](#adding-the-new-device-to-chats)). When a device adds a sibling in the Commit that creates a chat
 is not specified yet. Until it is, the founding exemption still applies ([Security
 considerations](#security-considerations)), but the account's devices do not use it for a newly linked device ([Adding
 the new device to chats](#adding-the-new-device-to-chats)).
@@ -1150,7 +1150,7 @@ status, and removing a device after a longer absence, are not specified yet.
 - Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
   joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
   sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. Until when a
-  device adds a sibling in the Commit that creates a group is specified, a device that creates a group may still add
+  device adds a sibling in the Commit that creates a chat is specified, a device that creates a chat may still add
   its account's published KeyPackages there under the founding exemption in
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), including one
   that someone holding that key published. The account's devices do not use it for a newly linked device ([Adding the
