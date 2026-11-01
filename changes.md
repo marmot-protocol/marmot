@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-01: When the approving device holds back a new device's chat Adds
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/device-group.md](./features/device-group.md).
+
+- The approving device adds the new device to no chat while the new device's entry has no `tag_signature_key`, as
+  before the new device first sets it or after branch selection drops it, since it cannot tell which chats already hold
+  the device.
+- It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's
+  slot, even if branch selection later drops that record and the roster lists the device again.
+
 ## 2026-11-01: Writing backups (draft)
 
 [#487](https://github.com/marmot-protocol/marmot/pull/487) changes

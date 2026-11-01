@@ -279,6 +279,13 @@ in.
 - It does not add the new device to a chat that already holds it: one where a leaf of the account carries a device tag
   that reads as the new device's slot ([Matching leaves to devices](#matching-leaves-to-devices)), or has the new
   device's `tag_signature_key` as its signature key.
+- It adds the new device to no chat while the new device's entry has no `tag_signature_key`, as before the new device
+  first sets it ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags") or after
+  branch selection drops it. No tag reads as the new device's slot then, so it cannot tell which chats already hold the
+  device.
+- It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's slot
+  ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)), even if branch selection later drops that
+  record and the roster lists the device again.
 - It skips a chat that cannot take that Add: one that does not require `0x800d`, one whose routing names no relay list
   that a sibling Welcome may carry ([Message](#message)), one where the account already has `max_leaves_per_account`
   leaves ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Leaf limit"), and one
