@@ -95,8 +95,9 @@ this table only names the value and points at the owner.
 
 The table includes Marmot-allocated kinds and standard app-event kinds to which Marmot assigns an inner payload meaning.
 Standard transport kinds that the Nostr binding reuses unchanged — kind `1059` (NIP-59 gift wrap), kind `13` (NIP-59
-seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `10002` (NIP-65 relay list), and kind
-`10050` (NIP-17 DM inbox relay list) — remain defined in [../transports/nostr.md](../transports/nostr.md).
+seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `10002` (NIP-65 relay list), kind
+`10050` (NIP-17 DM inbox relay list), and kind `30078` (NIP-78 application data, for the backup pointer) — remain
+defined in [../transports/nostr.md](../transports/nostr.md).
 
 | Kind    | Name                                | Layer                               | Document                                                |
 | ------- | ----------------------------------- | ----------------------------------- | ------------------------------------------------------- |

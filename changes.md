@@ -13,6 +13,29 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-01: Writing backups (draft)
+
+[#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) changes
+[features/account-sync.md](./features/account-sync.md) and [transports/nostr.md](./transports/nostr.md).
+
+- The device the account entry names as `backup_writer`, or a device that trusts no device group under the key it
+  keeps, writes the account's backup once the newest one its backup pointer lists is a day old. A backup is Blossom
+  blobs: each history bundle of each chat it holds, other than its device group, its small-state items, and a head
+  that holds the archive key sealed to the recovery key and an index of the blobs. Every key derives from a fresh
+  archive key or from the recovery key's public half, as "Backup archives" gives it, with test vectors.
+- The account's backup pointer lists the backups kept under one recovery key, at most 16, newest first. It is a kind
+  `30078` event signed by the account, at a `d` address the public half derives, with content encrypted under a key
+  the public half derives, published to the account's NIP-65 write relays. A backup counts only once a relay accepts
+  the pointer that lists it; until then the writer publishes it again for up to a day. A writer builds a pointer only
+  from a fetch that a relay answered in full.
+- Retention keeps the newest two backups, any older one whose index cannot be read, and any older one that is the last
+  to hold an unexpired stretch of some chat. A writer condemns the blobs of each backup a pointer it builds drops, and
+  of each backup it abandons, and deletes a condemned blob with BUD-02 an hour later at the earliest, only while the
+  pointer it fetched in that pass lists no backup the blob belongs to. Backups under other words are never deleted.
+- A device that is not the writer takes over, through the account entry's compare-and-set, at once when the writer has
+  left the roster or is `leaving`, and when the writer has listed nothing for 7 days since this device first saw it
+  named for the key.
+
 ## 2026-10-31: A device signs out through its siblings
 
 [#484](https://github.com/marmot-protocol/marmot/pull/484) changes
