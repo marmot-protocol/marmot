@@ -269,6 +269,12 @@ them, so if she still has her old words, she can still restore them. If she has 
 replacing them is all she needs to do. Anyone who already copied an old backup and also has the old words can still
 read that old copy; nothing can take it back.
 
+The first adopted [restore flow](../features/account-sync.md#restoring-history-from-backups) restores history only
+for chats the device currently belongs to. Before a real join, an index supplies availability metadata, not a
+transcript or membership. That flow leaves the current recovery key and archived preferences unchanged. The pre-join
+read-only transcript described next, the broader disaster recovery, and "Keeping the same words" behavior below remain
+ideas.
+
 **Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
 **Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
 and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If she
@@ -347,5 +353,6 @@ It needs nothing beyond gift wraps and the existing add, so it can come after th
 4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
    holds it) and writing backups (the archive format, the backup pointer, retention, deletion and takeover) are
    specified in [../features/account-sync.md](../features/account-sync.md), and the pointer's Nostr event in
-   [../transports/nostr.md](../transports/nostr.md). Still to come: the restore flow.
+   [../transports/nostr.md](../transports/nostr.md). History-only restore for chats the device currently belongs to is
+   specified there too; restoring small state and broader disaster recovery remain to come.
 5. **Re-add requests**, when they are picked up.
