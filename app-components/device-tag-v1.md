@@ -125,8 +125,9 @@ about the leaves of a removed slot, or of a slot the roster no longer lists, is 
 [../features/device-group.md](../features/device-group.md) ("Devices the roster no longer lists" and "Removing it from
 chats").
 The device that approved a sibling's link adds it to the chats it is in
-([../features/device-group.md](../features/device-group.md), "Adding the new device to chats"); what they do about a
-sibling missing from a group otherwise is not specified yet.
+([../features/device-group.md](../features/device-group.md), "Adding the new device to chats"). Other missing sibling
+memberships follow [Filling a missing chat](../features/device-group.md#filling-a-missing-chat), including in chats the
+approving device is in; that flow defines the selected-parent presence recheck and the remaining duplicate-leaf limit.
 
 ## Validity
 
