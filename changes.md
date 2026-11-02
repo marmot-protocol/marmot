@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Edit linked-device settings with user-edit recovery
+
+PR pending, for [mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md), and
+[features/account-sync.md](./features/account-sync.md).
+
+- Allow post-link changes to all three device settings. Omitted values come from current roster state.
+- Generalize existing `rename_id` provenance to label/settings user edits without changing its encoding. Recover a
+  prior lost edit before accepting a later one; a busy outcome is retryable. Non-user updates preserve the id and
+  values, and a competing user edit wins as a whole. Preserve legacy label-only recovery and safe no-op cancellation.
+- Enabling history affects future sibling Adds and remaining obligations; it starts no retroactive backfill.
+
 ## 2026-11-02: Linked siblings in a chat's founding Add
 
 [#490](https://github.com/marmot-protocol/marmot/pull/490) changes

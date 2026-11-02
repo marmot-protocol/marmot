@@ -407,6 +407,9 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
   each sibling whose leaf that Commit adds: a leaf of its own account whose device tag, read against its trusted roster,
   names a device in that roster ([device-group.md](./device-group.md), "Matching leaves to devices"). It records that it
   owes the history before it sends any of it. A Commit that adds a sibling to the device group itself owes nothing.
+- Changing "bring chat history" after linking creates no new history obligation for an already joined chat and
+  does not recreate an obligation forgotten while the setting was off. It governs later sibling Adds and history
+  still owed when it would be sent ([device-group.md](./device-group.md), "Device settings").
 - It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
   on and a history key it can seal to, and only while the device still holds the chat. It checks these when it would
   send, and forgets the history as soon as one fails; it does not wait for a history key to appear. A sibling it can

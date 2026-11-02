@@ -1125,6 +1125,25 @@ slot that holds it.
 A device shows its user the account's devices from its device group's roster, for example on a Devices screen. It never
 shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
 
+### Device settings
+
+Any device MAY change any device's three settings after linking, its own included
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A change is one roster
+Commit. A client changing only some settings MUST preserve the others from the state it commits to, rather than
+restore values from an earlier view.
+
+- Turning "add to all my chats" on lets siblings add the device to the chats it is missing, under the sibling-Add
+  rules above. Turning it off never removes the device from a chat it has joined. It does not exclude a sibling from
+  a newly created chat ([Creating a chat](#creating-a-chat)).
+- "Bring chat history" governs future sibling Adds and histories still owed, as
+  [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
+  chat the device already joined and does not restore history forgotten while it was off.
+- "Keep while inactive" prevents automatic removal for inactivity when that removal is supported. It does not cancel
+  a user-decided removal or the device's sign-out, and does not change its status.
+
+A settings edit and a rename use the same user-edit provenance and recovery below. Concurrent user edits of the same
+device follow branch selection as whole edits, even when they changed different settings; they are not merged by field.
+
 ### Labels, clients and platforms
 
 A device entry's `label`, `client` and `platform`
@@ -1134,12 +1153,11 @@ the devices apart.
 - Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
   secure random source: the creating device's entry in the founding state, and the entry of every device added, by the
   founding Add ("Creating the device group") or a later link ("Approving").
-  Only a rename changes it afterwards, so no two entries share one, and an id a device kept can show up in the roster
-  again only when a fork brings back an earlier state, which is what rename recovery below reads.
-- Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
-  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a fresh `rename_id` drawn the
-  same way, one that clears `label` included. Every other update to an entry MUST keep its `label` and its
-  `rename_id`.
+  Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
+  again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
+- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings that sends a Commit MUST write
+  a fresh `rename_id` drawn the same way, one that clears `label` included. It changes only the intended label or
+  settings and this id. Every non-user update MUST preserve `label`, `settings` and `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
@@ -1151,31 +1169,41 @@ the devices apart.
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
   older roster puts back whatever changed in that entry since.
 
-A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit.
-The entry's `rename_id` tells the renaming device where its rename stands; labels and Commits do not, since two renames
-can set the same label and a lost Commit can be sent again as a different Commit. From before it sends a rename's
-Commit, a device keeps, for the device it renames:
+A user edit can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's
+Commit. The entry's `rename_id` tells the editing device where its edit stands; values and Commits do not, since two
+edits can set the same values and a lost Commit can be sent again as a different Commit. From before sending an
+edit's Commit, a device retains or can reconstruct the label and three settings it intends, and these ids:
 
-- as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
-- as replaced, the `rename_id` the entry held when the device built the rename. If the device still keeps an earlier
-  rename of that device, and the entry held an id that earlier rename kept, as written or as replaced, it also keeps as
-  replaced every id the earlier rename kept, both kinds. The new rename takes the earlier one's place.
+- as written, the `rename_id` the edit writes, and each one it writes when it makes the edit again;
+- as replaced, the `rename_id` the entry held when the device built the edit. If it still keeps an earlier edit of
+  that device and the entry holds an id that earlier edit kept, as written or replaced, it also keeps as replaced
+  every id the earlier edit kept, both kinds. The new edit takes the earlier one's place.
 
-It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
-stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
-no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state,
-taking the first of these that matches:
+A label-only rename retained before settings edits were supported remains label-only: its recovery MUST NOT invent
+settings. A device keeps an edit until another user edit of that device stands or the device leaves the roster. It
+reads its standing only while its device group is `Stable`
+([../protocol-core/group-state.md](../protocol-core/group-state.md)) and no Commit of its own there is unresolved,
+from the entry's `rename_id` in canonical roster state, taking the first match:
 
-- One kept as written: the rename applied.
-- One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
-  fresh `rename_id`, unless the entry already shows the label it set.
-- Any other: another rename won and stands, and the device drops its own.
+- One kept as written: the edit applied. Keep it recoverable if a later fork drops it.
+- One kept as replaced: the edit lost and no other user edit followed. Make it again with a fresh `rename_id`,
+  unless the roster already holds every value it intends. Preserve all unrelated entry fields from current state.
+- Any other: another user edit won and stands; drop the local edit.
 
-A device MAY forget the oldest `rename_id`s it keeps for one device, but never the newest it keeps as written, nor the
-`rename_id` the entry held when the device last built the rename or made it again: while the rename has not applied and
-nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads as another rename's,
-so the device drops its rename rather than make it again over one it cannot place. Either way, a device shows its user
-the label its roster holds.
+Before accepting a further edit of that device, a client SHOULD first try this existing recovery and re-read the
+roster. If the earlier intention remains unresolved, refuse the later edit with a retryable busy outcome. An applied
+retained edit alone MUST NOT make subsequent edits busy. Resolve supplied values against the roster read after this
+recovery; omitted settings preserve their current values.
+
+Saving values already shown sends no new edit. It keeps a retained applied edit. A no-op MAY cancel a settled lost
+edit only when the user's supplied fields cover every pending difference; it MUST NOT discard a lost setting merely
+because the user saved the current label, or the converse. A successful no-op MUST NOT leave an opposite intention
+that can later change the saved values.
+
+A device MAY forget the oldest `rename_id`s kept for one device, but never its newest written id or the id held when
+it last built the edit or made it again: while the edit has not applied and no other user edit followed, the roster
+holds that one. A forgotten id reads as another edit's, so drop the local edit rather than overwrite one it cannot
+place. Show the user the label and settings held by the roster.
 
 ### Heartbeats
 
