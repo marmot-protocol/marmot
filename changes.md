@@ -22,7 +22,8 @@ PR pending, for [mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/i
   backups. Fetch and import only while the restoring device's own leaf belongs to the chat; an index never grants
   membership, creates a chat or triggers a join or re-add.
 - Keep the original global history-blob number when filtering chats, and use existing insert-only history validation,
-  retention and attachment-key rules with honest backup provenance. Importing history does not mark it read or create unread counts.
+  retention and attachment-key rules with honest backup provenance. Importing history does not mark it read or create
+  unread counts.
 - Leave archived small state unused in this version. Restore changes neither the current recovery key nor backup
   settings; old words remain independently usable. Nonsecret availability metadata may prompt for words after a real
   later join, without making an unknown chat into a transcript or route.
@@ -31,6 +32,29 @@ PR pending, for [mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/i
 - Clarify the narrower adopted scope in [ideas/account-sync.md](./ideas/account-sync.md) and
   [ideas/multi-device.md](./ideas/multi-device.md); their broader pre-join transcript and recovery-key retention
   proposals remain non-normative future directions.
+
+## 2026-11-02: Repairing a published sibling Welcome
+
+[#493](https://github.com/marmot-protocol/marmot/pull/493), for
+[mdk#2628, D70, D89, D90 and D91](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/device-group.md](./features/device-group.md#resending-a-published-sibling-welcome).
+
+- Retain the original adder's exact Welcome and private KeyPackage reference through expiry. Repair sends a new
+  carrier for those bytes, without another Add or KeyPackage, after the first new authenticated target-device
+  activity observed after durably confirmed publication and a fixed 600-second wait. Later activity cannot slide
+  that deadline; each successfully published carrier generation needs fresh activity before another wait.
+- Preserve each successful generation’s publication boundary and immutable first authenticated source observations,
+  including application messages and accepted member Commits/Proposals, across replay, rewrapping and restart; unknown legacy timing
+  holds repair. A selected matching device leaf advanced to Update or Commit suppresses repair, while the Add's
+  tagged KeyPackage leaf alone is inconclusive. New carriers retain the originating Add/readiness checks and the
+  one-unresolved-carrier boundary; handed-off targets still finish under the transport's publication rules.
+- On upgrade of existing experimental local device groups, freeze the selected branch’s current epoch as an activity cutoff: only
+  later-epoch activity qualifies, after the next ordinary committed update. Fresh local groups qualify immediately;
+  initial Welcome delivery is unchanged, and no extra Commit is made just for repair. Hold fresh carrier preparation
+  across a backward clock until its timestamp can exceed earlier prepared carriers; exact unexposed retries remain safe.
+- State the best-effort limit: delayed traffic is not proof of live post-publication activity or Welcome receipt,
+  and a delayed target update can cause a harmless duplicate Welcome. No new receipt, wire format, history backfill,
+  expired-package re-add, or duplicate-leaf cleanup is introduced.
 
 ## 2026-11-02: Edit linked-device settings with user-edit recovery
 
