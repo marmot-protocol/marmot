@@ -24,7 +24,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 - Allow post-link changes to all three device settings. Omitted values come from current roster state. Newly created
   founding and linked entries start with "keep while inactive" off; later choices and their recovery are preserved.
 - Generalize existing `rename_id` provenance to label/settings user edits without changing its encoding. Recover a
-  prior lost edit before accepting a later one; the user can try again while it is unresolved. Non-user updates preserve
+  prior lost edit before accepting a later one; the user can try again once it resolves. Non-user updates preserve
   the id and values, and a competing user edit wins as a whole. User label/settings edits must be inline in the editing device's
   own Commit; non-user roster updates may still be standalone. Preserve legacy label-only recovery and safe no-op
   cancellation, and resolve later requests only after the earlier intention settles, is dropped or is cancelled.

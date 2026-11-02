@@ -322,8 +322,9 @@ race and ordinary branch selection applies.
 - It asks the new device for as many private KeyPackages as the Adds need, beyond the ones it keeps
   ([Messages](#messages)).
 - It MAY spread the Adds over time. How long it goes on adding them is not specified yet.
-- Turning "add to all my chats" off stops further Adds under this section and takes the new device out of no chat.
-  It does not exclude the device from a new chat's founding Add ([Creating a chat](#creating-a-chat)).
+- Turning "add to all my chats" off stops beginning further automatic Add attempts under this section and takes the
+  new device out of no chat. An Add already admitted follows [Device settings](#device-settings). The setting does not
+  exclude the device from a new chat's founding Add ([Creating a chat](#creating-a-chat)).
 
 Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
 device's entry has "bring chat history" on. What the approving device shows its user about the chats it skips is not
@@ -383,7 +384,8 @@ the limit for an earlier untagged leaf described above still applies. Fresh publ
 valid claims from a lower slot can keep another device deferring beyond one claim's lifetime, for example while that
 claimant cannot reach a chat's relays. This best-effort flow guarantees neither fairness nor eventual filling.
 
-Turning "add to all my chats" off stops this gap filling and removes no existing leaf. This initial rule does not
+Turning "add to all my chats" off stops beginning further automatic Add attempts through this gap filling and removes
+no existing leaf. An Add already admitted follows [Device settings](#device-settings). This initial rule does not
 distinguish an old chat from an invitation missed after the link: with the setting off, a missed invitation waits for
 a re-invite. Creating a new chat and including linked siblings in its founding Add is a separate flow; this limit
 does not exclude them from that founding Add.
@@ -1223,8 +1225,11 @@ the others from the state it commits to, rather than restore values from an earl
 - Turning "add to all my chats" on permits eligible Adds under
   [Adding the new device to chats](#adding-the-new-device-to-chats) while that flow is still adding, and under
   [Filling a missing chat](#filling-a-missing-chat), subject to each flow's conditions. Turning it off stops both flows
-  and never removes the device from a joined chat or excludes a sibling from a newly created chat
-  ([Creating a chat](#creating-a-chat)).
+  from beginning further automatic Add attempts and never removes the device from a joined chat or excludes a sibling
+  from a newly created chat ([Creating a chat](#creating-a-chat)). An Add already admitted for outbound processing may
+  complete under the ordinary group and publication rules, even while awaiting preparation, publication or settlement.
+  Turning the setting off does not cancel that Add or make it invalid. Its history is governed separately by
+  "bring chat history" below.
 - "Bring chat history" governs future sibling Adds and histories still owed, as
   [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
   chat the device already joined and does not restore history forgotten while it was off.
