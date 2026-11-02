@@ -22,11 +22,12 @@ For [mdk#2628, D70, D89, D90 and D91](https://github.com/marmot-protocol/mdk/iss
   carrier for those bytes, without another Add or KeyPackage, after the first new authenticated target-device
   activity observed after durably confirmed publication and a fixed 600-second wait. Later activity cannot slide
   that deadline; each successfully published carrier generation needs fresh activity before another wait.
-- Preserve first publication and qualifying-activity observations across replay and restart; unknown legacy timing
+- Preserve each successful generation’s publication boundary and immutable first authenticated source observations,
+  including application messages and accepted member Commits/Proposals, across replay, rewrapping and restart; unknown legacy timing
   holds repair. A selected matching device leaf advanced to Update or Commit suppresses repair, while the Add's
   tagged KeyPackage leaf alone is inconclusive. New carriers retain the originating Add/readiness checks and the
   one-unresolved-carrier boundary; handed-off targets still finish under the transport's publication rules.
-- On upgrade of existing experimental local device groups, freeze the current epoch as an activity cutoff: only
+- On upgrade of existing experimental local device groups, freeze the selected branch’s current epoch as an activity cutoff: only
   later-epoch activity qualifies, after the next ordinary committed update. Fresh local groups qualify immediately;
   initial Welcome delivery is unchanged, and no extra Commit is made just for repair. Hold fresh carrier preparation
   across a backward clock until its timestamp can exceed earlier prepared carriers; exact unexposed retries remain safe.
