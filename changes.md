@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Linked siblings in a chat's founding Add
+
+The companion to [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/2628) changes
+[features/device-group.md](./features/device-group.md).
+
+- A creator includes linked siblings opportunistically in the founding Add with private KeyPackages, and retains their
+  sibling Welcome deliveries independently of ordinary Welcome deliveries. It never weakens the requirements selected
+  for the other accounts or uses its account's public KeyPackages.
+- The old-chat setting does not exclude a sibling from new chats. Leaving, keyless, pending-removal and remembered
+  removed devices are omitted; inactive devices remain eligible. Missing private stock does not delay creation.
+
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
 [#488](https://github.com/marmot-protocol/marmot/pull/488) changes
