@@ -15,7 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-02: Restore backup history for current device memberships
 
-PR pending, for [mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[#494](https://github.com/marmot-protocol/marmot/pull/494), for
+[mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/issues/2628), changes
 [features/account-sync.md](./features/account-sync.md).
 
 - Restore history on demand using the existing recovery key, pointer and archive formats, including older listed
