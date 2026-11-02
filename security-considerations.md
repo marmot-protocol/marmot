@@ -169,7 +169,9 @@ A current device-group member can also originate or rebroadcast a known invitati
 chat it is not in: matching local copies request their own ordinary Leave and hold new automatic sibling Adds under
 [invitation decisions](features/account-sync.md#invitation-decisions). A maximum-version decline cannot be superseded
 by a legal later acceptance; removing its sender does not undo retained state. Native departure/consent checks still
-apply, and unrelated generations are not an account-wide removal target.
+apply, and unrelated generations are not an account-wide removal target. Retained generations have no expiry or
+count limit: a malicious linked device can fabricate generations to enlarge stored state and rebroadcast work, with
+at least one update per generation of the same chat. Removing the sender does not clear those values.
 
 Owners: [active admins](app-components/admin-policy-v1.md#active-admins),
 [account-device security](app-components/account-devices-v1.md#security-considerations),
@@ -568,7 +570,9 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Residual risk:** Other receivers cannot verify private device approval; founding creation has its stated
   exception. Removing one leaf does not remove every leaf of the account. A retained maximum-version decline is
   permanent for its generation; removing the originating device does not undo it. Decline follows ordinary native
-  departure rules and does not directly remove unrelated generations.
+  departure rules and does not directly remove unrelated generations. Fabricated generations have no expiry or count
+  limit and enlarge retained state and rebroadcast work, requiring at least one update per generation of the same chat;
+  those values also survive removal of their sender.
 - **Normative owners:** [Account devices](app-components/account-devices-v1.md#sender-rules), [Account
   devices](app-components/account-devices-v1.md#security-considerations), [Member
   departure](protocol-core/member-departure.md#accounts-with-several-devices), [Invitation

@@ -158,8 +158,10 @@ SHA-256 = 6d0ba86f166ff1fc424217574e7a62dbcf9c6d16a54efd61936dbc05a1f8fec2
 
 For a locally founded group, use the successfully confirmed post-founding context: epoch 1 after a founding Add, or
 epoch 0 for solo creation ([../protocol-core/joining.md](../protocol-core/joining.md), "Behavior"). Its creator records
-one implicit accepted value, without treating a replay or restart as a new user action. No public founding Commit
-carrier is required for the identity.
+one implicit accepted value at version 1 only if it holds no decision for that generation, then retains and broadcasts
+it under the ordinary decision rules below. A held value is never replaced by that implicit acceptance; replay or
+restart neither creates a new user action nor increments its version. No public founding Commit carrier is required
+for the identity.
 
 **Inherited identity.** An automatic same-account sibling Add carries its sender's stored original generation in the
 version-2 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
@@ -718,7 +720,7 @@ entry holds no key, as it did when the device read it, and the update is committ
 A backup is a set of blobs on [Blossom](https://github.com/hzrd149/blossom) servers, each at the SHA-256 of its bytes:
 
 - one bundle blob for each history bundle ([History bundles](#history-bundles)) of each chat the backup holds;
-- at most one small-state blob, holding small-state items ([Items](#items));
+- at most one small-state blob, holding only `read`, `pin`, `mute` and `archive` items ([Items](#items));
 - one head, holding the backup's id, its archive key sealed to the recovery key, and its encrypted index, which lists
   every other blob.
 
@@ -758,7 +760,8 @@ decisions are excluded and remain retained/rebroadcast by the kind-475 rules. It
 update's content is written
 ([Messages](#messages)) but without its 32,768-byte limit, under the small-state key with the 28 ASCII bytes of
 `marmot backup small state v1` as associated data. That plaintext is at most 8,388,608 bytes long; a writer whose
-small state would be longer writes no backup. A backup whose writer holds no item has no small-state blob.
+small-state blob plaintext would be longer writes no backup. A backup whose writer holds no `read`, `pin`, `mute`
+or `archive` item has no small-state blob, even if it holds invitation decisions.
 
 **Index.** The index is one UTF-8 JSON object, encoded with the rules of a bundle's encoding: no object repeats a member
 name, every number is a decimal integer from 0 to 9007199254740991 without leading zeros, and the writer writes it
@@ -1000,9 +1003,9 @@ so no device moves it back; a later position moves it again once that one is fur
   device is, or may become, a member of that chat.
 - Any device of the account can set any item, including a stolen linked device until it is removed. A device that sends
   an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good: no
-  change a user makes can beat it, and removing the device does not undo it. Only another value at that version can
-  still replace it, by the tie-break. A read position that names a message no device holds can mark a whole chat as
-  read, and one at the largest epoch and `created_at` marks every later message read as well: positions never move back,
+  change a user makes can beat it, and removing the device does not undo it. Only another value at that version that
+  wins that item's tie-break can replace it; an equal-version invitation acceptance cannot replace a decline. A read
+  position that names a message no device holds can mark a whole chat as read, and one at the largest epoch and `created_at` marks every later message read as well: positions never move back,
   so removing the device does not clear it. A broadcast request makes every sibling broadcast, at most once an hour
   each. A linked device can already read and send in the account's chats; these let it also fix or change their
   settings.
@@ -1013,6 +1016,9 @@ so no device moves it back; a later position moves it again once that one is fur
   acceptance and no later legal version can supersede it; removing its sender does not undo the retained value.
   This consequence is permanent for that generation, not an account-wide removal across other generations. A higher
   acceptance before Leave is requested can supersede other declines, but cannot cancel an existing Leave request.
+  Retained generations have no expiry or count limit, and different generations of one chat require separate updates.
+  A malicious linked device can fabricate arbitrarily many generations to enlarge retained state and rebroadcast work,
+  requiring at least one update per generation of the same chat. Removing that sender does not clear those values.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
 - Any device of the account can rewrite another device's `history_key`, including a stolen linked device until it is
   removed. Siblings then seal history meant for that device to a key the stolen device chose, until that device writes
