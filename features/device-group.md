@@ -262,6 +262,9 @@ can remove that device like any other.
 
 ### Private sibling Add admission
 
+A client implementing this feature MUST NOT add a device of its account to a chat with a KeyPackage that device
+published, in the founding Add or later; it adds a sibling only with a private KeyPackage under this contract.
+
 These sender requirements apply whenever a device adds a sibling to a chat with a private KeyPackage, including the
 founding Add ([Creating a chat](#creating-a-chat)) and a later Add
 ([Adding the new device to chats](#adding-the-new-device-to-chats)). The flow chooses which eligible devices to add;
