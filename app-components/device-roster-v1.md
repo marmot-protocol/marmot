@@ -101,8 +101,8 @@ Each device the account has linked has one `DeviceEntryV1`:
   roster.
 - `label` is the name the user gave the device, `client` its client name, and `platform` its platform. Each is UTF-8,
   compared and stored as bytes and never normalized; a decoder rejects bytes that are not UTF-8.
-- `rename_id` is 16 random bytes. Every entry is created with a fresh one, every rename writes a new one, and no other
-  update changes it, so a device can tell its own rename from another after a fork
+- `rename_id` is 16 random bytes. Every entry is created with a fresh one. Every user edit of its label or settings
+  writes a new one, and non-user updates preserve it, so a device can tell its own edit from another after a fork
   ([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms").
 - `linked_at` is when the device was linked, in seconds since the Unix epoch, as the linking device wrote it.
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
@@ -227,7 +227,7 @@ Because no two operations name the same entry, the result does not depend on the
 resulting roster MUST be valid ("Validation" above); otherwise the update, and the Commit that carries it, is invalid.
 
 An update replaces whole the entries it names. A device that changes one field of an entry, such as its `platform`,
-sends the whole entry with that field changed; a rename changes `label` and `rename_id` together
+sends the whole entry with that field changed; a user edit changes the intended `label` or `settings` and `rename_id` together
 ([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms"). Other entries are
 untouched.
 
@@ -267,8 +267,12 @@ that created it, and that account is the group's only admin
 ([../features/device-group.md](../features/device-group.md), "Creating the device group"), so every device of the
 account may edit any entry. No device outranks another.
 
-A roster update MAY be inline or standalone. A standalone roster update is validated against its source epoch's
-roster when it is received, and against the candidate parent's roster when a Commit carries it.
+A user edit of a device's label or settings MUST be an inline roster update in a Commit made by the editing device;
+it MUST NOT be a standalone proposal ([../features/device-group.md](../features/device-group.md), "Labels, clients
+and platforms"). The requirement to use the editing device's own inline Commit is a sender rule; receivers do not
+reject a proposal or Commit solely for violating it. Other roster updates MAY be inline or standalone. A standalone
+roster update is validated against its source epoch's roster when it is received, and against the candidate parent's
+roster when a Commit carries it.
 
 ## Removal
 

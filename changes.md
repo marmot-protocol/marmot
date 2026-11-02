@@ -13,6 +13,26 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Edit linked-device settings with user-edit recovery
+
+[#492](https://github.com/marmot-protocol/marmot/pull/492), for
+[mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md), and
+[features/account-sync.md](./features/account-sync.md).
+
+- Allow post-link changes to all three device settings. Omitted values come from current roster state. Newly created
+  founding and linked entries start with "keep while inactive" off; later choices and their recovery are preserved.
+- Generalize existing `rename_id` provenance to label/settings user edits without changing its encoding. Recover a
+  prior lost edit before accepting a later one; the user can try again once it resolves. Non-user updates preserve
+  the id and values, and a competing user edit wins as a whole. User label/settings edits must be inline in the editing device's
+  own Commit; non-user roster updates may still be standalone. Preserve legacy label-only recovery and safe no-op
+  cancellation, and resolve later requests only after the earlier intention settles, is dropped or is cancelled.
+- Enabling history affects future sibling Adds and remaining obligations; it starts no retroactive backfill.
+- This is a coordinated development transition for settings writers: clients using the earlier draft's unchanged-id
+  settings updates must adopt the expanded marker rule before writing post-link settings. Existing retained label-only
+  renames remain label-only. No new wire encoding or mixed-draft preservation guarantee is introduced.
+
 ## 2026-11-02: Filling missing sibling memberships
 
 [#491](https://github.com/marmot-protocol/marmot/pull/491) changes

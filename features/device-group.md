@@ -60,7 +60,8 @@ device in the founding Add:
   device, with the rejected sign-ins it already keeps ("Answers"), which never name the linked device's slot ("Before
   answering"). The founding Add sets the linked device's roster entry, as every later Add sets the entry of the device
   it adds. The creating device's entry has the "add to all my chats" and
-  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving").
+  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving"). Its
+  "keep while inactive" setting is off when this entry is created.
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -126,7 +127,9 @@ Cancel `cannot_link`, so the new device stops waiting. When the slot is rejected
 
 On the existing device, the user who confirms the link also names the new device and sets its "add to all my chats"
 and "bring chat history" settings ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-"State"). Both settings are on unless the user turns them off. The device's Confirm names:
+"State"). Both settings are on unless the user turns them off. The newly linked entry's "keep while inactive"
+setting is off when the entry is created. These initial values do not reset a later user choice or its recovery
+("Device settings"). The device's Confirm names:
 
 - the device group it trusts, if it has one, with the signature key of its own leaf there;
 - otherwise a fresh group id of 16 random bytes, for the device group it will create, with the signature key it will
@@ -319,8 +322,9 @@ race and ordinary branch selection applies.
 - It asks the new device for as many private KeyPackages as the Adds need, beyond the ones it keeps
   ([Messages](#messages)).
 - It MAY spread the Adds over time. How long it goes on adding them is not specified yet.
-- Turning "add to all my chats" off stops further Adds under this section and takes the new device out of no chat.
-  It does not exclude the device from a new chat's founding Add ([Creating a chat](#creating-a-chat)).
+- Turning "add to all my chats" off stops beginning further automatic Add attempts under this section and takes the
+  new device out of no chat. An Add already admitted follows [Device settings](#device-settings). The setting does not
+  exclude the device from a new chat's founding Add ([Creating a chat](#creating-a-chat)).
 
 Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
 device's entry has "bring chat history" on. What the approving device shows its user about the chats it skips is not
@@ -380,7 +384,8 @@ the limit for an earlier untagged leaf described above still applies. Fresh publ
 valid claims from a lower slot can keep another device deferring beyond one claim's lifetime, for example while that
 claimant cannot reach a chat's relays. This best-effort flow guarantees neither fairness nor eventual filling.
 
-Turning "add to all my chats" off stops this gap filling and removes no existing leaf. This initial rule does not
+Turning "add to all my chats" off stops beginning further automatic Add attempts through this gap filling and removes
+no existing leaf. An Add already admitted follows [Device settings](#device-settings). This initial rule does not
 distinguish an old chat from an invitation missed after the link: with the setting off, a missed invitation waits for
 a re-invite. Creating a new chat and including linked siblings in its founding Add is a separate flow; this limit
 does not exclude them from that founding Add.
@@ -1210,6 +1215,30 @@ slot that holds it.
 A device shows its user the account's devices from its device group's roster, for example on a Devices screen. It never
 shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
 
+### Device settings
+
+Any device MAY change any device's three settings after linking, its own included
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A change is one roster
+Commit made by the editing device, with the roster update inline. A client changing only some settings MUST preserve
+the others from the state it commits to, rather than restore values from an earlier view.
+
+- Turning "add to all my chats" on permits eligible Adds under
+  [Adding the new device to chats](#adding-the-new-device-to-chats) while that flow is still adding, and under
+  [Filling a missing chat](#filling-a-missing-chat), subject to each flow's conditions. Turning it off stops both flows
+  from beginning further automatic Add attempts and never removes the device from a joined chat or excludes a sibling
+  from a newly created chat ([Creating a chat](#creating-a-chat)). An Add already admitted for outbound processing may
+  complete under the ordinary group and publication rules, even while awaiting preparation, publication or settlement.
+  Turning the setting off does not cancel that Add or make it invalid. Its history is governed separately by
+  "bring chat history" below.
+- "Bring chat history" governs future sibling Adds and histories still owed, as
+  [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
+  chat the device already joined and does not restore history forgotten while it was off.
+- "Keep while inactive" prevents automatic removal for inactivity when that removal is supported. It does not cancel
+  a user-decided removal or the device's sign-out, and does not change its status.
+
+A settings edit and a rename use the same user-edit provenance and recovery below. Concurrent user edits of the same
+device follow branch selection as whole edits, even when they changed different settings; they are not merged by field.
+
 ### Labels, clients and platforms
 
 A device entry's `label`, `client` and `platform`
@@ -1219,48 +1248,72 @@ the devices apart.
 - Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
   secure random source: the creating device's entry in the founding state, and the entry of every device added, by the
   founding Add ("Creating the device group") or a later link ("Approving").
-  Only a rename changes it afterwards, so no two entries share one, and an id a device kept can show up in the roster
-  again only when a fork brings back an earlier state, which is what rename recovery below reads.
-- Any device MAY change any device entry's `label`, its own included. An update that changes an entry's `label` is a
-  rename: it sets that entry with only `label` and `rename_id` changed, and MUST write a fresh `rename_id` drawn the
-  same way, one that clears `label` included. Every other update to an entry MUST keep its `label` and its
+  Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
+  again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
+- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings MUST be an
+  inline roster update in a Commit made by the editing device; it MUST NOT be a standalone proposal. The requirement
+  to use the editing device's own inline Commit is a sender rule; receivers do not reject a proposal or Commit solely
+  for violating it. The edit MUST write a fresh `rename_id` drawn the same way, one that clears `label` included. It
+  changes only the intended label or settings and this id. Every non-user update MUST preserve `label`, `settings` and
   `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
   write them in the update that announces its next KeyPackage ([Slot announcements](#slot-announcements)) rather than
   in an update of their own, so a changed value reaches the roster with that announcement. Publishing a KeyPackage its
-  entry already names makes no announcement. A rename never carries them. A device does not write another device's
+  entry already names makes no announcement. A user edit never carries them. A device does not write another device's
   `client` or `platform`.
 - A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
   older roster puts back whatever changed in that entry since.
 
-A rename can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's Commit.
-The entry's `rename_id` tells the renaming device where its rename stands; labels and Commits do not, since two renames
-can set the same label and a lost Commit can be sent again as a different Commit. From before it sends a rename's
-Commit, a device keeps, for the device it renames:
+A user edit can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's
+Commit. The entry's `rename_id` tells the editing device where its edit stands; values and Commits do not, since two
+edits can set the same values and a lost Commit can be sent again as a different Commit. From before sending its own
+Commit with the inline edit, the editing device retains or can reconstruct the label and three settings it intends,
+and these ids:
 
-- as written, the `rename_id` the rename writes, and each one it writes when it makes the rename again;
-- as replaced, the `rename_id` the entry held when the device built the rename. If the device still keeps an earlier
-  rename of that device, and the entry held an id that earlier rename kept, as written or as replaced, it also keeps as
-  replaced every id the earlier rename kept, both kinds. The new rename takes the earlier one's place.
+- as written, the `rename_id` the edit writes, and each one it writes when it makes the edit again;
+- as replaced, the `rename_id` the entry held when the device built the edit. If it still keeps an earlier edit of
+  that device and the entry holds an id that earlier edit kept, as written or replaced, it also keeps as replaced
+  every id the earlier edit kept, both kinds. The new edit takes the earlier one's place.
 
-It keeps them until another rename of that device stands or the device leaves the roster. It reads where a rename
-stands only while its device group is `Stable` ([../protocol-core/group-state.md](../protocol-core/group-state.md)) and
-no Commit of its own there is unresolved, and only from that entry's `rename_id` in the roster of its canonical state,
-taking the first of these that matches:
+A label-only rename retained before settings edits were supported remains label-only: its recovery MUST NOT invent
+settings. A device keeps an edit until another user edit of that device stands or the device leaves the roster. It
+reads its standing only while its device group is `Stable`
+([../protocol-core/group-state.md](../protocol-core/group-state.md)) and no Commit of its own there is unresolved,
+from the entry's `rename_id` in canonical roster state, taking the first match:
 
-- One kept as written: the rename applied.
-- One kept as replaced: the rename lost and nothing renamed the device since. It renames the device again with a
-  fresh `rename_id`, unless the entry already shows the label it set.
-- Any other: another rename won and stands, and the device drops its own.
+- One kept as written: the edit applied. Keep it recoverable if a later fork drops it.
+- One kept as replaced: the edit lost and no other user edit followed. Make it again with a fresh `rename_id`,
+  unless the roster already holds every value it intends. Preserve all unrelated entry fields from current state.
+- Any other: another user edit won and stands; drop the local edit.
 
-A device MAY forget the oldest `rename_id`s it keeps for one device, but never the newest it keeps as written, nor the
-`rename_id` the entry held when the device last built the rename or made it again: while the rename has not applied and
-nothing renamed the device since, the roster holds that one. A roster holding a forgotten one reads as another rename's,
-so the device drops its rename rather than make it again over one it cannot place. Either way, a device shows its user
-the label its roster holds.
+Before accepting a further edit of that device, a client first reads the earlier edit's standing under the settled
+conditions above. If the supplied values match this roster and cover every pending difference of a lost edit, it
+MUST cancel that lost edit before trying to make it again. Choosing the displayed label therefore cannot leave an
+opposite lost label to apply later, but it cannot discard a lost setting the user did not supply, or the converse.
+
+Otherwise the client MUST try the existing recovery first. A lost edit whose intended values already match the
+roster is settled for accepting later edits, although it can remain retained for recovery after a later fork. An
+applied retained edit is settled too and MUST NOT alone hold up another edit. If the earlier intention is still
+unresolved, including while a Commit that makes it again is unresolved, the client does not accept the later edit;
+the user can try again once it resolves.
+
+Only once the earlier intention is settled, dropped or cancelled does the client re-read the roster and resolve
+supplied values against it; omitted settings preserve these current values. A request that still matches that roster
+is a no-op and sends no new update. It keeps a retained applied edit recoverable. A successful no-op MUST NOT leave an
+opposite intention that can later change the saved values. A save that matched an earlier screen can require an update
+after recovery changed the roster.
+
+**Development transition.** Every client writing post-link settings in a device group MUST adopt the user-edit
+`rename_id` rule before using this feature. Clients based on the earlier draft, which required settings changes to
+preserve this id, must update first. The encoding is unchanged; retained label-only renames still recover only labels.
+
+A device MAY forget the oldest `rename_id`s kept for one device, but never its newest written id or the id held when
+it last built the edit or made it again: while the edit has not applied and no other user edit followed, the roster
+holds that one. A forgotten id reads as another edit's, so drop the local edit rather than overwrite one it cannot
+place. Show the user the label and settings held by the roster.
 
 ### Heartbeats
 
