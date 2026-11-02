@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Filling missing sibling memberships
+
+The companion to [mdk#2628, 3.5e](https://github.com/marmot-protocol/mdk/issues/2628) changes
+[features/device-group.md](./features/device-group.md) and allocates kind `458` in
+[foundation/registries.md](./foundation/registries.md).
+
+- A linked device fills a sibling's missing chat membership with private KeyPackages, rechecking the selected tree
+  at actual Add preparation. Kind `458` carries a ten-minute advisory claim; claims reduce races without granting
+  exclusive ownership and may be forgotten across restart.
+- Gap filling initially requires "add to all my chats" on. With it off, missed later invitations await re-invite.
+  New-chat founding inclusion remains separate. Automatic cleanup of duplicate leaves is deferred.
+- This defines no Welcome resend mechanism. Ordinary sibling-Welcome delivery and removal cleanup remain in force.
+
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
 [#488](https://github.com/marmot-protocol/marmot/pull/488) changes
