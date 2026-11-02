@@ -18,11 +18,12 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 The companion to [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628) changes
 [features/device-group.md](./features/device-group.md).
 
-- Before publishing or retrying a sibling Welcome, including after restart, establish that its originating Add is
-  still selected. A lost Add withdraws that Welcome and its remaining carrier attempts permanently; temporarily
-  unavailable or settling state holds publication instead. Canonical founding retains the creation exception.
-- Already-started attempts cannot be recalled and completed joins are not undone. Resending a delivered sibling
-  Welcome remains unspecified.
+- Before a new sibling Welcome delivery, establish that its originating Add is selected in the chat it joins,
+  retaining that association across restart. A deferred Add holds delivery because it may be selected again;
+  terminal ineligibility or a terminal chat ends the old Welcome's obligation. Temporarily unavailable state holds.
+- A founding Add needs no competing-branch check because only its creator holds the parent epoch. An already
+  handed-off application message finishes under its transport's publication rules and can arrive after branch loss.
+  Completed joins are not undone. Resending a delivered sibling Welcome remains unspecified.
 
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
