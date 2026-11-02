@@ -32,16 +32,18 @@ backups is not specified yet.
 
 Small state is per-chat state that follows the user from device to device. Each device keeps its own copy, applies it to
 its own chats, and tells its siblings when the user changes it. Read, pin, mute and archive state never changes group
-state. An invitation decline requests the ordinary local Leave described below; an acceptance never joins a group.
+state. An invitation decline requests ordinary local Leave in [Member departure](../protocol-core/member-departure.md);
+an acceptance never joins a group.
 The state update itself is sent only inside the device group, not in the chat it describes.
 
 Drafts are not small state: a draft belongs to the device it was typed on.
 
 ### Items
 
-Small state is a set of items. An item is one setting of one chat, named by the chat and the item's name. The chat is
+Small state is a set of items. An ordinary item is named by the chat and the item's name; an `invite` item is also
+named by its [invitation generation](#invitation-decisions). The chat is
 the group's MLS group id ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)), never a transport
-routing id. Small state covers only chats whose MLS group id is at most 256 bytes long, so that every item fits in one
+routing id. Small state covers only chats whose MLS group id is one to 256 bytes long, so that every item fits in one
 update; a device holds, sends and merges no item for another chat.
 
 | Item      | What it holds                                   | Which value wins                   |
@@ -144,6 +146,16 @@ write an identity on a rejected join or invent one when serialization or length 
 batches for the same Add result have the same context and account input, irrespective of recipients, wrappers,
 KeyPackages or GroupInfo outer signatures. No secret exporter is used.
 
+**Derivation test vector.** This minimal canonical TLS GroupContext tests the hash construction only; it is not a
+complete Marmot admission and grants no membership. Hexadecimal strings denote raw bytes, not text. `C` has length 97
+(`uint64_be` length `0000000000000061`); the ASCII domain label has 31 bytes before its separator.
+
+```text
+A = 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+C = 0001000111000102030405060708090a0b0c0d0e0f10000000000000000720111111111111111111111111111111111111111111111111111111111111111120222222222222222222222222222222222222222222222222222222222222222200
+SHA-256 = 6d0ba86f166ff1fc424217574e7a62dbcf9c6d16a54efd61936dbc05a1f8fec2
+```
+
 For a locally founded group, use the successfully confirmed post-founding context: epoch 1 after a founding Add, or
 epoch 0 for solo creation ([../protocol-core/joining.md](../protocol-core/joining.md), "Behavior"). Its creator records
 one implicit accepted value, without treating a replay or restart as a new user action. No public founding Commit
@@ -153,9 +165,11 @@ carrier is required for the identity.
 version-2 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
 later sibling Add's context. The authenticated device-group sender asserts that inheritance for the exact Welcome and
 KeyPackageRef; this is a trusted sibling's assertion, not independent proof of the earlier external admission. The
-receiver records it only with the successful native installation, or retains it with an ordinary held candidate
-awaiting existing consent. It never authorizes an active-copy replacement. A replay of the identical retained Welcome
-keeps the same generation.
+receiver records the installed association only with successful native admission. If it retains the Welcome while an
+active local copy prevents installation, it retains the asserted generation with those same Welcome bytes under
+[Receiving a sibling Welcome](./device-group.md#receiving-a-sibling-welcome). Retaining it is not installing it, and
+never authorizes active-copy replacement; [Welcome receiving](../protocol-core/joining.md#receiving-flow) keeps its
+explicit discard/rejoin boundary. A replay of the identical retained Welcome keeps the same generation.
 
 Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
 from its current epoch, time, route, account presence or a decision carrying only the same chat id. This feature
@@ -163,8 +177,11 @@ requires updated experimental senders and receivers before use; it adds no capab
 mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
 
 **Values.** A decision has a version from 1 through 9007199254740991 and value `accept` or `decline`. A local user
-change takes one more than the highest held version for this exact generation; at the maximum it cannot create a new
-version. Higher version wins; at equal version decline wins over accept. Equal version and value are identical state.
+change takes one more than the highest held version for this exact generation. A device that holds no value for that
+generation uses 0 as its highest held version.
+At the maximum it keeps the held value and sends no new user change; it does not reuse that version to change value.
+Ordinary rebroadcast of the held value remains permitted. Higher version wins; at equal version decline wins over
+accept. Equal version and value are identical state.
 There is no change id, sender tie-break or clock. Receiving or rebroadcasting a value is not a new local user action.
 Ordinary leaving, archiving, deletion, removal or disappearance is not inferred to be an invitation decline.
 
@@ -173,14 +190,21 @@ hold a matching chat. It creates no join, Add, KeyPackage allocation or restore 
 generation expiry that permits an old matching admission to escape a retained decision.
 
 **Applying.** Apply a decision only to a local copy associated with that exact generation. A value received before its
-Welcome is held without joining; once the matching native admission installs, apply it under the same guards. A value
+Welcome is retained without joining; once the matching native admission installs, apply it as below. A value
 for another generation remains held, without resolving the current invitation. A later independent reinvite can
 therefore prompt again.
 
-Acceptance resolves presentation consent only under the existing active-membership, pending-invitation and blocked
-inviter checks, preserves explicit archive intent, and never bypasses explicit replacement/rejoin consent. Decline
-records work for the matching local leaf to follow the ordinary Leave path; it does not directly remove every leaf of
-the account. Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
+The replicated value is always merged, independently of local presentation policy. Here a pending invitation means a
+client-local request for confirmation of an already natively joined copy, not an MLS membership state. Acceptance
+resolves only that pending presentation on an active matching local copy. Local policy, including blocking the inviter
+or retaining an explicit archive choice, still governs that presentation; it does not filter replication. Acceptance
+never installs a Welcome, restores membership, or grants the explicit discard/rejoin consent required by
+[Welcome receiving](../protocol-core/joining.md#receiving-flow).
+
+Decline is not filtered by those acceptance-only presentation checks or by whether the local copy was previously
+accepted. Each local copy associated with the matching generation records work to request ordinary Leave for its own
+leaf under [Member departure](../protocol-core/member-departure.md), not to directly remove leaves of other generations.
+Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
 winning decision, its owed broadcast and necessary decline work before external side effects; a received winner is
 merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A higher-version
 accept can replace the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This
@@ -212,7 +236,7 @@ object:
 
 | Member    | Value |
 | --------- | ----- |
-| `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so at most 512 characters |
+| `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so 2 to 512 characters |
 | `item`    | the item's name: `read`, `pin`, `mute`, `archive` or `invite` |
 | `generation` | for `invite` only: its 32-byte generation as exactly 64 lowercase hexadecimal characters |
 | `value`   | the item's value, below |
@@ -568,7 +592,7 @@ more:
   withdrawal, loses that history too.
 - A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
   off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
-  which no bundle or delivery can name; small state covers none longer than 256 bytes either.
+  which no bundle or delivery can name; small state likewise covers only one to 256-byte MLS group ids.
 - A history needs as many deliveries as it has bundles, and the sender may bound them, so a long history can arrive
   without its oldest messages, or not at all. A sender with no Blossom server to upload to sends no more of a history
   than fits the inline deliveries it will send. An event too large for any bundle is left out, as is one whose epoch,
@@ -729,7 +753,9 @@ index key:       18da5e74bcd81f43d7e6639dfcc464515f380d6ce016496e07597f2a78ff6ff
 gives it, but under blob key `n` in place of a fresh key. Bundle blobs are numbered from `0` in the order the index
 lists them. A chat's bundles cover consecutive stretches, as splitting gives them.
 
-**Small-state blob.** The small-state blob encrypts `{"v":1,"items":[...]}`, written as an update's content is
+**Small-state blob.** This blob contains only the writer's `read`, `pin`, `mute` and `archive` items. Invitation
+decisions are excluded and remain retained/rebroadcast by the kind-475 rules. It encrypts `{"v":1,"items":[...]}`, as an
+update's content is written
 ([Messages](#messages)) but without its 32,768-byte limit, under the small-state key with the 28 ASCII bytes of
 `marmot backup small state v1` as associated data. That plaintext is at most 8,388,608 bytes long; a writer whose
 small state would be longer writes no backup. A backup whose writer holds no item has no small-state blob.
@@ -980,6 +1006,13 @@ so no device moves it back; a later position moves it again once that one is fur
   so removing the device does not clear it. A broadcast request makes every sibling broadcast, at most once an hour
   each. A linked device can already read and send in the account's chats; these let it also fix or change their
   settings.
+- Any current device-group member can originate or rebroadcast a decline for any generation it knows, including one
+  learned from full broadcasts without being in that chat. Every matching local copy then records ordinary Leave work,
+  even if it previously accepted, and holds new automatic sibling Adds for that admission. Native membership, admin,
+  settled-state and explicit rejoin rules still apply. A decline at version 9007199254740991 beats equal-version
+  acceptance and no later legal version can supersede it; removing its sender does not undo the retained value.
+  This consequence is permanent for that generation, not an account-wide removal across other generations. A higher
+  acceptance before Leave is requested can supersede other declines, but cannot cancel an existing Leave request.
 - Nothing in small state is shown to other members of a chat, and no other account can read or write it.
 - Any device of the account can rewrite another device's `history_key`, including a stolen linked device until it is
   removed. Siblings then seal history meant for that device to a key the stolen device chose, until that device writes

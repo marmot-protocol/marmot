@@ -16,7 +16,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-02: Invitation decisions for a shared admission
 
 [PR #PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) updates
-[features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
+[features/account-sync.md](./features/account-sync.md), [features/device-group.md](./features/device-group.md) and
+[security-considerations.md](./security-considerations.md).
 Invitation generations hash the account and validated original admission context and are explicitly inherited in
 version-2 sibling Welcomes. A kind-475 invite item retains per-generation decisions, with higher version then equal
 version decline winning. Implementers persist decisions and required Leave work before sends, preserve membership,
@@ -27,6 +28,10 @@ across unrelated external admission batches/forks or undo an already requested L
 A known winning decline for the current generation holds new automatic sibling Adds and stock demand solely for
 those Adds. A later winning accept rechecks existing opted-in work without creating an Add obligation or recalling
 already admitted traffic; other generations and receiver validity remain independent.
+The item identity includes its generation while each kind-475 page keeps `(chat,item)` uniqueness. The existing single
+backup small-state blob remains limited to read/pin/mute/archive; invitation generations are not added to that format.
+The clarified nonempty chat bound matches the existing client rule and this feature's approved profile; prior general
+prose omitted its minimum. The security model now names remote-decline, new-Add hold and maximum-version consequences.
 
 ## 2026-11-02: Repairing a published sibling Welcome
 

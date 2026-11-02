@@ -359,8 +359,8 @@ own account just because it is published under the account. See "Sender rules" i
 
 ## Scene 6: Everyday life with several devices
 
-![Bob's client sends one Welcome for each of Alice's fresh devices. Alice accepts on her iPhone, the decision is shared
-through the device group, and her laptop joins too. Bob sees Alice as one member with two
+![Bob's client admits Alice's devices. Alice accepts on her iPhone, and the matching admission's presentation decision
+is shared through the device group; accepting never joins another device. Bob sees one account with two
 devices.](multi-device/scene-6-invites.svg)
 
 **What Alice sees:**

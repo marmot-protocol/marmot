@@ -287,6 +287,9 @@ these requirements decide whether the device can carry out that Add.
   adds it while that link's failure stands ([A link that is not taken up](#a-link-that-is-not-taken-up)). A local
   pending or failed outcome is not a verdict on an entry whose `linked_by` names another device: that device's later
   link stands under its own approver. This is the same ownership condition that controls undoing a failed link.
+- Before starting a new automatic Add from an existing admission, apply the current-generation decline hold in
+  [Invitation decisions](./account-sync.md#invitation-decisions). It does not recall admitted or signed traffic,
+  alter receiver validity, or block a separate new founding admission.
 - The unused, unexpired private KeyPackage was handed to this sender by that target and passes
   [Receiving](#receiving). A published KeyPackage of the sender's account never qualifies.
 - The chat requires `0x800d` (or its fixed founding requirements would require it), the KeyPackage meets its
@@ -345,7 +348,10 @@ as misuse, and who removes the extra leaf are not specified yet.
 
 A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its
 device group, after a relevant roster eligibility change, when a sibling hands it private KeyPackages it was waiting
-for, and when a claim that held back its attempt expires. It considers a sibling only while the selected trusted
+for, when a claim that held back its attempt expires, and when a winning invitation decision changes the affected
+chat's automatic Add eligibility ([Invitation decisions](./account-sync.md#invitation-decisions)), even without an MLS
+epoch change. That recheck resumes only existing opt-in work, never creates a new Add obligation. It considers a sibling
+only while the selected trusted
 roster lists it as `active` or `inactive`, with a `tag_signature_key` and "add to all my chats"
 on, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive sibling remains
 linked. The shared admission contract governs sender readiness, the current approver's local outcome, and removal
