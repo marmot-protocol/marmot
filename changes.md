@@ -32,6 +32,21 @@ PR pending, for [mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/26
   settings updates must adopt the expanded marker rule before writing post-link settings. Existing retained label-only
   renames remain label-only. No new wire encoding or mixed-draft preservation guarantee is introduced.
 
+## 2026-11-02: Filling missing sibling memberships
+
+[#491](https://github.com/marmot-protocol/marmot/pull/491) changes
+[features/device-group.md](./features/device-group.md), updates its reference in
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md), and allocates kind `458` in
+[foundation/registries.md](./foundation/registries.md), for
+[mdk#2628, 3.5e](https://github.com/marmot-protocol/mdk/issues/2628).
+
+- A linked device fills a sibling's missing chat membership with private KeyPackages, rechecking the selected tree
+  at actual Add preparation. Kind `458` carries a ten-minute advisory claim; claims reduce races without granting
+  exclusive ownership and may be forgotten across restart.
+- Gap filling initially requires "add to all my chats" on. With it off, missed later invitations await re-invite.
+  New-chat founding inclusion remains separate. Automatic cleanup of duplicate leaves is deferred.
+- This defines no Welcome resend mechanism. Ordinary sibling-Welcome delivery and removal cleanup remain in force.
+
 ## 2026-11-02: Linked siblings in a chat's founding Add
 
 [#490](https://github.com/marmot-protocol/marmot/pull/490) changes

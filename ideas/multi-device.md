@@ -325,8 +325,8 @@ that toggle on.
    open it. The device group is just the envelope, and nothing about these joins appears on relays as a gift wrap.
 6. The laptop processes each Welcome and deletes that KeyPackage's private key straight away, as single-use
    KeyPackages require.
-7. Chats the approving device isn't in are covered by **gap filling**: a sibling that is in the chat adds the missing
-   device, using its own allocation of the laptop's private KeyPackages (Scene 6).
+7. Missing memberships follow [Filling a missing chat](../features/device-group.md#filling-a-missing-chat), including
+   in chats the approving device is in. That feature surface owns the eligibility and coordination rules.
 8. History transfer runs afterwards; [account-sync.md](./account-sync.md) covers it. The history setting applies to
    every sibling, so a sibling that fills a chat also sends that chat's history if the setting is on. History is
    encrypted for the laptop alone, even though it travels through the device group, because not every sibling is in
@@ -354,8 +354,8 @@ own account just because it is published under the account. See "Sender rules" i
   UI says why.
 - Each device holds the private keys for KeyPackages it has handed out until they are used or replaced. This is a
   small amount of state, and it is the price of never sharing one key across Welcomes.
-- Two siblings can both try to fill the same gap. A short claim in the device group makes that rare. If both adds land
-  anyway, the extra leaf is removed. The limit on leaves per account in a chat is spec text in the same component.
+- The gap-fill claim and remaining duplicate-leaf limit are now in
+  [device-group.md](../features/device-group.md#filling-a-missing-chat). Automatic duplicate cleanup remains open.
 
 ## Scene 6: Everyday life with several devices
 
@@ -395,13 +395,9 @@ There is no "Alice added a device" notice.
   - **When an allocation runs out, the sibling waits** until the device comes online and tops it up. It doesn't fall
     back to the public KeyPackage. A sibling that needs more than it holds, for example to fill 30 chats at once, asks
     for a burst the same way the approving device does at link time.
-- **Gap filling checks capabilities too.** A device adds a sibling to a chat only with a KeyPackage that supports
-  everything the chat requires. A chat the sibling can't join is skipped and shown on the Devices screen, never loosened
-  to fit.
-- **Gap filling follows the roster.** Before adding a sibling to a chat, a device checks that sibling's settings. If
-  **Add to all my chats** is off, it leaves alone the chats Alice's devices were already in when that sibling was
-  linked. A device that was offline during the link reads the same settings when it comes back, so it doesn't undo
-  Alice's choice.
+- Gap filling's capability and setting rules are now in
+  [device-group.md](../features/device-group.md#filling-a-missing-chat). That initial flow also states the limit for
+  later missed invitations while **Add to all my chats** is off; it does not define a shared old/new-chat cutoff.
 - **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. Keeping this in
   the roster rather than in a message means a device linked later can read every sibling's current KeyPackage straight
   away. Each device also checks its own slot. A KeyPackage there that it didn't make, which only someone holding the
