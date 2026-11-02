@@ -265,7 +265,7 @@ event the receiver does not hold, or one the bundle leaves out.
 
 **What a bundle carries.** Every Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
 of the chat that the sender holds in the stretch, as the inner event it received, sent or imported from a sibling's
-history, except:
+history or a backup, except:
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
   expired; a retention of `0`, disappearing messages off, never expires;
@@ -862,21 +862,29 @@ over at once, one stands. A device that trusts no device group never takes over.
 A user can ask a device to restore history with recovery words at any time, including while other devices are online.
 The device derives the recovery key as in [Recovery key](#recovery-key), reads the account's pointer under that key
 ([Backup pointer](#backup-pointer)), and opens listed archives under [Backup archives](#backup-archives). It considers
-all listed backups: an older backup may hold history the newest one does not. The transport's completed discovery
-rules still apply ([../transports/nostr.md](../transports/nostr.md), "Backup pointer"); an incomplete discovery is not
-an empty pointer.
+all listed backups: an older backup may hold history the newest one does not. It processes them in the exact order
+the pointer lists them, newest first by `written_at`, preserving their listed order when timestamps are equal. Within
+each backup it processes selected history blobs in their original global index order. Existing insert-only and
+first-imported-authority rules still apply; a subsequently processed backup never replaces a held event or its kept
+`grant`. The transport's completed discovery rules still apply ([../transports/nostr.md](../transports/nostr.md),
+"Backup pointer"); an incomplete discovery is not an empty pointer.
 
 Restore imports history only for a chat the restoring device currently belongs to through its own MLS leaf. Another
-device of the same account being a member is not enough. The device checks this before fetching a history blob and
-again before applying it, so leaving or removal during a fetch prevents the import. An unknown, unjoined, removed,
-disbanded or unreadable chat takes no restored history. The device group takes none. A backup never grants membership,
-creates an MLS group, joins a chat, re-adds a device or authorizes any of those actions.
+device of the same account being a member is not enough. The device checks this for the chat named by the blob's
+index entry before fetching the blob and again as part of applying it. No membership change for that chat is processed
+between the second check and the import, so leaving or removal during a fetch prevents the import. An unknown,
+unjoined, removed, disbanded or unreadable chat takes no restored history. The device group takes none. A backup never
+grants membership, creates an MLS group, joins a chat, re-adds a device or authorizes any of those actions.
 
-A reader retains the global blob number assigned by [Backup archives](#backup-archives) before filtering chats. It
-opens each selected history blob with its archive envelope and applies the content validation, retention,
-attachment-key, authority-verdict and insert-only rules in [History bundles](#history-bundles). Held events remain as
-they are; restoring history does not mark it read, move the read position or create unread counts. It records the
-source as a backup, not as a verified sending device. The archive authenticates its bytes under the key, not its
+A reader retains the global blob number `n` assigned by [Backup archives](#backup-archives) before filtering chats.
+It applies that section's "Reading" size and SHA-256 checks, then opens each selected history blob under blob key `n`
+as "Bundle blobs" specifies. The index entry's `chat` is the carrying chat for the importing rules in
+[History bundles](#history-bundles): the reader drops the whole blob if its decrypted bundle names another chat. The
+membership checks and import apply to that same index-entry chat, not a different chat named by the decrypted data.
+It applies the existing content validation, retention, attachment-key, authority-verdict and insert-only rules there.
+Held events remain as they are; restoring history does not mark it read, move the read position or create unread
+counts. Restored events count as held history for later history bundles, including sibling deliveries and backups,
+subject to the existing export exclusions and backup size limits. It records the source as a backup, not as a verified sending device. The archive authenticates its bytes under the key, not its
 claimed writer, historical authors or their membership and authority; see [Security considerations](#security-considerations).
 Restored content does not become a live device-group event or an MLS membership instruction.
 
@@ -884,17 +892,22 @@ This version restores history only. It does not apply the archive's small-state 
 mutes, archive choices and invitation decisions remain unchanged. A reader may skip that optional blob without
 changing any history blob's global number. Restoring with older words leaves the account's current recovery key and
 writer unchanged and never enables backups. Each older key's pointer remains independent, as in
-[The account's recovery key](#the-accounts-recovery-key).
+[Backup pointer](#backup-pointer).
 
-A device may keep nonsecret index metadata for a chat it cannot restore yet. That metadata is availability information,
-not a transcript, membership or a transport route. If the device later actually joins such a chat, it tells the user
+A device may keep private index metadata for a chat it cannot restore yet. That metadata is availability information,
+not a transcript, membership or a transport route. Group ids learned this way remain private group security state:
+the rule against publishing them in [Security considerations](#security-considerations) still applies, even though
+the recovery key's public half opens the index. If the device later actually joins such a chat, it tells the user
 that a backup may hold history and that the user can supply the corresponding words again. It does not join or
 request a re-add because an index names the chat, and it does not need proof that other devices lack its history.
 
-Words, their entropy, the derived private recovery key and archive keys are kept only for the restore operation and
-are never persisted for automatic resumption. Cancellation or closing the device ends that use; another attempt asks
-for the words again. A failed blob or cancellation does not undo valid history already imported. The device reports
-an incomplete or partial restore rather than claiming no backup or complete recovery. This flow does not restore a
+Words, their entropy, the private recovery key, the plaintext archive key and any keys derived from that archive key
+are held in memory only for the restore operation. A device MUST NOT write their plaintext values to persistent
+storage, logs, debug output or diagnostics, or send those plaintext values off the device. This does not prohibit the
+sealed, encrypted archive key in a head or the encrypted blobs specified in [Backup archives](#backup-archives).
+Cancellation or closing the device ends the operation and releases its retained secret material; no secret-backed
+cursor or secret is persisted for automatic resumption, and another attempt asks for the words again. A failed blob
+or cancellation does not undo valid history already imported. The device reports an incomplete or partial restore rather than claiming no backup or complete recovery. This flow does not restore a
 whole account from nothing or expose transcripts of chats the restoring device has not joined.
 
 ## Convergence and retained history

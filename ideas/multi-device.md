@@ -212,8 +212,9 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 **Trade-offs:**
 
-- Starting fresh never recovers old chats by itself. A backup can restore their content read-only
-  ([account-sync.md](./account-sync.md)), but getting back into them needs a fresh add from someone still there.
+- Starting fresh never recovers old chats by itself. The broader idea can restore old content read-only before a
+  re-invite ([account-sync.md](./account-sync.md)); the adopted first restore flow imports history only into chats
+  the device has actually joined. Getting back into an old chat needs a fresh add from someone still there.
 - The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
   same way as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
