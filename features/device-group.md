@@ -1070,7 +1070,24 @@ roster defines them
   an initial send while its carrier would come from an unclaimed leaf.
 - It MUST NOT deliver a Welcome that consumes a private KeyPackage through the transport binding's Welcome delivery.
   Members of other accounts that the same Commit added get their Welcomes through the binding as usual.
-- When a device sends a sibling Welcome again is not specified yet.
+- Before creating a new sibling Welcome app event or handing it off for delivery as an MLS application message,
+  the sender establishes that the Add that produced the Welcome is on the selected branch of its state for the chat
+  the Welcome joins. It retains or can reconstruct the Welcome's association to that Add across restarts
+  ([../protocol-core/durability.md](../protocol-core/durability.md), "Recoverable protocol facts"). A founding Add
+  Commit cannot lose branch selection: the creator is the only member of its epoch-0 parent, so no other member can
+  make a competing Commit there ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md),
+  "Publish obligation"). Its sibling Welcomes need no originating-Commit selection check.
+- An Add that is merely deferred may be selected again, so its Welcome is held. A terminally ineligible Add ends that
+  Welcome's delivery obligation permanently; the sender keeps that condition across restarts. It also stops new
+  deliveries of the old Welcome when the chat is disbanded, its local copy is discarded, or recovery is
+  `Unrecoverable`. Temporarily unavailable or still-settling state, or an origin it cannot establish, holds new
+  delivery instead of treating absence of evidence as a terminal loss.
+- A sibling Welcome already handed off as an MLS application message follows the active transport binding's
+  publication rules, including its remaining attempts after restart. The origin check does not recall or cancel that
+  message. It can therefore arrive after its chat's Add has lost branch selection. A join that already consumed the
+  KeyPackage is not undone ("Receiving a sibling Welcome").
+- Whether and when a device sends a delivered sibling Welcome again is not specified yet; any new delivery it makes
+  passes the origin check above.
 
 ### Receiving a sibling Welcome
 

@@ -28,6 +28,18 @@ The companion to [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/
   delivery. Another approver's later link is not blocked by stale local failure. Missing private stock does not delay
   creation, and an initial Welcome waits while the sender's leaf is unclaimed.
 
+## 2026-11-02: Withdrawing a sibling Welcome whose Add lost
+
+[#489](https://github.com/marmot-protocol/marmot/pull/489) changes
+[features/device-group.md](./features/device-group.md) for [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628).
+
+- Before a new sibling Welcome delivery, establish that its originating Add is selected in the chat it joins,
+  retaining that association across restart. A deferred Add holds delivery because it may be selected again;
+  terminal ineligibility or a terminal chat ends the old Welcome's obligation. Temporarily unavailable state holds.
+- A founding Add needs no competing-branch check because only its creator holds the parent epoch. An already
+  handed-off application message finishes under its transport's publication rules and can arrive after branch loss.
+  Completed joins are not undone. Resending a delivered sibling Welcome remains unspecified.
+
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
 [#488](https://github.com/marmot-protocol/marmot/pull/488) changes
