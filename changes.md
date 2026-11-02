@@ -13,6 +13,17 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Withdrawing a sibling Welcome whose Add lost
+
+The companion to [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628) changes
+[features/device-group.md](./features/device-group.md).
+
+- Before publishing or retrying a sibling Welcome, including after restart, establish that its originating Add is
+  still selected. A lost Add withdraws that Welcome and its remaining carrier attempts permanently; temporarily
+  unavailable or settling state holds publication instead. Canonical founding retains the creation exception.
+- Already-started attempts cannot be recalled and completed joins are not undone. Resending a delivered sibling
+  Welcome remains unspecified.
+
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
 [#488](https://github.com/marmot-protocol/marmot/pull/488) changes

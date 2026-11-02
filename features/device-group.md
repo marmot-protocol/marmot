@@ -1029,6 +1029,14 @@ roster defines them
   "Behavior").
 - It MUST NOT deliver a Welcome that consumes a private KeyPackage through the transport binding's Welcome delivery.
   Members of other accounts that the same Commit added get their Welcomes through the binding as usual.
+- Before each publication attempt, including a retry after a restart, the sender establishes that the Add that
+  produced the sibling Welcome is still on its selected branch. A canonical founding Add follows the ordinary
+  creation exception ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)). If the originating Add
+  loses branch selection, the sender withdraws that Welcome and stops its remaining carrier publication attempts;
+  that Welcome stays withdrawn even if the Add is later selected again. It holds publication while the originating
+  state is temporarily unavailable or still settling, rather than treating that as evidence that the Add lost.
+  An attempt already in progress cannot be recalled, and a join that already consumed the KeyPackage is not undone
+  ("Receiving a sibling Welcome").
 - When a device sends a sibling Welcome again is not specified yet.
 
 ### Receiving a sibling Welcome
