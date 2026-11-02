@@ -15,8 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-02: Withdrawing a sibling Welcome whose Add lost
 
-The companion to [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628) changes
-[features/device-group.md](./features/device-group.md).
+[#489](https://github.com/marmot-protocol/marmot/pull/489) changes
+[features/device-group.md](./features/device-group.md) for [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628).
 
 - Before a new sibling Welcome delivery, establish that its originating Add is selected in the chat it joins,
   retaining that association across restart. A deferred Add holds delivery because it may be selected again;
