@@ -15,7 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-02: Edit linked-device settings with user-edit recovery
 
-PR pending, for [mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[#492](https://github.com/marmot-protocol/marmot/pull/492), for
+[mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/2628), changes
 [features/device-group.md](./features/device-group.md),
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md), and
 [features/account-sync.md](./features/account-sync.md).

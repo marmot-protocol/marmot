@@ -269,8 +269,10 @@ account may edit any entry. No device outranks another.
 
 A user edit of a device's label or settings MUST be an inline roster update in a Commit made by the editing device;
 it MUST NOT be a standalone proposal ([../features/device-group.md](../features/device-group.md), "Labels, clients
-and platforms"). Other roster updates MAY be inline or standalone. A standalone roster update is validated against
-its source epoch's roster when it is received, and against the candidate parent's roster when a Commit carries it.
+and platforms"). The requirement to use the editing device's own inline Commit is a sender rule; receivers do not
+reject a proposal or Commit solely for violating it. Other roster updates MAY be inline or standalone. A standalone
+roster update is validated against its source epoch's roster when it is received, and against the candidate parent's
+roster when a Commit carries it.
 
 ## Removal
 

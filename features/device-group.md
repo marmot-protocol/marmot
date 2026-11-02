@@ -1246,9 +1246,11 @@ the devices apart.
   Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
   again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
 - Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings MUST be an
-  inline roster update in a Commit made by the editing device; it MUST NOT be a standalone proposal. It MUST write a
-  fresh `rename_id` drawn the same way, one that clears `label` included. It changes only the intended label or
-  settings and this id. Every non-user update MUST preserve `label`, `settings` and `rename_id`.
+  inline roster update in a Commit made by the editing device; it MUST NOT be a standalone proposal. The requirement
+  to use the editing device's own inline Commit is a sender rule; receivers do not reject a proposal or Commit solely
+  for violating it. The edit MUST write a fresh `rename_id` drawn the same way, one that clears `label` included. It
+  changes only the intended label or settings and this id. Every non-user update MUST preserve `label`, `settings` and
+  `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
