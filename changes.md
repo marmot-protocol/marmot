@@ -24,6 +24,9 @@ archive and rejoin guards, enumerate all retained generations in bounded pages, 
 local-only. Experimental senders and receivers must update before using this feature; old V1 obligations are not
 converted, no capability negotiation is added, and kind477 remains reserved. A decline does not promise departure
 across unrelated external admission batches/forks or undo an already requested Leave.
+A known winning decline for the current generation holds new automatic sibling Adds and stock demand solely for
+those Adds. A later winning accept rechecks existing opted-in work without creating an Add obligation or recalling
+already admitted traffic; other generations and receiver validity remain independent.
 
 ## 2026-11-02: Repairing a published sibling Welcome
 

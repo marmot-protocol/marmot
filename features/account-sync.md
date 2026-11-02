@@ -186,6 +186,16 @@ merged durably before applying it. Existing Leave work remains retryable under i
 accept can replace the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This
 feature promises neither synchronous departure nor departure by unrelated generations.
 
+**Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
+MUST NOT start a new automatic sibling Add from that admission, or request private KeyPackages solely for those held
+Adds. This sender rule applies even while ordinary Leave cannot yet be requested. Keep existing advisory claims and
+their original expiry independent of that hold. A winning-value change MUST cause the affected chat's existing
+automatic Add eligibility to be reconsidered even when no MLS epoch changes. A higher accept before Leave is
+requested can therefore resume an already permitted opt-in flow; it creates no new Add or join obligation. A decline
+for another generation, an unidentified legacy admission, or a separate new founding admission does not impose this
+hold. Already admitted or signed Add and Welcome traffic follows its ordinary settlement and validation rules; this
+rule neither recalls it nor adds a receiver-side rejection rule. Already requested Leave remains independent as above.
+
 ### Messages
 
 | Kind  | Message           | Sent by                                                     |
