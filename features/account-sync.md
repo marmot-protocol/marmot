@@ -886,7 +886,8 @@ pointer lists none. The writer writes a due backup when it finds it convenient, 
 phone. A writer that cannot write, for example with no Blossom server to upload to, writes nothing.
 
 **A backup's content.** A backup holds every chat the writer holds other than its device group, each with the bundles
-[History bundles](#history-bundles) gives for it, and every small-state item the writer holds. The writer MAY bound how
+[History bundles](#history-bundles) gives for it, and every `read`, `pin`, `mute` and `archive` item the writer holds.
+Invitation decisions are excluded ([Backup archives](#backup-archives), "Small-state blob"). The writer MAY bound how
 many bundles one chat takes; it then keeps the newest bundles and leaves the older history out. A chat whose MLS group
 id no bundle can name, or for which History bundles gives no bundle, is left out.
 
@@ -896,7 +897,7 @@ id no bundle can name, or for which History bundles gives no bundle, is left out
    ([../transports/nostr.md](../transports/nostr.md), "Backup pointer"), since a pointer built without a full answer
    would drop every backup listed in one it did not see, and when it drops the newest pointer it fetched
    ([Backup pointer](#backup-pointer)).
-2. It uploads each bundle blob, then the small-state blob, then the head, each to a Blossom server of its choosing
+2. It uploads each bundle blob, then the small-state blob if any, then the head, each to a Blossom server of its choosing
    with the [BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation, as for a history
    delivery ([History deliveries](#history-deliveries), "Blossom"). It authorizes each upload, as each delete below,
    with a [BUD-11](https://github.com/hzrd149/blossom/blob/master/buds/11.md) token signed by the account identity, so
