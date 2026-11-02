@@ -15,8 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-02: Linked siblings in a chat's founding Add
 
-The companion to [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/2628) changes
-[features/device-group.md](./features/device-group.md).
+[#490](https://github.com/marmot-protocol/marmot/pull/490) changes
+[features/device-group.md](./features/device-group.md) for [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/2628).
 
 - A creator includes linked siblings opportunistically in the founding Add with private KeyPackages, and retains their
   sibling Welcome deliveries independently of ordinary Welcome deliveries. It never weakens the requirements selected
