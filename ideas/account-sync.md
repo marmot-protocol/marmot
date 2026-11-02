@@ -182,10 +182,10 @@ What matches across her devices:
 - **Pins.**
 - **Mute and notification settings per chat.**
 - **Archived or hidden chats.**
-- **Invite decisions.** Accepting or declining an invite is an account-wide decision (multi-device Scene 6). They use
-  versions like pins and mutes, with one extra rule ahead of the tie-break: at an equal version, a decline beats an
-  accept. An accepted device can still be removed later, but a decline can't be partly undone. A decline is final for
-  that invite: every device leaves, so a later accept has nothing to act on, and joining again needs a new invite.
+- **Invite decisions.** Accept/Decline follows the shared admission generation and explicitly inherited sibling Adds
+  described in [the account-sync feature](../features/account-sync.md#invitation-decisions). Higher version wins;
+  at equal version decline wins. A decision never joins a device or undoes an already requested Leave. Independent
+  later external admissions or different admission forks can prompt again; unidentified older invites stay local-only.
 
 **Not drafts.** A draft belongs to the device it was typed on.
 

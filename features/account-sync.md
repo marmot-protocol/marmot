@@ -9,7 +9,8 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
 small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
 that carry them from the device that adds a sibling to a chat; and backups: the recovery key they are sealed to, and
-how the account's backup writer writes them. Restoring backups, and invite decisions, are not specified yet.
+how the account's backup writer writes them, and invitation decisions scoped to one admission generation. Restoring
+backups is not specified yet.
 
 ## Surfaces
 
@@ -30,8 +31,9 @@ how the account's backup writer writes them. Restoring backups, and invite decis
 ## Small state
 
 Small state is per-chat state that follows the user from device to device. Each device keeps its own copy, applies it to
-its own chats, and tells its siblings when the user changes it. Small state never changes group state, and nothing
-about it is sent in the chat it describes.
+its own chats, and tells its siblings when the user changes it. Read, pin, mute and archive state never changes group
+state. An invitation decline requests the ordinary local Leave described below; an acceptance never joins a group.
+The state update itself is sent only inside the device group, not in the chat it describes.
 
 Drafts are not small state: a draft belongs to the device it was typed on.
 
@@ -48,6 +50,7 @@ update; a device holds, sends and merges no item for another chat.
 | `pin`     | whether the chat is pinned                      | the highest version, then the tie-break |
 | `mute`    | whether the chat's notifications are muted, and until when | the highest version, then the tie-break |
 | `archive` | whether the chat is archived                    | the highest version, then the tie-break |
+| `invite`  | accept or decline for one invitation generation | the highest version, then decline |
 
 **Read positions.** A read position names one message of the chat: a Marmot app event
 ([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, or imported from
@@ -116,6 +119,73 @@ two devices start with different settings for one chat, the rules above pick the
 
 A device keeps the items it holds for a chat it is not in, so a chat it joins later starts with the account's state.
 
+### Invitation decisions
+
+An invitation decision is keyed by the chat's raw MLS group id **and an invitation generation**, not by the group id
+alone. One generation covers the account's devices admitted by the same authenticated external or founding Add result
+and the siblings automatically added from that admission under the inheritance below. A separate external Add,
+separate Add batch, or different admission fork is a different generation even if the same account already has other
+leaves in the chat. A decision does not claim that every leaf of the account across those generations has left.
+
+**Native identity.** Let `A` be this account's valid raw 32-byte x-only secp256k1 public key
+([../foundation/identity.md](../foundation/identity.md)), not its hexadecimal text, slot or leaf signature key. Let `C`
+be the exact canonical RFC 9420 TLS serialization of the successfully validated post-admission GroupContext, in MLS
+field order, including version, ciphersuite, raw MLS group id, epoch, tree hash, confirmed transcript hash and extensions.
+The generation is the 32-byte SHA-256 digest of this concatenation:
+
+```text
+ASCII("marmot.invitation-generation.v1") || 0x00 || A[32] || uint64_be(byte_length(C)) || C
+```
+
+The ASCII label has no trailing NUL other than the explicit separator shown. The length is an unsigned 64-bit
+network-order byte count. A client MUST capture the original successfully validated context, before later group state
+can replace it, and persist its association with the installed local copy in the successful admission. It MUST NOT
+write an identity on a rejected join or invent one when serialization or length conversion fails. Different Welcome
+batches for the same Add result have the same context and account input, irrespective of recipients, wrappers,
+KeyPackages or GroupInfo outer signatures. No secret exporter is used.
+
+For a locally founded group, use the successfully confirmed post-founding context: epoch 1 after a founding Add, or
+epoch 0 for solo creation ([../protocol-core/joining.md](../protocol-core/joining.md), "Behavior"). Its creator records
+one implicit accepted value, without treating a replay or restart as a new user action. No public founding Commit
+carrier is required for the identity.
+
+**Inherited identity.** An automatic same-account sibling Add carries its sender's stored original generation in the
+version-2 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
+later sibling Add's context. The authenticated device-group sender asserts that inheritance for the exact Welcome and
+KeyPackageRef; this is a trusted sibling's assertion, not independent proof of the earlier external admission. The
+receiver records it only with the successful native installation, or retains it with an ordinary held candidate
+awaiting existing consent. It never authorizes an active-copy replacement. A replay of the identical retained Welcome
+keeps the same generation.
+
+Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
+from its current epoch, time, route, account presence or a decision carrying only the same chat id. This feature
+requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
+mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
+
+**Values.** A decision has a version from 1 through 9007199254740991 and value `accept` or `decline`. A local user
+change takes one more than the highest held version for this exact generation; at the maximum it cannot create a new
+version. Higher version wins; at equal version decline wins over accept. Equal version and value are identical state.
+There is no change id, sender tie-break or clock. Receiving or rebroadcasting a value is not a new local user action.
+Ordinary leaving, archiving, deletion, removal or disappearance is not inferred to be an invitation decline.
+
+A client retains each known generation's winning value for ordinary full broadcasts and resends, even if it does not
+hold a matching chat. It creates no join, Add, KeyPackage allocation or restore from a received decision. There is no
+generation expiry that permits an old matching admission to escape a retained decision.
+
+**Applying.** Apply a decision only to a local copy associated with that exact generation. A value received before its
+Welcome is held without joining; once the matching native admission installs, apply it under the same guards. A value
+for another generation remains held, without resolving the current invitation. A later independent reinvite can
+therefore prompt again.
+
+Acceptance resolves presentation consent only under the existing active-membership, pending-invitation and blocked
+inviter checks, preserves explicit archive intent, and never bypasses explicit replacement/rejoin consent. Decline
+records work for the matching local leaf to follow the ordinary Leave path; it does not directly remove every leaf of
+the account. Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
+winning decision, its owed broadcast and necessary decline work before external side effects; a received winner is
+merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A higher-version
+accept can replace the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This
+feature promises neither synchronous departure nor departure by unrelated generations.
+
 ### Messages
 
 | Kind  | Message           | Sent by                                                     |
@@ -133,9 +203,10 @@ object:
 | Member    | Value |
 | --------- | ----- |
 | `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so at most 512 characters |
-| `item`    | the item's name: `read`, `pin`, `mute` or `archive` |
+| `item`    | the item's name: `read`, `pin`, `mute`, `archive` or `invite` |
+| `generation` | for `invite` only: its 32-byte generation as exactly 64 lowercase hexadecimal characters |
 | `value`   | the item's value, below |
-| `version` | for `pin`, `mute` and `archive` only: the version |
+| `version` | for `pin`, `mute`, `archive` and `invite`: the version |
 | `change`  | for `pin`, `mute` and `archive` only: the change id, 32 lowercase hexadecimal characters |
 
 | Item      | `value` |
@@ -144,10 +215,24 @@ object:
 | `pin`     | `true` or `false` |
 | `mute`    | `false`, `true`, or a time in seconds since the Unix epoch |
 | `archive` | `true` or `false` |
+| `invite` | `"accept"` or `"decline"` |
 
 An item has exactly the members above for its name, and a `read` value exactly its three. Every number in these
 messages is a decimal integer from 0 to 9007199254740991, without leading zeros, and a version is at least 1. One
-message holds at most one item for each chat and item name.
+message holds at most one item for each chat and item name, including when two invite items have different generations.
+An invite object has exactly `chat,item,generation,value,version`, in that order, and no `change` member. `chat` has
+1..256 raw bytes (2..512 hexadecimal characters). For example:
+
+```json
+{"v":1,"items":[{"chat":"0102","item":"invite","generation":"0000000000000000000000000000000000000000000000000000000000000000","value":"accept","version":1}]}
+```
+
+A sender with multiple retained generations for one chat MUST flush the current update before appending the next
+invite for that chat, then continue in a new update. It enumerates every retained generation; it MUST NOT replace,
+discard or repeatedly select only the first generation. A successful page clears only the exact values it carried;
+failed publication leaves that page and later values owed for the existing retry/broadcast flow. This adds no snapshot
+completion receipt, per-sibling state or new scheduler. With finite held state and successful page publication the
+pass drains all pages; continuous changes or failed publication retain the existing best-effort delivery limits.
 
 A broadcast request's content is `{"v":1}`. It names no device and no item: it asks every sibling to broadcast.
 
@@ -160,7 +245,7 @@ A broadcast request's content is `{"v":1}`. It names no device and no item: it a
 - When branch selection withdraws an update that a device sent or merged
   ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"), the device sends
   each item that update carried again, in updates, unless it now holds a value for that item that beats it. Resending
-  keeps the item's version and change id. Every device that merged the update does this, not only its sender, which may
+  keeps the item's version and, for pin, mute and archive, its change id. Every device that merged the update does this, not only its sender, which may
   no longer be in the device group. A device that does not keep which items an update carried MAY instead send every
   item it holds again.
 - When branch selection withdraws a broadcast request, every device that sent or read it sends a new broadcast request,

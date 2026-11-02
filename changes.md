@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Invitation decisions for a shared admission
+
+[PR #PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM) updates
+[features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
+Invitation generations hash the account and validated original admission context and are explicitly inherited in
+version-2 sibling Welcomes. A kind-475 invite item retains per-generation decisions, with higher version then equal
+version decline winning. Implementers persist decisions and required Leave work before sends, preserve membership,
+archive and rejoin guards, enumerate all retained generations in bounded pages, and leave unidentified legacy invites
+local-only. Experimental senders and receivers must update before using this feature; old V1 obligations are not
+converted, no capability negotiation is added, and kind477 remains reserved. A decline does not promise departure
+across unrelated external admission batches/forks or undo an already requested Leave.
+
 ## 2026-11-02: Repairing a published sibling Welcome
 
 [#493](https://github.com/marmot-protocol/marmot/pull/493), for

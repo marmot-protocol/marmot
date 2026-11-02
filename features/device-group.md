@@ -1136,12 +1136,38 @@ struct {
 } SiblingWelcomeV1;
 ```
 
+Invitation-decision sync ([account-sync.md](./account-sync.md#invitation-decisions)) also defines:
+
+```text
+struct {
+  uint8 version;  // exactly 2
+  SlotId from;
+  SlotId to;
+  opaque invitation_generation[32];
+  KeyPackageRefV1 key_package_ref;
+  MLSMessage welcome;
+  SiblingWelcomeRelayV1 relays<V>;
+} SiblingWelcomeV2;
+```
+
+Version 2 inserts the fixed 32-byte original invitation generation after `to`, with no length prefix; every other
+field, bound and admission check is the same as version 1. New obligations with a known original generation use
+version 2 only under the updated-experimental-receiver boundary of account sync. An unknown original generation uses
+version 1 and remains local-only. A receiver supporting invitation-decision sync reads both versions; an older
+version-1 receiver rejects version 2 and may miss its Welcome, so this is not a mixed-receiver rollout guarantee.
+
+The sender binds the exact version and original generation when creating the Add/Welcome obligation. An outstanding
+version-1 obligation remains version 1: it MUST NOT be upgraded, reseeded from a later epoch, or accompanied by a second
+carrier to retrofit invitation metadata. Retrying or repairing a retained Welcome keeps its exact bytes. This is a
+sender/authoring rule; it adds no new receiver validity rule beyond the versioned encoding and existing checks.
+
+
 The structure uses the Marmot binary profile
 ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). `SlotId` and `KeyPackageRefV1` are as the
 roster defines them
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
 
-- `version` is `1`.
+- `version` is `1` for SiblingWelcomeV1 or `2` for SiblingWelcomeV2.
 - `from` is the sender's slot and `to` the slot of the sibling it added.
 - `key_package_ref` is the `KeyPackageRef` of the private KeyPackage the Commit consumed, computed as
   [../foundation/key-packages.md](../foundation/key-packages.md) gives it.
@@ -1250,7 +1276,7 @@ duplicate-leaf cleanup is added by this flow.
 A device reads a sibling Welcome only from the device group it trusts ([Trust](#trust)), and ignores the kind in any
 other group. It drops one unless:
 
-- its content decodes exactly as [Message](#message) gives it: `version` `1`, a `welcome` whose `wire_format` is
+- its content decodes exactly as [Message](#message) gives it: `version` `1` or `2`, a `welcome` whose `wire_format` is
   `mls_welcome`, and no bytes left over;
 - `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
 - `to` is its own slot;

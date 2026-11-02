@@ -365,13 +365,13 @@ devices.](multi-device/scene-6-invites.svg)
 
 **What Alice sees:**
 
-- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow. The
-  decision is small state ([account-sync.md](./account-sync.md)), so it carries a version and still reaches a device
-  that was offline. If one device accepts while another declines, decline wins: an accepted device can still be
-  removed later, but a decline can't be partly undone. A decline is final for that invite; joining again needs a new
-  invite.
-- **Declining works the same way**, except every device leaves the chat. Each device already has a leaf in the chat
-  once its Welcome arrives, so a decline that only applied to one device would leave ghost members behind.
+- **Invites admitted together share the decision.** Accepting on one device resolves the matching admission on its
+  siblings, including automatic sibling Adds that inherit it. A higher version wins; at equal version decline wins.
+  A separate external admission or admission fork can prompt again, and older unidentified invites stay local-only
+  ([account sync](../features/account-sync.md#invitation-decisions)).
+- **Declining requests departure on matching devices.** Each follows its ordinary Leave rules; it does not instantly
+  remove every account leaf or affect unrelated invitation generations. A later accept cannot undo a requested Leave
+  or rejoin a device automatically.
 - **Chats she creates** include her other devices from the start.
 - **A device that was missed** is added quietly by gap filling, unless its settings say otherwise.
 
