@@ -13,8 +13,9 @@ notice a new sign-in, how each device announces the KeyPackages it publishes, wh
 a KeyPackage it did not make, how devices hand each other private KeyPackages, how the Welcome for an add that uses one
 reaches its sibling, how the user removes a device and what the removed device does, how a device signs out, and how
 each device shows its siblings to its user. [account-sync.md](./account-sync.md) specifies the small-state messages
-devices exchange in the group, and the history deliveries a device sends a sibling it adds to a chat. The group's other
-messages for such an add are not specified yet.
+devices exchange in the group, and the history deliveries a device sends a sibling it adds to a chat. This document
+also defines [gap filling](#filling-a-missing-chat) and its advisory [claims](#gap-fill-claims-kind-458). Delivered
+sibling-Welcome resend remains unspecified ([Sending a sibling Welcome](#sending-a-sibling-welcome)).
 
 ## Surfaces
 
@@ -31,7 +32,8 @@ messages for such an add are not specified yet.
   [../protocol-core/joining.md](../protocol-core/joining.md).
 - Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
   roster entry announces into, and whose publications are the evidence of a new sign-in ([New sign-ins](#new-sign-ins)).
-- Marmot app events: kind `457` (heartbeat, [Heartbeats](#heartbeats)), kind `459` (private KeyPackage request), kind
+- Marmot app events: kind `457` (heartbeat, [Heartbeats](#heartbeats)), kind `458` (gap-fill claim,
+  [Gap-fill claims](#gap-fill-claims-kind-458)), kind `459` (private KeyPackage request), kind
   `460` (private KeyPackage hand-off, [Private KeyPackages](#private-keypackages)) and kind `461` (sibling Welcome,
   [Sibling Welcomes](#sibling-welcomes)), each sent only in a device group. Their kinds are registered in
   [../foundation/registries.md](../foundation/registries.md).
@@ -266,8 +268,9 @@ A client implementing this feature MUST NOT add a device of its account to a cha
 published, in the founding Add or later; it adds a sibling only with a private KeyPackage under this contract.
 
 These sender requirements apply whenever a device adds a sibling to a chat with a private KeyPackage, including the
-founding Add ([Creating a chat](#creating-a-chat)) and a later Add
-([Adding the new device to chats](#adding-the-new-device-to-chats)). The flow chooses which eligible devices to add;
+founding Add ([Creating a chat](#creating-a-chat)), a later post-link Add
+([Adding the new device to chats](#adding-the-new-device-to-chats)), and
+[Filling a missing chat](#filling-a-missing-chat). The flow chooses which eligible devices to add;
 these requirements decide whether the device can carry out that Add.
 
 - The sender trusts the device group ([Trust](#trust)), and its own leaf there carries a device tag that reads as its
@@ -302,7 +305,10 @@ Under this section, once a link is made, and while the roster lists the new devi
 chats" on, the approving device, the one the new device's entry names in `linked_by`, adds the new device to the chats it is in. These are the
 chats it is in while it is still adding, including one it joins after the link. A chat it creates includes its linked
 siblings under [Creating a chat](#creating-a-chat); a sibling omitted there may get a same-account Add afterwards under
-this section. No other device adds the new device, under the link, to a chat the approving device is in.
+this section. Only the approving device runs this direct post-link flow. Other devices can fill missing memberships
+through [Filling a missing chat](#filling-a-missing-chat), including in chats the approving device is in and while its
+direct flow is still running. Its Adds use the same selected-parent presence recheck described there; these flows can
+race and ordinary branch selection applies.
 
 - Each Add must pass [Private sibling Add admission](#private-sibling-add-admission). It uses one private KeyPackage
   the new device handed the approving device, sends the Welcome as a sibling Welcome, and skips a chat that cannot take
@@ -318,9 +324,9 @@ this section. No other device adds the new device, under the link, to a chat the
 
 Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
 device's entry has "bring chat history" on. What the approving device shows its user about the chats it skips is not
-specified. A chat the approving device skips gets the new device only if the chat can take the Add later, while the
-approving device is still adding the new device to chats. A chat the approving device is not in while it is adding gets
-the new device only from another sibling, which is not specified yet.
+specified. The approving device can retry a skipped chat under this direct flow while it is still adding and the chat
+can take the Add. Any eligible holder can also cover a missing membership through
+[Filling a missing chat](#filling-a-missing-chat), whether or not the approving device is in that chat or still adding.
 
 The signature-key check finds a leaf the new device made before the link, which carries no tag, only when that leaf's
 signature key is the one the device later set as its `tag_signature_key`. A device whose earlier leaves have other
@@ -330,6 +336,85 @@ leaf there ([../app-components/device-tag-v1.md](../app-components/device-tag-v1
 two leaves that read as that device's, which "Reading tags" there counts as misuse of its keys. The extra leaf counts
 toward `max_leaves_per_account` while it stays. Avoiding this, whether the account's devices then treat the two leaves
 as misuse, and who removes the extra leaf are not specified yet.
+
+### Filling a missing chat
+
+A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its
+device group, after a relevant roster eligibility change, when a sibling hands it private KeyPackages it was waiting
+for, and when a claim that held back its attempt expires. It considers a sibling only while the selected trusted
+roster lists it as `active` or `inactive`, with a `tag_signature_key` and "add to all my chats"
+on, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive sibling remains
+linked. The shared admission contract governs sender readiness, the current approver's local outcome, and removal
+exclusions. Other siblings rely on the selected trusted roster and the new device's tag key, written by its first
+Commit ([Approving](#approving)); they do not know the approver's local outcome. If that approver later undoes the
+link, the ordinary [removal cleanup](#devices-the-roster-no-longer-lists) applies. No shared "link made" record is added.
+A device whose own roster entry is `leaving` neither claims nor makes Adds through this flow.
+
+For each eligible sibling and chat:
+
+- The Add passes [Private sibling Add admission](#private-sibling-add-admission). A blocked or unreadable chat does
+  not prevent work on another chat.
+- A tagged leaf for the sibling, or an account leaf with its `tag_signature_key` as its signature key, means the chat
+  already holds it. A device MUST check this again on the selected parent state when it actually prepares the Add,
+  including after the Add waited for the group to settle. It never prepares another Add merely because an earlier
+  presence read found the sibling absent.
+- It uses an unused, unexpired private KeyPackage the sibling handed it, and checks that package against the chat
+  before spending it. With none, it requests private stock under [Messages](#messages) and waits. It never falls back
+  to a public KeyPackage.
+- Before claiming, it is ready under [Private sibling Add admission](#private-sibling-add-admission), has a qualifying
+  private KeyPackage, and both groups allow the respective operations now. It waits while a pending or settling
+  operation prevents the claim or Add. This does not prove that a relay will accept the Add.
+- Before making the Add it sends a [gap-fill claim](#gap-fill-claims-kind-458) in the device group. Among the live
+  claims it has observed for that chat and sibling, it proceeds only if its own slot is the lowest by unsigned
+  lexicographic comparison of the 32-byte slots. It then checks the current roster, readiness, private KeyPackage and
+  selected tree again. A claim never authorizes an Add.
+- It sends the Welcome through [Sibling Welcomes](#sibling-welcomes). History follows from the device whose own
+  confirmed Add added the sibling, under [account-sync.md](./account-sync.md#history-deliveries).
+
+An expired claim lets another device try. A device MAY forget claims across restart: they reduce competing attempts
+but are not exclusive ownership, and a lost claim, simultaneous attempts or different observed claim sets can still
+race. A previously observed claim MAY keep suppressing an attempt until its original expiry even if branch selection
+later withdraws its carrier: this delays work by at most ten minutes, never authorizes an Add, and replay cannot
+extend the delay. Normal branch selection applies. Automatic cleanup of duplicate device leaves is not defined here;
+the limit for an earlier untagged leaf described above still applies. Fresh publications are new claims: successive
+valid claims from a lower slot can keep another device deferring beyond one claim's lifetime, for example while that
+claimant cannot reach a chat's relays. This best-effort flow guarantees neither fairness nor eventual filling.
+
+Turning "add to all my chats" off stops this gap filling and removes no existing leaf. This initial rule does not
+distinguish an old chat from an invitation missed after the link: with the setting off, a missed invitation waits for
+a re-invite. Creating a new chat and including linked siblings in its founding Add is a separate flow; this limit
+does not exclude them from that founding Add.
+
+### Gap-fill claims (kind 458)
+
+A gap-fill claim is a Marmot app event
+([../foundation/application-messages.md](../foundation/application-messages.md)) sent only as an MLS application
+message in the trusted device group. Its `tags` is empty. A sender MUST encode its `content` as UTF-8 JSON, at most
+32 KiB, with exactly these members in this order and no whitespace:
+
+```json
+{"v":1,"from":"<claimant slot>","to":"<missing sibling slot>","chat":"<MLS group id>"}
+```
+
+`v` is written as the integer `1`, with no other numeric form. `from` and `to` are distinct device slots, each exactly
+64 lowercase hexadecimal characters. `chat` is the non-empty raw MLS group id in lowercase hexadecimal, never the
+transport routing id. The content limit bounds this coordination message only; it is not a new MLS group-id validity
+rule. A receiver MUST drop a claim unless its content is byte-for-byte this canonical encoding with valid members,
+types, values and bounds: repeated or unknown members, different order, whitespace and escaped spellings do not qualify.
+
+The event's `created_at` is when it was sent. The claim expires exactly 600 seconds later. A receiver ignores a claim
+dated after its current clock, one whose expiry has passed, and one whose expiry cannot be represented. Receiving or
+replaying it never moves that expiry. A future-dated claim is ignored at receipt, not held for later activation.
+Ordinary clock skew can therefore make devices observe different claim sets and attempt competing Adds; the
+best-effort rule adds no skew tolerance. It ignores kind `458` outside its trusted device group.
+
+A receiver accepts the claim only if both slots are current roster devices and the claimant is `active` or
+`inactive`. The leaf that sent it, as it was in the epoch the message was sent in, must carry a device tag that reads
+as `from` against the receiver's current trusted roster under [Matching leaves to devices](#matching-leaves-to-devices).
+The chat must be one the receiver already holds and considers for gap filling. An unknown chat never creates a local
+chat or work. For a known eligible pair, the receiver keeps the unexpired claims by claimant; repeated claims by one
+claimant keep the later expiry. A claim becomes irrelevant when its claimant or target leaves the roster or is listed
+as `leaving`. A claim has no effect on membership or group state, and no effect outside this account's linked devices.
 
 ### Creating a chat
 
@@ -349,9 +434,9 @@ requirements to include a sibling.
   older chats and does not exclude a device from a new one. An inactive device is still linked until removed.
 - A sibling with no qualifying private KeyPackage is omitted; the creator does not wait for one or make the chat fail
   because that sibling is missing. It asks that sibling for private KeyPackages under [Messages](#messages). Adding a
-  sibling omitted for lack of a qualifying KeyPackage later follows the same-account Add rules in a chat that requires
-  `0x800d`; gap filling is not specified yet. No later automatic gap Add is made while "add to all my chats" is off;
-  the omitted device then waits for a re-invite of the account.
+  sibling omitted for lack of a qualifying KeyPackage later follows [Filling a missing chat](#filling-a-missing-chat)
+  in a chat that requires `0x800d`. No later automatic gap Add is made while "add to all my chats" is off; the omitted
+  device then waits for a re-invite of the account.
 - Each included sibling gets a sibling Welcome; other accounts receive theirs through the transport binding as usual.
   The founding Add has an empty publication obligation
   ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Group creation"), so its initial
@@ -537,7 +622,7 @@ removed device, or of a device the roster no longer lists, is under [Removing a 
 whose tag a device reads under a key it keeps for a gone slot is that slot's, not unclaimed, for that device. The
 approving device adds a newly linked device to its chats
 ([Adding the new device to chats](#adding-the-new-device-to-chats)); adding a sibling to a group it is missing from
-otherwise is not specified yet.
+otherwise follows [Filling a missing chat](#filling-a-missing-chat).
 
 ## Removing a device
 
@@ -641,8 +726,8 @@ a roster listing a key cannot read the leaves tagged under it, which then read a
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
 the cleanup removed stays removed: a device listed again is missing from the groups it was removed from, and the cleanup
-adds it back to none of them. Adding it back to one of them is specified only in
-[Adding the new device to chats](#adding-the-new-device-to-chats), under that section's conditions.
+adds it back to none of them. A later Add follows [Adding the new device to chats](#adding-the-new-device-to-chats) or
+[Filling a missing chat](#filling-a-missing-chat), under that flow's conditions and the shared removal exclusions.
 
 ### Removing it from chats
 

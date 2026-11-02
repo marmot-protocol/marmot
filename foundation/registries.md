@@ -116,6 +116,7 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `455`   | Device pairing confirm              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `456`   | Device pairing cancel               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
 | `457`   | Device heartbeat                    | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `458`   | Sibling chat gap-fill claim         | Marmot app payload                  | [device-group.md](../features/device-group.md#gap-fill-claims-kind-458) |
 | `459`   | Private KeyPackage request          | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `460`   | Private KeyPackage hand-off         | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
 | `461`   | Sibling Welcome                     | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
