@@ -350,8 +350,10 @@ For each eligible sibling and chat:
 
 An expired claim lets another device try. A device MAY forget claims across restart: they reduce competing attempts
 but are not exclusive ownership, and a lost claim, simultaneous attempts or different observed claim sets can still
-race. Normal branch selection applies. Automatic cleanup of duplicate device leaves is not defined here; the limit
-for an earlier untagged leaf described above still applies.
+race. A previously observed claim MAY keep suppressing an attempt until its original expiry even if branch selection
+later withdraws its carrier: this delays work by at most ten minutes, never authorizes an Add, and replay cannot
+extend the delay. Normal branch selection applies. Automatic cleanup of duplicate device leaves is not defined here;
+the limit for an earlier untagged leaf described above still applies.
 
 Turning "add to all my chats" off stops this gap filling and removes no existing leaf. This initial rule does not
 distinguish an old chat from an invitation missed after the link: with the setting off, a missed invitation waits for
