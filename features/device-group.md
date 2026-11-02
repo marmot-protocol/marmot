@@ -58,7 +58,8 @@ device in the founding Add:
   device, with the rejected sign-ins it already keeps ("Answers"), which never name the linked device's slot ("Before
   answering"). The founding Add sets the linked device's roster entry, as every later Add sets the entry of the device
   it adds. The creating device's entry has the "add to all my chats" and
-  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving").
+  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving"). Its
+  "keep while inactive" setting is off when this entry is created.
 - The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
   no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
   ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
@@ -124,7 +125,9 @@ Cancel `cannot_link`, so the new device stops waiting. When the slot is rejected
 
 On the existing device, the user who confirms the link also names the new device and sets its "add to all my chats"
 and "bring chat history" settings ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-"State"). Both settings are on unless the user turns them off. The device's Confirm names:
+"State"). Both settings are on unless the user turns them off. The newly linked entry's "keep while inactive"
+setting is off when the entry is created. These initial values do not reset a later user choice or its recovery
+("Device settings"). The device's Confirm names:
 
 - the device group it trusts, if it has one, with the signature key of its own leaf there;
 - otherwise a fresh group id of 16 random bytes, for the device group it will create, with the signature key it will
@@ -1129,8 +1132,8 @@ shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
 
 Any device MAY change any device's three settings after linking, its own included
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A change is one roster
-Commit. A client changing only some settings MUST preserve the others from the state it commits to, rather than
-restore values from an earlier view.
+Commit made by the editing device, with the roster update inline. A client changing only some settings MUST preserve
+the others from the state it commits to, rather than restore values from an earlier view.
 
 - Turning "add to all my chats" on permits Adds under [Adding the new device to chats](#adding-the-new-device-to-chats)
   while that flow is still adding. It creates no other Add obligation. Turning it off never removes the device from a
@@ -1155,8 +1158,9 @@ the devices apart.
   founding Add ("Creating the device group") or a later link ("Approving").
   Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
   again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
-- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings that writes a roster update, inline or standalone, MUST write
-  a fresh `rename_id` drawn the same way, one that clears `label` included. It changes only the intended label or
+- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings MUST be an
+  inline roster update in a Commit made by the editing device; it MUST NOT be a standalone proposal. It MUST write a
+  fresh `rename_id` drawn the same way, one that clears `label` included. It changes only the intended label or
   settings and this id. Every non-user update MUST preserve `label`, `settings` and `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
   KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
@@ -1171,8 +1175,9 @@ the devices apart.
 
 A user edit can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's
 Commit. The entry's `rename_id` tells the editing device where its edit stands; values and Commits do not, since two
-edits can set the same values and a lost Commit can be sent again as a different Commit. From before sending an
-edit's Commit, a device retains or can reconstruct the label and three settings it intends, and these ids:
+edits can set the same values and a lost Commit can be sent again as a different Commit. From before sending its own
+Commit with the inline edit, the editing device retains or can reconstruct the label and three settings it intends,
+and these ids:
 
 - as written, the `rename_id` the edit writes, and each one it writes when it makes the edit again;
 - as replaced, the `rename_id` the entry held when the device built the edit. If it still keeps an earlier edit of
@@ -1195,15 +1200,17 @@ conditions above. If the supplied values match this roster and cover every pendi
 MUST cancel that lost edit before trying to make it again. Choosing the displayed label therefore cannot leave an
 opposite lost label to apply later, but it cannot discard a lost setting the user did not supply, or the converse.
 
-Otherwise the client SHOULD try the existing recovery first. A lost edit whose intended values already match the
+Otherwise the client MUST try the existing recovery first. A lost edit whose intended values already match the
 roster is settled for accepting later edits, although it can remain retained for recovery after a later fork. An
 applied retained edit is settled too and MUST NOT alone hold up another edit. If the earlier intention is still
-unresolved, the client does not accept the later edit; the user can try again once it resolves.
+unresolved, including while a Commit that makes it again is unresolved, the client does not accept the later edit;
+the user can try again once it resolves.
 
-After recovery, the client re-reads the roster and resolves supplied values against it; omitted settings preserve
-these current values. A request that still matches that roster is a no-op and sends no new update. It keeps a retained
-applied edit recoverable. A successful no-op MUST NOT leave an opposite intention that can later change the saved
-values. A save that matched an earlier screen can require an update after recovery changed the roster.
+Only once the earlier intention is settled, dropped or cancelled does the client re-read the roster and resolve
+supplied values against it; omitted settings preserve these current values. A request that still matches that roster
+is a no-op and sends no new update. It keeps a retained applied edit recoverable. A successful no-op MUST NOT leave an
+opposite intention that can later change the saved values. A save that matched an earlier screen can require an update
+after recovery changed the roster.
 
 **Development transition.** Every client writing post-link settings in a device group MUST adopt the user-edit
 `rename_id` rule before using this feature. Clients based on the earlier draft, which required settings changes to

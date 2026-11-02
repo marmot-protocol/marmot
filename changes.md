@@ -20,10 +20,13 @@ PR pending, for [mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/26
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md), and
 [features/account-sync.md](./features/account-sync.md).
 
-- Allow post-link changes to all three device settings. Omitted values come from current roster state.
+- Allow post-link changes to all three device settings. Omitted values come from current roster state. Newly created
+  founding and linked entries start with "keep while inactive" off; later choices and their recovery are preserved.
 - Generalize existing `rename_id` provenance to label/settings user edits without changing its encoding. Recover a
-  prior lost edit before accepting a later one; a busy outcome is retryable. Non-user updates preserve the id and
-  values, and a competing user edit wins as a whole. Preserve legacy label-only recovery and safe no-op cancellation.
+  prior lost edit before accepting a later one; the user can try again while it is unresolved. Non-user updates preserve
+  the id and values, and a competing user edit wins as a whole. User label/settings edits must be inline in the editing device's
+  own Commit; non-user roster updates may still be standalone. Preserve legacy label-only recovery and safe no-op
+  cancellation, and resolve later requests only after the earlier intention settles, is dropped or is cancelled.
 - Enabling history affects future sibling Adds and remaining obligations; it starts no retroactive backfill.
 - This is a coordinated development transition for settings writers: clients using the earlier draft's unchanged-id
   settings updates must adopt the expanded marker rule before writing post-link settings. Existing retained label-only

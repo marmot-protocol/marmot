@@ -267,8 +267,10 @@ that created it, and that account is the group's only admin
 ([../features/device-group.md](../features/device-group.md), "Creating the device group"), so every device of the
 account may edit any entry. No device outranks another.
 
-A roster update MAY be inline or standalone. A standalone roster update is validated against its source epoch's
-roster when it is received, and against the candidate parent's roster when a Commit carries it.
+A user edit of a device's label or settings MUST be an inline roster update in a Commit made by the editing device;
+it MUST NOT be a standalone proposal ([../features/device-group.md](../features/device-group.md), "Labels, clients
+and platforms"). Other roster updates MAY be inline or standalone. A standalone roster update is validated against
+its source epoch's roster when it is received, and against the candidate parent's roster when a Commit carries it.
 
 ## Removal
 
