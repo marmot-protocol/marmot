@@ -25,6 +25,9 @@ PR pending, for [mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/26
   prior lost edit before accepting a later one; a busy outcome is retryable. Non-user updates preserve the id and
   values, and a competing user edit wins as a whole. Preserve legacy label-only recovery and safe no-op cancellation.
 - Enabling history affects future sibling Adds and remaining obligations; it starts no retroactive backfill.
+- This is a coordinated development transition for settings writers: clients using the earlier draft's unchanged-id
+  settings updates must adopt the expanded marker rule before writing post-link settings. Existing retained label-only
+  renames remain label-only. No new wire encoding or mixed-draft preservation guarantee is introduced.
 
 ## 2026-11-02: Linked siblings in a chat's founding Add
 

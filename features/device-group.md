@@ -1132,9 +1132,9 @@ Any device MAY change any device's three settings after linking, its own include
 Commit. A client changing only some settings MUST preserve the others from the state it commits to, rather than
 restore values from an earlier view.
 
-- Turning "add to all my chats" on lets siblings add the device to the chats it is missing, under the sibling-Add
-  rules above. Turning it off never removes the device from a chat it has joined. It does not exclude a sibling from
-  a newly created chat ([Creating a chat](#creating-a-chat)).
+- Turning "add to all my chats" on permits Adds under [Adding the new device to chats](#adding-the-new-device-to-chats)
+  while that flow is still adding. It creates no other Add obligation. Turning it off never removes the device from a
+  joined chat or excludes a sibling from a newly created chat ([Creating a chat](#creating-a-chat)).
 - "Bring chat history" governs future sibling Adds and histories still owed, as
   [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
   chat the device already joined and does not restore history forgotten while it was off.
@@ -1155,7 +1155,7 @@ the devices apart.
   founding Add ("Creating the device group") or a later link ("Approving").
   Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
   again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
-- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings that sends a Commit MUST write
+- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings that writes a roster update, inline or standalone, MUST write
   a fresh `rename_id` drawn the same way, one that clears `label` included. It changes only the intended label or
   settings and this id. Every non-user update MUST preserve `label`, `settings` and `rename_id`.
 - A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
@@ -1163,7 +1163,7 @@ the devices apart.
   is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
   write them in the update that announces its next KeyPackage ([Slot announcements](#slot-announcements)) rather than
   in an update of their own, so a changed value reaches the roster with that announcement. Publishing a KeyPackage its
-  entry already names makes no announcement. A rename never carries them. A device does not write another device's
+  entry already names makes no announcement. A user edit never carries them. A device does not write another device's
   `client` or `platform`.
 - A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
   earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
@@ -1190,15 +1190,24 @@ from the entry's `rename_id` in canonical roster state, taking the first match:
   unless the roster already holds every value it intends. Preserve all unrelated entry fields from current state.
 - Any other: another user edit won and stands; drop the local edit.
 
-Before accepting a further edit of that device, a client SHOULD first try this existing recovery and re-read the
-roster. If the earlier intention remains unresolved, refuse the later edit with a retryable busy outcome. An applied
-retained edit alone MUST NOT make subsequent edits busy. Resolve supplied values against the roster read after this
-recovery; omitted settings preserve their current values.
+Before accepting a further edit of that device, a client first reads the earlier edit's standing under the settled
+conditions above. If the supplied values match this roster and cover every pending difference of a lost edit, it
+MUST cancel that lost edit before trying to make it again. Choosing the displayed label therefore cannot leave an
+opposite lost label to apply later, but it cannot discard a lost setting the user did not supply, or the converse.
 
-Saving values already shown sends no new edit. It keeps a retained applied edit. A no-op MAY cancel a settled lost
-edit only when the user's supplied fields cover every pending difference; it MUST NOT discard a lost setting merely
-because the user saved the current label, or the converse. A successful no-op MUST NOT leave an opposite intention
-that can later change the saved values.
+Otherwise the client SHOULD try the existing recovery first. A lost edit whose intended values already match the
+roster is settled for accepting later edits, although it can remain retained for recovery after a later fork. An
+applied retained edit is settled too and MUST NOT alone hold up another edit. If the earlier intention is still
+unresolved, the client does not accept the later edit; the user can try again once it resolves.
+
+After recovery, the client re-reads the roster and resolves supplied values against it; omitted settings preserve
+these current values. A request that still matches that roster is a no-op and sends no new update. It keeps a retained
+applied edit recoverable. A successful no-op MUST NOT leave an opposite intention that can later change the saved
+values. A save that matched an earlier screen can require an update after recovery changed the roster.
+
+**Development transition.** Every client writing post-link settings in a device group MUST adopt the user-edit
+`rename_id` rule before using this feature. Clients based on the earlier draft, which required settings changes to
+preserve this id, must update first. The encoding is unchanged; retained label-only renames still recover only labels.
 
 A device MAY forget the oldest `rename_id`s kept for one device, but never its newest written id or the id held when
 it last built the edit or made it again: while the edit has not applied and no other user edit followed, the roster
