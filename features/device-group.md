@@ -14,8 +14,8 @@ a KeyPackage it did not make, how devices hand each other private KeyPackages, h
 reaches its sibling, how the user removes a device and what the removed device does, how a device signs out, and how
 each device shows its siblings to its user. [account-sync.md](./account-sync.md) specifies the small-state messages
 devices exchange in the group, and the history deliveries a device sends a sibling it adds to a chat. This document
-also defines [gap filling](#filling-a-missing-chat) and its advisory [claims](#gap-fill-claims-kind-458). Delivered
-sibling-Welcome resend remains unspecified ([Sending a sibling Welcome](#sending-a-sibling-welcome)).
+also defines [gap filling](#filling-a-missing-chat) and its advisory [claims](#gap-fill-claims-kind-458). The original adder also
+[repairs a published sibling Welcome](#resending-a-published-sibling-welcome) that was lost.
 
 ## Surfaces
 
@@ -295,11 +295,11 @@ these requirements decide whether the device can carry out that Add.
   requirement to make room for it. The chat's routing names a relay list a sibling Welcome may carry
   ([Message](#message)).
 
-The initial sibling Welcome follows [Sending a sibling Welcome](#sending-a-sibling-welcome) once its Add is canonical.
+A sibling Welcome follows [Sending a sibling Welcome](#sending-a-sibling-welcome) once its Add is canonical.
 If the sender's own leaf in the device group no longer reads as its slot then, it keeps the unsent Welcome and waits
 until the leaf is ready again; it does not send a carrier the receiver would drop. It checks readiness for the epoch
-that carries the message, not only for an earlier read. This is deferral of the initial send, not a new rule for
-resending a Welcome that reached a relay. The ordinary KeyPackage expiry and gone-slot rules still apply
+that carries the message, not only for an earlier read. This readiness check applies to any new carrier, initial or
+[repair](#resending-a-published-sibling-welcome). The ordinary KeyPackage expiry and gone-slot rules still apply
 ([Issuing](#issuing), [Its private KeyPackages](#its-private-keypackages)).
 
 ### Adding the new device to chats
@@ -1157,7 +1157,7 @@ roster defines them
   ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"), and sends it when an inviter sends a
   Welcome: after the Commit's publish obligation succeeds ([../protocol-core/joining.md](../protocol-core/joining.md),
   "Behavior"). The shared readiness rule in [Private sibling Add admission](#private-sibling-add-admission) holds
-  an initial send while its carrier would come from an unclaimed leaf.
+  any new carrier, initial or repair, while it would come from an unclaimed leaf.
 - It MUST NOT deliver a Welcome that consumes a private KeyPackage through the transport binding's Welcome delivery.
   Members of other accounts that the same Commit added get their Welcomes through the binding as usual.
 - Before creating a new sibling Welcome app event or handing it off for delivery as an MLS application message,
@@ -1176,8 +1176,74 @@ roster defines them
   publication rules, including its remaining attempts after restart. The origin check does not recall or cancel that
   message. It can therefore arrive after its chat's Add has lost branch selection. A join that already consumed the
   KeyPackage is not undone ("Receiving a sibling Welcome").
-- Whether and when a device sends a delivered sibling Welcome again is not specified yet; any new delivery it makes
-  passes the origin check above.
+
+### Resending a published sibling Welcome
+
+The original adder retains, or can reconstruct, the exact encoded sibling Welcome body, including its MLS Welcome,
+private KeyPackage reference and relay list, and its private KeyPackage expiry. It retains this repair obligation until
+that private KeyPackage expires, the target is gone for it, or the completion rule below ends repair of that Welcome. It SHOULD repair a lost delivery by sending that Welcome again under the
+following rules; this repair creates no new Add and consumes no new KeyPackage. The old-chat gap-filling setting governs
+starting new automatic Adds ([Filling a missing chat](#filling-a-missing-chat)); turning it off does not cancel a Welcome
+from an already admitted Add. Resending creates no new history offer or backfill obligation
+([account-sync.md](./account-sync.md#history-deliveries), "History deliveries").
+
+- A successful delivery generation begins when the sender durably records its first observation that the carrier's
+  publication has been accepted. This is local publication-observation evidence, not a transport storage timestamp.
+  Unknown or legacy timing holds repair; the sender MUST NOT substitute the app event's creation time, an attempt's
+  start, or a later projection's time. A carrier whose publication obligation has ended with no accepted target leaves
+  the Welcome where it was: an initial delivery still owed, or a prior repair still due. Another carrier may follow
+  under the checks below.
+- After that boundary, the first newly observed authenticated message from the target device in the sender's trusted
+  device group starts a fixed 600-second wait. This includes application messages and accepted member MLS Commits and
+  Proposals, even when they produce no application message. The sender attributes the authenticated source leaf, as
+  that leaf was in the epoch the message was sent in, to the target through its device tag and the current roster's
+  tag keys, as in [Receiving](#receiving), rather than through the account identity or another device's leaf. The first
+  local authenticated source observation is retained even if its exact source-leaf proof or current-roster attribution
+  is temporarily unavailable; later proof or attribution MUST NOT change that observation time or order. An old pairing
+  confirmation alone does not start the wait, including when a first Welcome is delivered late. Later activity MUST
+  NOT postpone an armed deadline.
+- For each successful delivery generation, the sender retains, or can reconstruct, its publication boundary and its
+  first qualifying activity's identity, observation time and fixed deadline across restarts. Replaying, rewrapping or
+  projecting authenticated inner content the sender already observed, whether it qualified or not, MUST NOT make it
+  newly observed, arm a later delivery generation, or move the deadline. The identity is the authenticated inner
+  content's, not its outer transport envelope's. In particular, a source first observed before publication cannot arm
+  that generation when its proof, attribution or projection becomes available afterward. Each successfully published
+  new delivery generation requires new qualifying activity after its own publication boundary before another wait
+  can start. An unsuccessful or unresolved carrier does not begin a new successful generation.
+- When the wait expires, the sender checks the selected chat tree. A matching target-device leaf whose MLS
+  `leaf_node_source` has advanced to `update` or `commit` is positive participation evidence and completes repair of that retained Welcome.
+  A matching tagged `key_package` leaf is inconclusive: the Add installed that leaf before the target could consume
+  the Welcome. Only a leaf attributed to this target by the current roster's tag keys counts. An unreadable or
+  still-settling selected tree holds repair. Historical tag keys reserved for gone-slot cleanup do not establish
+  current participation.
+- Every new delivery passes [Sending a sibling Welcome](#sending-a-sibling-welcome)'s origin and readiness checks and
+  remains within the retained private KeyPackage's lifetime. Existing gone-slot and local-removal exclusions still
+  apply; a target that is `leaving`, whose current tag key is unavailable, or whose link this sender approved is still
+  pending cannot begin a new delivery. These checks do not depend on the target's old-chat gap-filling setting.
+  The sender MUST NOT create another carrier while any earlier carrier of this Welcome has an unresolved outcome or
+  outstanding publication targets from its snapshotted target list. Those targets may finish the identical
+  already-handed-off carrier under the active transport binding's publication rules even while new delivery is held
+  (on Nostr, [Publish targets and acknowledgements](../transports/nostr.md#publish-targets-and-acknowledgements)). A due
+  repair uses the same retained body in a fresh sibling Welcome carrier. Completing repair of this Welcome is not a
+  permanent assertion of membership or a new receipt; any future missing membership follows the existing Add policy.
+
+When upgrading an experimental local device group whose older state lacks these observation facts, a client records
+the selected branch's current epoch as an immutable activity cutoff. Only authenticated target-device messages
+whose source epoch is later than that cutoff qualify;
+activity in the upgrade epoch or earlier stays ineligible through replay and rewrapping. Thus an existing local device
+group starts this repair tracking after its next ordinary committed update, such as a rename or settings change. A
+new local group qualifies activity immediately. This one-time limit does not delay initial Welcome delivery and does
+not cause a client to create a Commit just to cross the cutoff. Unknown historical publication timing remains held.
+
+A new carrier MUST have a fresh app event identity. When that identity depends on its creation timestamp, a client
+whose wall clock cannot advance beyond the timestamps of its previously prepared carriers holds new preparation until
+it can, without inventing a future timestamp. An already
+reserved, unexposed carrier can be retried unchanged, and already-handed-off targets still settle independently.
+
+This repair is best effort. Queued device-group traffic can arrive late; local observation order proves neither live
+activity after publication nor receipt of the Welcome. A target that joined but whose Update or Commit is delayed can
+receive a harmless duplicate Welcome. No receipt, challenge, freshness window, expired-KeyPackage removal/re-add, or
+duplicate-leaf cleanup is added by this flow.
 
 ### Receiving a sibling Welcome
 
