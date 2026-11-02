@@ -13,6 +13,25 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Restore backup history for current device memberships
+
+PR pending, for [mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/account-sync.md](./features/account-sync.md).
+
+- Restore history on demand using the existing recovery key, pointer and archive formats, including older listed
+  backups. Fetch and import only while the restoring device's own leaf belongs to the chat; an index never grants
+  membership, creates a chat or triggers a join or re-add.
+- Keep the original global history-blob number when filtering chats, and use existing insert-only history validation,
+  retention and attachment-key rules with honest backup provenance. Importing history does not mark it read or create unread counts.
+- Leave archived small state unused in this version. Restore changes neither the current recovery key nor backup
+  settings; old words remain independently usable. Nonsecret availability metadata may prompt for words after a real
+  later join, without making an unknown chat into a transcript or route.
+- Keep restore secrets ephemeral and report partial/incomplete outcomes. This defines no new wire format,
+  automatic secret-backed resume or full account disaster recovery.
+- Clarify the narrower adopted scope in [ideas/account-sync.md](./ideas/account-sync.md) and
+  [ideas/multi-device.md](./ideas/multi-device.md); their broader pre-join transcript and recovery-key retention
+  proposals remain non-normative future directions.
+
 ## 2026-11-02: Edit linked-device settings with user-edit recovery
 
 [#492](https://github.com/marmot-protocol/marmot/pull/492), for

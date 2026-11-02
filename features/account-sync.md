@@ -9,7 +9,8 @@ as pins, mutes and archived chats. The account's devices exchange it inside thei
 The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
 small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
 that carry them from the device that adds a sibling to a chat; and backups: the recovery key they are sealed to, and
-how the account's backup writer writes them. Restoring backups, and invite decisions, are not specified yet.
+how the account's backup writer writes them, and history-only restore for chats the restoring device currently
+belongs to. Restoring archived small state, broader disaster recovery, and invite decisions are not specified yet.
 
 ## Surfaces
 
@@ -492,8 +493,9 @@ more:
 
 A backup keeps an account's history for when every device that holds it is gone. Backups are sealed to the account's
 recovery key, which is separate from the account's signing key: holding the signing key, or being a linked device, does
-not open a backup. This version specifies the recovery key, how the account's devices keep it, and how the account's
-backup writer writes backups and lists them in the account's backup pointer. Restoring backups is not specified yet.
+not open a backup. This version specifies the recovery key, how the account's devices keep it, how the account's
+backup writer writes backups and lists them in the account's backup pointer, and on-demand history restore for chats
+the restoring device currently belongs to.
 
 ### Recovery key
 
@@ -504,8 +506,8 @@ never chooses it: a password the user chose would be too weak to protect a backu
 offline.
 
 The words derive an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under DHKEM(X25519,
-HKDF-SHA256), the KEM of ciphersuite `0x0001`, whatever ciphersuite the device group uses, because a device that
-restores a backup may hold no group:
+HKDF-SHA256), the KEM of ciphersuite `0x0001`, whatever ciphersuite the device group uses, because a device looking
+for backups may hold no group:
 
 ```text
 prk      = HKDF-Extract(salt = "marmot recovery key v1", IKM = entropy)
@@ -854,6 +856,46 @@ over at once, one stands. A device that trusts no device group never takes over.
 - Retention compares stretches, not messages: a message deleted since an older backup was written does not keep that
   backup.
 - Retention keeps at most 16 backups. Past that, the oldest is dropped even when it is the last to hold some stretch.
+
+### Restoring history from backups
+
+A user can ask a device to restore history with recovery words at any time, including while other devices are online.
+The device derives the recovery key as in [Recovery key](#recovery-key), reads the account's pointer under that key
+([Backup pointer](#backup-pointer)), and opens listed archives under [Backup archives](#backup-archives). It considers
+all listed backups: an older backup may hold history the newest one does not. The transport's completed discovery
+rules still apply ([../transports/nostr.md](../transports/nostr.md), "Backup pointer"); an incomplete discovery is not
+an empty pointer.
+
+Restore imports history only for a chat the restoring device currently belongs to through its own MLS leaf. Another
+device of the same account being a member is not enough. The device checks this before fetching a history blob and
+again before applying it, so leaving or removal during a fetch prevents the import. An unknown, unjoined, removed,
+disbanded or unreadable chat takes no restored history. The device group takes none. A backup never grants membership,
+creates an MLS group, joins a chat, re-adds a device or authorizes any of those actions.
+
+A reader retains the global blob number assigned by [Backup archives](#backup-archives) before filtering chats. It
+opens each selected history blob with its archive envelope and applies the content validation, retention,
+attachment-key, authority-verdict and insert-only rules in [History bundles](#history-bundles). Held events remain as
+they are; restoring history does not mark it read, move the read position or create unread counts. It records the
+source as a backup, not as a verified sending device. The archive authenticates its bytes under the key, not its
+claimed writer, historical authors or their membership and authority; see [Security considerations](#security-considerations).
+Restored content does not become a live device-group event or an MLS membership instruction.
+
+This version restores history only. It does not apply the archive's small-state snapshot: read positions, pins,
+mutes, archive choices and invitation decisions remain unchanged. A reader may skip that optional blob without
+changing any history blob's global number. Restoring with older words leaves the account's current recovery key and
+writer unchanged and never enables backups. Each older key's pointer remains independent, as in
+[The account's recovery key](#the-accounts-recovery-key).
+
+A device may keep nonsecret index metadata for a chat it cannot restore yet. That metadata is availability information,
+not a transcript, membership or a transport route. If the device later actually joins such a chat, it tells the user
+that a backup may hold history and that the user can supply the corresponding words again. It does not join or
+request a re-add because an index names the chat, and it does not need proof that other devices lack its history.
+
+Words, their entropy, the derived private recovery key and archive keys are kept only for the restore operation and
+are never persisted for automatic resumption. Cancellation or closing the device ends that use; another attempt asks
+for the words again. A failed blob or cancellation does not undo valid history already imported. The device reports
+an incomplete or partial restore rather than claiming no backup or complete recovery. This flow does not restore a
+whole account from nothing or expose transcripts of chats the restoring device has not joined.
 
 ## Convergence and retained history
 

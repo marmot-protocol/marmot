@@ -269,6 +269,11 @@ them, so if she still has her old words, she can still restore them. If she has 
 replacing them is all she needs to do. Anyone who already copied an old backup and also has the old words can still
 read that old copy; nothing can take it back.
 
+The first adopted [restore flow](../features/account-sync.md#restoring-history-from-backups) restores history only
+for chats the device currently belongs to. Before a real join, an index supplies availability metadata, not a
+transcript or membership. That flow leaves the current recovery key and archived preferences unchanged. The broader
+disaster recovery and "Keeping the same words" behavior below remain ideas.
+
 **Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
 **Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
 and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If she
