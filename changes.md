@@ -15,7 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-02: Repairing a published sibling Welcome
 
-For [mdk#2628, D70, D89, D90 and D91](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[#493](https://github.com/marmot-protocol/marmot/pull/493), for
+[mdk#2628, D70, D89, D90 and D91](https://github.com/marmot-protocol/mdk/issues/2628), changes
 [features/device-group.md](./features/device-group.md#resending-a-published-sibling-welcome).
 
 - Retain the original adder's exact Welcome and private KeyPackage reference through expiry. Repair sends a new
