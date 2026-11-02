@@ -13,6 +13,30 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Restore backup history for current device memberships
+
+[#494](https://github.com/marmot-protocol/marmot/pull/494), for
+[mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/account-sync.md](./features/account-sync.md).
+
+- Restore history on demand using the existing recovery key, pointer and archive formats, including older listed
+  backups in exact pointer order, newest first, preserving listed tie order.
+  Bind each decrypted bundle to its index-entry chat and serialize the current-own-leaf check with import; an index
+  never grants membership, creates a chat or triggers a join or re-add.
+- Keep the original global history-blob number when filtering chats, and use existing insert-only history validation,
+  retention and attachment-key rules with honest backup provenance and existing first-imported-authority semantics.
+  Restored history counts as held history for later sibling exports and backups. Importing it does not mark it read or
+  create unread counts.
+- Leave archived small state unused in this version. Restore changes neither the current recovery key nor backup
+  settings; old words and their pointers remain independently usable. Private index metadata may prompt for words
+  after a real later join, without making an unknown chat into a transcript or route.
+- Keep plaintext restore/archive/derived keys in memory only, never in persistent storage, logs, debug output,
+  diagnostics or off-device exports. Existing sealed encrypted keys remain part of the archive format. Report
+  partial/incomplete outcomes; no new wire format, automatic secret-backed resume or full account disaster recovery.
+- Clarify the narrower adopted scope in [ideas/account-sync.md](./ideas/account-sync.md) and
+  [ideas/multi-device.md](./ideas/multi-device.md); their broader pre-join transcript and recovery-key retention
+  proposals remain non-normative future directions.
+
 ## 2026-11-02: Repairing a published sibling Welcome
 
 [#493](https://github.com/marmot-protocol/marmot/pull/493), for

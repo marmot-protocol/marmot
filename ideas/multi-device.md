@@ -168,7 +168,10 @@ approves on the iPad, group 1 absorbs the laptop and desktop and group 2 is dele
 **What Alice sees:** after choosing **No, start fresh**, the laptop works on its own. It is only in chats she is invited
 to from now on, and it says so: her old chats aren't available here, and people can re-invite her. If she has a backup,
 she can also choose **Restore from backup** to bring back her old chats' content, read-only until she is added back
-([account-sync.md](./account-sync.md)).
+([account-sync.md](./account-sync.md)). The first adopted
+[restore flow](../features/account-sync.md#restoring-history-from-backups) restores history only after the device
+actually joins a chat; before that, it keeps only availability metadata. The broader read-only-before-rejoin view
+above remains an idea.
 
 **Underneath:** the laptop has no device group. Starting fresh answers **Not now** for the devices it found, never
 **This wasn't me**: they stay listed, nothing is rejected, and no warning appears. If one of her old devices is still
@@ -209,8 +212,9 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 **Trade-offs:**
 
-- Starting fresh never recovers old chats by itself. A backup can restore their content read-only
-  ([account-sync.md](./account-sync.md)), but getting back into them needs a fresh add from someone still there.
+- Starting fresh never recovers old chats by itself. The broader idea can restore old content read-only before a
+  re-invite ([account-sync.md](./account-sync.md)); the adopted first restore flow imports history only into chats
+  the device has actually joined. Getting back into an old chat needs a fresh add from someone still there.
 - The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
   same way as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
