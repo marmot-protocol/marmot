@@ -317,28 +317,39 @@ as misuse, and who removes the extra leaf are not specified yet.
 
 ### Creating a chat
 
-A device that creates a chat SHOULD include its linked siblings in the founding Add, using one private KeyPackage each
-sibling handed it ([Private KeyPackages](#private-keypackages)). It selects other accounts under the ordinary rules
+A client implementing this feature MUST NOT use its account's published KeyPackages in a chat's founding Add, whether
+or not it currently trusts a device group. Other clients retain the generic founding exemption
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules").
+
+A device that trusts a device group and creates a chat SHOULD include its linked siblings in the founding Add, using
+one private KeyPackage each sibling handed it ([Private KeyPackages](#private-keypackages)). It selects other accounts under the ordinary rules
 ([../foundation/key-packages.md](../foundation/key-packages.md)) and fixes the requirements the chat would have without
 those sibling KeyPackages ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)). It MUST NOT weaken those
 requirements to include a sibling. If that state would not require `0x800d`, it includes no sibling this way.
 
 - It considers every other device in its trusted roster that is `active` or `inactive`. "Add to all my chats" covers
   older chats and does not exclude a device from a new one. An inactive device is still linked until removed.
+- It includes no device whose link it has recorded as failed. For a device it approved, it waits until the link is
+  made ([Approving](#approving)); a tag signature key alone never overrides that link's outcome.
+- It includes no sibling unless the chat's routing names a relay list that a sibling Welcome may carry
+  ([Message](#message)).
 - It includes no device whose entry has no `tag_signature_key`, whose removal it has decided and not completed, or
   whose slot a roster state it applied held as `removed` while it keeps that record's key, as under
   [Adding the new device to chats](#adding-the-new-device-to-chats). It includes no `leaving` device.
 - It uses only unused, unexpired private KeyPackages that pass [Receiving](#receiving), and whose capabilities meet the
-  fixed requirements. It MUST NOT use a published KeyPackage of its account, including under the founding exemption
-  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules").
+  fixed requirements.
 - A sibling with no qualifying private KeyPackage is omitted; the creator does not wait for one or make the chat fail
   because that sibling is missing. It asks that sibling for private KeyPackages under [Messages](#messages). Adding a
-  sibling omitted from creation later follows the same-account Add rules; gap filling is not specified yet.
+  sibling omitted for lack of a qualifying KeyPackage later follows the same-account Add rules in a chat that requires
+  `0x800d`; gap filling is not specified yet. An omitted sibling is not promised a later Add, including when "add to all
+  my chats" is off.
 - The founding Add stays within `max_leaves_per_account`. Each included sibling receives its Welcome as a sibling
   Welcome ([Sibling Welcomes](#sibling-welcomes)); other accounts receive theirs through the transport binding as usual.
-  The ordinary founding exception makes the Add canonical locally
-  ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)), so these sibling Welcomes are deliverable once
-  creation is canonical, and remain owed independently of the other accounts' Welcome deliveries.
+  The founding Add has an empty publication obligation
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Group creation"), so these sibling
+  Welcomes are ready to send once creation is canonical, independently of the other accounts' Welcome deliveries.
+  [Sending a sibling Welcome](#sending-a-sibling-welcome) gives their sending lifecycle; this section adds no resend
+  rule.
 
 ## Keeping it out of sight
 
@@ -1250,9 +1261,10 @@ status, and removing a device after a longer absence, are not specified yet.
 - Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
   joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
   sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. A device that
-  creates a chat follows the same private-KeyPackage rule ([Creating a chat](#creating-a-chat)); it never uses its
-  account's published KeyPackages under the generic founding exemption in
-  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules").
+  creates a chat under this feature follows the same private-KeyPackage rule
+  ([Creating a chat](#creating-a-chat)), even while it has no device group; clients without this feature retain the
+  generic founding exemption in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)
+  ("Sender rules").
 - A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
   another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
 - Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records

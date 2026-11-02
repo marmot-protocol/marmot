@@ -22,7 +22,8 @@ The companion to [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/
   sibling Welcome deliveries independently of ordinary Welcome deliveries. It never weakens the requirements selected
   for the other accounts or uses its account's public KeyPackages.
 - The old-chat setting does not exclude a sibling from new chats. Leaving, keyless, pending-removal and remembered
-  removed devices are omitted; inactive devices remain eligible. Missing private stock does not delay creation.
+  removed devices are omitted; inactive devices remain eligible. A failed or still-pending local link never qualifies,
+  nor does routing that cannot carry a sibling Welcome. Missing private stock does not delay creation.
 
 ## 2026-11-01: When the approving device holds back a new device's chat Adds
 
