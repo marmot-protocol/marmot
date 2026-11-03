@@ -20,14 +20,14 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
 
 - **Leaving a chat.** A user leaving a chat now also records a decline for the device's own invitation generation, so
-  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. A refused departure, a
-  copy with no identified generation, a device that trusts no device group, signing out and removing a device record
-  no decline, and a device that leaves because a decline reached it records nothing new. Private sibling Add
-  admission gains one check: a device that applied a Commit removing a sibling's leaf by that leaf's own SelfRemove
+  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. A departure that cannot be
+  requested, a copy with no identified generation, a device that trusts no device group, signing out and removing a
+  device record no decline, and a device that leaves because a decline reached it records nothing new. Private sibling
+  Add admission gains one check: a device that applied a Commit removing a sibling's leaf by that leaf's own SelfRemove
   makes no automatic Add of that sibling to that chat until a leaf of that sibling is in it again. Implementers record
-  the decline with the departure and keep, per chat and across restarts, the siblings that left it. Stated limit: a
-  device that never applied that Commit and is in the chat under a generation the user did not leave may add the
-  sibling back.
+  the decline before publishing anything for the departure, and keep, per chat and across restarts, the siblings that
+  left it. Stated limit: a device that never applied that Commit and is in the chat under a generation the user did not
+  leave may add the sibling back.
 - **Private KeyPackages under a decline.** The decline hold now covers only starting automatic sibling Adds. Requests
   for private KeyPackages follow the ordinary stock rules; the rule against requesting them solely for held Adds is
   removed.

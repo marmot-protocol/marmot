@@ -377,8 +377,9 @@ devices.](multi-device/scene-6-invites.svg)
   remove every account leaf or affect unrelated invitation generations. A later accept cannot undo a requested Leave
   or rejoin a device automatically.
 - **Leaving a chat leaves it on her devices.** Leaving on one device declines the invitation the chat came in by, so
-  her devices admitted with it leave too, and none of them is added back. A device that came in through a separate
-  invitation stays until she leaves there as well ([account sync](../features/account-sync.md#invitation-decisions)).
+  her devices admitted with it leave too, and her devices that saw them leave don't add them back. A device that came
+  in through a separate invitation stays until she leaves there as well, and if it never saw them leave it may add
+  one back ([account sync](../features/account-sync.md#invitation-decisions)).
 - **Chats she creates** include her other devices from the start.
 - **A device that was missed** is added quietly by gap filling, unless its settings say otherwise.
 
