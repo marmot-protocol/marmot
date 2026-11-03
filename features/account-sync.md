@@ -33,8 +33,9 @@ recovery are not specified yet.
 
 Small state is per-chat state that follows the user from device to device. Each device keeps its own copy, applies it to
 its own chats, and tells its siblings when the user changes it. Read, pin, mute and archive state never changes group
-state. An invitation decline requests ordinary local Leave in [Member departure](../protocol-core/member-departure.md);
-an acceptance never joins a group.
+state. An invitation decline requests ordinary local Leave in [Member departure](../protocol-core/member-departure.md),
+and a user leaving a chat records a decline ([Invitation decisions](#invitation-decisions), "Leaving"); an acceptance
+never joins a group.
 The state update itself is sent only inside the device group, not in the chat it describes.
 
 Drafts are not small state: a draft belongs to the device it was typed on.
@@ -186,7 +187,28 @@ At the maximum it keeps the held value and sends no new user change; it does not
 Ordinary rebroadcast of the held value remains permitted. Higher version wins; at equal version decline wins over
 accept. Equal version and value are identical state.
 There is no change id, sender tie-break or clock. Receiving or rebroadcasting a value is not a new local user action.
-Ordinary leaving, archiving, deletion, removal or disappearance is not inferred to be an invitation decline.
+
+**Leaving.** When its user leaves a chat, a device takes the account out, not only itself. It leaves by SelfRemove under
+[Member departure](../protocol-core/member-departure.md#behavior), first taking the account off the admin list if the
+account is an active admin; a user leaving a chat is never carried out as a Remove committed by a sibling, which stays
+for other departures such as signing out
+([Member departure](../protocol-core/member-departure.md#removal-by-another-device-of-the-same-account)). When it
+requests that departure, it records a decline, as a local user change, for the generation associated with its local
+copy, before it publishes anything for that departure. The decline stands even if the departure is not yet committed;
+the departure stays owed under its ordinary rules. Its siblings admitted by that generation then leave as well
+(Applying, below), and the decline holds automatic sibling Adds from that admission. While its account is the chat's
+last active admin, its user cannot leave the chat on any of its devices: the device records no decline and requests no
+departure, and the user first makes another member an admin
+([Member departure](../protocol-core/member-departure.md#behavior)). A device that cannot request its departure for
+another reason records no decline either. If the generation's held value is already at the maximum version, the device
+leaves without a new decline (Values, above). A copy with no identified generation, or a device that trusts no device
+group, takes out only its own leaf. A sibling admitted by a separate generation stays in the chat until its user leaves
+there too, without admin if the account gave it up to leave. Siblings that applied the leaving device's SelfRemove don't
+add it back automatically ([Private sibling Add admission](./device-group.md#private-sibling-add-admission)). A device
+that leaves because a decline reached it records nothing new. Departures made while signing out or removing a device
+([Signing out](./device-group.md#signing-out), [Removing a device](./device-group.md#removing-a-device)) are not a user
+leaving a chat and record no decline. Archiving, deleting a local copy, removal by another member and disappearance are
+not declines either.
 
 A client retains each known generation's winning value for ordinary full broadcasts and resends, even if it does not
 hold a matching chat. It creates no join, Add, KeyPackage allocation or restore from a received decision. There is no
@@ -214,14 +236,15 @@ accept can replace the replicated value but MUST NOT cancel an already requested
 feature promises neither synchronous departure nor departure by unrelated generations.
 
 **Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
-MUST NOT start a new automatic sibling Add from that admission, or request private KeyPackages solely for those held
-Adds. This sender rule applies even while ordinary Leave cannot yet be requested. Keep existing advisory claims and
-their original expiry independent of that hold. A winning-value change MUST cause the affected chat's existing
-automatic Add eligibility to be reconsidered even when no MLS epoch changes. A higher accept before Leave is
-requested can therefore resume an already permitted opt-in flow; it creates no new Add or join obligation. A decline
-for another generation, an unidentified legacy admission, or a separate new founding admission does not impose this
-hold. Already admitted or signed Add and Welcome traffic follows its ordinary settlement and validation rules; this
-rule neither recalls it nor adds a receiver-side rejection rule. Already requested Leave remains independent as above.
+MUST NOT start a new automatic sibling Add from that admission. The hold neither forbids nor requires a private
+KeyPackage request; requests follow the ordinary stock rules ([device-group.md](./device-group.md#private-keypackages)).
+This sender rule applies even while ordinary Leave cannot yet be requested. Keep existing advisory claims and their
+original expiry independent of that hold. A winning-value change MUST cause the affected chat's existing automatic Add
+eligibility to be reconsidered even when no MLS epoch changes. A higher accept before Leave is requested can therefore
+resume an already permitted opt-in flow; it creates no new Add or join obligation. A decline for another generation, an
+unidentified legacy admission, or a separate new founding admission does not impose this hold. Already admitted or
+signed Add and Welcome traffic follows its ordinary settlement and validation rules; this rule neither recalls it nor
+adds a receiver-side rejection rule. Already requested Leave remains independent as above.
 
 ### Messages
 
