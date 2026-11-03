@@ -193,10 +193,12 @@ departure under [Member departure](../protocol-core/member-departure.md), by whi
 records a decline, as a local user change, for the generation associated with its local copy, before it publishes
 anything for that departure. The decline stands even if the departure is not yet committed; the departure stays owed
 under its ordinary rules. Its siblings admitted by that generation then leave as well (Applying, below), and the decline
-holds automatic sibling Adds from that admission. A device that cannot request its departure, for example because its
-account is the chat's last active admin, records no decline. A copy with no identified generation, or a device that
-trusts no device group, takes out only its own leaf. A sibling admitted by a separate generation stays in the chat until
-its user leaves there too. Siblings that applied the leaving device's SelfRemove don't add it back automatically
+holds automatic sibling Adds from that admission. While its account is the chat's last active admin, its user cannot
+leave the chat on any of its devices: the device records no decline and requests no departure, and the user first makes
+another member an admin ([Member departure](../protocol-core/member-departure.md#behavior)). A device that cannot
+request its departure for another reason records no decline either. A copy with no identified generation, or a device
+that trusts no device group, takes out only its own leaf. A sibling admitted by a separate generation stays in the chat
+until its user leaves there too. Siblings that applied the leaving device's SelfRemove don't add it back automatically
 ([Private sibling Add admission](./device-group.md#private-sibling-add-admission)). A device that leaves because a
 decline reached it records nothing new. Departures made while signing out or removing a device
 ([Signing out](./device-group.md#signing-out), [Removing a device](./device-group.md#removing-a-device)) are not a user
@@ -229,16 +231,15 @@ accept can replace the replicated value but MUST NOT cancel an already requested
 feature promises neither synchronous departure nor departure by unrelated generations.
 
 **Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
-MUST NOT start a new automatic sibling Add from that admission. It still requests private KeyPackages under the ordinary
-stock rules ([device-group.md](./device-group.md#private-keypackages)), whether or not a held Add would have used them;
-unused ones are used later or expire. This sender rule applies even while ordinary Leave cannot yet be requested. Keep
-existing advisory claims and their original expiry independent of that hold. A winning-value change MUST cause the
-affected chat's existing automatic Add eligibility to be reconsidered even when no MLS epoch changes. A higher accept
-before Leave is requested can therefore resume an already permitted opt-in flow; it creates no new Add or join
-obligation. A decline for another generation, an unidentified legacy admission, or a separate new founding admission
-does not impose this hold. Already admitted or signed Add and Welcome traffic follows its ordinary settlement and
-validation rules; this rule neither recalls it nor adds a receiver-side rejection rule. Already requested Leave remains
-independent as above.
+MUST NOT start a new automatic sibling Add from that admission. The hold neither forbids nor requires a private
+KeyPackage request; requests follow the ordinary stock rules ([device-group.md](./device-group.md#private-keypackages)).
+This sender rule applies even while ordinary Leave cannot yet be requested. Keep existing advisory claims and their
+original expiry independent of that hold. A winning-value change MUST cause the affected chat's existing automatic Add
+eligibility to be reconsidered even when no MLS epoch changes. A higher accept before Leave is requested can therefore
+resume an already permitted opt-in flow; it creates no new Add or join obligation. A decline for another generation, an
+unidentified legacy admission, or a separate new founding admission does not impose this hold. Already admitted or
+signed Add and Welcome traffic follows its ordinary settlement and validation rules; this rule neither recalls it nor
+adds a receiver-side rejection rule. Already requested Leave remains independent as above.
 
 ### Messages
 
