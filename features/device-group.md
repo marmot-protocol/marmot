@@ -11,9 +11,10 @@ the device group itself: what makes a group one, how it is created, when a devic
 it and which chats the device that linked it adds it to, how clients keep it out of sight, how the account's devices
 notice a new sign-in, how each device announces the KeyPackages it publishes, what a device does when its own slot holds
 a KeyPackage it did not make, how devices hand each other private KeyPackages, how the Welcome for an add that uses one
-reaches its sibling, how the user removes a device and what the removed device does, how a device signs out, and how
-each device shows its siblings to its user. [account-sync.md](./account-sync.md) specifies the small-state messages
-devices exchange in the group, and the history deliveries a device sends a sibling it adds to a chat. This document
+reaches its sibling, how the user removes a device and what the removed device does, how a device signs out or moves
+between device groups, and how each device shows its siblings to its user. [account-sync.md](./account-sync.md)
+specifies the small-state messages devices exchange in the group, and the history deliveries a device sends a sibling
+it adds to a chat. This document
 also defines [gap filling](#filling-a-missing-chat) and its advisory [claims](#gap-fill-claims-kind-458). The original adder also
 [repairs a published sibling Welcome](#resending-a-published-sibling-welcome) that was lost.
 
@@ -96,7 +97,8 @@ A device MUST NOT join a group that requires `0x800e` through any other Welcome,
 a refused Welcome uses up neither the KeyPackage nor the group id ("Joining"). The group id alone proves nothing:
 anyone holding the account's signing key can read it in the existing device's Confirm and found a group under it.
 
-A device records which group it trusts as its device group when it creates or joins it, and does not infer it later
+A device records which group it trusts as its device group when it creates or joins it, except that a
+[move](#moving-between-device-groups) keeps the original trusted until the move is made. It does not infer trust later
 from group state.
 
 ## Linking a device
@@ -110,7 +112,8 @@ leaf in that group. This section covers what each device does around that exchan
 An existing device answers a pairing request only if it is not running a session as a new device itself or keeping a
 link that waits for its Welcome ("Joining"), and only if it would link the KeyPackage the request names
 ([device-pairing.md](./device-pairing.md), "Existing device", step 2). It answers whether it trusts a device group or
-has none yet. It would not link the KeyPackage when:
+has none yet. An old-sibling guidance exception after a [move](#moving-between-device-groups) suppresses proactive
+sign-in questions, not an ordinary pairing Request from that sibling. It would not link the KeyPackage when:
 
 - the KeyPackage's slot is already a device in its roster, the roster rejects that slot, or the device rejected that
   slot itself ("Answers");
@@ -183,7 +186,8 @@ By the time it sends its Confirm, the new device has recorded the link: the pair
 across restarts until the link ends, so that after a restart has erased the session's secrets it can still check a
 Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
 whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
-group requires `0x800e`, and on joining records the group as its device group ("Trust"). While it waits, the group id is
+group requires `0x800e`. On joining it records the group as its device group ("Trust"), except during a
+[move](#moving-between-device-groups), whose trust switch waits until the move is made. While it waits, the group id is
 reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The confirmed
 KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite to a chat
 built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the group id for
@@ -203,8 +207,8 @@ Welcome under it, once:
 This is the only limit on how long a new device waits for its Welcome. It decides before joining. A Cancel after it has
 joined changes nothing: it keeps its device group and its leaf there. Once the link has ended, a Welcome into its group
 is one no link expects, refused if the group requires `0x800e`, and linking again starts a new pairing session. A device
-that has a device group does not run a pairing session as a new device: joining a second device group, which merging
-two device groups would need, is not specified yet.
+that already trusts a device group can run a pairing session as a new device only to
+[move this device](#moving-between-device-groups). This does not merge the groups.
 
 ### A link that is not taken up
 
@@ -238,6 +242,9 @@ slot, every device that applied the new device's first Commit cleans up after it
 state for the device group is settled and its roster lists no device in the slot: the slot is then gone for it ([Devices
 the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked
 carry no tag and stay.
+
+For a [move](#moving-between-device-groups), distinguish a failed destination admission from removal of the preserved
+old copy as that section specifies. Neither is permission to apply the account sign-out effects of an ordinary removal.
 
 A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
 longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
@@ -279,8 +286,8 @@ these requirements decide whether the device can carry out that Add.
 - The sender trusts the device group ([Trust](#trust)), and its own leaf there carries a device tag that reads as its
   own slot ([Matching leaves to devices](#matching-leaves-to-devices)). Until that leaf is ready, it adds no sibling;
   creating a chat may proceed without siblings. Possessing a sibling's private KeyPackages alone is not readiness.
-- The current trusted roster lists the target device with a `tag_signature_key`, and it is not `leaving`. The sender
-  has not decided to remove it with that removal still pending. Nor has a roster state it applied held the slot as
+- The current trusted roster lists the target device with a `tag_signature_key`, and it is neither `leaving` nor
+  `moved`. The sender has not decided to remove it with that removal still pending. Nor has a roster state it applied held the slot as
   `removed` while it keeps that record's key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)):
   dropping that record on another branch does not end this exclusion, even after a later link of the same slot.
 - If the current entry names the sender in `linked_by`, the sender waits until the link it approved is made and never
@@ -369,7 +376,7 @@ linked. The shared admission contract governs sender readiness, the current appr
 exclusions. Other siblings rely on the selected trusted roster and the new device's tag key, written by its first
 Commit ([Approving](#approving)); they do not know the approver's local outcome. If that approver later undoes the
 link, the ordinary [removal cleanup](#devices-the-roster-no-longer-lists) applies. No shared "link made" record is added.
-A device whose own roster entry is `leaving` neither claims nor makes Adds through this flow.
+A device whose own roster entry is `leaving` or `moved` neither claims nor makes Adds through this flow.
 
 For each eligible sibling and chat:
 
@@ -436,7 +443,8 @@ as `from` against the receiver's current trusted roster under [Matching leaves t
 The chat must be one the receiver already holds and considers for gap filling. An unknown chat never creates a local
 chat or work. For a known eligible pair, the receiver keeps the unexpired claims by claimant; repeated claims by one
 claimant keep the later expiry. A claim becomes irrelevant when its claimant or target leaves the roster or is listed
-as `leaving`. A claim has no effect on membership or group state, and no effect outside this account's linked devices.
+as `leaving` or `moved`. A claim has no effect on membership or group state, and no effect outside this account's linked
+devices.
 
 ### Creating a chat
 
@@ -464,6 +472,117 @@ requirements to include a sibling.
   ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Group creation"), so its initial
   sibling Welcome deliveries follow [Private sibling Add admission](#private-sibling-add-admission) once creation is
   canonical, independently of other accounts' Welcome deliveries. This section adds no resend rule.
+
+## Moving between device groups
+
+A user moves this device to another device group through an ordinary code-confirmed
+[link](./device-pairing.md). The answering device's group survives. The same exact group, sender leaf and
+KeyPackage checks in [Joining](#joining) apply; possession of the account key or an old roster authorizes nothing.
+Only this device moves. Each old sibling needs its own confirmed link; there is no automatic group merge or new
+pairing message. The moving device keeps one pending link and uses a KeyPackage no earlier link of its own confirmed.
+
+### Joining and becoming made
+
+The original device group remains this device's sole trusted group until the move is **made**. Joining the exact
+confirmed Welcome records the destination admission, but does not change that trust. A cancelled or expired Welcome
+wait, or a refused Welcome, leaves original trust unchanged. After joining, a later Cancel does not undo that
+admission ([Joining](#joining)). While acting as the new device or waiting for that Welcome, the moving device does
+not answer pairing Requests ([Before answering](#before-answering)).
+
+The moving device makes its first own Commit in the destination, setting its tag signature key in its own roster
+entry and tagging that Commit's UpdatePath from the destination roster
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md#producing-tags)). This targets the confirmed
+destination only; it does not authorize other work there as a trusted group. Ordinary work continues to use the
+original trusted group until Made.
+
+The move is made once that first Commit is on the destination's selected branch, the destination is settled with no
+pending group input, and its roster lists this device with the signature key of its own leaf. This is the same
+first-Commit evidence as [Approving](#approving); Welcome admission, publication alone, elapsed time or a quiet
+transport is not enough. The ordinary first-Commit deadline and failed-link undo still apply
+([A link that is not taken up](#a-link-that-is-not-taken-up)).
+
+When recording Made, the device retains or can reconstruct the original authenticated group's identity, the selected
+old roster's rejected slots to carry, and the old-sibling guidance below. Recording Made, those facts and the switch
+of sole trust from the original to the destination MUST NOT be exposed partially, including after restart. It does not
+substitute an empty capture for unavailable old state, or infer a past Made point from a later removal. While the
+required present evidence is unavailable it waits without a partial trust switch.
+
+### Failure
+
+If the destination removes this device before Made, linking failed. The device intentionally forgets the destination,
+not its chats or account, and leaves the original trust unchanged. It does not restore trust, resume held old work,
+or treat another retained group as its original. An independent removal from the original follows its ordinary rules;
+a failed move does not reverse it. A destination removal after Made is ordinary unlinking, not a return to the old
+group.
+
+If required move facts cannot be recovered and the device cannot determine whether the move became made, it MUST
+NOT guess historical trust or membership. This experimental failure leaves the device unlinked: it trusts no device
+group and tells its user to link again. This ambiguity is distinct from a known failure before Made, which leaves
+original trust unchanged. No old-trust reconstruction or historical quiet proof is required to complete the failure.
+
+### What it brings
+
+At Made the device captures the rejected slots of its selected old roster, with each original reason, rejection time
+and optional tag signature key. It brings only `not_me` and `removed` records. It brings no rejected KeyPackages,
+device entries, old sealing key, account entry or old devices' settings. Its destination entry/settings come from the
+ordinary link choices.
+
+For each captured rejection it checks the destination again when it commits:
+
+- If the slot is a destination device, omit the old rejection and tell the user that the confirmed link overrode it.
+- If the destination already rejects the slot, keep that destination record unchanged, regardless of either record's
+  reason, age or key.
+- Otherwise import the original record unchanged, under its ordinary expiry rules. Importing does not refresh its age.
+
+The device retains enough facts to repeat each import, skip or expiry after restart without changing its result.
+Folding its own local rejection choices into the destination MUST NOT first give a carried rejection a fresh time.
+
+Small-state items, invitation winners and their versions stay unchanged. Destination activation broadcasts them and
+requests its siblings' state under [account-sync.md](./account-sync.md#starting); it neither starts their versions
+over nor imports an old account snapshot. Moving creates no retrospective history offer or backfill.
+
+### Leaving the old device group
+
+After Made the device commits its own old roster entry to `moved`, preserving every other field, including its
+`rename_id`. It uses its own inline Commit, not a standalone proposal. For this sole status operation in the original
+authenticated group, it preserves its old leaf signature key and valid old device tag; it does not tag that leaf from
+the destination roster. Other new leaf updates use the currently trusted roster. These are sender rules, not new
+receiver validity checks.
+
+The device retries the status update whenever it can ordinarily commit, until `moved` is on the old selected branch
+with no pending input, or that branch no longer includes it. Only then may it intentionally discard the old active
+copy. Already-admitted work remains bound to that old group and can finish under ordinary settlement rules; the trust
+switch does not recall it or promise immediate quiet. Ordinary destination tag, announcement and publication gates
+still apply, with no timeout bypass. Destination KeyPackage publication does not additionally wait for old cleanup;
+an offline or changing old group can delay cleanup indefinitely.
+
+An old sibling that sees `moved` removes that device's old leaf and roster entry together in one Commit, using the old
+entry's key to identify the leaf as in [Matching leaves to devices](#matching-leaves-to-devices). It retries if branch
+selection drops that cleanup. It records no rejection, removes no chat leaves, deletes no publication slot and does
+not sign the moved device out. The moved device does not interpret removal from the old group as removal from its
+current group or account. It retains or can reconstruct why the selected branch removed that incarnation's entry,
+so restart does not reinterpret moved cleanup as ordinary removal. Seeing `moved` on a discarded branch is not a
+permanent exemption. A separate explicit removal keeps its ordinary effect.
+
+Old-sibling slots and display labels support private guidance on moving each sibling separately. On the moving
+device they suppress proactive Link/This wasn't me questions until the destination first lists that sibling as a
+device or the user ends the exception. They authenticate nothing and authorize no Add. That sibling can still start
+its own ordinary pairing Request ([Before answering](#before-answering)).
+
+### Old-group work
+
+At Made the device stops starting new work authorized by the old roster. Outstanding old label/settings edits,
+private-KeyPackage exchange, sibling Welcome and history delivery work MUST NOT become destination work merely
+because it names the same slot or chat. Moving promises no delivery across that boundary. Already-admitted old-group
+traffic may settle normally in that group; its completion MUST NOT clear or recreate a destination obligation. New
+destination work arises only through an independently applicable existing flow. A completed old history upload does
+not itself authorize a new destination history delivery.
+
+Discard is intentional local cleanup, not missing material to recover
+([../protocol-core/durability.md](../protocol-core/durability.md#missing-or-corrupt-material)). Restart or late old
+input MUST NOT recreate the discarded active copy. A later ordinary confirmed link there is a fresh join. The device
+retains whatever its already-admitted publication outcomes still need under their ordinary rules; those outcomes
+neither restore old trust nor create replacement old deliveries.
 
 ## Keeping it out of sight
 
@@ -727,6 +846,9 @@ unclaimed for it. A slot's latest key, for a device, is the most recent key that
 listed for the slot; a state that listed the slot with no key does not change it. What it keeps changes nothing about
 how it validates, applies or selects roster states.
 
+A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
+because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
+
 A slot other than the device's own is gone for it:
 
 - while its trusted roster records the slot as `removed`, read by the key that record keeps; and
@@ -787,6 +909,9 @@ KeyPackages](#private-keypackages)):
 
 ### On the removed device
 
+Removal from a preserved old group after a [move](#leaving-the-old-device-group) is old membership cleanup, not this
+removed-device flow. Removal from the currently trusted destination after Made follows this flow normally.
+
 A device that its device group removes is unlinked from the account, unless it had started signing out before the
 removal reached it ([Removed while signing out](#removed-while-signing-out)), or the removal undid a failed link, which
 the roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). An unlinked
@@ -833,7 +958,7 @@ own](#on-its-own)):
 - it trusts a device group ([Trust](#trust));
 - its own entry in that group's roster has its `tag_signature_key`, since no device may remove an entry that has none
   ([The removal Commit](#the-removal-commit));
-- the roster lists another device whose status is not `leaving`.
+- the roster lists another device whose status is `active` or `inactive`.
 
 It then:
 
@@ -842,7 +967,7 @@ It then:
 2. once that Commit is confirmed, leaves itself, as
    [../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than
    the device group, except one that requires `0x800d` in which its own leaf carries a device tag that reads as its
-   slot and another leaf carries one that reads as a device the roster lists with a status other than `leaving`
+   slot and another leaf carries one that reads as a device the roster lists as `active` or `inactive`
    ([Matching leaves to devices](#matching-leaves-to-devices)). A sibling removes it from those groups with a
    same-account Remove ([Removing it from chats](#removing-it-from-chats)), since only a leaf whose tag reads as its
    slot is removed there, and from the device group ([Its siblings](#its-siblings));
@@ -862,8 +987,8 @@ device group, then deletes its slot and its local state for the account. It cann
 account is that group's admin ([Creating the device group](#creating-the-device-group)), and an active admin's
 SelfRemove is invalid. Its leaf there stays until a sibling removes it: the approving device, if its link fails ([A
 link that is not taken up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after
-all; otherwise the user, from another device. When the roster lists no other device whose status is not `leaving`, no
-device runs the device group once this one has signed out, and its leaf stays there. The account's next link founds a
+all; otherwise the user, from another device. When the roster lists no other device whose status is `active` or
+`inactive`, no device runs the device group once this one has signed out, and its leaf stays there. The account's next link founds a
 new device group, since the device that approves it trusts none ([Creating the device
 group](#creating-the-device-group)).
 
@@ -1247,8 +1372,8 @@ from an already admitted Add. Resending creates no new history offer or backfill
   current participation.
 - Every new delivery passes [Sending a sibling Welcome](#sending-a-sibling-welcome)'s origin and readiness checks and
   remains within the retained private KeyPackage's lifetime. Existing gone-slot and local-removal exclusions still
-  apply; a target that is `leaving`, whose current tag key is unavailable, or whose link this sender approved is still
-  pending cannot begin a new delivery. These checks do not depend on the target's old-chat gap-filling setting.
+  apply; a target that is `leaving` or `moved`, whose current tag key is unavailable, or whose link this sender approved
+  is still pending cannot begin a new delivery. These checks do not depend on the target's old-chat gap-filling setting.
   The sender MUST NOT create another carrier while any earlier carrier of this Welcome has an unresolved outcome or
   outstanding publication targets from its snapshotted target list. Those targets may finish the identical
   already-handed-off carrier under the active transport binding's publication rules even while new delivery is held
@@ -1484,6 +1609,10 @@ status, and removing a device after a longer absence, are not specified yet.
 - Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
   siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
   outright.
+- A [move](#moving-between-device-groups) authenticates the destination by a new code-confirmed link, not by the old
+  roster. Old members keep whatever secrets and content they already hold; changing trust does not revoke those or
+  recall old traffic. A `moved` entry is a roster decision, not proof that another device completed a move: any linked
+  device can already edit the roster or remove that old leaf. It grants no destination authority.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
@@ -1493,8 +1622,8 @@ status, and removing a device after a longer absence, are not specified yet.
   a group that requires `0x800e` is still refused, since no link names it yet, and uses up neither. This is denial of
   service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security considerations").
 - A device that trusts no device group cannot see one that another device of the account already has, such as one linked
-  from another sign-in. When it approves a link it founds a second device group. Merging two device groups is not
-  specified yet ("Joining").
+  from another sign-in. When it approves a link it founds a second device group. Moving one device does not merge those
+  groups ([Moving between device groups](#moving-between-device-groups)).
 - Holding the account's signing key never authenticates a device. A device enters the device group only under a link
   whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
   under the account is not enough.
