@@ -189,14 +189,15 @@ accept. Equal version and value are identical state.
 There is no change id, sender tie-break or clock. Receiving or rebroadcasting a value is not a new local user action.
 
 **Leaving.** When its user leaves a chat, a device takes the account out, not only itself. When it requests its own
-Leave under [Member departure](../protocol-core/member-departure.md), it also records a decline, as a local user change,
-for the generation associated with its local copy. Its siblings admitted by that generation then leave as well
-(Applying, below), and the decline holds automatic sibling Adds from that admission. A device whose own Leave is
-refused, for example because its account is the chat's last active admin, records no decline. A copy with no
-identified generation, or a device that trusts no device group, takes out only its own leaf. A sibling admitted by a
-separate generation stays in the chat until its user leaves there too, and no sibling adds the device that left back
-automatically ([Private sibling Add admission](./device-group.md#private-sibling-add-admission)). A device that leaves
-because a decline reached it records nothing new. Departures made while signing out or removing a device
+departure under [Member departure](../protocol-core/member-departure.md), by whichever path that document allows it,
+it also records a decline, as a local user change, for the generation associated with its local copy. Its siblings
+admitted by that generation then leave as well (Applying, below), and the decline holds automatic sibling Adds from that
+admission. A device whose departure is refused or cannot be made, for example because its account is the chat's last
+active admin, records no decline. A copy with no identified generation, or a device that trusts no device group, takes
+out only its own leaf. A sibling admitted by a separate generation stays in the chat until its user leaves there too.
+Siblings that applied the leaving device's SelfRemove don't add it back automatically
+([Private sibling Add admission](./device-group.md#private-sibling-add-admission)). A device that leaves because a
+decline reached it records nothing new. Departures made while signing out or removing a device
 ([Signing out](./device-group.md#signing-out), [Removing a device](./device-group.md#removing-a-device)) are not a
 user leaving a chat and record no decline. Archiving, deleting a local copy, removal by another member and
 disappearance are not declines either.
@@ -227,8 +228,8 @@ accept can replace the replicated value but MUST NOT cancel an already requested
 feature promises neither synchronous departure nor departure by unrelated generations.
 
 **Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
-MUST NOT start a new automatic sibling Add from that admission. It still requests private KeyPackages under the
-ordinary stock rules ([device-group.md](./device-group.md#messages)), whether or not a held Add would have used them;
+MUST NOT start a new automatic sibling Add from that admission. It still requests private KeyPackages under the ordinary
+stock rules ([device-group.md](./device-group.md#private-keypackages)), whether or not a held Add would have used them;
 unused ones are used later or expire. This sender rule applies even while ordinary Leave cannot yet be requested. Keep
 existing advisory claims and their original expiry independent of that hold. A winning-value change MUST cause the
 affected chat's existing automatic Add eligibility to be reconsidered even when no MLS epoch changes. A higher accept
