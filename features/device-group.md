@@ -290,6 +290,13 @@ these requirements decide whether the device can carry out that Add.
 - Before starting a new automatic Add from an existing admission, apply the current-generation decline hold in
   [Invitation decisions](./account-sync.md#invitation-decisions). It does not recall admitted or signed traffic,
   alter receiver validity, or block a separate new founding admission.
+- The target has not left the chat itself. A device that applies a Commit removing a leaf that reads as the target's
+  slot through that leaf's own SelfRemove ([../protocol-core/member-departure.md](../protocol-core/member-departure.md))
+  records that the target left that chat, and makes no automatic Add of the target there until a leaf that reads as the
+  target's slot is in the chat again, as after a new invitation of the account. That SelfRemove is how a user leaving
+  the chat on that device looks to its siblings ([Invitation decisions](./account-sync.md#invitation-decisions),
+  "Leaving"). A device that did not apply that Commit does not know the target left; the decline hold is then what
+  keeps it from adding the target back.
 - The unused, unexpired private KeyPackage was handed to this sender by that target and passes
   [Receiving](#receiving). A published KeyPackage of the sender's account never qualifies.
 - The chat requires `0x800d` (or its fixed founding requirements would require it), the KeyPackage meets its
@@ -1219,30 +1226,15 @@ starting new automatic Adds ([Filling a missing chat](#filling-a-missing-chat));
 from an already admitted Add. Resending creates no new history offer or backfill obligation
 ([account-sync.md](./account-sync.md#history-deliveries), "History deliveries").
 
-- A successful delivery generation begins when the sender durably records its first observation that the carrier's
-  publication has been accepted. This is local publication-observation evidence, not a transport storage timestamp.
-  Unknown or legacy timing holds repair; the sender MUST NOT substitute the app event's creation time, an attempt's
-  start, or a later projection's time. A carrier whose publication obligation has ended with no accepted target leaves
-  the Welcome where it was: an initial delivery still owed, or a prior repair still due. Another carrier may follow
-  under the checks below.
-- After that boundary, the first newly observed authenticated message from the target device in the sender's trusted
-  device group starts a fixed 600-second wait. This includes application messages and accepted member MLS Commits and
-  Proposals, even when they produce no application message. The sender attributes the authenticated source leaf, as
-  that leaf was in the epoch the message was sent in, to the target through its device tag and the current roster's
-  tag keys, as in [Receiving](#receiving), rather than through the account identity or another device's leaf. The first
-  local authenticated source observation is retained even if its exact source-leaf proof or current-roster attribution
-  is temporarily unavailable; later proof or attribution MUST NOT change that observation time or order. An old pairing
-  confirmation alone does not start the wait, including when a first Welcome is delivered late. Later activity MUST
-  NOT postpone an armed deadline.
-- For each successful delivery generation, the sender retains, or can reconstruct, its publication boundary and its
-  first qualifying activity's identity, observation time and fixed deadline across restarts. Replaying, rewrapping or
-  projecting authenticated inner content the sender already observed, whether it qualified or not, MUST NOT make it
-  newly observed, arm a later delivery generation, or move the deadline. The identity is the authenticated inner
-  content's, not its outer transport envelope's. In particular, a source first observed before publication cannot arm
-  that generation when its proof, attribution or projection becomes available afterward. Each successfully published
-  new delivery generation requires new qualifying activity after its own publication boundary before another wait
-  can start. An unsuccessful or unresolved carrier does not begin a new successful generation.
-- When the wait expires, the sender checks the selected chat tree. A matching target-device leaf whose MLS
+- When a carrier's publication is first accepted, the sender records that time by its own clock, and keeps the latest
+  such time for the Welcome across restarts. A carrier whose publication obligation ends with no accepted target records
+  nothing and leaves the Welcome where it was: an initial delivery still owed, or a repair still due. A Welcome with no
+  recorded time, such as one published before a client supported this section, is not repaired.
+- The Welcome is due again once the target's last activity ([Heartbeats](#heartbeats)) is at least 600 seconds after
+  that recorded time: the target was running ten minutes after the Welcome went out. Last activity counts only
+  heartbeats, which a device sends about once an hour, so a repair can come up to an hour after the target is back. A
+  target that never runs again is never sent the Welcome again.
+- When it is due, the sender checks the selected chat tree. A matching target-device leaf whose MLS
   `leaf_node_source` has advanced to `update` or `commit` is positive participation evidence and completes repair of that retained Welcome.
   A matching tagged `key_package` leaf is inconclusive: the Add installed that leaf before the target could consume
   the Welcome. Only a leaf attributed to this target by the current roster's tag keys counts. An unreadable or
@@ -1259,23 +1251,16 @@ from an already admitted Add. Resending creates no new history offer or backfill
   repair uses the same retained body in a fresh sibling Welcome carrier. Completing repair of this Welcome is not a
   permanent assertion of membership or a new receipt; any future missing membership follows the existing Add policy.
 
-When upgrading an experimental local device group whose older state lacks these observation facts, a client records
-the selected branch's current epoch as an immutable activity cutoff. Only authenticated target-device messages
-whose source epoch is later than that cutoff qualify;
-activity in the upgrade epoch or earlier stays ineligible through replay and rewrapping. Thus an existing local device
-group starts this repair tracking after its next ordinary committed update, such as a rename or settings change. A
-new local group qualifies activity immediately. This one-time limit does not delay initial Welcome delivery and does
-not cause a client to create a Commit just to cross the cutoff. Unknown historical publication timing remains held.
-
 A new carrier MUST have a fresh app event identity. When that identity depends on its creation timestamp, a client
 whose wall clock cannot advance beyond the timestamps of its previously prepared carriers holds new preparation until
 it can, without inventing a future timestamp. An already
 reserved, unexposed carrier can be retried unchanged, and already-handed-off targets still settle independently.
 
-This repair is best effort. Queued device-group traffic can arrive late; local observation order proves neither live
-activity after publication nor receipt of the Welcome. A target that joined but whose Update or Commit is delayed can
-receive a harmless duplicate Welcome. No receipt, challenge, freshness window, expired-KeyPackage removal/re-add, or
-duplicate-leaf cleanup is added by this flow.
+This repair is best effort. Last activity proves neither that the target read the Welcome nor that it was lost: a
+heartbeat that arrives late, a target whose clock runs ahead, or a target that joined but has not yet updated its leaf
+can make a Welcome due again. The target drops such a duplicate, because joining consumed the private KeyPackage it
+names ([Receiving a sibling Welcome](#receiving-a-sibling-welcome)). No receipt, challenge, freshness window,
+expired-KeyPackage removal/re-add, or duplicate-leaf cleanup is added by this flow.
 
 ### Receiving a sibling Welcome
 

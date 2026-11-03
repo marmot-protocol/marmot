@@ -13,6 +13,29 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-03: Leaving takes the account out, and a simpler sibling-Welcome repair
+
+[#497](https://github.com/marmot-protocol/marmot/pull/497), for
+[mdk#2628](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
+
+- **Leaving a chat.** A user leaving a chat now also records a decline for the device's own invitation generation, so
+  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. A refused Leave, a copy
+  with no identified generation, signing out and removing a device record no decline. Private sibling Add admission
+  gains one check: a device that applied a sibling's own SelfRemove from a chat makes no automatic Add of that sibling
+  there until the account is invited again. Implementers record the decline with the Leave and remember, per chat,
+  the siblings that left it.
+- **Private KeyPackages under a decline.** The decline hold now covers only starting automatic sibling Adds. Requests
+  for private KeyPackages follow the ordinary stock rules; the rule against requesting them solely for held Adds is
+  removed.
+- **Repairing a published sibling Welcome.** A Welcome is due again once the target's last activity (its heartbeats)
+  is at least 600 seconds after the latest accepted publication of a carrier. This replaces the wait armed by the
+  first newly observed message, the source observations kept through replay and rewrapping, and the upgrade activity
+  cutoff. Implementers no longer record observation order or content identity for device-group messages. A Welcome
+  with no recorded publication time is not repaired. A repair can now come up to an hour after the target is back,
+  and the target drops a duplicate because joining consumed its KeyPackage. Participation evidence, the origin and
+  readiness checks and the one-unresolved-carrier rule are unchanged.
+
 ## 2026-11-02: Invitation decisions for a shared admission
 
 [PR #496](https://github.com/marmot-protocol/marmot/pull/496) updates
