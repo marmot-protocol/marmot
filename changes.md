@@ -20,26 +20,28 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 [features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
 
 - **Leaving a chat.** A user leaving a chat now also records a decline for the device's own invitation generation, so
-  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. While the account is the
-  chat's last active admin, leaving is refused on all its devices, with no decline and no departure; the user first
-  makes another member an admin. A departure that cannot be requested for another reason, a copy with no identified
-  generation, a device that trusts no device group, signing out and removing a device record no decline, and a device
-  that leaves because a decline reached it records nothing new. Private sibling Add admission gains one check: a device
-  that applied a Commit removing a sibling's leaf by that leaf's own SelfRemove makes no automatic Add of that sibling
-  to that chat until a leaf of that sibling is in it again. Implementers record the decline before publishing anything
-  for the departure, and keep, for the device's current membership of each chat and across restarts, the siblings that
-  left it; a device that rejoins through a new Welcome starts without that record. Stated limit: a device that never
-  applied that Commit and is in the chat under a generation the user did not leave may add the sibling back.
+  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. The device leaves by
+  SelfRemove, first taking the account off the admin list if it is an active admin; a sibling's Remove is not used for
+  it. While the account is the chat's last active admin, leaving is refused on all its devices, with no decline and no
+  departure; the user first makes another member an admin. A departure that cannot be requested for another reason, a
+  copy with no identified generation, a device that trusts no device group, signing out and removing a device record no
+  decline, and a device that leaves because a decline reached it records nothing new. Private sibling Add admission
+  gains one check: a device that applied a Commit removing a sibling's leaf by that leaf's own SelfRemove makes no
+  automatic Add of that sibling to that chat until a leaf of that sibling is in it again. Implementers record the
+  decline before publishing anything for the departure, and keep, for the device's current membership of each chat and
+  across restarts, the siblings that left it; a device that rejoins through a new Welcome starts without that record.
+  Stated limit: a device that never applied that Commit and is in the chat under a generation the user did not leave may
+  add the sibling back.
 - **Private KeyPackages under a decline.** The decline hold now covers only starting automatic sibling Adds. The hold
   neither forbids nor requires a private KeyPackage request; requests follow the ordinary stock rules, and the rule
   against requesting them solely for held Adds is removed.
-- **Repairing a published sibling Welcome.** A Welcome is due again once the target's last activity (its heartbeats)
-  is at least 600 seconds after the latest accepted publication of a carrier. This replaces the wait armed by the
-  first newly observed message, the source observations kept through replay and rewrapping, and the upgrade activity
-  cutoff. Implementers no longer record observation order or content identity for device-group messages. A Welcome
-  with no recorded publication time is not repaired. A repair can now come up to an hour after the target is back,
-  and the target drops a duplicate because joining consumed its KeyPackage. Participation evidence, the origin and
-  readiness checks and the one-unresolved-carrier rule are unchanged.
+- **Repairing a published sibling Welcome.** A Welcome is due again once the target's last activity (its heartbeats) is
+  at least 600 seconds after the latest accepted publication of a carrier. This replaces the wait armed by the first
+  newly observed message, the source observations kept through replay and rewrapping, and the upgrade activity cutoff.
+  Implementers no longer record observation order or content identity for device-group messages. A Welcome with no
+  recorded publication time is not repaired. A repair can now come up to an hour after the target is back, later by
+  however far the target's clock runs behind, and the target drops a duplicate because joining consumed its KeyPackage.
+  Participation evidence, the origin and readiness checks and the one-unresolved-carrier rule are unchanged.
 
 ## 2026-11-02: Invitation decisions for a shared admission
 

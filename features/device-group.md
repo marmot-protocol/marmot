@@ -1236,8 +1236,9 @@ from an already admitted Add. Resending creates no new history offer or backfill
   recorded time, such as one published before a client supported this section, is not repaired.
 - The Welcome is due again once the target's last activity ([Heartbeats](#heartbeats)) is at least 600 seconds after
   that recorded time: the target was running ten minutes after the Welcome went out. Last activity counts only
-  heartbeats, which a device sends about once an hour, so a repair can come up to an hour after the target is back. A
-  target that never runs again is never sent the Welcome again.
+  heartbeats, which a device sends about once an hour, so a repair can come up to an hour after the target is back,
+  later by however far the target's clock runs behind the sender's. A target that never runs again is never sent the
+  Welcome again.
 - When it is due, the sender checks the selected chat tree. A matching target-device leaf whose MLS
   `leaf_node_source` has advanced to `update` or `commit` is positive participation evidence and completes repair of that retained Welcome.
   A matching tagged `key_package` leaf is inconclusive: the Add installed that leaf before the target could consume
