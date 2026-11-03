@@ -165,6 +165,14 @@ Account-wide admin rights apply to its device leaves. Where account-devices is r
 device can add or remove same-account leaves within that component's powers; other receivers cannot enforce the
 sender's private device-approval decision. No device has superior account authority merely by being older or primary.
 
+A current device-group member can also originate or rebroadcast a known invitation-generation decline, including for a
+chat it is not in: matching local copies request their own ordinary Leave and hold new automatic sibling Adds under
+[invitation decisions](features/account-sync.md#invitation-decisions). A maximum-version decline cannot be superseded
+by a legal later acceptance; removing its sender does not undo retained state. Native departure/consent checks still
+apply, and unrelated generations are not an account-wide removal target. Retained generations have no expiry or
+count limit: a malicious linked device can fabricate generations to enlarge stored state and rebroadcast work, with
+at least one update per generation of the same chat. Removing the sender does not clear those values.
+
 Owners: [active admins](app-components/admin-policy-v1.md#active-admins),
 [account-device security](app-components/account-devices-v1.md#security-considerations),
 [member departure](protocol-core/member-departure.md), and
@@ -552,16 +560,23 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Attacker and prerequisites:** A malicious admin, compromised member device, or stolen account key can supply
   more account leaves; device consent and revocation are the assets.
 - **Attack sequence:** It adds another leaf before the original device is removed, or a stolen member device
-  uses enabled same-account authority to add/remove sibling leaves.
+  uses enabled same-account authority to add/remove sibling leaves. A current device-group member can learn a
+  generation from broadcasts and send a maximum-version decline, causing matching copies to request ordinary Leave
+  and holding new automatic sibling Adds even without holding a leaf in that chat.
 - **Affected property and assumptions:** G3 limits shape and account scope, but A3 is needed for sender-side
   approval; account authority is shared across its leaves.
 - **Mitigations:** Apply account-devices activation, support, leaf-cap and sender rules. Existing-group
   same-account Adds require authenticated user-approved device material at the sender.
 - **Residual risk:** Other receivers cannot verify private device approval; founding creation has its stated
-  exception. Removing one leaf does not remove every leaf of the account.
+  exception. Removing one leaf does not remove every leaf of the account. A retained maximum-version decline is
+  permanent for its generation; removing the originating device does not undo it. Decline follows ordinary native
+  departure rules and does not directly remove unrelated generations. Fabricated generations have no expiry or count
+  limit and enlarge retained state and rebroadcast work, requiring at least one update per generation of the same chat;
+  those values also survive removal of their sender.
 - **Normative owners:** [Account devices](app-components/account-devices-v1.md#sender-rules), [Account
   devices](app-components/account-devices-v1.md#security-considerations), [Member
-  departure](protocol-core/member-departure.md#accounts-with-several-devices).
+  departure](protocol-core/member-departure.md#accounts-with-several-devices), [Invitation
+  decisions](features/account-sync.md#invitation-decisions).
 - **Verification status:** Unverified — candidate check: exercise sibling persistence, same-account shape
   restrictions, cap boundaries, founding exceptions and loss of activation on another branch.
 

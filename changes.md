@@ -13,6 +13,26 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-02: Invitation decisions for a shared admission
+
+[PR #496](https://github.com/marmot-protocol/marmot/pull/496) updates
+[features/account-sync.md](./features/account-sync.md), [features/device-group.md](./features/device-group.md) and
+[security-considerations.md](./security-considerations.md).
+Invitation generations hash the account and validated original admission context and are explicitly inherited in
+version-2 sibling Welcomes. A kind-475 invite item retains per-generation decisions, with higher version then equal
+version decline winning. Implementers persist decisions and required Leave work before sends, preserve membership,
+archive and rejoin guards, enumerate all retained generations in bounded pages, and leave unidentified legacy invites
+local-only. Experimental senders and receivers must update before using this feature; old V1 obligations are not
+converted, no capability negotiation is added, and kind477 remains reserved. A decline does not promise departure
+across unrelated external admission batches/forks or undo an already requested Leave.
+A known winning decline for the current generation holds new automatic sibling Adds and stock demand solely for
+those Adds. A later winning accept rechecks existing opted-in work without creating an Add obligation or recalling
+already admitted traffic; other generations and receiver validity remain independent.
+The item identity includes its generation while each kind-475 page keeps `(chat,item)` uniqueness. The existing single
+backup small-state blob remains limited to read/pin/mute/archive; invitation generations are not added to that format.
+The clarified nonempty chat bound matches the existing client rule and this feature's approved profile; prior general
+prose omitted its minimum. The security model now names remote-decline, new-Add hold and maximum-version consequences.
+
 ## 2026-11-02: Restore backup history for current device memberships
 
 [#494](https://github.com/marmot-protocol/marmot/pull/494), for
