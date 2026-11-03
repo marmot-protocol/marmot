@@ -293,13 +293,14 @@ these requirements decide whether the device can carry out that Add.
 - The target has not left the chat itself. A device that applies a Commit removing a leaf that reads as the target's
   slot through that leaf's own SelfRemove ([../protocol-core/member-departure.md](../protocol-core/member-departure.md))
   records that the target left that chat, keeps that record across restarts, and makes no automatic Add of the target
-  there until a leaf that reads as the target's slot is in the chat again. That SelfRemove is how a user leaving the
-  chat on that device looks to its siblings ([Invitation decisions](./account-sync.md#invitation-decisions),
-  "Leaving"). A device that never applied that Commit, such as one that joined the chat later, does not know the
-  target left. If it joined through a new invitation of the account, adding the target is intended: the target then
-  answers that invitation like its siblings. If it joined under a generation the user did not leave, because the
-  account was in the chat under more than one generation and the user left on only one device, it may add the target
-  back. That is a stated limit.
+  there until a leaf that reads as the target's slot is in the chat again. The record lasts only for this device's
+  current membership of the chat: a device that rejoins the chat through a new Welcome, as after a new invitation of the
+  account, starts without it. That SelfRemove is how a user leaving the chat on that device looks to its siblings
+  ([Invitation decisions](./account-sync.md#invitation-decisions), "Leaving"). A device that never applied that Commit,
+  such as one that joined the chat later, does not know the target left. If it joined through a new invitation of the
+  account, adding the target is intended: the target then answers that invitation like its siblings. If it joined under
+  a generation the user did not leave, because the account was in the chat under more than one generation and the user
+  left on only one device, it may add the target back. That is a stated limit.
 - The unused, unexpired private KeyPackage was handed to this sender by that target and passes
   [Receiving](#receiving). A published KeyPackage of the sender's account never qualifies.
 - The chat requires `0x800d` (or its fixed founding requirements would require it), the KeyPackage meets its

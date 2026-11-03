@@ -27,8 +27,9 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
   that leaves because a decline reached it records nothing new. Private sibling Add admission gains one check: a device
   that applied a Commit removing a sibling's leaf by that leaf's own SelfRemove makes no automatic Add of that sibling
   to that chat until a leaf of that sibling is in it again. Implementers record the decline before publishing anything
-  for the departure, and keep, per chat and across restarts, the siblings that left it. Stated limit: a device that
-  never applied that Commit and is in the chat under a generation the user did not leave may add the sibling back.
+  for the departure, and keep, for the device's current membership of each chat and across restarts, the siblings that
+  left it; a device that rejoins through a new Welcome starts without that record. Stated limit: a device that never
+  applied that Commit and is in the chat under a generation the user did not leave may add the sibling back.
 - **Private KeyPackages under a decline.** The decline hold now covers only starting automatic sibling Adds. The hold
   neither forbids nor requires a private KeyPackage request; requests follow the ordinary stock rules, and the rule
   against requesting them solely for held Adds is removed.
