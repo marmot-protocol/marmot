@@ -545,9 +545,9 @@ over nor imports an old account snapshot. Moving creates no retrospective histor
 
 After Made the device commits its own old roster entry to `moved`, preserving every other field, including its
 `rename_id`. It uses its own inline Commit, not a standalone proposal. For this sole status operation in the original
-authenticated group, it preserves its old leaf signature key and valid old device tag; it does not tag that leaf from
-the destination roster. Other new leaf updates use the currently trusted roster. These are sender rules, not new
-receiver validity checks.
+authenticated group, it preserves its old leaf signature key and preserves or produces a valid old-roster tag;
+it does not tag that leaf from the destination roster. Other new leaf updates use the currently trusted roster. These
+are sender rules, not new receiver validity checks.
 
 The device retries the status update whenever it can ordinarily commit, until `moved` is on the old selected branch
 with no pending input, or that branch no longer includes it. Only then may it intentionally discard the old active

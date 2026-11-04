@@ -89,7 +89,7 @@ During a [move between device groups](../features/device-group.md#moving-between
 Commit in the confirmed destination uses that destination's roster to set its own tag signature key and tag its
 UpdatePath, although the original group remains trusted until Made. This permits no other use of the destination
 roster before that point. After Made, the sole old moved-status Commit preserves the original leaf's signature key
-and valid old tag instead of retagging it from the destination. These sender exceptions do not change tag validation
+and preserves or produces a valid old-roster tag instead of retagging it from the destination. These sender exceptions do not change tag validation
 or let old roster material authenticate a leaf under the destination roster. Ordinary KeyPackages and other new leaf
 updates use the currently trusted roster.
 

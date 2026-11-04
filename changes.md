@@ -31,7 +31,8 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
   rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
   destination broadcast/request. Old delivery/completion cannot become or satisfy destination work.
 - Add draft `moved(3)` with a coordinated updated-participant boundary. The mover uses destination tag context only
-  for its first-own Commit, then preserves its old tag/key only for the old moved-status inline Commit. Old siblings
+  for its first-own Commit, then preserves its key and preserves or produces a valid old-roster tag only for the old
+  moved-status inline Commit. Old siblings
   clean up old membership without rejection, chat removal, slot deletion or sign-out. Old admitted work settles
   ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication.
 
