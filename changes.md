@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-03: Moving one device between device groups
 
-Pull request: pending (local draft), for [mdk#2628, D102](https://github.com/marmot-protocol/mdk/issues/2628).
+Pull request: [marmot#498](https://github.com/marmot-protocol/marmot/pull/498), for [mdk#2628, D102](https://github.com/marmot-protocol/mdk/issues/2628).
 Changes [features/device-group.md](./features/device-group.md#moving-between-device-groups),
 [app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md), and
