@@ -28,6 +28,8 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
   do not restore old trust or hold old work for resumption. An unrecoverable destination can stay pending with old
   trust while ordinary repair applies. Corrupt/unreadable local move facts can fail progress/status reads and need
   manual local recovery or reset/relink; no automatic unlinked signal is promised.
+  One confirmed pending link is retained. A fresh comparison after restart can end in late refusal while that move is
+  pending; it creates no second approval, Add or Welcome expectation.
 - Carry rejected slots with original fields/ages, destination precedence and device-collision notice; carry no
   rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
   destination broadcast/request. Old delivery/completion cannot become or satisfy destination work. An old admitted
@@ -36,7 +38,8 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
   for its first-own Commit, then preserves its key and preserves or produces a valid old-roster tag only for the old
   moved-status inline Commit. Old siblings
   clean up old membership without rejection, chat removal, slot deletion or sign-out. Old admitted work settles
-  ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication.
+  ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication. Old
+  siblings can race that cleanup, costing extra Commits and convergence passes.
 - Recognition guidance suppresses sign-in questions only on the mover. Old siblings may still ask about its sign-in
   after cleanup; users can dismiss that prompt.
 

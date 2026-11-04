@@ -479,7 +479,13 @@ A user moves this device to another device group through an ordinary code-confir
 [link](./device-pairing.md). The answering device's group survives. The same exact group, sender leaf and
 KeyPackage checks in [Joining](#joining) apply; possession of the account key or an old roster authorizes nothing.
 Only this device moves. Each old sibling needs its own confirmed link; there is no automatic group merge or new
-pairing message. The moving device keeps one pending link and uses a KeyPackage no earlier link of its own confirmed.
+pairing message. The moving device keeps at most one confirmed pending link and, while awaiting its Welcome, that
+link's expectation. It uses a KeyPackage no earlier link of its own confirmed.
+
+After a restart, a fresh code comparison may begin even while the earlier move is pending. If that move is still
+pending when the new exchange reaches confirmation, the device cancels the new exchange before sending its own
+Confirm. The earlier confirmed link and any still-live Welcome expectation stay unchanged; the new exchange creates
+no second link approval or Add.
 
 ### Joining and becoming made
 
@@ -516,8 +522,9 @@ a failed move does not reverse it. A destination removal after Made is ordinary 
 group.
 
 An unrecoverable destination before Made is not proof of a failed link. The original trust remains unchanged while
-ordinary group repair applies; the move can stay pending indefinitely if repair never completes. Manual local
-recovery and another confirmed link may be needed. This flow adds no automatic abort or terminal-state inference.
+ordinary group repair applies; the move can stay pending indefinitely if repair never completes. While pending, it
+cannot confirm another move or answer new pairing Requests. Manual local recovery before another confirmed link may
+be needed. This flow adds no automatic abort or terminal-state inference.
 
 If required local move facts are corrupt or unreadable, the device MUST NOT guess historical trust or membership.
 Progress or status reads can fail; this flow promises no automatic unlinked state or unlink notification for that
@@ -565,7 +572,9 @@ An old sibling that sees `moved` removes that device's old leaf and roster entry
 entry's key to identify the leaf as in [Matching leaves to devices](#matching-leaves-to-devices). It retries if branch
 selection drops that cleanup. It records no rejection, removes no chat leaves, deletes no publication slot and does
 not sign the moved device out. The moved device does not interpret removal from the old group as removal from its
-current group or account. It retains or can reconstruct why the selected branch removed that incarnation's entry,
+current group or account. Several old siblings may attempt this cleanup at once, costing extra Commits and
+convergence passes; normal branch selection applies. The moved device retains or can reconstruct why the selected
+branch removed that incarnation's entry,
 so restart does not reinterpret moved cleanup as ordinary removal. Seeing `moved` on a discarded branch is not a
 permanent exemption. A separate explicit removal keeps its ordinary effect.
 
