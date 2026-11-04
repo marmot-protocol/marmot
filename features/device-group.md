@@ -589,7 +589,8 @@ sign-in exemption on the old siblings.
 
 ### Old-group work
 
-At Made the device stops starting new work authorized by the old roster. Outstanding old label/settings edits,
+At Made the device stops starting new work authorized by the old roster, except for the required `moved` status Commit
+and its retries ([Leaving the old device group](#leaving-the-old-device-group)). Outstanding old label/settings edits,
 private-KeyPackage exchange, sibling Welcome and history delivery work MUST NOT become destination work merely
 because it names the same slot or chat. Moving promises no delivery across that boundary. Already-admitted old-group
 traffic may settle normally in that group; its completion MUST NOT clear or recreate a destination obligation. New
