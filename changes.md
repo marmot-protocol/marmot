@@ -13,6 +13,36 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-03: Moving one device between device groups
+
+Pull request: [marmot#498](https://github.com/marmot-protocol/marmot/pull/498), for [mdk#2628, D102](https://github.com/marmot-protocol/mdk/issues/2628).
+Changes [features/device-group.md](./features/device-group.md#moving-between-device-groups),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md), and
+[features/account-sync.md](./features/account-sync.md#starting); updates the non-normative
+[threat model](./security-considerations.md#t5-malicious-members-administrators-and-same-account-devices).
+
+- Move only this device through an ordinary code-confirmed link. Keep the original group trusted through Welcome
+  admission; record Made, capture the old rejected slots and switch sole trust together once the destination's first
+  own Commit is selected with no pending group input. Forget only the destination when linking fails before Made;
+  do not restore old trust or hold old work for resumption. An unrecoverable destination can stay pending with old
+  trust while ordinary repair applies. Corrupt/unreadable local move facts can fail progress/status reads and need
+  manual local recovery or reset/relink; no automatic unlinked signal is promised.
+  One confirmed pending link is retained. A fresh comparison after restart can end in late refusal while that move is
+  pending; it creates no second approval, Add or Welcome expectation.
+- Carry rejected slots with original fields/ages, destination precedence and device-collision notice; carry no
+  rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
+  destination broadcast/request. Old delivery/completion cannot become or satisfy destination work. An old admitted
+  chat Add can leave an unusable leaf that needs manual membership repair; moving adds no duplicate-leaf cleanup.
+- Add draft `moved(3)` with a coordinated updated-participant boundary. The mover uses destination tag context only
+  for its first-own Commit, then preserves its key and preserves or produces a valid old-roster tag only for the old
+  moved-status inline Commit. Old siblings
+  clean up old membership without rejection, chat removal, slot deletion or sign-out. Old admitted work settles
+  ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication. Old
+  siblings can race that cleanup, costing extra Commits and convergence passes.
+- Recognition guidance suppresses sign-in questions only on the mover. Old siblings may still ask about its sign-in
+  after cleanup; users can dismiss that prompt.
+
 ## 2026-11-03: Leaving takes the account out, and a simpler sibling-Welcome repair
 
 [#497](https://github.com/marmot-protocol/marmot/pull/497), for

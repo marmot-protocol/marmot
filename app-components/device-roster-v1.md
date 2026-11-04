@@ -40,6 +40,7 @@ enum {
   active(0),
   inactive(1),
   leaving(2),
+  moved(3),
   (255)
 } DeviceStatusV1;
 
@@ -108,8 +109,9 @@ Each device the account has linked has one `DeviceEntryV1`:
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
 - `settings` holds one flag per bit: bit 0 (`0x01`) "add to all my chats", bit 1 (`0x02`) "bring chat history", and
   bit 2 (`0x04`) "keep while inactive". The other bits MUST be zero.
-- `status` is `active`, `inactive` (the device's siblings marked it inactive), or `leaving` (the device recorded that it
-  is signing out).
+- `status` is `active`, `inactive` (the device's siblings marked it inactive), `leaving` (the device recorded that it
+  is signing out), or `moved` (it left this device group for another,
+  [../features/device-group.md](../features/device-group.md#moving-between-device-groups)).
 - `announced_key_package` is the `KeyPackageRef` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.2) of
   the KeyPackage the device announced for its slot, if it announced one. A `KeyPackageRefV1` holds the raw output of
   `MakeKeyPackageRef` under the KeyPackage's ciphersuite, without the length prefix MLS gives a `HashReference`: 32
@@ -270,8 +272,9 @@ account may edit any entry. No device outranks another.
 A user edit of a device's label or settings MUST be an inline roster update in a Commit made by the editing device;
 it MUST NOT be a standalone proposal ([../features/device-group.md](../features/device-group.md), "Labels, clients
 and platforms"). The requirement to use the editing device's own inline Commit is a sender rule; receivers do not
-reject a proposal or Commit solely for violating it. Other roster updates MAY be inline or standalone. A standalone
-roster update is validated against its source epoch's roster when it is received, and against the candidate parent's
+reject a proposal or Commit solely for violating it. The device's own `moved` status update has the same sender-only
+inline-Commit requirement ([../features/device-group.md](../features/device-group.md#leaving-the-old-device-group)).
+Other roster updates MAY be inline or standalone. A standalone roster update is validated against its source epoch's roster when it is received, and against the candidate parent's
 roster when a Commit carries it.
 
 ## Removal
@@ -372,3 +375,7 @@ A roster with no devices, no rejections and an empty account entry is its `leaf_
 This is the first version. While this component is a draft, its encoding can change under the id `0x800e`, with no
 promise that two revisions of the draft work together. Once it is adopted, a breaking change gets a new component id and
 document.
+
+The experimental move transition adds `moved(3)` under this draft id. Every participant in a device group using moves
+must update to understand it first. Older draft decoders reject the value, and the component id does not distinguish
+those revisions. This transition supports no mixed-revision operation and adds no capability negotiation.

@@ -173,6 +173,14 @@ apply, and unrelated generations are not an account-wide removal target. Retaine
 count limit: a malicious linked device can fabricate generations to enlarge stored state and rebroadcast work, with
 at least one update per generation of the same chat. Removing the sender does not clear those values.
 
+[Moving one device](features/device-group.md#moving-between-device-groups) requires another code-confirmed link.
+Old roster membership grants no destination authority; trust changes only when the destination's selected first-own
+Commit establishes Made. Old admitted traffic can still finish, and old members retain copied keys/content. An
+unrecoverable destination before Made can leave the move pending with original trust until ordinary repair or manual
+local recovery. Corrupt or unreadable local move facts can fail progress/status reads and need manual recovery or
+reset/relink; no automatic unlinked signal is promised, and old trust is not reconstructed. Old siblings may ask about
+the moved device's sign-in after cleanup. Moves promise no outstanding Welcome/history delivery across device groups.
+
 Owners: [active admins](app-components/admin-policy-v1.md#active-admins),
 [account-device security](app-components/account-devices-v1.md#security-considerations),
 [member departure](protocol-core/member-departure.md), and

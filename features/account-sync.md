@@ -121,6 +121,11 @@ with a fresh change id, and takes its current read position for each chat it has
 broadcast request ([Broadcasts](#broadcasts)), so its siblings learn what it holds and it learns what they hold. Where
 two devices start with different settings for one chat, the rules above pick the same winner on both.
 
+When a [move between device groups](./device-group.md#moving-between-device-groups) becomes made, the device keeps
+its existing items and versions, including all retained invitation-generation winners. It broadcasts them and sends a
+broadcast request in the destination. A late old-group send completion does not satisfy this destination broadcast.
+This is not another first start and does not reset versions.
+
 A device keeps the items it holds for a chat it is not in, so a chat it joins later starts with the account's state.
 
 ### Invitation decisions
