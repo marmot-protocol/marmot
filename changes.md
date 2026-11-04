@@ -30,7 +30,8 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
   manual local recovery or reset/relink; no automatic unlinked signal is promised.
 - Carry rejected slots with original fields/ages, destination precedence and device-collision notice; carry no
   rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
-  destination broadcast/request. Old delivery/completion cannot become or satisfy destination work.
+  destination broadcast/request. Old delivery/completion cannot become or satisfy destination work. An old admitted
+  chat Add can leave an unusable leaf that needs manual membership repair; moving adds no duplicate-leaf cleanup.
 - Add draft `moved(3)` with a coordinated updated-participant boundary. The mover uses destination tag context only
   for its first-own Commit, then preserves its key and preserves or produces a valid old-roster tag only for the old
   moved-status inline Commit. Old siblings

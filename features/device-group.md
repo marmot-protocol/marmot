@@ -587,6 +587,10 @@ traffic may settle normally in that group; its completion MUST NOT clear or recr
 destination work arises only through an independently applicable existing flow. A completed old history upload does
 not itself authorize a new destination history delivery.
 
+An old-group Add already admitted near Made can leave a chat leaf whose Welcome no longer reaches the moving device.
+The destination's ordinary duplicate-Add checks can keep that leaf from being replaced automatically. Moving adds no
+duplicate-leaf cleanup; manual chat membership repair may be needed, as under [Filling a missing chat](#filling-a-missing-chat).
+
 Discard is intentional local cleanup, not missing material to recover
 ([../protocol-core/durability.md](../protocol-core/durability.md#missing-or-corrupt-material)). Restart or late old
 input MUST NOT recreate the discarded active copy. A later ordinary confirmed link there is a fresh join. The device
