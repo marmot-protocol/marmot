@@ -25,8 +25,9 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
 - Move only this device through an ordinary code-confirmed link. Keep the original group trusted through Welcome
   admission; record Made, capture the old rejected slots and switch sole trust together once the destination's first
   own Commit is selected with no pending group input. Forget only the destination when linking fails before Made;
-  do not restore old trust or hold old work for resumption. An unresolvable outcome can leave the device unlinked and
-  needing another link.
+  do not restore old trust or hold old work for resumption. An unrecoverable destination can stay pending with old
+  trust while ordinary repair applies. Corrupt/unreadable local move facts can fail progress/status reads and need
+  manual local recovery or reset/relink; no automatic unlinked signal is promised.
 - Carry rejected slots with original fields/ages, destination precedence and device-collision notice; carry no
   rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
   destination broadcast/request. Old delivery/completion cannot become or satisfy destination work.
@@ -35,6 +36,8 @@ Changes [features/device-group.md](./features/device-group.md#moving-between-dev
   moved-status inline Commit. Old siblings
   clean up old membership without rejection, chat removal, slot deletion or sign-out. Old admitted work settles
   ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication.
+- Recognition guidance suppresses sign-in questions only on the mover. Old siblings may still ask about its sign-in
+  after cleanup; users can dismiss that prompt.
 
 ## 2026-11-03: Leaving takes the account out, and a simpler sibling-Welcome repair
 

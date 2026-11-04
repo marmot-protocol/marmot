@@ -515,10 +515,15 @@ or treat another retained group as its original. An independent removal from the
 a failed move does not reverse it. A destination removal after Made is ordinary unlinking, not a return to the old
 group.
 
-If required move facts cannot be recovered and the device cannot determine whether the move became made, it MUST
-NOT guess historical trust or membership. This experimental failure leaves the device unlinked: it trusts no device
-group and tells its user to link again. This ambiguity is distinct from a known failure before Made, which leaves
-original trust unchanged. No old-trust reconstruction or historical quiet proof is required to complete the failure.
+An unrecoverable destination before Made is not proof of a failed link. The original trust remains unchanged while
+ordinary group repair applies; the move can stay pending indefinitely if repair never completes. Manual local
+recovery and another confirmed link may be needed. This flow adds no automatic abort or terminal-state inference.
+
+If required local move facts are corrupt or unreadable, the device MUST NOT guess historical trust or membership.
+Progress or status reads can fail; this flow promises no automatic unlinked state or unlink notification for that
+condition. The user may need manual local recovery or reset and a new confirmed link. This is distinct from a known
+failure before Made, which leaves original trust unchanged, and does not excuse partial trust changes after a normal
+process crash with valid retained facts. No old-trust reconstruction or historical quiet proof is required.
 
 ### What it brings
 
@@ -568,6 +573,10 @@ Old-sibling slots and display labels support private guidance on moving each sib
 device they suppress proactive Link/This wasn't me questions until the destination first lists that sibling as a
 device or the user ends the exception. They authenticate nothing and authorize no Add. That sibling can still start
 its own ordinary pairing Request ([Before answering](#before-answering)).
+
+These recognition hints apply on the moving device only. An old sibling left behind can ask “Was this you?” about the
+moved device after cleaning up its old entry; the user can dismiss that prompt. Moving does not grant a permanent
+sign-in exemption on the old siblings.
 
 ### Old-group work
 
