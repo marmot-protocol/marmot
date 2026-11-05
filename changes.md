@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-05: Explicit local device-group reset and prior-link context
 
-Pull request: pending, for [mdk#2847](https://github.com/marmot-protocol/mdk/issues/2847).
+Pull request: [marmot#499](https://github.com/marmot-protocol/marmot/pull/499), for [mdk#2847](https://github.com/marmot-protocol/mdk/issues/2847).
 Changes [features/device-group.md](./features/device-group.md#explicit-local-reset).
 
 - Permit user-controlled discard of an active local hidden device-group copy before fresh, code-confirmed pairing,
