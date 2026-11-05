@@ -228,8 +228,9 @@ grants no exception for a rejected slot or removal.
 Reset MAY precede successful pairing. Cancellation, failure or a restart before the fresh link is confirmed can leave
 the device without a trusted device group, requiring fresh pairing; it does not restore the discarded copy. A fresh
 link already confirmed keeps [Joining](#joining)'s durable Welcome wait and restart rules. Once that wait ends, another
-pairing may be needed. Implementations MUST distinguish discarding this hidden group's local state and unfinished
-device synchronization from erasing ordinary local chat data or account credentials. Retained chat data does not
+pairing may be needed. Implementations MUST distinguish discarding this hidden group's local continuity and abandoned
+link-bound preparations from erasing ordinary local chat data or account credentials. Retained shared values and
+security decisions keep their existing authority and can synchronize again under ordinary rules. Retained chat data does not
 prove current membership, guarantee missing history backfill, or recall already-admitted work. This differs from a
 [move](#moving-between-device-groups)'s preserved original copy and Made cut.
 
