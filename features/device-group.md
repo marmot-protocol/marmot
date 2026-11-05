@@ -225,6 +225,11 @@ admission authority. The device MUST NOT reuse the KeyPackage that installed the
 Welcome. The approving device applies its current roster's ordinary duplicate, rejection, capacity and admission rules; reset
 grants no exception for a rejected slot or removal.
 
+A user may discard a local copy whose slot is still listed elsewhere; ordinary admission can then refuse a fresh link.
+Removing that slot does not bypass the removal rules. If no other device retains the old group, a later first link can
+create a different device group; the discarded roster continuity is not restored. This does not erase independently
+retained account data or security decisions.
+
 Reset MAY precede successful pairing. Cancellation, failure or a restart before the fresh link is confirmed can leave
 the device without a trusted device group, requiring fresh pairing; it does not restore the discarded copy. A fresh
 link already confirmed keeps [Joining](#joining)'s durable Welcome wait and restart rules. Once that wait ends, another
