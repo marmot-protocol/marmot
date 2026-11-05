@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-05: Explicit local device-group reset and prior-link context
+
+Pull request: pending, for [mdk#2847](https://github.com/marmot-protocol/mdk/issues/2847).
+Changes [features/device-group.md](./features/device-group.md#explicit-local-reset).
+
+- Permit user-controlled discard of an active local hidden device-group copy before fresh, code-confirmed pairing,
+  including a fresh join to the same group id. Keep ordinary local chat data and account credentials; preserve all
+  current Welcome authentication, removal and rejection rules. An interrupted attempt need not restore old trust;
+  an already-confirmed fresh link retains its ordinary durable Welcome wait across restart. No new bytes or version.
+- Permit narrowly qualified prior-linked-slot context on existing sign-in listings. It reports current local roster
+  absence, not permanent loss, physical-device identity or authority to reset automatically. Reset repairs no ordinary
+  chat membership and guarantees neither history backfill nor recall of admitted work.
+
 ## 2026-11-03: Moving one device between device groups
 
 Pull request: [marmot#498](https://github.com/marmot-protocol/marmot/pull/498), for [mdk#2628, D102](https://github.com/marmot-protocol/mdk/issues/2628).
