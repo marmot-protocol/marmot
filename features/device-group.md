@@ -208,7 +208,36 @@ This is the only limit on how long a new device waits for its Welcome. It decide
 joined changes nothing: it keeps its device group and its leaf there. Once the link has ended, a Welcome into its group
 is one no link expects, refused if the group requires `0x800e`, and linking again starts a new pairing session. A device
 that already trusts a device group can run a pairing session as a new device only to
-[move this device](#moving-between-device-groups). This does not merge the groups.
+[move this device](#moving-between-device-groups). Alternatively, its user can explicitly discard the local copy
+[before fresh pairing](#explicit-local-reset). Neither operation merges the groups.
+
+### Explicit local reset
+
+On the user's explicit choice, a device MAY discard its active local device-group copy to attempt a fresh
+code-confirmed link. It stops trusting that copy before the new link is confirmed. This is a local reset, not a
+removal Commit, an unlinked notification, or proof that the old link cannot return through ordinary
+[convergence](../protocol-core/convergence.md). It removes no device from any group and restores no chat membership.
+A client MAY refuse the reset while already-admitted work remains unsettled; no completion deadline is promised.
+
+After reset, joining the same device-group id is a fresh join and MUST satisfy [Joining](#joining)'s current confirmed
+KeyPackage, sender, group and wait checks. An earlier made link or account-key-authenticated traffic grants no
+admission authority. The device MUST NOT reuse the KeyPackage that installed the discarded copy or an earlier link's
+Welcome. The approving device applies its current roster's ordinary duplicate, rejection, capacity and admission rules; reset
+grants no exception for a rejected slot or removal.
+
+A user may discard a local copy whose slot is still listed elsewhere; ordinary admission can then refuse a fresh link.
+Removing that slot does not bypass the removal rules. If no other device retains the old group, a later first link can
+create a different device group; the discarded roster continuity is not restored. This does not erase independently
+retained account data or security decisions.
+
+Reset MAY precede successful pairing. Cancellation, failure or a restart before the fresh link is confirmed can leave
+the device without a trusted device group, requiring fresh pairing; it does not restore the discarded copy. A fresh
+link already confirmed keeps [Joining](#joining)'s durable Welcome wait and restart rules. Once that wait ends, another
+pairing may be needed. Implementations MUST distinguish discarding this hidden group's local continuity and abandoned
+link-bound preparations from erasing ordinary local chat data or account credentials. Retained shared values and
+security decisions keep their existing authority and can synchronize again under ordinary rules. Retained chat data does not
+prove current membership, guarantee missing history backfill, or recall already-admitted work. This differs from a
+[move](#moving-between-device-groups)'s preserved original copy and Made cut.
 
 ### A link that is not taken up
 
@@ -733,6 +762,17 @@ start without them, in groups it is invited to from then on. Starting that way a
 check returned, including one that does not count then and is listed only when it counts later. It MUST NOT reject them:
 one of them may be a device the user still has somewhere, which can link this one later, and a rejection would block
 that link and warn the user about a device they only lost.
+
+### A previously linked slot missing from this roster
+
+A device MAY add local context to an existing unrecognized-sign-in listing when it retains a made approval for that
+slot in its currently trusted device group, but its current settled selected roster no longer lists the slot. It
+describes this as a current local observation, not proof of permanent disconnection or removal. A remembered approval
+for a slot does not authenticate the device currently publishing in that slot. Known removal, rejection or movement
+is not a lost-link warning. Incomplete local records, expired removal evidence, slot reuse and discovery availability
+limit this context; its absence does not mean the slot was never linked. Silence or failure to decrypt traffic alone
+establishes no lost link and authorizes no automatic reset. The user may open both devices to check the link, or
+explicitly choose a [local reset](#explicit-local-reset) followed by fresh code pairing.
 
 ### Any one device's answer
 
@@ -1636,6 +1676,9 @@ status, and removing a device after a longer absence, are not specified yet.
   roster. Old members keep whatever secrets and content they already hold; changing trust does not revoke those or
   recall old traffic. A `moved` entry is a roster decision, not proof that another device completed a move: any linked
   device can already edit the roster or remove that old leaf. It grants no destination authority.
+- [Explicit local reset](#explicit-local-reset) discards only this device's trust and local group continuity. It gives
+  no other device admission authority, erases no secrets held by peers, bypasses no removal, and proves no permanent
+  loss. A prior-linked-slot observation is display context, never authentication of a current publication.
 - The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
   control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
   `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
