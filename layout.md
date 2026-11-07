@@ -76,6 +76,7 @@ ideas/
   README.md
   account-sync.md
   multi-device.md
+  group-permissions.md
 implementation-model.md
 ```
 
