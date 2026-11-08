@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-08: A departing admin may enter Leaving before its step-down
+
+Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior).
+
+- A departing admin may enter `Leaving` once it durably records its leave, before sending the admin-policy update that
+  removes its account from the admin list. That first update then counts as the step-down: the repeated step-down and
+  blocked-leave rules apply from that point, so a step-down that is refused or lost to another branch is sent again
+  from the selected state's admin list, and a leave that canonical state leaves with the account as the last active
+  admin is blocked. The last active admin still cannot start a leave. A client that enters `Leaving` only after its
+  SelfRemove, as before, stays conformant; the bytes on the wire do not change.
+
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
 Pull request: [marmot#501](https://github.com/marmot-protocol/marmot/pull/501), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
