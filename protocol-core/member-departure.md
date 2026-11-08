@@ -66,9 +66,10 @@ The leaving member MUST NOT commit its own SelfRemove proposal. A remaining auth
 After handing the SelfRemove proposal to the active transport, the leaving member enters a local `Leaving` state for
 that group. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits other than the
 repeated step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for
-a newer source epoch when the prior SelfRemove becomes stale and canonical state does not make its account an active
+a new source epoch when its prior SelfRemove is not valid there and canonical state does not make its account an active
 admin. Transport-level retries of the same serialized SelfRemove
-proposal MAY continue, but the client MUST NOT generate fresh SelfRemove proposal bytes for the same source epoch. The
+proposal MAY continue, but the client MUST NOT generate fresh SelfRemove proposal bytes for the same source epoch. Group
+states on different branches that share an epoch number are different source epochs for this rule. The
 `Leaving` state is backed by a durable leave request. While canonical state contains the local leaf, it ends only if
 the member repairs or rejoins through a future specified recovery flow, its user cancels a blocked leave (below), or
 the client discards the local group copy. An accepted removing Commit moves the copy to the removed condition described
@@ -93,10 +94,15 @@ the client publishes a fresh SelfRemove proposal for the new source epoch.
 If canonical state instead makes the account the last active admin, the leave is blocked: no admin-policy update can
 remove the account, and its SelfRemove would be invalid. The client keeps the durable leave request and stays in
 `Leaving`. It MUST NOT present the group as joined again on its own and MUST NOT reverse an invitation decision on its
-own ([../features/account-sync.md](../features/account-sync.md#invitation-decisions)). It MUST NOT publish a
-SelfRemove or any other group message until canonical state changes. A later canonical state unblocks the leave: if
-the account is still an active admin and another active admin remains, the client repeats the step-down as above; if
-the account is not an active admin, the client publishes a fresh SelfRemove proposal and no admin-policy update.
+own ([../features/account-sync.md](../features/account-sync.md#invitation-decisions)). While canonical state makes
+the account the last active admin, the leave stays blocked and the client MUST NOT generate any new message in that
+group: no SelfRemove, admin-policy update, other proposal, Commit or application message. Transport-level retries of a
+SelfRemove it already generated for another source epoch MAY continue. The leave unblocks in only two ways. If
+canonical state makes the account an active admin while another active admin remains, the client repeats the step-down
+as above. If canonical state does not make the account an active admin, the client publishes no admin-policy update and
+follows the SelfRemove rules above: when it already generated a SelfRemove for this source epoch, it retries those
+bytes and generates none; otherwise it SHOULD publish a fresh SelfRemove proposal for this source epoch once local
+group-state commits are allowed.
 
 While the leave is blocked, its user MAY cancel it. Before cancelling, the client MUST check that the group lifecycle
 is `Stable`, that its convergence status is `Settled`, and that this settled canonical state still makes the account

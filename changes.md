@@ -21,12 +21,18 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
 [features/account-sync.md](./features/account-sync.md#invitation-decisions).
 
 - A `Leaving` member publishes a fresh SelfRemove only while canonical state does not make its account an active admin.
+  Group states on different branches that share an epoch number count as different source epochs for the rule against
+  new SelfRemove bytes for the same source epoch.
 - A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
   should repeat its step-down from that state's admin list and then send a fresh SelfRemove. That Commit carries only
   the admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
 - If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
-  stays `Leaving`, must send nothing, and must not show the group as joined again or reverse an invitation decision on
+  stays `Leaving`, must generate nothing new in that group (transport retries of a SelfRemove already generated for
+  another source epoch may continue), and must not show the group as joined again or reverse an invitation decision on
   its own. A blocked leave is not a new leave attempt: the last-admin refusal applies to starting a leave.
+- A blocked leave unblocks only when canonical state leaves another active admin (repeat the step-down) or no longer
+  makes the account an active admin. In the second case the client sends no admin-policy update and retries a
+  SelfRemove it already generated for that source epoch, generating a fresh one only when it has none.
 - Its user may cancel a blocked leave, on that client only. The client must refuse unless the lifecycle is `Stable`,
   convergence status is `Settled`, and that state still makes the account the last active admin. Cancel replaces the
   earlier "future explicit cancel flow", is not replicated to sibling devices, and leaves an invitation decline in
