@@ -13,6 +13,41 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-08: Repeated step-down, blocked leave and Cancel
+
+Pull request: [marmot#501](https://github.com/marmot-protocol/marmot/pull/501), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
+[features/account-sync.md](./features/account-sync.md#invitation-decisions).
+
+- A `Leaving` member publishes a fresh SelfRemove only while canonical state does not make its account an active admin.
+  Group states on different branches that share an epoch number count as different source epochs for the rule against
+  new SelfRemove bytes for the same source epoch. A prior SelfRemove is stale wherever canonical state reaches a source
+  epoch it is not valid for, after a later Commit or a branch change; the client retries a SelfRemove it already
+  generated for the current source epoch and otherwise should send a fresh one.
+- A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
+  should repeat its step-down from that state's admin list. While the state it produces is canonical, the client
+  retries a SelfRemove it already generated for that source epoch or sends a fresh one. That Commit carries only the
+  admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
+- If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
+  stays `Leaving`, must generate nothing new in that group (transport retries of a SelfRemove already generated for
+  another source epoch may continue), and must not show the group as joined again or reverse an invitation decision on
+  its own. A blocked leave is not a new leave attempt: the last-admin refusal and the designate-first requirement
+  apply when a leave starts, and a blocked leave designates no other admin.
+- A blocked leave unblocks only when canonical state leaves another active admin (repeat the step-down) or no longer
+  makes the account an active admin. In the second case the client sends no admin-policy update and retries a
+  SelfRemove it already generated for that source epoch, generating a fresh one only when it has none.
+- Its user may cancel a blocked leave, on that client only. The client must refuse unless the lifecycle is `Stable`,
+  convergence status is `Settled`, and that state still makes the account the last active admin. Cancel replaces the
+  earlier "future explicit cancel flow", is not replicated to sibling devices, and leaves an invitation decline in
+  place; the account stays the last active admin. It does not withdraw SelfRemove proposals or Commits already
+  published on other branches; a later selected branch that removes the account still applies. Cancel is for the
+  last-admin block only, where nothing the client sends can finish the leave; with another active admin the client
+  repeats the step-down instead.
+- A copy owes decline work once per winning value; receiving the same value again, a rebroadcast, a restart or a
+  replayed admission owes none, so the decline that stands after a Cancel does not request the Leave again. Only a new
+  winning value or a new native admission owes new decline work. No new bytes or version.
+
 ## 2026-11-08: Marking and removing inactive devices
 
 Pull request: [marmot#500](https://github.com/marmot-protocol/marmot/pull/500), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).

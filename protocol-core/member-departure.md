@@ -56,6 +56,9 @@ in its authenticated source-epoch state is invalid (see
 A departing admin MUST first complete an accepted admin-policy update that removes its account from the admin list
 before creating a SelfRemove proposal. The admin-policy update is an admin-gated group-state change and is valid only
 if at least one other active admin remains, so the last active admin MUST designate another admin before leaving.
+These requirements apply when a leave starts. A `Leaving` member whose account canonical state later makes an active
+admin again follows the repeated step-down and blocked-leave rules below instead; while its leave is blocked it
+designates no other admin and sends no admin-policy update.
 
 This two-step flow applies to voluntary departure through SelfRemove only. An admin removed by another admin does not
 use it: the removing commit drops the account's last leaf and its `admins` key together, under the coupling rule in
@@ -64,21 +67,62 @@ use it: the removing commit drops the account's last leaf and its `admins` key t
 The leaving member MUST NOT commit its own SelfRemove proposal. A remaining authorized member commits it.
 
 After handing the SelfRemove proposal to the active transport, the leaving member enters a local `Leaving` state for
-that group. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits, or non-SelfRemove
-MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for a newer source epoch when the prior
-SelfRemove becomes stale. Transport-level retries of the same serialized SelfRemove proposal MAY continue, but the
-client MUST NOT generate fresh SelfRemove proposal bytes for the same source epoch. The `Leaving` state is backed by a
-durable leave request. While canonical state contains the local leaf, it ends only if the member repairs or rejoins
-through a future specified recovery flow, a future explicit cancel flow clears the request, or the client discards the
-local group copy. An accepted removing Commit moves the copy to the removed condition described below.
+that group. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits other than the
+repeated step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for
+a source epoch it has generated none for, while canonical state does not make its account an active admin.
+Transport-level retries of the same serialized SelfRemove proposal MAY continue, but the client MUST NOT generate fresh
+SelfRemove proposal bytes for the same source epoch. Group states on different branches that share an epoch number are
+different source epochs for this rule. The `Leaving` state is backed by a durable leave request. While canonical state
+contains the local leaf, it ends only if the member repairs or rejoins through a future specified recovery flow, its
+user cancels a blocked leave (below), or the client discards the local group copy. An accepted removing Commit moves
+the copy to the removed condition described below.
 
 Applying an accepted removing Commit ends `Leaving` and puts the local copy in the terminal removed condition below.
 The client MAY release the durable leave request after it durably records that condition.
 
-If an accepted commit advances the group to a later epoch without removing the leaving member, the prior SelfRemove is
-stale because MLS proposals are epoch-bound. The client remains in `Leaving`, MUST NOT reuse the old SelfRemove
-proposal bytes, and SHOULD publish a fresh SelfRemove proposal for the new source epoch once local group-state commits
-are allowed.
+If canonical state reaches a source epoch where the prior SelfRemove is not valid, because an accepted commit advanced
+the group to a later epoch without removing the leaving member or because convergence selected another branch, that
+SelfRemove is stale there: MLS proposals are bound to their source epoch. The client remains in `Leaving` and MUST NOT
+count a SelfRemove generated for another source epoch as one for the current source epoch. If it already generated a
+SelfRemove for the current source epoch, it retries those bytes and generates none; otherwise it SHOULD publish a fresh
+SelfRemove proposal for that source epoch once local group-state commits are allowed. That applies only while canonical
+state does not make its account an active admin; otherwise the client follows the next two paragraphs and publishes no
+SelfRemove.
+
+Canonical state can make a `Leaving` member's account an active admin again, for example when convergence selects a
+branch that does not hold its accepted admin-policy update. While another active admin remains in that state, the
+client SHOULD repeat the step-down: an admin-policy update that removes its account from that state's admin list,
+leaving every other entry as that state has it. That Commit carries only the admin-policy update and is the one
+group-state Commit a `Leaving` member may send. While the state that accepted update produces is canonical, the
+account is not an active admin there, and the client follows the SelfRemove rules above: it retries a SelfRemove it
+already generated for that source epoch, and otherwise SHOULD publish a fresh one once local group-state commits are
+allowed. If canonical state moves on, the client follows these rules for the new state.
+
+If canonical state instead makes the account the last active admin, the leave is blocked: no admin-policy update can
+remove the account, and its SelfRemove would be invalid. The client keeps the durable leave request and stays in
+`Leaving`. It MUST NOT present the group as joined again on its own and MUST NOT reverse an invitation decision on its
+own ([../features/account-sync.md](../features/account-sync.md#invitation-decisions)). While canonical state makes
+the account the last active admin, the leave stays blocked and the client MUST NOT generate any new message in that
+group: no SelfRemove, admin-policy update, other proposal, Commit or application message. Transport-level retries of a
+SelfRemove it already generated for another source epoch MAY continue. The leave unblocks in only two ways. If
+canonical state makes the account an active admin while another active admin remains, the client repeats the step-down
+as above. If canonical state does not make the account an active admin, the client publishes no admin-policy update and
+follows the SelfRemove rules above: when it already generated a SelfRemove for this source epoch, it retries those
+bytes and generates none; otherwise it SHOULD publish a fresh SelfRemove proposal for this source epoch once local
+group-state commits are allowed.
+
+While the leave is blocked, its user MAY cancel it. Before cancelling, the client MUST check that the group lifecycle
+is `Stable`, that its convergence status is `Settled`, and that this settled canonical state still makes the account
+the last active admin; otherwise it MUST refuse, and the leave continues. Cancel clears the durable leave request on
+that client only and ends `Leaving`. The account is still the group's last active admin, and the client sends under the
+ordinary rules for an admin. Cancel is limited to a blocked leave because only there can nothing the client sends
+finish the leave: no admin-policy update can remove the account, and its SelfRemove is invalid. Being an active admin
+is not enough: while another active admin remains, the client repeats the step-down instead. Where the account is not
+an active admin, the leave can still finish through its SelfRemove, so clearing the request would not stop the
+departure. Cancel clears only the client's own leave intent. It does not withdraw SelfRemove proposals or Commits
+already published on other branches: if convergence later selects a branch whose accepted Commit removes the account,
+the client applies that removing Commit as any other. Cancel does not change an invitation decision. To leave
+afterwards, the user designates another admin and leaves again.
 
 ## SelfRemove commits
 

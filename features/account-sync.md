@@ -201,10 +201,14 @@ for other departures such as signing out
 requests that departure, it records a decline, as a local user change, for the generation associated with its local
 copy, before it publishes anything for that departure. The decline stands even if the departure is not yet committed;
 the departure stays owed under its ordinary rules. Its siblings admitted by that generation then leave as well
-(Applying, below), and the decline holds automatic sibling Adds from that admission. While its account is the chat's
-last active admin, its user cannot leave the chat on any of its devices: the device records no decline and requests no
-departure, and the user first makes another member an admin
-([Member departure](../protocol-core/member-departure.md#behavior)). A device that cannot request its departure for
+(Applying, below), and the decline holds automatic sibling Adds from that admission. The decline also stands if the
+departure becomes blocked and its user cancels it
+([Member departure](../protocol-core/member-departure.md#behavior)). That Cancel is a local action on that device: it
+is not replicated and does not clear a sibling's departure. While its account is the chat's last active admin, its user
+cannot start leaving the chat on any of its devices: the device records no decline and requests no departure, and the
+user first makes another member an admin ([Member departure](../protocol-core/member-departure.md#behavior)). A
+departure requested earlier that later becomes blocked stays owed under those rules until it unblocks or that device's
+user cancels it. A device that cannot request its departure for
 another reason records no decline either. If the generation's held value is already at the maximum version, the device
 leaves without a new decline (Values, above). A copy with no identified generation, or a device that trusts no device
 group, takes out only its own leaf. A sibling admitted by a separate generation stays in the chat until its user leaves
@@ -236,9 +240,13 @@ accepted. Each local copy associated with the matching generation records work t
 leaf under [Member departure](../protocol-core/member-departure.md), not to directly remove leaves of other generations.
 Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
 winning decision, its owed broadcast and necessary decline work before external side effects; a received winner is
-merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A higher-version
-accept can replace the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This
-feature promises neither synchronous departure nor departure by unrelated generations.
+merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A copy owes decline
+work once for each winning value: merging the same value again, rebroadcasting it, restarting or replaying the same
+native admission owes no new work. So after its user cancels a blocked departure
+([Member departure](../protocol-core/member-departure.md#behavior)), the decline that stands owes no new Leave for that
+copy; only a new winning value or a new native admission can owe new decline work. A higher-version accept can replace
+the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This feature promises
+neither synchronous departure nor departure by unrelated generations.
 
 **Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
 MUST NOT start a new automatic sibling Add from that admission. The hold neither forbids nor requires a private
