@@ -16,14 +16,17 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-08: A departing admin may enter Leaving before its step-down
 
 Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
-Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior) and
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md).
 
 - A departing admin may enter `Leaving` once it durably records its leave, before sending the admin-policy update that
-  removes its account from the admin list. That first update then counts as the step-down: the repeated step-down and
-  blocked-leave rules apply from that point, so a step-down that is refused or lost to another branch is sent again
-  from the selected state's admin list, and a leave that canonical state leaves with the account as the last active
-  admin is blocked. The last active admin still cannot start a leave. A client that enters `Leaving` only after its
-  SelfRemove, as before, stays conformant; the bytes on the wire do not change.
+  removes its account from the admin list; that update is then its first step-down. The step-down and blocked-leave
+  rules no longer wait for canonical state to make the account an admin again: they apply whenever canonical state makes
+  a `Leaving` member's account an active admin. So a step-down that is refused, never published or lost to another
+  branch should be sent again from the selected state's admin list, and a leave whose account canonical state makes the
+  last active admin is blocked, even before any step-down is accepted. A client must not record a leave request or enter
+  `Leaving` for the last active admin. A client that enters `Leaving` only after its SelfRemove, as before, stays
+  conformant; the bytes on the wire do not change.
 
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
