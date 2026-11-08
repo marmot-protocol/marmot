@@ -13,6 +13,22 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-08: Marking and removing inactive devices
+
+Pull request: [marmot#PR](https://github.com/marmot-protocol/marmot/pull/PR), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).
+Changes [features/device-group.md](./features/device-group.md#marking-and-removing-inactive-devices).
+
+- Each device keeps an inactivity clock per sibling that counts only while it is caught up with its device group;
+  a gap of more than 24 hours restarts every clock. A counted heartbeat restarts a sibling's clock at the time it is
+  counted, and so does seeing the sibling clear its own mark.
+- At 30 days a caught-up device sets the sibling's status to `inactive`; a marked device that is caught up and has sent
+  a heartbeat sets itself back to `active`. At 90 days, while the roster still says `inactive` and "keep while inactive"
+  is off, a caught-up device removes it with the ordinary removal Commit, rechecking before every attempt and keeping no
+  decision.
+- Departure from the user-removal rule: no device deletes the slot of a device removed for inactivity.
+- A device that cannot catch up, because it missed a Commit it can no longer fetch, cannot clear its mark and is removed
+  at 90 days; it should offer its user the explicit local reset and a fresh link. No new bytes or version.
+
 ## 2026-11-05: Explicit local device-group reset and prior-link context
 
 Pull request: [marmot#499](https://github.com/marmot-protocol/marmot/pull/499), for [mdk#2847](https://github.com/marmot-protocol/mdk/issues/2847).
