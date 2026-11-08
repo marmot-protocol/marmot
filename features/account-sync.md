@@ -240,9 +240,13 @@ accepted. Each local copy associated with the matching generation records work t
 leaf under [Member departure](../protocol-core/member-departure.md), not to directly remove leaves of other generations.
 Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
 winning decision, its owed broadcast and necessary decline work before external side effects; a received winner is
-merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A higher-version
-accept can replace the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This
-feature promises neither synchronous departure nor departure by unrelated generations.
+merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A copy owes decline
+work once for each winning value: merging the same value again, rebroadcasting it, restarting or replaying the same
+native admission owes no new work. So after its user cancels a blocked departure
+([Member departure](../protocol-core/member-departure.md#behavior)), the decline that stands owes no new Leave for that
+copy; only a new winning value or a new native admission can owe new decline work. A higher-version accept can replace
+the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This feature promises
+neither synchronous departure nor departure by unrelated generations.
 
 **Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
 MUST NOT start a new automatic sibling Add from that admission. The hold neither forbids nor requires a private

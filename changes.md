@@ -43,7 +43,10 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
   place; the account stays the last active admin. It does not withdraw SelfRemove proposals or Commits already
   published on other branches; a later selected branch that removes the account still applies. Cancel is for the
   last-admin block only, where nothing the client sends can finish the leave; with another active admin the client
-  repeats the step-down instead. No new bytes or version.
+  repeats the step-down instead.
+- A copy owes decline work once per winning value; receiving the same value again, a rebroadcast, a restart or a
+  replayed admission owes none, so the decline that stands after a Cancel does not request the Leave again. Only a new
+  winning value or a new native admission owes new decline work. No new bytes or version.
 
 ## 2026-11-08: Marking and removing inactive devices
 
