@@ -22,14 +22,18 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
 
 - A `Leaving` member publishes a fresh SelfRemove only while canonical state does not make its account an active admin.
   Group states on different branches that share an epoch number count as different source epochs for the rule against
-  new SelfRemove bytes for the same source epoch.
+  new SelfRemove bytes for the same source epoch. A prior SelfRemove is stale wherever canonical state reaches a source
+  epoch it is not valid for, after a later Commit or a branch change; the client retries a SelfRemove it already
+  generated for the current source epoch and otherwise should send a fresh one.
 - A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
-  should repeat its step-down from that state's admin list and then send a fresh SelfRemove. That Commit carries only
-  the admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
+  should repeat its step-down from that state's admin list. While the state it produces is canonical, the client
+  retries a SelfRemove it already generated for that source epoch or sends a fresh one. That Commit carries only the
+  admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
 - If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
   stays `Leaving`, must generate nothing new in that group (transport retries of a SelfRemove already generated for
   another source epoch may continue), and must not show the group as joined again or reverse an invitation decision on
-  its own. A blocked leave is not a new leave attempt: the last-admin refusal applies to starting a leave.
+  its own. A blocked leave is not a new leave attempt: the last-admin refusal and the designate-first requirement
+  apply when a leave starts, and a blocked leave designates no other admin.
 - A blocked leave unblocks only when canonical state leaves another active admin (repeat the step-down) or no longer
   makes the account an active admin. In the second case the client sends no admin-policy update and retries a
   SelfRemove it already generated for that source epoch, generating a fresh one only when it has none.
@@ -37,8 +41,9 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
   convergence status is `Settled`, and that state still makes the account the last active admin. Cancel replaces the
   earlier "future explicit cancel flow", is not replicated to sibling devices, and leaves an invitation decline in
   place; the account stays the last active admin. It does not withdraw SelfRemove proposals or Commits already
-  published on other branches; a later selected branch that removes the account still applies. No new bytes or
-  version.
+  published on other branches; a later selected branch that removes the account still applies. Cancel is for the
+  last-admin block only, where nothing the client sends can finish the leave; with another active admin the client
+  repeats the step-down instead. No new bytes or version.
 
 ## 2026-11-08: Marking and removing inactive devices
 
