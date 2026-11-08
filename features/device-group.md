@@ -297,9 +297,9 @@ no longer undoes that entry: the later link stays made, so the device records no
 forks before the undo, the later link's Add and its new device's first Commit. If that branch does not also bring back
 the failed link's first Commit, the entry has no `tag_signature_key`, so no device may remove it ([The removal
 Commit](#the-removal-commit)), and while the roster lists it, no device answers a pairing request from its slot ("Before
-answering"). Nothing in this specification frees that slot then: removing a device after a longer absence is not
-specified yet ([Inactive devices](#inactive-devices)). If it does, the entry has its `tag_signature_key`, and the user
-can remove that device like any other.
+answering"). Nothing in this specification frees that slot then: removal for inactivity ([Inactive
+devices](#inactive-devices)) uses the same removal Commit, so it does not either. If it does, the entry has its
+`tag_signature_key`, and the user can remove that device like any other.
 
 ### Private sibling Add admission
 
@@ -831,7 +831,9 @@ otherwise follows [Filling a missing chat](#filling-a-missing-chat).
 ## Removing a device
 
 The user removes a linked device from any other device of the account. A device never removes itself this way: a
-device the user is done with signs out ([Signing out](#signing-out)).
+device the user is done with signs out ([Signing out](#signing-out)). The account's devices also remove a device that
+has been inactive for 90 days ([Marking and removing inactive devices](#marking-and-removing-inactive-devices)), with
+the same Commit.
 
 ### The removal Commit
 
@@ -890,7 +892,9 @@ publication slots"):
 - when branch selection drops the removal after that, it commits the removal again and, once its state is settled and
   no longer lists the slot as a device, deletes the slot again, since the removed device may have published to it in
   between;
-- no other device deletes the slot, and nothing else lets a device delete another device's slot.
+- no other device deletes the slot, and nothing else lets a device delete another device's slot. A removal for
+  inactivity ([Inactive devices](#inactive-devices)) is not a user's decision: no device deletes the slot of a device
+  removed that way.
 
 The deletion stops inviters from selecting the KeyPackages the removed device published up to the deletion's time. It
 does not cover a later publication: what the account's devices do about a removed device that publishes again is not
@@ -1509,8 +1513,8 @@ the others from the state it commits to, rather than restore values from an earl
 - "Bring chat history" governs future sibling Adds and histories still owed, as
   [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
   chat the device already joined and does not restore history forgotten while it was off.
-- "Keep while inactive" prevents automatic removal for inactivity when that removal is supported. It does not cancel
-  a user-decided removal or the device's sign-out, and does not change its status.
+- "Keep while inactive" prevents removal for inactivity ([Inactive devices](#inactive-devices)). It does not prevent
+  the `inactive` mark, cancel a user-decided removal or the device's sign-out, or change its status.
 
 A settings edit and a rename use the same user-edit provenance and recovery below. Concurrent user edits of the same
 device follow branch selection as whole edits, even when they changed different settings; they are not merged by field.
@@ -1648,8 +1652,55 @@ This judgment only decides what a device shows. A device that comes back after a
 moved its device group on counts none of the heartbeats sent before that Commit ([Heartbeats](#heartbeats)), so it sees
 siblings as inactive until they send heartbeats it counts, and its view says little about who is still running. A
 device MUST NOT set a device entry's status to `inactive`
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it. When a device records that
-status, and removing a device after a longer absence, are not specified yet.
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it; it uses the inactivity clock
+below.
+
+#### Marking and removing inactive devices
+
+A device is caught up with its device group when it has fetched and processed every event of the group its relays hold
+up to now, is missing no Commit, and can commit there. Events from before the last restart of its inactivity clocks
+(below) that it has given up fetching do not count, since none of them could move a clock. A device keeps an inactivity
+clock for each sibling, by its own clock, and counts time only while it is caught up: when more than 24 hours pass
+between two times it finds itself caught up, or its clock goes back, it restarts every sibling's inactivity clock at
+the second. Shorter gaps count as running time. When it gives up fetching events from after that restart, it restarts
+every sibling's inactivity clock at the second too.
+
+A sibling's inactivity clock also restarts when the device first finds the sibling's entry in its roster, when it
+counts a heartbeat that moves the sibling's last activity later ([Heartbeats](#heartbeats)), at the time it counts it
+rather than the heartbeat's own time, and when it sees the sibling's entry go from `inactive` to `active`. It never
+runs from earlier than the judgment above, so a device never marks a sibling it would not show as inactive.
+
+A device acts on these clocks only while it is caught up, and makes at most one of the Commits below at a time:
+
+- Once a sibling's inactivity clock reaches 30 days, the device commits the sibling's entry with status `inactive`
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), every other field unchanged. It
+  marks no entry that is `leaving` or `moved` or has no `tag_signature_key`, and no slot whose removal it decided.
+- A device that finds its own entry `inactive` sets it back to `active`, every other field unchanged, once it is caught
+  up and has sent a heartbeat no earlier than its inactivity clocks last restarted, so the heartbeat it sends as it
+  comes back counts.
+- Once a sibling's inactivity clock reaches 90 days, the device removes it with [the removal
+  Commit](#the-removal-commit), `rejected_at` the time it removes it, provided the roster still lists the sibling as
+  `inactive` with its "keep while inactive" setting off ([Device settings](#device-settings)). Unlike a user's removal,
+  it keeps no decision: it checks all of these conditions again before each attempt, and a removal that branch
+  selection drops is made again only if they still hold. A user's removal of the slot is unaffected and takes
+  precedence. Nobody deletes the removed device's slot ([The removed device's slot](#the-removed-devices-slot)).
+
+Siblings that mark or remove at the same time fork, and branch selection keeps one Commit. A device MAY make a mark or
+clearing that branch selection dropped again while the entry is still as it found it: that repeats a decision it made
+while caught up, and decides no removal. A mark that a later fork drops can restart that sibling's clock on the devices
+that saw it, delaying the next mark. A device that applies a mark
+and its clearing between two of its looks, and counts the cleared device's heartbeat only after the clearing, can mark
+it once more; that device then clears it again.
+
+A device catches up only as far back as its relays and its own recovery reach. A device that comes back after its device
+group took a Commit it can no longer fetch cannot catch up: it cannot see or clear its mark, and its siblings remove it
+at 90 days like one that never came back. Such a device SHOULD offer its user the [explicit local
+reset](#explicit-local-reset) and a fresh link. Once removed, its slot cannot link again until its `removed` record
+expires. A device whose other devices are each closed for more than 24 hours at a time never marks or removes any of
+them. Because a device removed for inactivity keeps its slot, inviters can still select a KeyPackage it published
+there until that KeyPackage's `Lifetime` ends ([../foundation/key-packages.md](../foundation/key-packages.md)); after
+90 days without running, the device has published none that is still valid unless it kept running without reaching
+its device group.
 
 ## Security considerations
 
