@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-08: A departing admin may enter Leaving before its step-down
 
-Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
 Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior).
 
 - A departing admin may enter `Leaving` once it durably records its leave, before sending the admin-policy update that
