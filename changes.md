@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
-Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Pull request: [marmot#501](https://github.com/marmot-protocol/marmot/pull/501), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
 Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
 [protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
 [features/account-sync.md](./features/account-sync.md#invitation-decisions).
