@@ -16,17 +16,23 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
 Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
-Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior) and
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
 [features/account-sync.md](./features/account-sync.md#invitation-decisions).
 
+- A `Leaving` member publishes a fresh SelfRemove only while canonical state does not make its account an active admin.
 - A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
   should repeat its step-down from that state's admin list and then send a fresh SelfRemove. That Commit carries only
-  the admin-policy update and is exempt from the `Leaving` ban on group-state Commits.
+  the admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
 - If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
-  stays `Leaving`, sends nothing, and must not show the group as joined again or reverse an invitation decision on its
-  own.
-- Its user may cancel a blocked leave, on that client only, after the client re-checks that it is still blocked. Cancel
-  replaces the earlier "future explicit cancel flow" and leaves an invitation decline in place. No new bytes or version.
+  stays `Leaving`, must send nothing, and must not show the group as joined again or reverse an invitation decision on
+  its own. A blocked leave is not a new leave attempt: the last-admin refusal applies to starting a leave.
+- Its user may cancel a blocked leave, on that client only. The client must refuse unless the lifecycle is `Stable`,
+  convergence status is `Settled`, and that state still makes the account the last active admin. Cancel replaces the
+  earlier "future explicit cancel flow", is not replicated to sibling devices, and leaves an invitation decline in
+  place; the account stays the last active admin. It does not withdraw SelfRemove proposals or Commits already
+  published on other branches; a later selected branch that removes the account still applies. No new bytes or
+  version.
 
 ## 2026-11-08: Marking and removing inactive devices
 
