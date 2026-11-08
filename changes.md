@@ -13,6 +13,21 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-08: Repeated step-down, blocked leave and Cancel
+
+Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior) and
+[features/account-sync.md](./features/account-sync.md#invitation-decisions).
+
+- A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
+  should repeat its step-down from that state's admin list and then send a fresh SelfRemove. That Commit carries only
+  the admin-policy update and is exempt from the `Leaving` ban on group-state Commits.
+- If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
+  stays `Leaving`, sends nothing, and must not show the group as joined again or reverse an invitation decision on its
+  own.
+- Its user may cancel a blocked leave, on that client only, after the client re-checks that it is still blocked. Cancel
+  replaces the earlier "future explicit cancel flow" and leaves an invitation decline in place. No new bytes or version.
+
 ## 2026-11-08: Marking and removing inactive devices
 
 Pull request: [marmot#500](https://github.com/marmot-protocol/marmot/pull/500), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).

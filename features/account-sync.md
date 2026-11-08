@@ -200,8 +200,10 @@ for other departures such as signing out
 ([Member departure](../protocol-core/member-departure.md#removal-by-another-device-of-the-same-account)). When it
 requests that departure, it records a decline, as a local user change, for the generation associated with its local
 copy, before it publishes anything for that departure. The decline stands even if the departure is not yet committed;
-the departure stays owed under its ordinary rules. Its siblings admitted by that generation then leave as well
-(Applying, below), and the decline holds automatic sibling Adds from that admission. While its account is the chat's
+the departure stays owed under its ordinary rules. It also stands if the departure becomes blocked and the user cancels
+it ([Member departure](../protocol-core/member-departure.md#behavior)); each device cancels its own blocked departure.
+Its siblings admitted by that generation then leave as well (Applying, below), and the decline holds automatic sibling
+Adds from that admission. While its account is the chat's
 last active admin, its user cannot leave the chat on any of its devices: the device records no decline and requests no
 departure, and the user first makes another member an admin
 ([Member departure](../protocol-core/member-departure.md#behavior)). A device that cannot request its departure for
