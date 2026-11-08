@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-08: Marking and removing inactive devices
 
-Pull request: [marmot#PR](https://github.com/marmot-protocol/marmot/pull/PR), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).
+Pull request: [marmot#500](https://github.com/marmot-protocol/marmot/pull/500), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).
 Changes [features/device-group.md](./features/device-group.md#marking-and-removing-inactive-devices).
 
 - Each device keeps an inactivity clock per sibling that counts only while it is caught up with its device group;
