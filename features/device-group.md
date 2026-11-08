@@ -1658,10 +1658,12 @@ below.
 #### Marking and removing inactive devices
 
 A device is caught up with its device group when it has fetched and processed every event of the group its relays hold
-up to now, is missing no Commit, and can commit there. A device keeps an inactivity clock for each sibling, by its own
-clock, and counts time only while it is caught up: when more than 24 hours pass between two times it finds itself
-caught up, or its clock goes back, it restarts every sibling's inactivity clock at the second. Shorter gaps count as
-running time.
+up to now, is missing no Commit, and can commit there. Events from before the last restart of its inactivity clocks
+(below) that it has given up fetching do not count, since none of them could move a clock. A device keeps an inactivity
+clock for each sibling, by its own clock, and counts time only while it is caught up: when more than 24 hours pass
+between two times it finds itself caught up, or its clock goes back, it restarts every sibling's inactivity clock at
+the second. Shorter gaps count as running time. When it gives up fetching events from after that restart, it restarts
+every sibling's inactivity clock at the second too.
 
 A sibling's inactivity clock also restarts when the device first finds the sibling's entry in its roster, when it
 counts a heartbeat that moves the sibling's last activity later ([Heartbeats](#heartbeats)), at the time it counts it
@@ -1674,7 +1676,8 @@ A device acts on these clocks only while it is caught up, and makes at most one 
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), every other field unchanged. It
   marks no entry that is `leaving` or `moved` or has no `tag_signature_key`, and no slot whose removal it decided.
 - A device that finds its own entry `inactive` sets it back to `active`, every other field unchanged, once it is caught
-  up and has sent a heartbeat since its inactivity clocks last restarted.
+  up and has sent a heartbeat no earlier than its inactivity clocks last restarted, so the heartbeat it sends as it
+  comes back counts.
 - Once a sibling's inactivity clock reaches 90 days, the device removes it with [the removal
   Commit](#the-removal-commit), `rejected_at` the time it removes it, provided the roster still lists the sibling as
   `inactive` with its "keep while inactive" setting off ([Device settings](#device-settings)). Unlike a user's removal,
@@ -1682,8 +1685,10 @@ A device acts on these clocks only while it is caught up, and makes at most one 
   selection drops is made again only if they still hold. A user's removal of the slot is unaffected and takes
   precedence. Nobody deletes the removed device's slot ([The removed device's slot](#the-removed-devices-slot)).
 
-Siblings that mark or remove at the same time fork, and branch selection keeps one Commit. A mark that a later fork
-drops can restart that sibling's clock on the devices that saw it, delaying the next mark. A device that applies a mark
+Siblings that mark or remove at the same time fork, and branch selection keeps one Commit. A device MAY make a mark or
+clearing that branch selection dropped again while the entry is still as it found it: that repeats a decision it made
+while caught up, and decides no removal. A mark that a later fork drops can restart that sibling's clock on the devices
+that saw it, delaying the next mark. A device that applies a mark
 and its clearing between two of its looks, and counts the cleared device's heartbeat only after the clearing, can mark
 it once more; that device then clears it again.
 
