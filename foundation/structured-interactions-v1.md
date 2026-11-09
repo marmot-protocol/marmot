@@ -64,9 +64,8 @@ text MAY contain LF (U+000A). Labels MUST NOT contain LF. Receivers MUST reject 
 These restrictions reject explicit bidi formatting controls, not ordinary right-to-left language text. Clients SHOULD
 use isolated plain-text controls for labels and answers and MUST NOT execute embedded commands or URLs.
 
-The wire expiry is fixed at creation. The owner MUST use the same deadline for its local authority and MUST NOT extend
-it from response timestamps, edits, receipt delivery, or client clocks. The owner's monotonic deadline evaluation is
-specified in the [feature lifecycle](../features/structured-interactions.md).
+The wire expiry is fixed at creation. The [feature lifecycle](../features/structured-interactions.md) requires the same
+unextendable local deadline and defines its monotonic evaluation.
 
 ## Request
 
@@ -78,10 +77,10 @@ The descriptor and reference are:
 ["marmot-option", option_id, label]
 ```
 
-The last line repeats once per option. `request_type` is exactly `approval` or `choice`. `custom_text` is exactly `0`
-or `1`. The original request event's authenticated author supplies the request-author identity. The originating input
-MUST be an authenticated delivered input from the named responder in the same group; an unproven origin produces only
-inert ordinary text, not an executable request.
+The last line repeats once per option. `request_type` is exactly `approval` or `choice`; `custom_text` is exactly `0`
+or `1`. The [feature's authorization rules](../features/structured-interactions.md#authorization-and-current-membership)
+require a delivered authenticated originating input from the named responder in the same group. An unproven origin
+produces only inert ordinary text, not an executable request.
 
 For `approval`, the option tags MUST be exactly these, in this order, and `custom_text` MUST be `0`:
 
@@ -89,20 +88,20 @@ For `approval`, the option tags MUST be exactly these, in this order, and `custo
 [["marmot-option","once","Allow once"],["marmot-option","deny","Deny"]]
 ```
 
-`once` authorizes only the concrete pending action bound to this prompt. `deny` denies that action. Neither option
-creates a session-wide or persistent capability. An adapter unable to enforce that scope MUST NOT emit an approval.
-The complete action and relevant resource MUST be visible in the readable body before the user answers.
+`once` authorizes only the bound pending action; `deny` denies it. Neither creates a session-wide or persistent
+capability. An adapter unable to enforce that scope MUST NOT emit an approval. The readable body MUST show the complete
+action and relevant resource before the user answers.
 
 For `choice`, option ids MUST be unique and in ascending ASCII byte order. Labels are display data and MUST NOT be
 passed to the resolver in place of stored option ids. Choice labels MUST also be byte-distinct; visually similar labels
 remain a presentation risk. Custom text is permitted only when `custom_text` is `1` and the feature's effective-DM
 requirements hold. A choice never grants permission to execute an action that requires a separate approval.
 
-`content` MUST state the entire question or approval scope, the options, the expiry, and instructions for the exact text
-fallback. A producer MUST NOT emit a structured request if that complete body exceeds the bound. It can shorten the
-question before minting a request, or send inert text. A request cannot contain its own event id without a circular
-hash dependency: the instructions tell the user to copy the request's inner id from message details. A fallback client
-that cannot expose that id cannot answer safely and leaves the request unanswered. Bare numbered replies do not work.
+`content` MUST state the entire question or approval scope, options, expiry, and exact text-fallback instructions.
+If that complete body exceeds the bound, a producer MUST NOT emit the structured request; it can shorten the question
+before minting a request or send inert text. Because including its own event id creates a circular hash dependency, the
+instructions tell the user to copy the request's inner id from message details. A fallback client unable to expose that
+id leaves the request unanswered. Bare numbered replies do not work.
 
 ## Response
 
@@ -117,9 +116,9 @@ Exactly one selection is carried. There is no denial-reason field. `content` is 
 change the descriptor's meaning. A feature-aware client renders the authenticated selection from the original request
 and response descriptor, not contradictory prose.
 
-Retransmission MUST reuse the same event bytes. Reuse of a `response_id` with different event bytes under the same
-request is an invalid attempt. A second response id does not provide a second chance after claim. No response event,
-including a response authored by the named account, is a receipt or proof of resolver acceptance.
+Retransmission MUST reuse the same event bytes. Reusing a `response_id` with different bytes under the same request is
+invalid. A second response id gives no second chance after claim. No response, even from the named account, proves
+resolver acceptance or serves as a receipt.
 
 ## Resolution
 
@@ -139,11 +138,11 @@ and prompt id in the same group. A missing request or accepted response does not
 activation. Clients MAY buffer an unresolved, non-actionable resolution observation in the feature's bounded volatile
 presentation cache until the original request arrives; they MUST establish its receipt authority before using it.
 
-A `cancelled` or `superseded` resolution from the request author can also ask its owner to close an open request. It
-passes the same deadline and serialization rules as other candidates. Other received resolution states are observations
-only. No received receipt creates ownership, claims a response, invokes a resolver, or reopens a terminal request.
-A superseded receipt does not authorize a replacement: a replacement is a fresh request with a fresh prompt id and the
-full creation checks. No replacement chain is followed automatically.
+A request-author `cancelled` or `superseded` resolution can ask its owner to close an open request under the
+[feature's deadline and serialization rules](../features/structured-interactions.md#cancellation-and-supersession).
+Other received states are observations only. No received receipt creates ownership, claims a response, invokes a
+resolver, or reopens a terminal request. Replacement requires a fresh request and prompt id with full creation checks;
+a superseded receipt neither authorizes it nor causes automatic replacement-chain traversal.
 
 ## Correlated text fallback
 
@@ -166,10 +165,10 @@ belongs to custom text, including a trailing LF if supplied; custom text cannot 
 is performed. The content's request id MUST equal the reply tag's request id. A response id is mandatory for either
 form, and the fallback event's authenticated author is still the responder.
 
-The owner MUST process a valid fallback through exactly the structured response's authorization and one-shot claim
-path. A reply to a receipt, bare option label, `yes`, `no`, numbered answer, `/approve`, or ambiguous prose MUST NOT be
-inferred as a decision. A malformed reserved-prefix attempt is consumed, not handed to the model. Ordinary uncorrelated
-conversation remains conversation and never resolves a prompt.
+The owner MUST process valid fallback through the structured response's authorization and one-shot claim path. A reply
+to a receipt, bare option label, `yes`, `no`, numbered answer, `/approve`, or ambiguous prose MUST NOT be inferred as a
+decision. [Reserved-prefix interception](#profile-and-dispatch) also applies to malformed fallback. Uncorrelated
+conversation never resolves a prompt.
 
 ## Author withdrawal
 
@@ -188,20 +187,20 @@ overlays an edit; clients MUST disable controls rather than present edited prose
 
 ## Conformance fixtures
 
-[structured-interactions-v1.json](./fixtures/structured-interactions-v1.json) is the normative synthetic input corpus for
-this draft. Every implementation of this feature MUST exercise its applicable wire, authorization, and lifecycle cases.
-It contains no production secrets and supplies event-level evidence, not raw MLS ciphertext or proof of MLS validation.
-A test driver establishes the stated authenticated context before applying app semantics.
+[structured-interactions-v1.json](./fixtures/structured-interactions-v1.json) is this draft's normative synthetic corpus.
+Implementations MUST exercise its applicable wire, authorization, and lifecycle cases. It contains no production secrets
+and supplies event-level evidence, not raw MLS ciphertext or proof of MLS validation. Drivers establish the stated
+authenticated context before applying app semantics.
 
-- `events` maps stable fixture names to complete unsigned app events. Each `id` is computed from the exact canonical
-  Nostr preimage. The original input and golden requests, responses, fallback, and receipts are included.
+- `events` maps stable names to complete unsigned app events with ids computed from their exact canonical Nostr preimages,
+  including the original input and golden requests, responses, fallback, and receipts.
 - `raw_cases` carries malformed payload bytes as lowercase `payload_utf8_hex`. Hex-decode these bytes before strict
   UTF-8 and JSON string decoding. `envelope_reject` requires rejection before feature dispatch; these inputs have no
-  valid canonical event-id claim. Keeping them outside `events` lets scalar-string decoders load the corpus itself.
+  valid canonical event-id claim. Their separation from `events` lets scalar-string decoders load the corpus.
 - `wire_cases` names an event and its expected parser result: `request`, `response`, `resolution`, `fallback`, or
-  `inert`. A syntactically valid record may still fail authorization. A hostile event still has a correct event id
-  unless its expected result is `envelope_reject`. Parsing here checks field syntax and bounds; request-relative
-  selection, authorship, and execution eligibility are checked by scenarios, not inferred from a parser result.
+  `inert`. Event ids are correct, even for hostile events, unless the expected result is `envelope_reject`. Parsing
+  checks syntax and bounds, not authorization: scenarios check request-relative selection, authorship, and execution
+  eligibility.
 - `scenarios` names its initial owner state and context, an ordered list of candidate actions, and expected final state,
   resolver-call count, and dispatch outcome. Actions are serialized owner-observed transitions, not claims that relay
   order chooses distributed state. Scenarios are independent; the defaults below reset before each one.
@@ -227,11 +226,10 @@ For `open`, setup first establishes a valid owner, then applies the context over
 | `group_choices_reviewed: true` | The group-choice use case has received the required nonsensitive-content review. |
 | `known_responses` | Fixture names already delivered to the app but not yet offered to the owner's serialized claim path. |
 
-Each action is one string from the table below, or exactly `{"event": NAME}` to deliver a named event into the owner's
-candidate path, or `{"context": OBJECT}` to apply context observations before the next candidate. An event delivery
-attempts claim immediately when eligible. Successfully claiming invokes the bound resolver once and waits for `ack`.
-`claim_only` deliberately interrupts between the recoverable claim and invocation. Ordinary wire parsing of a response
-does not itself claim it.
+Each action is a table string, exactly `{"event": NAME}` to deliver a named event into the owner's candidate path, or
+`{"context": OBJECT}` to apply observations before the next candidate. Eligible delivery immediately attempts claim,
+invokes the bound resolver once if successful, and waits for `ack`. `claim_only` stops before invocation as defined
+below. Wire parsing alone does not claim a response.
 
 | Action | Meaning |
 | --- | --- |
@@ -253,13 +251,12 @@ names accounts in the canonical state used for encryption; `settled` says whethe
 later returned to two accounts. `expect_encrypt` is whether the queued event may now be encrypted and published.
 All cases use active Stable group state; no case permits owner evidence to be discarded.
 
-`client_cases` supplies named events in receive order to a feature-aware responder client at time `1700000001`, in the
-default effective DM, with optional volatile receipt buffering enabled. No answer was submitted locally. All input fits
-its reorder cache. After consuming all events,
-`expect.receipt` is the selected authenticated receipt's event id or null, `conflict` is the protocol-violation diagnostic,
-and `controls_enabled` says whether the original request can still offer controls. Every case starts without prior
-request knowledge. Unknown references stay non-actionable until already-arriving evidence supplies their context;
-the driver MUST NOT invent a fetch or executable owner from that context.
+`client_cases` supplies events in receive order to a feature-aware responder at time `1700000001` in the default
+effective DM. Optional volatile receipt buffering is enabled; all input fits its reorder cache. Each case starts with
+no request knowledge or locally submitted answer. After all events, `expect.receipt` is the selected authenticated
+receipt's event id or null, `conflict` is the protocol-violation diagnostic, and `controls_enabled` says whether the
+original request can offer controls. Unknown references remain non-actionable until already-arriving evidence supplies
+context; the driver MUST NOT invent a fetch or executable owner.
 
 `operation_cases` starts without owners on one live adapter connection and runtime generation, in the default group
 and membership context. Its actions are serialized owner transitions at backend time `1700000001`:

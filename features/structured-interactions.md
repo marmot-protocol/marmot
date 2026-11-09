@@ -9,8 +9,9 @@ The response resumes one pending operation through its local owner. A response i
 ## Scope and owning surfaces
 
 [Structured interaction records v1](../foundation/structured-interactions-v1.md) owns the exact record bytes,
-parser bounds, text restrictions, fallback grammar, mutation shapes, and fixtures. Implementations MUST use that
-contract rather than infer semantics from displayed text. This feature owns authorization and execution behavior.
+parser bounds, text restrictions, fallback grammar, dispatch interception, author mutations, and fixtures.
+Implementations MUST use that contract rather than infer semantics from displayed text.
+This feature owns authorization and execution behavior.
 
 [Application payloads](../foundation/application-messages.md) owns inner-event identity and MLS sender authentication.
 [Group state](../protocol-core/group-state.md), [convergence](../protocol-core/convergence.md), and
@@ -33,25 +34,22 @@ The owner MUST bind the request to all of the following facts:
 - the original authenticated input event from that responder;
 - the immutable request event, deadline, options, and custom-text permission.
 
-Creation MUST atomically reserve the tuple of authenticated adapter connection, runtime generation, and local
-pending-operation identity for one open prompt. Another prompt MUST NOT reserve that tuple while it is open or claimed,
-or after any prompt has claimed it. Changing the prompt id, responder, or group MUST NOT bypass this check.
-An adapter MUST NOT reuse a pending-operation identity for a different operation within the same runtime generation.
-Cancellation, expiry, or supersession before claim may release the reservation; a claim consumes it until that
-generation ends, including after `resolved` or `indeterminate`. Replacing an unclaimed prompt MUST serialize its
-terminalization with reservation of the replacement. An uncertain claimed operation cannot be retried under a fresh
-prompt id.
+Creation MUST atomically reserve the adapter-connection, runtime-generation, and pending-operation tuple for one
+open prompt. Another prompt MUST NOT reserve it while open or after claim, regardless of id, responder, or group.
+The adapter MUST NOT reuse a pending-operation identity for a different operation within that generation.
+Pre-claim cancellation, expiry, or supersession may release it; claim consumes it until generation end, including
+after `resolved` or `indeterminate`. Replacement MUST serialize the unclaimed prompt's terminalization with the
+new reservation. An uncertain claimed operation cannot be retried under a fresh prompt id.
 
 Runtime names, local pending identities, and resolver handles MUST NOT appear on the wire.
 Receiving a request, restoring a transcript, or importing account history MUST NOT create executable owner state.
 Copies of the same identity or owner store running as independent owners are unsupported. This contract supplies no
 distributed lock and makes no at-most-once claim across such copies.
 
-Before rich emission, the adapter MUST explicitly register support for the requested interaction type and the typed
-response path for its live connection and generation. Support MUST NOT be inferred from an agent name, displayed
-prompt, model output, or support registered by a previous connection. The owner MUST reject unsupported requests as
-locally unavailable. An implementation MAY show an unsupported interaction as inert readable text, but MUST NOT turn
-it into a generic model approval or create an executable request through a text fallback.
+Before rich emission, the adapter MUST register the interaction type and typed response path for its live connection
+and generation. Agent names, displayed prompts, model output, or a previous connection's registration establish no
+support. The owner MUST reject unsupported requests as locally unavailable. They MAY appear as inert readable text,
+but MUST NOT become generic model approvals or executable text fallbacks.
 
 Only the owning adapter MAY receive a validated typed decision. It MUST map an option to the already-bound pending
 operation, not interpret a label, request body, or answer as executable code. A choice with custom text remains typed
@@ -92,8 +90,8 @@ and MUST NOT itself grant approval. The owner MUST retain its immutable identity
 An approval MUST describe the pending action and its scope in the readable request. That description grants no rights
 beyond the pending operation bound by the owner.
 
-The owner MUST recheck current membership and all applicable gates before claim, even when the response authenticated
-in an earlier source epoch. Historical membership authenticates authorship but does not grant current permission.
+The [claim checks](#claim-and-resolver-durability) use current membership and gates even for responses authenticated
+in an earlier source epoch. Historical membership authenticates authorship, not current permission.
 A response from another leaf of the named responder account MAY qualify. Another account, an admin acting for the
 responder, or a sibling transcript import MUST NOT qualify merely because it can display the request.
 
@@ -103,11 +101,10 @@ Before creating a request, the owner MUST reserve fixed bounded capacity for its
 terminal outcome, and receipt publication. Resource refusal MUST NOT leave an executable request behind.
 An owner MUST NOT evict an open or claimed record in a way that permits it to be recreated or claimed again.
 
-Implementations MUST document finite entry-count, byte, and elapsed-time ceilings for optional reorder and evidence
-caches for known prompts. On reaching a ceiling, they MUST discard excess optional input without invocation or generic
-dispatch. The execution path MUST discard unknown request or prompt identities without creating per-identity owner
-state or fetching references. Cache expiry or eviction MUST NOT remove required owner evidence, reopen a prompt, or
-erase a no-replay fact.
+Optional reorder and evidence caches for known prompts MUST have documented finite entry-count, byte, and elapsed-time
+ceilings. Excess input MUST be discarded without invocation or generic dispatch. The execution path MUST discard unknown
+request or prompt identities without per-identity owner state or reference fetches. Eviction or expiry MUST preserve required
+owner evidence and no-replay facts and MUST NOT reopen prompts.
 
 Client presentation MAY buffer structurally valid, MLS-authenticated resolution observations before their requests
 arrive, in a separate volatile cache with documented finite entry-count, byte, and elapsed-time ceilings. Observations
@@ -117,7 +114,7 @@ MUST be discarded. This presentation exception does not buffer unknown executabl
 
 The owner MUST persist the complete `open` record and stable request event before publication can expose the request.
 Publication failures MUST NOT generate another pending operation under the same prompt identity.
-The default lifetime is 300 seconds. The maximum is 900 seconds. A request's deadline MUST NOT be extended.
+The owner MUST use the wire contract's lifetime bounds and default, with the same unextendable deadline.
 Changing the pending operation, responder, options, or deadline requires superseding the old prompt and creating a fresh
 prompt with fresh identities, subject to the same authorization and capacity checks.
 
@@ -168,43 +165,36 @@ The atomic claim MUST make the selected response's stable identity, exact decisi
 resolver-operation identity, claimed state, and consumed pending-operation reservation recoverable before the resolver
 can be invoked. The reservation check and consumption MUST be atomic with the claim, not a separate preflight check.
 An invocation MUST be fenced so interruption cannot make a possibly attempted invocation appear unattempted.
-The resolver MUST be invoked at most once for that prompt. A duplicate response id, repeated event, alternate answer,
-or response from another device MUST NOT invoke it again.
+The resolver MUST be invoked at most once for that prompt, regardless of duplicate events, ids, answers, or devices.
 
-`resolved` requires a recoverable acknowledgement that the bound runtime accepted the selected decision.
-It MUST NOT be presented as proof that a tool or external action succeeded. A missing acknowledgement after a possible
-invocation MUST produce `indeterminate`. The owner MUST NOT retry the resolver, including against the same runtime.
-After a crash, even a claim provably not yet invoked MAY conservatively become `indeterminate` rather than execute.
-Loss of the bound live connection before claim MUST cancel the open prompt. After claim, connection loss without a
-recoverable acceptance acknowledgement MUST produce `indeterminate`, not leave the prompt indefinitely `claimed`.
-The owner MUST document and enforce a finite acknowledgement-wait ceiling, including across restart. Reaching that
-ceiling without a recoverable acceptance acknowledgement MUST produce `indeterminate`. Neither connection loss nor
-wait expiry permits replay, reassignment to a replacement generation, or automatic recreation of the operation.
+`resolved` requires recoverable acknowledgement that the bound runtime accepted the decision, not proof of tool or
+external-action success; presentation MUST preserve that distinction. Missing acknowledgement after possible invocation,
+or connection loss after claim without such acknowledgement, MUST produce `indeterminate`. The owner MUST document
+and enforce a finite acknowledgement-wait ceiling across restart; reaching it without acknowledgement has the same
+result. The resolver MUST NOT be retried, even against the same runtime. Connection loss or wait expiry MUST NOT permit
+replay, reassignment to another generation, or automatic operation recreation. Connection loss before claim MUST cancel
+the open prompt. After a crash, a claim provably not yet invoked MAY conservatively become `indeterminate`.
 
-Before publishing a terminal resolution, the owner MUST make its outcome and stable receipt event bytes recoverable.
-Bounded retry of that same receipt is permitted, subject to normal group outbound gates.
-The owner MUST document finite attempt-count, aggregate-byte, and elapsed-time ceilings for receipt retry and MUST
-retain enough retry accounting that restart cannot reset those ceilings. Exhausting a ceiling MUST stop publication
-attempts and leave the receipt locally marked undelivered. It MUST NOT discard the terminal outcome or its no-replay facts.
-Receipt publication failure MUST NOT change the outcome or retry the resolver.
-A receipt is an observation of the owner's outcome. No network receipt authorizes resolver invocation.
+Before terminal publication, the owner MUST make the outcome and stable receipt bytes recoverable. Retries of those
+same bytes MAY occur under normal outbound gates, with documented finite attempt-count, aggregate-byte, and elapsed-time
+ceilings and restart-persistent accounting. Exhaustion MUST stop publication and mark the receipt locally undelivered,
+without discarding the outcome or no-replay facts. Publication failure MUST NOT change the outcome or retry the resolver.
+Receipts only observe outcomes; no network receipt authorizes invocation.
 
 ## Cancellation and supersession
 
-An authenticated same-author request edit or deletion in the mutation shapes defined by the
-[wire contract](../foundation/structured-interactions-v1.md) MUST cancel an open prompt.
-An edit MUST NOT modify the executable request in place. A replacement needs a fresh prompt.
-The owner MUST apply deadline expiry before considering cancellation or supersession.
+The [author-withdrawal rules](../foundation/structured-interactions-v1.md#author-withdrawal) govern request,
+response, and receipt mutations, including pre-claim candidate invalidation, post-claim irreversibility,
+and display-only changes. The owner MUST apply [deadline expiry](#creation-and-deadlines) before cancellation
+or supersession. A replacement MUST be a fresh prompt, not an in-place executable edit.
 
 A valid same-author `cancelled` or `superseded` resolution MAY request the matching terminal transition while the local
 prompt is open. Other network resolution states are observations only. A resolution from another account MUST NOT
 change owner state. A terminalization request that loses to a claim cannot undo that claim.
 
-Responder or third-party edits, deletions, and moderation MUST NOT reopen a prompt or undo an accepted decision.
-They may affect display under their owning feature rules. A valid response mutation known before claim MUST make that
-response candidate ineligible. A mutation learned after claim MUST NOT roll back the claim or trigger another answer.
 The owner MUST cancel an open prompt if its request, origin, or other required authorization evidence is withdrawn or
-becomes unavailable. Already claimed work follows the no-replay rule even if its display is later withdrawn.
+becomes unavailable. Claimed work remains subject to [resolver durability](#claim-and-resolver-durability),
+even if its display is withdrawn.
 
 ## Client controls and receipts
 
@@ -216,8 +206,8 @@ It MUST distinguish an approval from an ordinary choice and MUST NOT preselect a
 
 Sending an answer MUST disable that local submission's controls while its outcome is pending.
 A local send or an echoed response MUST NOT be displayed as accepted solely because it was published.
-Only a valid resolution from the authenticated original request author in the same group, referencing that request and
-prompt, can supply the network terminal status. A `resolved` receipt identifies the accepted response event.
+Only a resolution satisfying the [wire receipt-authority rules](../foundation/structured-interactions-v1.md#resolution)
+can supply network terminal status or identify the accepted response.
 A client MAY indicate that another device answered, but MUST NOT infer acceptance from a response alone.
 All terminal receipts MUST leave the request's controls disabled. `indeterminate` MUST be shown as an unknown outcome,
 not a denial or invitation to retry the same operation.
@@ -234,13 +224,12 @@ A receipt's disappearance from display MUST NOT clear a locally known claim or t
 Only delivered app payloads can enter the authorization path. Retained ciphertext, a candidate branch, a transport
 acknowledgement, or an imported historical row MUST NOT create permission to execute.
 [Selected-branch application](../protocol-core/convergence.md#applying-the-selected-branch) can withdraw previously
-delivered payloads and state notifications. An open prompt whose required evidence is withdrawn MUST be cancelled.
-An observed unresolved membership view invalidates an open DM-only prompt even if a later pass selects the old view.
+delivered payloads and state notifications. The [cancellation](#cancellation-and-supersession) and permanent
+[DM invalidation](#authorization-and-current-membership) rules apply even if a later pass selects the old view.
 
-A claim or external effect cannot be reversed by convergence. Clients MUST withdraw the affected display when required,
-but MUST NOT roll back the nonexecution facts that prevent another invocation. A redelivered request or response MUST
-NOT recreate the owner, reopen a terminal prompt, or replay claimed work. `Settled` does not promise that a later
-branch change cannot withdraw the prompt or its answer.
+Clients MUST withdraw affected display when required, without reversing a claim or external effect or clearing
+nonexecution facts. Redelivery MUST NOT recreate ownership or bypass the [lifecycle](#durable-prompt-lifecycle).
+`Settled` does not prevent a later branch change from withdrawing the prompt or answer.
 
 [Protocol durability](../protocol-core/durability.md#application-effects-after-restart) still governs effective delivery
 and withdrawal. Feature owners MUST additionally recover their claim, terminal, deadline, and invocation facts before
@@ -267,11 +256,9 @@ Logs and telemetry produced by conforming feature components MUST omit prompt, a
 and account, group, and message identifiers. This includes malformed and rejected candidates, resolver errors, and
 fallback handling. This rule does not claim control over external runtimes, operating systems, relays, or user exports.
 
-Clients without rich support can read the complete fallback body. A responder MAY send the exact text answer defined
-by the [wire contract](../foundation/structured-interactions-v1.md), subject to the same authorization and claim checks.
-Prose such as an uncorrelated yes or a quoted answer MUST NOT authorize an operation.
-Reserved interaction markers and answer prefixes MUST be intercepted before model or slash-command dispatch, including
-malformed, unsupported, stale, duplicate, and losing attempts. Unknown or unowned references MUST be consumed without
-allocating owner state or fetching referenced content. Bounded parsing MUST precede owner-state lookup.
-Unknown versions, types, extra fields, or malformed structured records MUST remain inert and MUST NOT be retried as
-text answers or generic chat instructions. This version defines no migration of prior textual approvals into authority.
+Clients without rich support can read the complete fallback body. A responder MAY send a
+[correlated text fallback](../foundation/structured-interactions-v1.md#correlated-text-fallback), subject to the same
+authorization and claim checks. The wire contract's [dispatch rules](../foundation/structured-interactions-v1.md#profile-and-dispatch)
+keep malformed, unsupported, stale, duplicate, losing, unknown, and unowned attempts out of model and command input.
+Bounded parsing MUST precede owner-state lookup. This version defines no migration of prior textual approvals
+into authority.

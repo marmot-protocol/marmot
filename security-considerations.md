@@ -300,48 +300,23 @@ protocol validity; rejecting a locally unsupported operation does not authorize 
 ### T12. Draft structured interactions and external actions
 
 The optional [structured-interaction feature](features/structured-interactions.md#owner-and-adapter-boundary) and its
-[wire profile](foundation/structured-interactions-v1.md#profile-and-dispatch) are DRAFT proposals pending
+[wire profile](foundation/structured-interactions-v1.md) are drafts pending
 [MDK #858](https://github.com/marmot-protocol/mdk/issues/858), not adopted protections or implementation evidence.
-The following boundaries describe that proposal without extending G1–G7.
+They add no guarantee to G1–G7.
 
-All request fields and answers are group plaintext after decryption. Naming a responder does not create a private
-agent-to-responder channel. The draft limits approvals and custom text to an effective two-account DM and permits
-only maintainer-reviewed nonsensitive opaque choices in larger groups. This does not hide saved content from members
-or later revoke their copies. Its [log/telemetry exclusions](features/structured-interactions.md#privacy-and-downgrade)
-cover conforming feature components, not external services.
+G2 authenticates a sender, not consent. The draft's [dispatch and fallback rules](foundation/structured-interactions-v1.md#profile-and-dispatch)
+and [current-membership checks](features/structured-interactions.md#authorization-and-current-membership) separate
+typed decisions from model input. Bounded parsing limits work; it does not prevent authenticated floods or social deception.
 
-G2 establishes a sender, not consent to a tool action. Malicious prompt bodies, labels, originating input, quoted
-answers, and ordinary chat can spoof an approval interface or instruction. The draft requires an authenticated local
-adapter capability and a live local prompt owner before execution is possible; remote requests and history cannot
-create that owner. The owner rechecks the original immutable response, named responder, current eligible membership,
-group state, deadline, and local runtime binding before claiming a decision. Observed loss of effective-DM conditions
-permanently invalidates an open DM-only prompt, even if membership later returns. See
-[current-membership authorization](features/structured-interactions.md#authorization-and-current-membership).
-The draft also rechecks the effective-DM audience against the encryption state's membership immediately before
-encryption or new publication, including queued requests, responses, fallbacks, and re-encryption. Observed
-invalidation discards unsent DM-only records even if the DM is later restored, without discarding owner evidence.
+Requests and answers remain group plaintext. The effective-DM gate covers creation, claim, queued publication, and
+re-encryption, but cannot revoke members' saved copies or create private delivery within a larger group.
+The [privacy rules](features/structured-interactions.md#privacy-and-downgrade) cover conforming components, not external infrastructure.
 
-The [dispatch rules](foundation/structured-interactions-v1.md#profile-and-dispatch),
-[parser bounds](foundation/structured-interactions-v1.md#bounds-and-text), and
-[correlated fallback](foundation/structured-interactions-v1.md#correlated-text-fallback) separate typed decisions from
-generic model or slash-command input. Malformed or unsupported reserved records cannot be downgraded to chat
-approval; readable content cannot replace structured answer semantics. Unknown or unowned references are consumed
-without fetching or allocating owner state. Bounded parsing and reserved local capacity limit work but do not promise
-availability against authenticated floods or a malicious local adapter.
-
-The [durable local owner](features/structured-interactions.md#claim-and-resolver-durability) reserves each live pending
-operation and serializes its claim across prompt ids. A consumed reservation lasts through that runtime generation.
-Replicated resolution receipts describe observations; none
-authorizes invocation or reconstructs executable owner state. The draft excludes duplicate identities or copied stores
-used by independent owners and supplies no distributed lock. It permits at most one resolver invocation per owned
-prompt: an uncertain result is `indeterminate` and is not retried, even on the same runtime. Retrying a stored receipt
-is distinct from invoking again. `resolved` means the runtime accepted the decision, not that an external tool succeeded.
-
-Branch withdrawal, edits, deletion, moderation, and retention can remove display evidence or invalidate an open prompt.
-They cannot undo a claimed decision or an external tool's effect. Required nonexecution facts survive display
-withdrawal through the deadline; history reconstruction cannot reopen a prompt. This is an external-action boundary,
-not a rollback or exactly-once tool-execution guarantee from G4–G5. See [convergence and
-restart](features/structured-interactions.md#convergence-retention-and-restart) and [SC-086](#sc-086)–[SC-087](#sc-087).
+One [durable owner](features/structured-interactions.md#claim-and-resolver-durability) reserves each live operation
+across prompt ids. Receipts are observations, not a distributed lock; independent owners sharing an identity or copied
+store are unsupported. An uncertain invocation is terminal `indeterminate`, without resolver retry. `resolved` means
+decision acceptance, not tool success. [Convergence and display withdrawal](features/structured-interactions.md#convergence-retention-and-restart)
+cannot undo external effects or reopen execution. [SC-086](#sc-086) and [SC-087](#sc-087) cover these boundaries.
 
 ## Detailed scenario catalogue
 
