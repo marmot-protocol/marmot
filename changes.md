@@ -24,6 +24,11 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
   canonical state makes the last active admin. A departing admin may enter `Leaving` once it durably records a leave it
   accepted, before sending the admin-policy update that removes its account from the admin list; that update is then its
   first step-down. `group-state.md` names this second way into `Leaving`.
+- Once a leave has started, the client designates no other admin for it. If canonical state then makes the account the
+  last active admin, the leave is blocked, and a client not yet in `Leaving` durably records the leave and enters
+  `Leaving` then. Any accepted update that removes the account from the admin list counts as its step-down, whichever
+  admin committed it: a departing admin that another admin demoted sends no admin-policy update and goes on to its
+  SelfRemove.
 - The step-down and blocked-leave rules no longer wait for canonical state to make the account an admin again: they
   apply whenever canonical state makes a `Leaving` member's account an active admin. So a step-down that is refused,
   never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
@@ -31,8 +36,8 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
   and recorded after that admin stepped down.
 - Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
   publish-before-apply.
-- A client that enters `Leaving` only after its SelfRemove, as before, stays conformant; the bytes on the wire do not
-  change.
+- A client that enters `Leaving` only after its SelfRemove, as before, stays conformant, except that a leave blocked
+  before then enters `Leaving` when it is blocked; the bytes on the wire do not change.
 
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 

@@ -54,13 +54,16 @@ in its authenticated source-epoch state is invalid (see
 [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) for the definition of an active admin).
 
 A departing admin MUST first complete an accepted admin-policy update that removes its account from the admin list
-before creating a SelfRemove proposal. The admin-policy update is an admin-gated group-state change and is valid only if
-at least one other active admin remains, so the last active admin MUST designate another admin before leaving. These
-requirements apply when a leave starts, which is when the client accepts the request to leave: a client MUST NOT accept
-a leave for an account that canonical state makes the last active admin. Once a leave has started, a `Leaving` member
-whose account canonical state makes an active admin follows the step-down and blocked-leave rules below instead, even
-when the account has become the last active admin since the leave was accepted; while its leave is blocked it designates
-no other admin and sends no admin-policy update.
+before creating a SelfRemove proposal. Any accepted update that removes the account from the admin list meets this
+requirement, whichever admin committed it. The admin-policy update is an admin-gated group-state change and is valid
+only if at least one other active admin remains, so the last active admin MUST designate another admin before leaving.
+These requirements apply when a leave starts, which is when the client accepts the request to leave: a client MUST NOT
+accept a leave for an account that canonical state makes the last active admin. Once a leave has started, the client
+designates no other admin for it, whether or not it has entered `Leaving` yet. If canonical state then makes the account
+the last active admin, even though another active admin remained when the leave was accepted, the leave is blocked: a
+client not yet in `Leaving` durably records the leave and enters `Leaving` then, and the blocked-leave rules below
+apply. A `Leaving` member whose account canonical state makes an active admin while another active admin remains
+follows the step-down rules below.
 
 This two-step flow applies to voluntary departure through SelfRemove only. An admin removed by another admin does not
 use it: the removing commit drops the account's last leaf and its `admins` key together, under the coupling rule in
@@ -70,12 +73,14 @@ The leaving member MUST NOT commit its own SelfRemove proposal. A remaining auth
 
 After handing the SelfRemove proposal to the active transport, the leaving member enters a local `Leaving` state for
 that group. A departing admin MAY enter `Leaving` earlier, once it durably records a leave it accepted and before it
-sends the admin-policy update that removes its account from the admin list. Its account is then an active admin in
-canonical state, so the step-down and blocked-leave rules below apply from that point: that admin-policy update is its
-first step-down, and if canonical state makes the account the last active admin when the leave is recorded, the leave is
-blocked. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits other than the
-step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for a source
-epoch it has generated none for, while canonical state does not make its account an active admin. Transport-level
+sends the admin-policy update that removes its account from the admin list. From that point the rules below apply to
+whatever canonical state makes the account. While the account is an active admin and another active admin remains, that
+admin-policy update is its first step-down. If canonical state makes the account the last active admin, including when
+the leave is recorded, the leave is blocked. If canonical state does not make the account an active admin, for example
+because another admin's update removed it from the admin list first, the client sends no admin-policy update and follows
+the SelfRemove rules. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits other than
+the step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for a
+source epoch it has generated none for, while canonical state does not make its account an active admin. Transport-level
 retries of the same serialized SelfRemove proposal MAY continue, but the client MUST NOT generate fresh SelfRemove
 proposal bytes for the same source epoch. Group states on different branches that share an epoch number are different
 source epochs for this rule. The `Leaving` state is backed by a durable leave request. While canonical state contains
