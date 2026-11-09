@@ -16,17 +16,23 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 ## 2026-11-08: A departing admin may enter Leaving before its step-down
 
 Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
-Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior) and
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/group-state.md](./protocol-core/group-state.md) and
 [protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md).
 
-- A departing admin may enter `Leaving` once it durably records its leave, before sending the admin-policy update that
-  removes its account from the admin list; that update is then its first step-down. The step-down and blocked-leave
-  rules no longer wait for canonical state to make the account an admin again: they apply whenever canonical state makes
-  a `Leaving` member's account an active admin. So a step-down that is refused, never published or lost to another
-  branch should be sent again from the selected state's admin list, and a leave whose account canonical state makes the
-  last active admin is blocked, even before any step-down is accepted. A client must not record a leave request or enter
-  `Leaving` for the last active admin. A client that enters `Leaving` only after its SelfRemove, as before, stays
-  conformant; the bytes on the wire do not change.
+- A leave starts when the client accepts the request to leave, and a client must not accept one for an account that
+  canonical state makes the last active admin. A departing admin may enter `Leaving` once it durably records a leave it
+  accepted, before sending the admin-policy update that removes its account from the admin list; that update is then its
+  first step-down. `group-state.md` names this second way into `Leaving`.
+- The step-down and blocked-leave rules no longer wait for canonical state to make the account an admin again: they
+  apply whenever canonical state makes a `Leaving` member's account an active admin. So a step-down that is refused,
+  never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
+  account canonical state makes the last active admin is blocked, including one accepted while another admin remained
+  and recorded after that admin stepped down.
+- Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
+  publish-before-apply.
+- A client that enters `Leaving` only after its SelfRemove, as before, stays conformant; the bytes on the wire do not
+  change.
 
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
