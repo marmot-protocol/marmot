@@ -32,7 +32,7 @@ transition. A replacement conversation creates a new group.
 held while convergence input is unresolved, because they MUST be encrypted against the selected canonical state.
 
 A member that has sent a SelfRemove proposal also enters the local `Leaving` gate defined in
-[member-departure.md](./member-departure.md); a departing admin MAY enter it earlier, once it durably records its leave
+[member-departure.md](./member-departure.md); a departing admin enters it earlier, once it durably records its leave
 and before its step-down. `Leaving` is not a canonical group lifecycle state: the MLS group state still contains the
 member until a commit removes it. It is a durable outbound restriction on the leaving client and may span multiple
 epoch-bound SelfRemove proposals.

@@ -38,11 +38,11 @@ A commit that removes an account's last member leaf MUST also remove that accoun
 commit. An admin-policy state that lists an account with no member leaf is invalid in the resulting epoch, so in valid
 group state every key in `admins` names an active admin.
 
-This coupling rule and the SelfRemove flow below are two different departure paths, not two orderings of one
-transition. The coupling rule binds commits that remove a listed account's last leaf — for example, an admin removing
-another listed account's last device with a Remove proposal. SelfRemove never triggers the coupling rule: a SelfRemove
-proposal whose sender is still an active admin is invalid at the sender check, so a departing admin's admin-policy
-update always lands in an earlier commit, and the account is no longer listed in `admins` by the time its SelfRemove
+This coupling rule and the SelfRemove flow below are two different departure paths, not two orderings of one transition.
+The coupling rule binds commits that remove a listed account's last leaf — for example, an admin removing another listed
+account's last device with a Remove proposal. SelfRemove never triggers the coupling rule: a SelfRemove proposal whose
+sender is still an active admin is invalid at the sender check, so the admin-policy update that removes a departing
+admin always lands in an earlier commit, and the account is no longer listed in `admins` by the time its SelfRemove
 commits.
 
 ## Update
@@ -125,8 +125,8 @@ SelfRemove is special:
 
 - a non-admin member MAY self-remove
 - a SelfRemove proposal whose sender is an active admin in its authenticated source-epoch state is invalid
-- a departing admin first commits an admin-policy update that removes it from `admins` (valid only if at least one
-  other active admin remains), then uses SelfRemove
+- a departing admin's account is first removed from `admins` by an accepted admin-policy update, normally its own
+  step-down (valid only if at least one other active admin remains), then it uses SelfRemove
 - any remaining authorized member MAY commit a SelfRemove proposal
 - the committer of a SelfRemove proposal MUST NOT be the leaving member
 

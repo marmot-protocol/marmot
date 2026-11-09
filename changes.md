@@ -13,31 +13,31 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
-## 2026-11-08: A departing admin may enter Leaving before its step-down
+## 2026-11-09: A departing admin enters Leaving before its step-down
 
 Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
 Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
-[protocol-core/group-state.md](./protocol-core/group-state.md) and
-[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md).
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md#authorization).
 
 - A leave starts when the client accepts the request to leave, and a client must not accept one for an account that
-  canonical state makes the last active admin. A departing admin may enter `Leaving` once it durably records a leave it
-  accepted, before sending the admin-policy update that removes its account from the admin list; that update is then its
-  first step-down. `group-state.md` names this second way into `Leaving`.
-- Once a leave has started, the client designates no other admin for it. If canonical state then makes the account the
-  last active admin, the leave is blocked, and a client not yet in `Leaving` durably records the leave and enters
-  `Leaving` then. Any accepted update that removes the account from the admin list counts as its step-down, whichever
-  admin committed it: a departing admin that another admin demoted sends no admin-policy update and goes on to its
-  SelfRemove.
+  canonical state makes the last active admin. Once a leave has started, the client designates no other admin for it.
+- A departing admin enters `Leaving` as soon as it durably records a leave it accepted, before any admin-policy update,
+  instead of after its SelfRemove. Other members still enter it after their SelfRemove. `group-state.md` names this
+  second way into `Leaving`.
 - The step-down and blocked-leave rules no longer wait for canonical state to make the account an admin again: they
   apply whenever canonical state makes a `Leaving` member's account an active admin. So a step-down that is refused,
   never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
-  account canonical state makes the last active admin is blocked, including one accepted while another admin remained
-  and recorded after that admin stepped down.
+  account canonical state makes the last active admin is blocked, including one accepted while another admin remained.
+- The account must be off the admin list in canonical state before its SelfRemove. An update another admin committed
+  counts as its step-down while canonical state contains it, and the client then sends no admin-policy update.
+  `admin-policy-v1.md`'s SelfRemove summary now says the account is removed from `admins` by an accepted update, not
+  necessarily its own.
 - Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
   publish-before-apply.
-- A client that enters `Leaving` only after its SelfRemove, as before, stays conformant, except that a leave blocked
-  before then enters `Leaving` when it is blocked; the bytes on the wire do not change.
+- A client that refuses an admin's leave until its account has been demoted stays conformant: its leave then starts as a
+  non-admin's. The bytes on the wire do not change.
 
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
