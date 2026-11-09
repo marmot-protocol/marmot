@@ -329,7 +329,8 @@ approval; readable content cannot replace structured answer semantics. Unknown o
 without fetching or allocating owner state. Bounded parsing and reserved local capacity limit work but do not promise
 availability against authenticated floods or a malicious local adapter.
 
-The [durable local owner](features/structured-interactions.md#claim-and-resolver-durability) serializes one winning claim.
+The [durable local owner](features/structured-interactions.md#claim-and-resolver-durability) reserves each live pending
+operation and serializes its claim across prompt ids. A consumed reservation lasts through that runtime generation.
 Replicated resolution receipts describe observations; none
 authorizes invocation or reconstructs executable owner state. The draft excludes duplicate identities or copied stores
 used by independent owners and supplies no distributed lock. It permits at most one resolver invocation per owned
@@ -2176,10 +2177,11 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   [current-membership authorization](features/structured-interactions.md#authorization-and-current-membership), and
   [privacy](features/structured-interactions.md#privacy-and-downgrade).
 - **Verification status:** Unverified — candidate check: mix spoofed bodies, malformed reserved records, wrong
-  responders, group changes, expired answers, and unknown references; require no generic dispatch or unauthorized
-  claim. Queue requests, responses, and fallbacks, then add a third account before encryption/publication; repeat
-  with re-encryption and DM restoration, requiring no unsent DM-only disclosure or lost owner evidence. Inspect
-  the audience from another member's client without claiming private delivery.
+  responders, group changes, expired answers, and unknown references. Require no generic dispatch for reserved
+  attempts and no unauthorized claim for any input. Ordinary chat that merely quotes an answer may enter generic
+  dispatch without resolving a prompt. Queue requests, responses, and fallbacks before a third-account join; repeat
+  with encryption, publication, re-encryption, and DM restoration. Require no unsent DM-only disclosure or lost owner
+  evidence. Inspect the audience from another member's client without claiming private delivery.
 
 <a id="sc-087"></a>
 
@@ -2193,7 +2195,8 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Affected property and assumptions:** G4–G5 and A4–A6 concern canonical state and recoverable application
   observations. They do not supply distributed execution exclusion or rollback of an external tool.
 - **Mitigations:** The draft binds one durable local owner to its adapter and runtime generation, records claim
-  evidence before invocation, and serializes one winning transition. Unknown invocation outcomes become
+  evidence and consumption of the pending-operation reservation before invocation, and serializes one winning
+  transition across prompt ids. Unknown invocation outcomes become
   `indeterminate` without retry. Receipts are observational, and only their stored publication bytes may be retried.
   Withdrawal invalidates open prompts without reopening claimed or terminal prompts.
 - **Residual risk:** Independent owners sharing an identity or copied store are unsupported; the draft provides
@@ -2205,8 +2208,9 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   withdrawal](foundation/structured-interactions-v1.md#author-withdrawal), and existing [application
   observation](protocol-core/durability.md#application-effects-after-restart).
 - **Verification status:** Unverified — candidate check: interrupt before and after claim/invocation, replay
-  competing answers and receipts, then withdraw dependencies and reconstruct history; require at most one owner
-  invocation and no reopening. An external-effect rollback result is neither expected nor established.
+  competing answers and receipts, attempt two prompts for one live pending operation, then withdraw dependencies
+  and reconstruct history; require at most one invocation per live pending operation and no reopening.
+  An external-effect rollback result is neither expected nor established.
 
 ## Questions for maintainer review
 

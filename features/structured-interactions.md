@@ -33,6 +33,15 @@ The owner MUST bind the request to all of the following facts:
 - the original authenticated input event from that responder;
 - the immutable request event, deadline, options, and custom-text permission.
 
+Creation MUST atomically reserve the tuple of authenticated adapter connection, runtime generation, and local
+pending-operation identity for one open prompt. Another prompt MUST NOT reserve that tuple while it is open or claimed,
+or after any prompt has claimed it. Changing the prompt id, responder, or group MUST NOT bypass this check.
+An adapter MUST NOT reuse a pending-operation identity for a different operation within the same runtime generation.
+Cancellation, expiry, or supersession before claim may release the reservation; a claim consumes it until that
+generation ends, including after `resolved` or `indeterminate`. Replacing an unclaimed prompt MUST serialize its
+terminalization with reservation of the replacement. An uncertain claimed operation cannot be retried under a fresh
+prompt id.
+
 Runtime names, local pending identities, and resolver handles MUST NOT appear on the wire.
 Receiving a request, restoring a transcript, or importing account history MUST NOT create executable owner state.
 Copies of the same identity or owner store running as independent owners are unsupported. This contract supplies no
@@ -96,8 +105,15 @@ An owner MUST NOT evict an open or claimed record in a way that permits it to be
 
 Implementations MUST document finite entry-count, byte, and elapsed-time ceilings for optional reorder and evidence
 caches for known prompts. On reaching a ceiling, they MUST discard excess optional input without invocation or generic
-dispatch. Unknown request or prompt identities MUST be discarded without creating per-identity state or fetching
-references. Cache expiry or eviction MUST NOT remove required owner evidence, reopen a prompt, or erase a no-replay fact.
+dispatch. The execution path MUST discard unknown request or prompt identities without creating per-identity owner
+state or fetching references. Cache expiry or eviction MUST NOT remove required owner evidence, reopen a prompt, or
+erase a no-replay fact.
+
+Client presentation MAY buffer structurally valid, MLS-authenticated resolution observations before their requests
+arrive, in a separate volatile cache with documented finite entry-count, byte, and elapsed-time ceilings. Observations
+MUST remain non-actionable until the original request establishes their receipt authority. They MUST NOT create durable
+per-identity state, executable owner records, reference fetches, or generic dispatch. Excess or expired observations
+MUST be discarded. This presentation exception does not buffer unknown executable requests or responses for later claim.
 
 The owner MUST persist the complete `open` record and stable request event before publication can expose the request.
 Publication failures MUST NOT generate another pending operation under the same prompt identity.
@@ -146,9 +162,11 @@ Before `open` becomes `claimed`, every check below MUST pass in the same seriali
 5. The response author is the named responder, and its request reference and prompt identity match the immutable request.
 6. Its option is one offered by that request, or its custom text is permitted by that request and the wire contract.
 7. No known cancellation, supersession, mutation, withdrawal, or source invalidation makes the candidate ineligible.
+8. This prompt still holds the pending-operation reservation, and no prompt has previously claimed that operation.
 
 The atomic claim MUST make the selected response's stable identity, exact decision and authentication evidence,
-resolver-operation identity, and claimed state recoverable before the resolver can be invoked.
+resolver-operation identity, claimed state, and consumed pending-operation reservation recoverable before the resolver
+can be invoked. The reservation check and consumption MUST be atomic with the claim, not a separate preflight check.
 An invocation MUST be fenced so interruption cannot make a possibly attempted invocation appear unattempted.
 The resolver MUST be invoked at most once for that prompt. A duplicate response id, repeated event, alternate answer,
 or response from another device MUST NOT invoke it again.
@@ -233,6 +251,8 @@ Normal application-effect replay MUST NOT be treated as permission to replay an 
 [retained history](../protocol-core/retained-history.md) may shorten prompt availability but MUST NOT extend execution.
 An owner MUST retain enough nonexecution facts through at least the original deadline to reject stale or duplicate
 answers, and longer while a claim, possible invocation, or receipt obligation remains unresolved.
+The consumed pending-operation reservation MUST additionally survive until the bound runtime generation ends;
+pruning an old prompt MUST NOT permit that operation to be claimed through a new prompt.
 Pruning request or answer content MUST NOT reconstruct an open prompt from history or clear a no-replay restriction.
 If required content must be removed before claim, the owner MUST cancel rather than prolong availability.
 

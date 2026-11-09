@@ -136,7 +136,8 @@ of the state, without quoting those values.
 
 Only a resolution from the original request-author account has receipt meaning. A receipt MUST match both request id
 and prompt id in the same group. A missing request or accepted response does not justify recursive fetching or control
-activation; clients may display an unresolved, non-actionable observation within their bounded cache policy.
+activation. Clients MAY buffer an unresolved, non-actionable resolution observation in the feature's bounded volatile
+presentation cache until the original request arrives; they MUST establish its receipt authority before using it.
 
 A `cancelled` or `superseded` resolution from the request author can also ask its owner to close an open request. It
 passes the same deadline and serialization rules as other candidates. Other received resolution states are observations
@@ -174,8 +175,8 @@ conversation remains conversation and never resolves a prompt.
 
 For this optional profile, an authenticated kind-`1009` edit with exactly `[["e", target_event_id]]` uses the existing
 [edit rules](./application-messages.md#message-edits-kind-1009). An inner kind-`5` withdrawal uses exactly the same single
-`e` tag and an empty `content`. These are not outer transport deletion requests. The target MUST be a known request or
-response in this group. Its original authenticated author MUST equal the mutation's authenticated author.
+`e` tag and an empty `content`. These are not outer transport deletion requests. The target MUST be a known request,
+response, or resolution in this group. Its original authenticated author MUST equal the mutation's authenticated author.
 
 A request-author mutation cancels only an open request. It never replaces stored request semantics. A response-author
 mutation known before claim makes that response ineligible; it does not cancel the request. After claim, neither
@@ -253,10 +254,25 @@ later returned to two accounts. `expect_encrypt` is whether the queued event may
 All cases use active Stable group state; no case permits owner evidence to be discarded.
 
 `client_cases` supplies named events in receive order to a feature-aware responder client at time `1700000001`, in the
-default effective DM. No answer was submitted locally. All input fits its reorder cache. After consuming all events,
+default effective DM, with optional volatile receipt buffering enabled. No answer was submitted locally. All input fits
+its reorder cache. After consuming all events,
 `expect.receipt` is the selected authenticated receipt's event id or null, `conflict` is the protocol-violation diagnostic,
 and `controls_enabled` says whether the original request can still offer controls. Every case starts without prior
 request knowledge. Unknown references stay non-actionable until already-arriving evidence supplies their context;
 the driver MUST NOT invent a fetch or executable owner from that context.
+
+`operation_cases` starts without owners on one live adapter connection and runtime generation, in the default group
+and membership context. Its actions are serialized owner transitions at backend time `1700000001`:
+
+- `{"create": REQUEST, "pending_operation": LOCAL_NAME}` attempts local owner creation for the named request event,
+  binding that synthetic local pending identity. All creation checks other than reservation uniqueness pass.
+- `{"answer": RESPONSE}` offers that named response to its referenced prompt's claim path and invokes once if claimed.
+- `{"ack": REQUEST}` records proven acceptance for that claimed request.
+- `{"supersede": REQUEST}` terminalizes that open request before claim; its pending operation remains live for replacement.
+- `{"indeterminate": REQUEST}` loses the acknowledgement after invocation of that claimed request.
+
+`expect.states` gives each attempted request's final owner state, using `absent` for rejected creation.
+`resolver_calls` counts invocations across all prompts, not one count per prompt. Local names are fixture labels only
+and MUST NOT become wire fields. No action imports authority from a network request or invokes ordinary model dispatch.
 
 The corpus does not certify cryptography, runtime compliance, implementation durability, or deployment safety.

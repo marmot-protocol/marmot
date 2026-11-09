@@ -26,9 +26,10 @@ mdk#858; it does not authorize implementation or rollout.
 - Proposes a bounded, versioned kind-9 request, response, and resolution profile, exact inner-event references,
   immutable semantics, author withdrawal, and correlated text fallback. Unsupported or malformed interaction
   attempts remain inert and stay out of ordinary model and command input.
-- Supporting owners would bind one named current responder to a live adapter generation, serialize one durable claim,
-  enforce a non-extending deadline, and never retry an uncertain resolver invocation. Receipts report outcomes without
-  granting execution authority. Session-wide and persistent approval are excluded.
+- Supporting owners would bind one named current responder to a live adapter generation, reserve pending operations
+  across prompt ids, serialize one durable claim, enforce a non-extending deadline, and never retry an uncertain
+  resolver invocation. Receipts only report outcomes; they grant no execution authority. Session-wide and persistent
+  approval are excluded.
 - Approvals and custom text would require an effective two-account DM, rechecked at creation, encryption and queued
   publication, and claim. Larger groups permit only reviewed nonsensitive opaque choices. A membership change cannot
   turn queued custom text into a group-visible answer; branch withdrawal cannot undo an external action.

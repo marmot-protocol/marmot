@@ -2380,6 +2380,78 @@
       ],
       "content": "Brief."
     },
+    "approval_second": {
+      "id": "104d2ae099a3a9c28a80fc90f5417c6c83a13b55927094ce71ece3b112b67e1a",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "second_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID second_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "allow_second": {
+      "id": "8f5e18e31fd67f5ef6295582097dd034ce8d72689ec9fdf0e1ff7d788ffcb610",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "second_0123456789abcdef",
+          "second_response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "104d2ae099a3a9c28a80fc90f5417c6c83a13b55927094ce71ece3b112b67e1a",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "resolution_delete": {
+      "id": "796fadee14ce8998b786f9016f665a2dd89f1f66580fa561f92abf83d0ab69ef",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000001,
+      "kind": 5,
+      "tags": [
+        [
+          "e",
+          "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef"
+        ]
+      ],
+      "content": ""
+    },
     "bad_envelope_id": {
       "id": "0000000000000000000000000000000000000000000000000000000000000000",
       "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
@@ -2851,6 +2923,16 @@
     {
       "name": "group_brief",
       "event": "group_brief",
+      "expect": "response"
+    },
+    {
+      "name": "approval_second",
+      "event": "approval_second",
+      "expect": "request"
+    },
+    {
+      "name": "allow_second",
+      "event": "allow_second",
       "expect": "response"
     }
   ],
@@ -3717,6 +3799,141 @@
         "receipt": null,
         "conflict": false,
         "controls_enabled": false
+      }
+    },
+    {
+      "name": "resolution_withdrawal_keeps_terminal",
+      "events": [
+        "approval",
+        "allow",
+        "resolved",
+        "resolution_delete"
+      ],
+      "expect": {
+        "receipt": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+        "conflict": false,
+        "controls_enabled": false
+      }
+    }
+  ],
+  "operation_cases": [
+    {
+      "name": "concurrent_prompts_same_operation",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "answer": "allow_second"
+        },
+        {
+          "ack": "approval"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "resolved",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "claimed_operation_cannot_be_reprompted",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "indeterminate": "approval"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "indeterminate",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "resolved_operation_stays_consumed",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "ack": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "resolved",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "unclaimed_supersession_releases_operation",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "supersede": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "answer": "allow_second"
+        },
+        {
+          "ack": "approval_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "superseded",
+          "approval_second": "resolved"
+        },
+        "resolver_calls": 1
       }
     }
   ]
