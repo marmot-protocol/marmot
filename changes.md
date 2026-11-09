@@ -31,9 +31,9 @@ Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#
   never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
   account canonical state makes the last active admin is blocked, including one accepted while another admin remained.
 - The account must be off the admin list in canonical state before its SelfRemove. An update another admin committed
-  counts as its step-down while canonical state contains it, and the client then sends no admin-policy update.
-  `admin-policy-v1.md`'s SelfRemove summary now says the account is removed from `admins` by an accepted update, not
-  necessarily its own.
+  counts as its step-down while canonical state contains it, and the client then sends no admin-policy update and
+  publishes its SelfRemove. `admin-policy-v1.md`'s SelfRemove summary now says the account is removed from `admins` by
+  an accepted update, not necessarily its own.
 - Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
   publish-before-apply.
 - A client that refuses an admin's leave until its account has been demoted stays conformant: its leave then starts as a

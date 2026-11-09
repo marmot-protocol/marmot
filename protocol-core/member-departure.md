@@ -72,16 +72,18 @@ A departing admin enters a local `Leaving` state for that group as soon as it du
 before it sends any admin-policy update. Any other leaving member enters `Leaving` after handing its SelfRemove proposal
 to the active transport. From then on the rules below apply to whatever canonical state makes the account: while it is
 an active admin and another active admin remains, the client sends the step-down; while it is the last active admin, the
-leave is blocked; while it is not an active admin, the client sends no admin-policy update and follows the SelfRemove
-rules. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits other than the step-down
-below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for a source epoch it
-has generated none for, while canonical state does not make its account an active admin. Transport-level retries of the
-same serialized SelfRemove proposal MAY continue, but the client MUST NOT generate fresh SelfRemove proposal bytes for
-the same source epoch. Group states on different branches that share an epoch number are different source epochs for
-this rule. The `Leaving` state is backed by a durable leave request. While canonical state contains the local leaf, it
-ends only if the member repairs or rejoins through a future specified recovery flow, its user cancels a blocked leave
-(below), or the client discards the local group copy. An accepted removing Commit moves the copy to the removed
-condition described below.
+leave is blocked; while it is not an active admin, whether its own step-down or another admin's update took it off the
+list, the client sends no admin-policy update and publishes its SelfRemove: it retries one it already generated for the
+current source epoch, and otherwise SHOULD publish a fresh SelfRemove proposal for that source epoch once local
+group-state commits are allowed. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits
+other than the step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove
+proposal for a source epoch it has generated none for, while canonical state does not make its account an active admin.
+Transport-level retries of the same serialized SelfRemove proposal MAY continue, but the client MUST NOT generate fresh
+SelfRemove proposal bytes for the same source epoch. Group states on different branches that share an epoch number are
+different source epochs for this rule. The `Leaving` state is backed by a durable leave request. While canonical state
+contains the local leaf, it ends only if the member repairs or rejoins through a future specified recovery flow, its
+user cancels a blocked leave (below), or the client discards the local group copy. An accepted removing Commit moves the
+copy to the removed condition described below.
 
 Applying an accepted removing Commit ends `Leaving` and puts the local copy in the terminal removed condition below.
 The client MAY release the durable leave request after it durably records that condition.
