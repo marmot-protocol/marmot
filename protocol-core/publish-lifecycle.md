@@ -26,8 +26,8 @@ apply any pending state, because another authorized member commits it (see
 [member-departure.md](./member-departure.md)). Publish-before-apply binds any remaining member that prepares a
 SelfRemove-only Commit, not the leaver. If the leaver's durable leave request later requires a fresh SelfRemove proposal
 for a new source epoch, that proposal is another standalone proposal publish and still has no pending state. A leaver's
-step-down, including a repeated step-down while `Leaving` ([member-departure.md](./member-departure.md#behavior)), is
-an ordinary admin policy update and follows publish-before-apply like any other.
+step-down, including one sent while `Leaving` ([member-departure.md](./member-departure.md#behavior)), is an ordinary
+admin policy update and follows publish-before-apply like any other.
 
 ## Shape
 

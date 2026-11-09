@@ -13,6 +13,32 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-09: A departing admin enters Leaving before its step-down
+
+Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md#authorization).
+
+- A leave starts when the client accepts the request to leave, and a client must not accept one for an account that
+  canonical state makes the last active admin. Once a leave has started, the client designates no other admin for it.
+- A departing admin enters `Leaving` as soon as it durably records a leave it accepted, before any admin-policy update,
+  instead of after its SelfRemove. Other members still enter it after their SelfRemove. `group-state.md` names this
+  second way into `Leaving`.
+- The step-down and blocked-leave rules no longer wait for canonical state to make the account an admin again: they
+  apply whenever canonical state makes a `Leaving` member's account an active admin. So a step-down that is refused,
+  never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
+  account canonical state makes the last active admin is blocked, including one accepted while another admin remained.
+- The account must be off the admin list in canonical state before its SelfRemove. An update another admin committed
+  counts as its step-down while canonical state contains it, and the client then sends no admin-policy update and
+  publishes its SelfRemove. `admin-policy-v1.md`'s SelfRemove summary now says the account is removed from `admins` by
+  an accepted update, not necessarily its own.
+- Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
+  publish-before-apply.
+- A client that refuses an admin's leave until its account has been demoted stays conformant: its leave then starts as a
+  non-admin's. The bytes on the wire do not change.
+
 ## 2026-11-08: Repeated step-down, blocked leave and Cancel
 
 Pull request: [marmot#501](https://github.com/marmot-protocol/marmot/pull/501), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
