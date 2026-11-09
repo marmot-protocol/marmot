@@ -3876,6 +3876,35 @@
       }
     },
     {
+      "name": "indeterminate_operation_stays_consumed",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "indeterminate": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "indeterminate",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
       "name": "resolved_operation_stays_consumed",
       "actions": [
         {
