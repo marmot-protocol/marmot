@@ -101,6 +101,7 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 
 | Kind    | Name                                | Layer                               | Document                                                |
 | ------- | ----------------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| `5`     | Author interaction withdrawal (draft) | Marmot app payload                | [structured-interactions-v1.md](./structured-interactions-v1.md#author-withdrawal) |
 | `9`     | Default chat message                | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `444`   | Marmot welcome rumor                | Nostr welcome transport             | [nostr.md](../transports/nostr.md)                      |
 | `445`   | Marmot group message                | Nostr group transport               | [nostr.md](../transports/nostr.md)                      |
@@ -172,6 +173,14 @@ notices that clients render separately from human chat.
 Kind `1009` is reserved for message edits — an in-place replacement of a prior chat message's text. The event carries a
 single `e` tag referencing the edited event id and `content` is the replacement plaintext. Clients render the latest
 replacement onto the original row's body, never as a separate transcript row.
+
+## App-payload interaction namespace
+
+The draft [structured interaction profile](./structured-interactions-v1.md) reserves tag prefixes
+`marmot-interaction` and `marmot-option` for kind-9 interaction descriptors and options, and the content prefix
+`marmot-answer` for correlated text answers. Version `1` is the proposed profile; unknown or malformed attempts
+are inert and never fall through to ordinary agent input. This assigns no MLS capability or new event kind.
+Its inner kind-`5` withdrawal meaning is distinct from outer NIP-09 KeyPackage deletion.
 
 ## ALPN and protocol identifiers
 

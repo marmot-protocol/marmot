@@ -25,6 +25,9 @@ foundation/
   key-packages.md
   canonical-encoding.md
   application-messages.md
+  structured-interactions-v1.md
+  fixtures/
+    structured-interactions-v1.json
   wire-envelopes.md
   mls-protocol.md
   conformance.md
@@ -70,6 +73,7 @@ features/
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
+  structured-interactions.md
   push-notifications.md
   device-pairing.md
 ideas/

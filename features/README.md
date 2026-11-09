@@ -22,6 +22,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [encrypted-media-v1.md](./encrypted-media-v1.md) - frozen legacy encrypted-media v1 wire behavior.
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text
   streams, anchored by normal durable final messages.
+- [structured-interactions.md](./structured-interactions.md) - draft agent-neutral approvals and single-select
+  questions, with one authoritative owner and authenticated responses and receipts.
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
 - [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
   account's existing devices.
