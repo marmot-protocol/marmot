@@ -14,7 +14,7 @@ continuity.
 ## Scope and evidence
 
 The model covers the adopted foundation, protocol core, components, Nostr binding, and optional adopted features.
-Experimental QUIC previews, draft moderation, superseded profiles, and ideas are identified separately in the
+Experimental QUIC previews, draft moderation and structured interactions, superseded profiles, and ideas are identified separately in the
 [coverage map](#surface-coverage). Supporting an optional feature brings its additional boundaries into scope.
 
 The identifiers below are local reference points for later formalization, not additional protocol requirements.
@@ -297,6 +297,27 @@ experimental profiles do not acquire current-profile authority by appearing in t
 [canonical encodings](foundation/canonical-encoding.md). Application resource limits remain separate from deterministic
 protocol validity; rejecting a locally unsupported operation does not authorize rewriting the group's requirements.
 
+### T12. Draft structured interactions and external actions
+
+The optional [structured-interaction feature](features/structured-interactions.md#owner-and-adapter-boundary) and its
+[wire profile](foundation/structured-interactions-v1.md) are drafts pending
+[MDK #858](https://github.com/marmot-protocol/mdk/issues/858), not adopted protections or implementation evidence.
+They add no guarantee to G1–G7.
+
+G2 authenticates a sender, not consent. The draft's [dispatch and fallback rules](foundation/structured-interactions-v1.md#profile-and-dispatch)
+and [current-membership checks](features/structured-interactions.md#authorization-and-current-membership) separate
+typed decisions from model input. Bounded parsing limits work; it does not prevent authenticated floods or social deception.
+
+Requests and answers remain group plaintext. The effective-DM gate covers creation, claim, queued publication, and
+re-encryption, but cannot revoke members' saved copies or create private delivery within a larger group.
+The [privacy rules](features/structured-interactions.md#privacy-and-downgrade) cover conforming components, not external infrastructure.
+
+One [durable owner](features/structured-interactions.md#claim-and-resolver-durability) reserves each live operation
+across prompt ids. Receipts are observations, not a distributed lock; independent owners sharing an identity or copied
+store are unsupported. An uncertain invocation is terminal `indeterminate`, without resolver retry. `resolved` means
+decision acceptance, not tool success. [Convergence and display withdrawal](features/structured-interactions.md#convergence-retention-and-restart)
+cannot undo external effects or reopen execution. [SC-086](#sc-086) and [SC-087](#sc-087) cover these boundaries.
+
 ## Detailed scenario catalogue
 
 This catalogue complements the overview above. SC identifiers are stable references; titles and grouping may evolve,
@@ -325,6 +346,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 | [SC-080](#sc-080)–[SC-081](#sc-081) | Message edits and the provenance of system notices. |
 | [SC-082](#sc-082)–[SC-084](#sc-084) | Moderation authority, reversible display effects and report privacy (draft). |
 | [SC-085](#sc-085) | Push record replay after a device leaf is removed. |
+| [SC-086](#sc-086)–[SC-087](#sc-087) | Structured-decision spoofing and local-owner execution/recovery boundaries (DRAFT). |
 
 <a id="sc-001"></a>
 
@@ -2103,6 +2125,68 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   records/tombstones, then relay the removed leaf's old proof and an owner-signed nonexistent leaf index; record
   the current ambiguity and require a specified result before claiming removed-device record exclusion.
 
+<a id="sc-086"></a>
+
+### SC-086. A draft interaction is substituted with a spoofed or stale answer
+
+- **Attacker and prerequisites:** A current member can send authenticated chat or interaction-shaped records to
+  a client implementing the optional DRAFT feature; prompt contents and labels remain untrusted.
+- **Attack sequence:** The attacker quotes an answer, substitutes readable content for structured fields, attaches
+  malformed reserved tags, or supplies a correlated fallback from the wrong account or after membership changes.
+  Generic model dispatch or a stale membership check turns the input into approval. A queued DM-only record can
+  also disclose its contents if it is encrypted or newly published after another account joins.
+- **Affected property and assumptions:** G2 authenticates authorship under A1–A3, not consent. The draft adds
+  local owner, responder, current-membership, and deadline gates; it does not enlarge G1 or G7.
+- **Mitigations:** Under the draft, intercept reserved records before generic dispatch and use the exact bounded
+  parser and correlated-fallback grammar. Recheck the immutable candidate against its live local owner before
+  claim. Permanently invalidate open DM-only prompts on observed loss of effective-DM conditions. Recheck the
+  encryption state's audience before encryption or new publication, including queued records and re-encryption;
+  discard unsent DM-only records after observed invalidation while preserving owner evidence. Unsupported
+  interactions remain inert readable text.
+- **Residual risk:** A malicious prompt can still socially mislead its responder. All group members can read
+  prompt fields and answers; the two-account gate is not a separate private channel or protection from copied
+  plaintext. Limits do not eliminate flood costs or defend against a compromised host.
+- **Normative owners:** DRAFT [dispatch](foundation/structured-interactions-v1.md#profile-and-dispatch),
+  [bounds](foundation/structured-interactions-v1.md#bounds-and-text), [fallback
+  grammar](foundation/structured-interactions-v1.md#correlated-text-fallback),
+  [current-membership authorization](features/structured-interactions.md#authorization-and-current-membership), and
+  [privacy](features/structured-interactions.md#privacy-and-downgrade).
+- **Verification status:** Unverified — candidate check: mix spoofed bodies, malformed reserved records, wrong
+  responders, group changes, expired answers, and unknown references. Require no generic dispatch for reserved
+  attempts and no unauthorized claim for any input. Ordinary chat that merely quotes an answer may enter generic
+  dispatch without resolving a prompt. Queue requests, responses, and fallbacks before a third-account join; repeat
+  with encryption, publication, re-encryption, and DM restoration. Require no unsent DM-only disclosure or lost owner
+  evidence. Inspect the audience from another member's client without claiming private delivery.
+
+<a id="sc-087"></a>
+
+### SC-087. A draft decision is invoked again after uncertainty or branch withdrawal
+
+- **Attacker and prerequisites:** A member replays responses or receipts while the local owner restarts, loses
+  its runtime connection, or observes withdrawal of request, origin, or required evidence.
+- **Attack sequence:** After a claim, the resolver may have accepted a decision but its acknowledgement is lost.
+  Recovery retries the resolver, imports a receipt as authority, or reconstructs an open owner from history.
+  A later branch change is incorrectly treated as undoing an external action.
+- **Affected property and assumptions:** G4–G5 and A4–A6 concern canonical state and recoverable application
+  observations. They do not supply distributed execution exclusion or rollback of an external tool.
+- **Mitigations:** The draft binds one durable local owner to its adapter and runtime generation, records claim
+  evidence and consumption of the pending-operation reservation before invocation, and serializes one winning
+  transition across prompt ids. Unknown invocation outcomes become
+  `indeterminate` without retry. Receipts are observational, and only their stored publication bytes may be retried.
+  Withdrawal invalidates open prompts without reopening claimed or terminal prompts.
+- **Residual risk:** Independent owners sharing an identity or copied store are unsupported; the draft provides
+  no distributed lock. Avoiding retry can leave work unresolved. Acknowledged decisions do not establish tool
+  success, and deletion or branch withdrawal cannot reverse external effects.
+- **Normative owners:** DRAFT [owner lifecycle and recovery](features/structured-interactions.md#claim-and-resolver-durability),
+  [convergence and restart](features/structured-interactions.md#convergence-retention-and-restart),
+  [resolution records](foundation/structured-interactions-v1.md#resolution), [author
+  withdrawal](foundation/structured-interactions-v1.md#author-withdrawal), and existing [application
+  observation](protocol-core/durability.md#application-effects-after-restart).
+- **Verification status:** Unverified — candidate check: interrupt before and after claim/invocation, replay
+  competing answers and receipts, attempt two prompts for one live pending operation, then withdraw dependencies
+  and reconstruct history; require at most one invocation per live pending operation and no reopening.
+  An external-effect rollback result is neither expected nor established.
+
 ## Questions for maintainer review
 
 These are limits or ambiguities found while reviewing the current scenario paths, not new requirements or claims that
@@ -2148,6 +2232,7 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
 | [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
+| [Structured-interaction wire profile](foundation/structured-interactions-v1.md), [structured-interaction feature](features/structured-interactions.md) | T12; optional DRAFT pending MDK #858, not adopted: group-visible decisions, current-membership gates, bounded dispatch, local owner versus replicated receipts, uncertain invocation and irreversible external effects; [SC-086](#sc-086)–[SC-087](#sc-087). |
 
 ## Formalization and review boundary
 

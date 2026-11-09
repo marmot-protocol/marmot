@@ -1,0 +1,3969 @@
+{
+  "profile": "marmot-interaction/1",
+  "accounts": {
+    "agent": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "responder": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+    "third": "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9"
+  },
+  "events": {
+    "origin": {
+      "id": "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [],
+      "content": "Please check the report."
+    },
+    "approval": {
+      "id": "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "choice_dm": {
+      "id": "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "choice_group": {
+      "id": "7f26ff122550f45c688c9a9597f5d5af33bc6be750dc5a3efe77310db4d7ec48",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "group_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Choose the public report length: brief = Brief; full = Full. No custom text. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID group_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "allow": {
+      "id": "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "deny": {
+      "id": "b1cc0cff30191390c8f3f3edc3bd642d4d4e5b73750cdbbaa9539d8d5ee467f5",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "denial_0123456789abcdef",
+          "option",
+          "deny"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Deny."
+    },
+    "custom": {
+      "id": "970e1366aa31cdf88e4493ee3a84743996e60b83acfe6565c19552f96e047eda",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          "Résumé\nبالعربية"
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "fallback": {
+      "id": "81f91febaf82ffc0538109733326f4c96f87c61caed97207f08cf3b11d47bde9",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_root": {
+      "id": "4133c633ca5f045421e8f85f78eec43368bd7c14e10b0ffa219368bbda306942",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "root"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_custom": {
+      "id": "e58e47de474956658919a848af8bbcffd945bb977e8622b09c9adce844665cfc",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896 choice_0123456789abcdef response_0123456789abcdef text\nTwo paragraphs.\n"
+    },
+    "resolved": {
+      "id": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "resolved",
+          "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction resolved."
+    },
+    "expired": {
+      "id": "989cb1186668dba6a50701417ba8dd7e8aeb42ef8f4e394eca52be24e91b08ce",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "expired",
+          ""
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction expired."
+    },
+    "cancelled": {
+      "id": "53f329c7c9e4ef84fba4a2753fcad5d83298cb0c47458ec2dbead5505d0d5139",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "cancelled",
+          ""
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction cancelled."
+    },
+    "superseded": {
+      "id": "19aa20abe0770884af35b5742f82f3a0b9ca590148c670f8e543b272e6ede166",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "superseded",
+          ""
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction superseded."
+    },
+    "indeterminate": {
+      "id": "1a431acce50d2ab15964b9c809844070bcbf9de54e17a17272f22fcf955fb373",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "indeterminate",
+          ""
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction indeterminate."
+    },
+    "unknown_version": {
+      "id": "cbe0e0c2b53473655468ae10710f6ae7a44c82f9e1465d2394c546988a8893d7",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "2",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "unknown_record": {
+      "id": "7b2a6dbcc61b4d286e3f1c00c4a9de24526ce217b141ee1a00b6dac59c3a1c65",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "form",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "duplicate_descriptor": {
+      "id": "e0cf2ad6f3f91d353aa67d862c76aa848c6eb2e6a6f0c489a293527f68dfc2d3",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ],
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "duplicate_reference": {
+      "id": "b67bd6becb068d80afd1cf075b7e4afcdf32d67a6b88e7248a7949c6e13728c2",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "duplicate_option": {
+      "id": "355eda843dc9b465d2357d5209c34281e767436c7cac6d45a6501224657d0afb",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "extra_tag": {
+      "id": "c2d5aa7b0f354f29b30e35cf4baae9c105e7a5d26bc054a559f4583d6cf70174",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ],
+        [
+          "p",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "reordered_tags": {
+      "id": "e8c7f1b910d00dec4b3c552ff96b777caa2fb9896187848a7dc664c6fd26f042",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "reordered_choices": {
+      "id": "d5b8a20b79c452f9faab24b1b775a9d42c5d61665a0f9a1c71ef8859c9e5e686",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "short_reference": {
+      "id": "e0f35f923dc6e92d1944d77601f4953c17fb31a7112627f092b4ccd27da89afa",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "reference_hint": {
+      "id": "da743c7db2f60611f2c7b67f0aea73b735aed6bdd1df80f8b3ee5a91d775a8d0",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "wss://relay.invalid",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "reference_extra": {
+      "id": "3d8783487c3c4750127ec225758cb14c6ea545578c9aa82f8f5b7f2021ca996d",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "uppercase_reference": {
+      "id": "944e64ec961baea4d6d2e9173c920678e59148be4c8a815fedbb821ba84327af",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491CA72CAD1B5CDB26B1781282B3A1EBDEA2AFDAAED56B49C0E22FA04F123C3F",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "bad_account": {
+      "id": "e4b9a8aba5c1383a712a630713d4fd34c6bfeb2e0220112e760304f8e85cd2be",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "empty_prompt": {
+      "id": "a8647707e2043f763397a5248fedb498a1f3069f80f6d91392c85679cf34a8af",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "long_prompt": {
+      "id": "7b41ea19cc9bf988829703c3d7d22d0acaff98984ef7847d789e0ea8001907a6",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "nonascii_prompt": {
+      "id": "3d0f4981adb7551703ff32f3003cc4195596c3d6bbe87703454a8e73cf2bde7d",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prömpt",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "leading_zero_expiry": {
+      "id": "70972643fd0900b2a2b416d37da5a977649921c588be5abe6ea840b150213bac",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "01700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "ttl_zero": {
+      "id": "f66680fb08de3be0efa8ca6c49b691cdd243d8a6d4e265e27a83708bbfc315e5",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000000",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "ttl_901": {
+      "id": "260558df136c1b8b262c0aca7675c563aa64586ad66aef4dd90be63cf02e914f",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000901",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "negative_expiry": {
+      "id": "49fd220018709bbb4dd58dea17c95c3fe91180b27049aa41094f24471d4d1439",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "-1",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "unsafe_timestamp": {
+      "id": "4d7b3d79cfb04299b8e7d6f5e1c453549f3b94e7b6ce4a8da74696234c18ff44",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "9007199254740992",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "boolean_custom": {
+      "id": "ace5bc24881325f1a6b542c76154fb53298371e2a8b6420937a7c86a40897781",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "true"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "approval_custom": {
+      "id": "be367eeeded69f56dd4a7e9eefe787c800832207c9695e6580f5900121144e6d",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "approval_reordered": {
+      "id": "5809dc1a770e26d3fe116bf37477ac6ac0a3df818caf73213d0fca5dd0715f2f",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "approval_always": {
+      "id": "74769f3e923da078a70534b8c0efb7c88b1857d5afb2e3038c5a01b7e96c64c8",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "always",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "approval_label": {
+      "id": "ee62fa400de91f8707151955b8ee09be014f6fca3334af3f8a48aa0dcebf24c9",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Always allow"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "no_options": {
+      "id": "a7d7a82eaa680a06baa1261cb2492223cd44dc303b71f1276d8ad7d020f5a55f",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "five_options": {
+      "id": "bff54cb2a4b06db250ff643d2a65f3de5ace276b5a369e318e87a8cd014dc429",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ],
+        [
+          "marmot-option",
+          "z0",
+          "Extra 0"
+        ],
+        [
+          "marmot-option",
+          "z1",
+          "Extra 1"
+        ],
+        [
+          "marmot-option",
+          "z2",
+          "Extra 2"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "duplicate_labels": {
+      "id": "697c67e82ea1b26119cb8c1c7195b861dbf1fde89deaab2c45a2d84f3396e1af",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Brief"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "label_129_bytes": {
+      "id": "e7ab588316a826e0334f21b3ea77d9f488557fe95c4c89ab60573a2ae1fc2cdd",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééx"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "label_lf": {
+      "id": "1a7f751858acd621f76a8ca51c7e71ca5d68c6b08e861aeb8889ce34067e2541",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief\nAllow"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "label_bidi": {
+      "id": "5d4126eedc3d98942514be56d2dd6fa8ca6dc74ee5bd575a23d01256865a2e80",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "Brief‮"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "content_cr": {
+      "id": "058fc9257526155f374da89ab6507e46c12fd01b4da16f5023d287baaa7140ae",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id.\r"
+    },
+    "content_nul": {
+      "id": "8cff22a9fca2495998467c62b0774ec8b6f18ed47466b67bf828fd386d5a7f7f",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id.\u0000"
+    },
+    "content_bidi_isolate": {
+      "id": "0edc4701ac85b1dca79966ce0301a3fc01d84b877b03bc922040a4cfbd403733",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id.⁦"
+    },
+    "content_4097": {
+      "id": "39b452f73ca9cd033f3f720625cc60ce89489b7c718c00f616d1ae85cfb9f3f0",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "empty_content": {
+      "id": "077866364b11a618a5768d81b4097129aed58d433284981d971abfe691ed8e1b",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": ""
+    },
+    "text_2049": {
+      "id": "f54dc6b85f42da11af8fe2aeab67f3298bacf24938208f42bca9b2e7eed7a10a",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "text_empty": {
+      "id": "ef3cd1083b6f7f7723f767aa12aba5c6a61adb7bf3d0205330ad0032c5f9b265",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          ""
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "text_tab": {
+      "id": "aed7029f65dc5032297f781815cb34aa7db9afc13ff66fd52b00117271f21838",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          "a\tb"
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "unknown_selection": {
+      "id": "1d44a245b3c951f1426974407d5d282e222db740b911bd526cff44649698ff89",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "url",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "extra_response_field": {
+      "id": "3ac559eaa7867941ce678131197008dc8a45358917f06b21cd96ce02ba3bdec4",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once",
+          "extra"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "unknown_terminal": {
+      "id": "9f29de92a22a06979ec1d47519acaac441f607a8cca37e05642e1fcfac887a6e",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "success",
+          "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction resolved."
+    },
+    "missing_accepted_id": {
+      "id": "7c4d962b7f81cd6df57bd9f42871178fe933c221335bfcf73bf089dd8743f4e9",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "resolved",
+          ""
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction resolved."
+    },
+    "indeterminate_evidence": {
+      "id": "b09f700ed4ca85f405f88a0d7aaee598817a6c228aa2989b0d5e543293a2ac3a",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "indeterminate",
+          "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction indeterminate."
+    },
+    "fallback_trailing_lf": {
+      "id": "7bf1614668a6992ef8d50075fb621b3874c6caf8a2fb2d21e277fef356bcb1d0",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once\n"
+    },
+    "fallback_double_space": {
+      "id": "426ad8e32a3bc933fb51d127e888561db0554cec6bf94004f35e7956900a7451",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer  1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_wrong_version": {
+      "id": "1966f5492f6f64a7d1be326f27e4c0338bb794a332d2b71544ee3f67c25e6994",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 2 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_id_mismatch": {
+      "id": "a0a6168b0fb0c55f76c11c7e47122a0f66b67ff1812e4c934cc33b58bf9855a4",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_empty_text": {
+      "id": "2efafe71c01b7f162bc341729dee2fee63eee51a6cfe67f39966c3b052dc1719",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896 choice_0123456789abcdef response_0123456789abcdef text\n"
+    },
+    "fallback_unmarked": {
+      "id": "ee659c4dc65a26d396d8301987fd35f22547f44f6abfc56a1a13dc0a54714f0a",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_extra_tag": {
+      "id": "46b00e3e497d184af2f0e7dc4fcd47c4191d67021b260c8ab042ff13e7771711",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ],
+        [
+          "p",
+          "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_reserved_tag": {
+      "id": "fc3a4a9bdf1a0247f5d259cb8eb55fa37e60690c5f5424bf7b254162d03c3602",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "0"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_duplicate_reply": {
+      "id": "f2ea9dfe8d253f77d76546797da0bd8fd87e8d6f9fbf4eaa46d39c98bb311898",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "fallback_root_equals_reply": {
+      "id": "d0b992273f7852ee1e401809491429ae251362f9f79337ca6539183a61fa62de",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "root"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "marmot-answer 1 491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f prompt_0123456789abcdef response_0123456789abcdef option once"
+    },
+    "extension_8193": {
+      "id": "76c3675b5367babfaa78f80db0433bca040d889b351abb79f118fd9e4c9e52b9",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "wrong_kind": {
+      "id": "996e6763871ed5ce38a635952c7483f3890a61ff5a6285270d3d8cd480290e87",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 1201,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "legacy_yes": {
+      "id": "65d114b901a08cfe7b71098b84e256c84ea6dd984b6af0ca762486542f90b9b8",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "yes"
+    },
+    "legacy_number": {
+      "id": "9b4654abed0284a779316fd4e5a593319cbaf9d625fbf0a184ae907b9af374e4",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "1"
+    },
+    "legacy_command": {
+      "id": "902e068d026f1a75b41096c7c7bbe3fe77845c06c392f4ce4397967204ba631d",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "/approve"
+    },
+    "max_ttl": {
+      "id": "955f6482524dfb0b781f34065e399dd975d834840aa9c93302ed6be124d08a32",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "prompt_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000900",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000900. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID prompt_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "label_128_bytes": {
+      "id": "57adef794839a60a809f45f70973e097f786da0ae2bb813c9a454a82da1fc2fa",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "choice_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "choice",
+          "1700000300",
+          "1"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "brief",
+          "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        ],
+        [
+          "marmot-option",
+          "full",
+          "Full"
+        ]
+      ],
+      "content": "Which report length? brief = Brief; full = Full. Custom text permitted. Expires at Unix time 1700000300. Reply with marmot-answer 1 REQUEST_ID choice_0123456789abcdef RESPONSE_ID option OPTION_ID, or replace option OPTION_ID with text followed by one newline and your answer. Copy REQUEST_ID from message details and choose a fresh RESPONSE_ID."
+    },
+    "text_2048_bytes": {
+      "id": "60ae2eab8fa6cc94b6aaee80ca92918d4e8217afdee70a6299e08beca34f4ac4",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "choice_0123456789abcdef",
+          "custom_0123456789abcdef",
+          "text",
+          "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        ],
+        [
+          "e",
+          "c66e99a010b8137a56060392a71ffe3d94894c5036f43ab3e37f2ea64f37b896",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom report preference."
+    },
+    "response_wrong_option": {
+      "id": "06cc8e16333ea9e5e910194066e3f02d1fa585a6782aae3443ad378a16f825d8",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "always"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "response_wrong_author": {
+      "id": "f1f46e6046dd88811b66e1c3c4616e71f4f68323dd0c08a8af6512c5e4cb21ff",
+      "pubkey": "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "response_wrong_prompt": {
+      "id": "b50d581e69155e6a4c2bac45f9ebc8aa38972e57dad7d01c0473b3c96a102dfb",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "another_prompt",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "response_to_receipt": {
+      "id": "f5b0bbe1fd42aa4836640c53c244cb29d2b5c41c682561884d6b5c882b63b8e5",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "conflicting_receipt": {
+      "id": "e97b381fa2521ef6a11ed6714a188c2aa3a9ef493ecca5c9baf00dfcdf261ca4",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "resolved",
+          "b1cc0cff30191390c8f3f3edc3bd642d4d4e5b73750cdbbaa9539d8d5ee467f5"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction resolved."
+    },
+    "wrong_receipt_author": {
+      "id": "d6275a309a683f09e776b0276ae008eeb4543a769f5ac0169ed015e7654065e2",
+      "pubkey": "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "resolution",
+          "prompt_0123456789abcdef",
+          "resolved",
+          "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Interaction resolved."
+    },
+    "request_edit": {
+      "id": "be6548b0ff69346b7cc44ef819badafbda57caab0ae5d55a2a2bfaa241106dde",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 1009,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f"
+        ]
+      ],
+      "content": "Changed question"
+    },
+    "request_delete": {
+      "id": "7bfa3df8804c5898d366c25ac4811ca8d671ff830eaf4e7a712cc46a2648618d",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 5,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f"
+        ]
+      ],
+      "content": ""
+    },
+    "third_party_delete": {
+      "id": "ec93c5adeeb6daa21022217f00c8d4319dd735bd5e37535855c4b3343863d89b",
+      "pubkey": "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
+      "created_at": 1700000000,
+      "kind": 5,
+      "tags": [
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f"
+        ]
+      ],
+      "content": ""
+    },
+    "response_delete": {
+      "id": "6686cc967c3eada62f72487d8bb652af01aab515b69e0320184f7fcc7e39bc28",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 5,
+      "tags": [
+        [
+          "e",
+          "020a8e47f62437e4beb58a711786a529e5cad5caaa19d08f3349f70a35976af5"
+        ]
+      ],
+      "content": ""
+    },
+    "group_custom": {
+      "id": "a383ae2c1fcab53d2ac5f53f65107b14a2867c0d8a476da149104e7e3f057b6d",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "group_0123456789abcdef",
+          "grouptext_0123456789abcdef",
+          "text",
+          "Brief, please."
+        ],
+        [
+          "e",
+          "7f26ff122550f45c688c9a9597f5d5af33bc6be750dc5a3efe77310db4d7ec48",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Custom preference."
+    },
+    "group_brief": {
+      "id": "5a8b6f5b67968b89dacae418df377ccecd9d9e336110154acd6ba8e5628afa7f",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "group_0123456789abcdef",
+          "groupbrief_0123456789abcdef",
+          "option",
+          "brief"
+        ],
+        [
+          "e",
+          "7f26ff122550f45c688c9a9597f5d5af33bc6be750dc5a3efe77310db4d7ec48",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Brief."
+    },
+    "approval_second": {
+      "id": "104d2ae099a3a9c28a80fc90f5417c6c83a13b55927094ce71ece3b112b67e1a",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "request",
+          "second_0123456789abcdef",
+          "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+          "approval",
+          "1700000300",
+          "0"
+        ],
+        [
+          "e",
+          "4a10d5e55f4a00f377a4fb418c14e6bb44932fc0dab8f8392cbb555832a675b8",
+          "",
+          "reply"
+        ],
+        [
+          "marmot-option",
+          "once",
+          "Allow once"
+        ],
+        [
+          "marmot-option",
+          "deny",
+          "Deny"
+        ]
+      ],
+      "content": "Allow the agent to read report.txt once? Options: once = Allow once; deny = Deny. Expires at Unix time 1700000300. To answer without buttons, reply to this message with: marmot-answer 1 REQUEST_ID second_0123456789abcdef RESPONSE_ID option OPTION_ID. Copy REQUEST_ID from this message details; choose a fresh RESPONSE_ID and an option id."
+    },
+    "allow_second": {
+      "id": "8f5e18e31fd67f5ef6295582097dd034ce8d72689ec9fdf0e1ff7d788ffcb610",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "second_0123456789abcdef",
+          "second_response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "104d2ae099a3a9c28a80fc90f5417c6c83a13b55927094ce71ece3b112b67e1a",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    },
+    "resolution_delete": {
+      "id": "796fadee14ce8998b786f9016f665a2dd89f1f66580fa561f92abf83d0ab69ef",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "created_at": 1700000001,
+      "kind": 5,
+      "tags": [
+        [
+          "e",
+          "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef"
+        ]
+      ],
+      "content": ""
+    },
+    "bad_envelope_id": {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "pubkey": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+      "created_at": 1700000000,
+      "kind": 9,
+      "tags": [
+        [
+          "marmot-interaction",
+          "1",
+          "response",
+          "prompt_0123456789abcdef",
+          "response_0123456789abcdef",
+          "option",
+          "once"
+        ],
+        [
+          "e",
+          "491ca72cad1b5cdb26b1781282b3a1ebdea2afdaaed56b49c0e22fa04f123c3f",
+          "",
+          "reply"
+        ]
+      ],
+      "content": "Allow once."
+    }
+  },
+  "raw_cases": [
+    {
+      "name": "lone_surrogate",
+      "payload_utf8_hex": "7b226964223a2235666132326530353531363662656261313930323833623139616362313062316162643465326161326261303638653530313530373939623239303936656266222c227075626b6579223a2237396265363637656639646362626163353561303632393563653837306230373032396266636462326463653238643935396632383135623136663831373938222c22637265617465645f6174223a313730303030303030302c226b696e64223a392c2274616773223a5b5b226d61726d6f742d696e746572616374696f6e222c2231222c2272657175657374222c2263686f6963655f30313233343536373839616263646566222c2263363034376639343431656437643664333034353430366539356330376364383563373738653462386365663363613761626163303962393563373039656535222c2263686f696365222c2231373030303030333030222c2231225d2c5b2265222c2234613130643565353566346130306633373761346662343138633134653662623434393332666330646162386638333932636262353535383332613637356238222c22222c227265706c79225d2c5b226d61726d6f742d6f7074696f6e222c226272696566222c2242726965665c7564383030225d2c5b226d61726d6f742d6f7074696f6e222c2266756c6c222c2246756c6c225d5d2c22636f6e74656e74223a225768696368207265706f7274206c656e6774683f206272696566203d2042726965663b2066756c6c203d2046756c6c2e20437573746f6d2074657874207065726d69747465642e204578706972657320617420556e69782074696d6520313730303030303330302e205265706c792077697468206d61726d6f742d616e73776572203120524551554553545f49442063686f6963655f3031323334353637383961626364656620524553504f4e53455f4944206f7074696f6e204f5054494f4e5f49442c206f72207265706c616365206f7074696f6e204f5054494f4e5f49442077697468207465787420666f6c6c6f776564206279206f6e65206e65776c696e6520616e6420796f757220616e737765722e20436f707920524551554553545f49442066726f6d206d6573736167652064657461696c7320616e642063686f6f7365206120667265736820524553504f4e53455f49442e227d",
+      "expect": "envelope_reject"
+    },
+    {
+      "name": "duplicate_object_key",
+      "payload_utf8_hex": "7b226964223a2230323061386534376636323433376534626562353861373131373836613532396535636164356361616131396430386633333439663730613335393736616635222c227075626b6579223a2263363034376639343431656437643664333034353430366539356330376364383563373738653462386365663363613761626163303962393563373039656535222c22637265617465645f6174223a313730303030303030302c226b696e64223a392c226b696e64223a392c2274616773223a5b5b226d61726d6f742d696e746572616374696f6e222c2231222c22726573706f6e7365222c2270726f6d70745f30313233343536373839616263646566222c22726573706f6e73655f30313233343536373839616263646566222c226f7074696f6e222c226f6e6365225d2c5b2265222c2234393163613732636164316235636462323662313738313238326233613165626465613261666461616564353662343963306532326661303466313233633366222c22222c227265706c79225d5d2c22636f6e74656e74223a22416c6c6f77206f6e63652e227d",
+      "expect": "envelope_reject"
+    },
+    {
+      "name": "invalid_utf8",
+      "payload_utf8_hex": "7b22636f6e74656e74223a22ff227d",
+      "expect": "envelope_reject"
+    }
+  ],
+  "wire_cases": [
+    {
+      "name": "approval",
+      "event": "approval",
+      "expect": "request"
+    },
+    {
+      "name": "choice_dm",
+      "event": "choice_dm",
+      "expect": "request"
+    },
+    {
+      "name": "choice_group",
+      "event": "choice_group",
+      "expect": "request"
+    },
+    {
+      "name": "allow",
+      "event": "allow",
+      "expect": "response"
+    },
+    {
+      "name": "deny",
+      "event": "deny",
+      "expect": "response"
+    },
+    {
+      "name": "custom",
+      "event": "custom",
+      "expect": "response"
+    },
+    {
+      "name": "fallback",
+      "event": "fallback",
+      "expect": "fallback"
+    },
+    {
+      "name": "fallback_root",
+      "event": "fallback_root",
+      "expect": "fallback"
+    },
+    {
+      "name": "fallback_custom",
+      "event": "fallback_custom",
+      "expect": "fallback"
+    },
+    {
+      "name": "resolved",
+      "event": "resolved",
+      "expect": "resolution"
+    },
+    {
+      "name": "expired",
+      "event": "expired",
+      "expect": "resolution"
+    },
+    {
+      "name": "cancelled",
+      "event": "cancelled",
+      "expect": "resolution"
+    },
+    {
+      "name": "superseded",
+      "event": "superseded",
+      "expect": "resolution"
+    },
+    {
+      "name": "indeterminate",
+      "event": "indeterminate",
+      "expect": "resolution"
+    },
+    {
+      "name": "unknown_version",
+      "event": "unknown_version",
+      "expect": "inert"
+    },
+    {
+      "name": "unknown_record",
+      "event": "unknown_record",
+      "expect": "inert"
+    },
+    {
+      "name": "duplicate_descriptor",
+      "event": "duplicate_descriptor",
+      "expect": "inert"
+    },
+    {
+      "name": "duplicate_reference",
+      "event": "duplicate_reference",
+      "expect": "inert"
+    },
+    {
+      "name": "duplicate_option",
+      "event": "duplicate_option",
+      "expect": "inert"
+    },
+    {
+      "name": "extra_tag",
+      "event": "extra_tag",
+      "expect": "inert"
+    },
+    {
+      "name": "reordered_tags",
+      "event": "reordered_tags",
+      "expect": "inert"
+    },
+    {
+      "name": "reordered_choices",
+      "event": "reordered_choices",
+      "expect": "inert"
+    },
+    {
+      "name": "short_reference",
+      "event": "short_reference",
+      "expect": "inert"
+    },
+    {
+      "name": "reference_hint",
+      "event": "reference_hint",
+      "expect": "inert"
+    },
+    {
+      "name": "reference_extra",
+      "event": "reference_extra",
+      "expect": "inert"
+    },
+    {
+      "name": "uppercase_reference",
+      "event": "uppercase_reference",
+      "expect": "inert"
+    },
+    {
+      "name": "bad_account",
+      "event": "bad_account",
+      "expect": "inert"
+    },
+    {
+      "name": "empty_prompt",
+      "event": "empty_prompt",
+      "expect": "inert"
+    },
+    {
+      "name": "long_prompt",
+      "event": "long_prompt",
+      "expect": "inert"
+    },
+    {
+      "name": "nonascii_prompt",
+      "event": "nonascii_prompt",
+      "expect": "inert"
+    },
+    {
+      "name": "leading_zero_expiry",
+      "event": "leading_zero_expiry",
+      "expect": "inert"
+    },
+    {
+      "name": "ttl_zero",
+      "event": "ttl_zero",
+      "expect": "inert"
+    },
+    {
+      "name": "ttl_901",
+      "event": "ttl_901",
+      "expect": "inert"
+    },
+    {
+      "name": "negative_expiry",
+      "event": "negative_expiry",
+      "expect": "inert"
+    },
+    {
+      "name": "unsafe_timestamp",
+      "event": "unsafe_timestamp",
+      "expect": "inert"
+    },
+    {
+      "name": "boolean_custom",
+      "event": "boolean_custom",
+      "expect": "inert"
+    },
+    {
+      "name": "approval_custom",
+      "event": "approval_custom",
+      "expect": "inert"
+    },
+    {
+      "name": "approval_reordered",
+      "event": "approval_reordered",
+      "expect": "inert"
+    },
+    {
+      "name": "approval_always",
+      "event": "approval_always",
+      "expect": "inert"
+    },
+    {
+      "name": "approval_label",
+      "event": "approval_label",
+      "expect": "inert"
+    },
+    {
+      "name": "no_options",
+      "event": "no_options",
+      "expect": "inert"
+    },
+    {
+      "name": "five_options",
+      "event": "five_options",
+      "expect": "inert"
+    },
+    {
+      "name": "duplicate_labels",
+      "event": "duplicate_labels",
+      "expect": "inert"
+    },
+    {
+      "name": "label_129_bytes",
+      "event": "label_129_bytes",
+      "expect": "inert"
+    },
+    {
+      "name": "label_lf",
+      "event": "label_lf",
+      "expect": "inert"
+    },
+    {
+      "name": "label_bidi",
+      "event": "label_bidi",
+      "expect": "inert"
+    },
+    {
+      "name": "content_cr",
+      "event": "content_cr",
+      "expect": "inert"
+    },
+    {
+      "name": "content_nul",
+      "event": "content_nul",
+      "expect": "inert"
+    },
+    {
+      "name": "content_bidi_isolate",
+      "event": "content_bidi_isolate",
+      "expect": "inert"
+    },
+    {
+      "name": "content_4097",
+      "event": "content_4097",
+      "expect": "inert"
+    },
+    {
+      "name": "empty_content",
+      "event": "empty_content",
+      "expect": "inert"
+    },
+    {
+      "name": "text_2049",
+      "event": "text_2049",
+      "expect": "inert"
+    },
+    {
+      "name": "text_empty",
+      "event": "text_empty",
+      "expect": "inert"
+    },
+    {
+      "name": "text_tab",
+      "event": "text_tab",
+      "expect": "inert"
+    },
+    {
+      "name": "unknown_selection",
+      "event": "unknown_selection",
+      "expect": "inert"
+    },
+    {
+      "name": "extra_response_field",
+      "event": "extra_response_field",
+      "expect": "inert"
+    },
+    {
+      "name": "unknown_terminal",
+      "event": "unknown_terminal",
+      "expect": "inert"
+    },
+    {
+      "name": "missing_accepted_id",
+      "event": "missing_accepted_id",
+      "expect": "inert"
+    },
+    {
+      "name": "indeterminate_evidence",
+      "event": "indeterminate_evidence",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_trailing_lf",
+      "event": "fallback_trailing_lf",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_double_space",
+      "event": "fallback_double_space",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_wrong_version",
+      "event": "fallback_wrong_version",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_id_mismatch",
+      "event": "fallback_id_mismatch",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_empty_text",
+      "event": "fallback_empty_text",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_unmarked",
+      "event": "fallback_unmarked",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_extra_tag",
+      "event": "fallback_extra_tag",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_reserved_tag",
+      "event": "fallback_reserved_tag",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_duplicate_reply",
+      "event": "fallback_duplicate_reply",
+      "expect": "inert"
+    },
+    {
+      "name": "fallback_root_equals_reply",
+      "event": "fallback_root_equals_reply",
+      "expect": "inert"
+    },
+    {
+      "name": "extension_8193",
+      "event": "extension_8193",
+      "expect": "inert"
+    },
+    {
+      "name": "wrong_kind",
+      "event": "wrong_kind",
+      "expect": "inert"
+    },
+    {
+      "name": "legacy_yes",
+      "event": "legacy_yes",
+      "expect": "inert"
+    },
+    {
+      "name": "legacy_number",
+      "event": "legacy_number",
+      "expect": "inert"
+    },
+    {
+      "name": "legacy_command",
+      "event": "legacy_command",
+      "expect": "inert"
+    },
+    {
+      "name": "max_ttl",
+      "event": "max_ttl",
+      "expect": "request"
+    },
+    {
+      "name": "label_128_bytes",
+      "event": "label_128_bytes",
+      "expect": "request"
+    },
+    {
+      "name": "text_2048_bytes",
+      "event": "text_2048_bytes",
+      "expect": "response"
+    },
+    {
+      "name": "response_wrong_option",
+      "event": "response_wrong_option",
+      "expect": "response"
+    },
+    {
+      "name": "response_wrong_author",
+      "event": "response_wrong_author",
+      "expect": "response"
+    },
+    {
+      "name": "response_wrong_prompt",
+      "event": "response_wrong_prompt",
+      "expect": "response"
+    },
+    {
+      "name": "response_to_receipt",
+      "event": "response_to_receipt",
+      "expect": "response"
+    },
+    {
+      "name": "conflicting_receipt",
+      "event": "conflicting_receipt",
+      "expect": "resolution"
+    },
+    {
+      "name": "wrong_receipt_author",
+      "event": "wrong_receipt_author",
+      "expect": "resolution"
+    },
+    {
+      "name": "bad_envelope_id",
+      "event": "bad_envelope_id",
+      "expect": "envelope_reject"
+    },
+    {
+      "name": "group_custom",
+      "event": "group_custom",
+      "expect": "response"
+    },
+    {
+      "name": "group_brief",
+      "event": "group_brief",
+      "expect": "response"
+    },
+    {
+      "name": "approval_second",
+      "event": "approval_second",
+      "expect": "request"
+    },
+    {
+      "name": "allow_second",
+      "event": "allow_second",
+      "expect": "response"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "first_answer_wins",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "deny",
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "fallback_uses_same_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "fallback"
+        },
+        "claim",
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "wrong_group",
+      "initial_state": "open",
+      "context": {
+        "response_group": "other"
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "removed_responder",
+      "initial_state": "open",
+      "context": {
+        "eligible_responder": false
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "unowned",
+      "initial_state": "absent",
+      "context": {
+        "owned": false
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "absent",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "old_generation",
+      "initial_state": "open",
+      "context": {
+        "runtime_generation": "other"
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "origin_unproven",
+      "initial_state": "open",
+      "context": {
+        "origin_authenticated": false
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "wrong_author",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "response_wrong_author"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "wrong_option",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "response_wrong_option"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "wrong_prompt",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "response_wrong_prompt"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "reply_to_receipt",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "response_to_receipt"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "deadline_equal",
+      "initial_state": "open",
+      "context": {
+        "backend_time": 1700000300
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "expired",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "clock_rollback",
+      "initial_state": "open",
+      "context": {
+        "backend_time": 1699999999,
+        "last_effective_now": 1700000300
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "expired",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "clock_forward",
+      "initial_state": "open",
+      "context": {
+        "backend_time": 1700000900
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "expired",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "dm_third_account",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "context": {
+            "third_account": true
+          }
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "membership_unresolved",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "context": {
+            "membership_resolved": false
+          }
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "connection_loss",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "connection_loss",
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "runtime_restart",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "runtime_restart",
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "author_edit_before_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "request_edit"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "author_delete_before_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "request_delete"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "third_party_hide",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "third_party_delete"
+        },
+        "claim",
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "deleted_response",
+      "initial_state": "open",
+      "context": {
+        "known_responses": ["allow"]
+      },
+      "actions": [
+        {
+          "event": "response_delete"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "claim_before_cancel",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        {
+          "event": "request_delete"
+        },
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "cancel_before_deadline",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "cancelled"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "cancel_at_deadline",
+      "initial_state": "open",
+      "context": {
+        "backend_time": 1700000300
+      },
+      "actions": [
+        {
+          "event": "cancelled"
+        }
+      ],
+      "expect": {
+        "state": "expired",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "supersede_before_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "superseded"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "superseded",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "expiry_after_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        {
+          "context": {
+            "backend_time": 1700000400
+          }
+        },
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "lost_ack",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "crash_uncertain",
+        "claim"
+      ],
+      "expect": {
+        "state": "indeterminate",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "receipt_retry_only",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "ack",
+        "receipt_failure",
+        "receipt_retry",
+        "claim"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "receipt_cannot_execute",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "resolved"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "history_cannot_create_owner",
+      "initial_state": "absent",
+      "context": {
+        "owned": false,
+        "history_import": true
+      },
+      "actions": [
+        {
+          "event": "approval"
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "absent",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "withdraw_origin",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "origin_withdrawn",
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "withdraw_request",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "request_withdrawn",
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "withdraw_after_claim",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "request_withdrawn",
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "group_approval_disabled",
+      "initial_state": "open",
+      "context": {
+        "third_account": true
+      },
+      "actions": [
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "group_custom_disabled",
+      "initial_state": "open",
+      "context": {
+        "request": "choice_group",
+        "third_account": true,
+        "group_choices_reviewed": true
+      },
+      "actions": [
+        {
+          "event": "group_custom"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "group_opaque_choice",
+      "initial_state": "open",
+      "context": {
+        "request": "choice_group",
+        "third_account": true,
+        "group_choices_reviewed": true
+      },
+      "actions": [
+        {
+          "event": "group_brief"
+        },
+        "ack"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "malformed_never_dispatch",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "event": "unknown_version"
+        },
+        {
+          "event": "fallback_reserved_tag"
+        },
+        {
+          "event": "fallback_trailing_lf"
+        }
+      ],
+      "expect": {
+        "state": "open",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "claim_persisted_before_invocation",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim_only"
+      ],
+      "expect": {
+        "state": "claimed",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "connection_loss_before_invocation",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim_only",
+        "connection_loss",
+        "claim"
+      ],
+      "expect": {
+        "state": "indeterminate",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "ack_timeout",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "ack_timeout",
+        "ack"
+      ],
+      "expect": {
+        "state": "indeterminate",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "ack_persisted_before_receipt",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        "claim",
+        "ack",
+        "connection_loss",
+        "receipt_retry"
+      ],
+      "expect": {
+        "state": "resolved",
+        "resolver_calls": 1,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "response_before_remote_request",
+      "initial_state": "absent",
+      "context": {
+        "owned": false
+      },
+      "actions": [
+        {
+          "event": "allow"
+        },
+        {
+          "event": "approval"
+        },
+        {
+          "event": "allow"
+        }
+      ],
+      "expect": {
+        "state": "absent",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    },
+    {
+      "name": "membership_restoration_never_reopens",
+      "initial_state": "open",
+      "context": {},
+      "actions": [
+        {
+          "context": {
+            "third_account": true
+          }
+        },
+        {
+          "context": {
+            "third_account": false
+          }
+        },
+        "claim"
+      ],
+      "expect": {
+        "state": "cancelled",
+        "resolver_calls": 0,
+        "normal_dispatch": false
+      }
+    }
+  ],
+  "send_cases": [
+    {
+      "name": "dm_custom_unchanged",
+      "event": "custom",
+      "request": "choice_dm",
+      "encryption_accounts": [
+        "agent",
+        "responder"
+      ],
+      "settled": true,
+      "observed_dm_invalidation": false,
+      "expect_encrypt": true
+    },
+    {
+      "name": "queued_approval_after_add",
+      "event": "approval",
+      "request": "approval",
+      "encryption_accounts": [
+        "agent",
+        "responder",
+        "third"
+      ],
+      "settled": true,
+      "observed_dm_invalidation": true,
+      "expect_encrypt": false
+    },
+    {
+      "name": "queued_custom_after_add",
+      "event": "custom",
+      "request": "choice_dm",
+      "encryption_accounts": [
+        "agent",
+        "responder",
+        "third"
+      ],
+      "settled": true,
+      "observed_dm_invalidation": true,
+      "expect_encrypt": false
+    },
+    {
+      "name": "queued_fallback_custom_after_add",
+      "event": "fallback_custom",
+      "request": "choice_dm",
+      "encryption_accounts": [
+        "agent",
+        "responder",
+        "third"
+      ],
+      "settled": true,
+      "observed_dm_invalidation": true,
+      "expect_encrypt": false
+    },
+    {
+      "name": "queued_send_unresolved_membership",
+      "event": "custom",
+      "request": "choice_dm",
+      "encryption_accounts": [
+        "agent",
+        "responder"
+      ],
+      "settled": false,
+      "observed_dm_invalidation": true,
+      "expect_encrypt": false
+    },
+    {
+      "name": "queued_answer_after_dm_restored",
+      "event": "custom",
+      "request": "choice_dm",
+      "encryption_accounts": [
+        "agent",
+        "responder"
+      ],
+      "settled": true,
+      "observed_dm_invalidation": true,
+      "expect_encrypt": false
+    }
+  ],
+  "client_cases": [
+    {
+      "name": "receipt_before_request",
+      "events": [
+        "resolved",
+        "approval",
+        "allow"
+      ],
+      "expect": {
+        "receipt": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+        "conflict": false,
+        "controls_enabled": false
+      }
+    },
+    {
+      "name": "conflicting_receipts_order_a",
+      "events": [
+        "approval",
+        "allow",
+        "deny",
+        "resolved",
+        "conflicting_receipt"
+      ],
+      "expect": {
+        "receipt": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+        "conflict": true,
+        "controls_enabled": false
+      }
+    },
+    {
+      "name": "conflicting_receipts_order_b",
+      "events": [
+        "approval",
+        "allow",
+        "deny",
+        "conflicting_receipt",
+        "resolved"
+      ],
+      "expect": {
+        "receipt": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+        "conflict": true,
+        "controls_enabled": false
+      }
+    },
+    {
+      "name": "wrong_receipt_author",
+      "events": [
+        "approval",
+        "allow",
+        "wrong_receipt_author"
+      ],
+      "expect": {
+        "receipt": null,
+        "conflict": false,
+        "controls_enabled": true
+      }
+    },
+    {
+      "name": "response_without_request",
+      "events": [
+        "allow"
+      ],
+      "expect": {
+        "receipt": null,
+        "conflict": false,
+        "controls_enabled": false
+      }
+    },
+    {
+      "name": "resolution_withdrawal_keeps_terminal",
+      "events": [
+        "approval",
+        "allow",
+        "resolved",
+        "resolution_delete"
+      ],
+      "expect": {
+        "receipt": "ca7569a3ff72c4ca5b74068f7945e69a252d792e0dbdf803ea3c81ef6fe29eef",
+        "conflict": false,
+        "controls_enabled": false
+      }
+    }
+  ],
+  "operation_cases": [
+    {
+      "name": "concurrent_prompts_same_operation",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "answer": "allow_second"
+        },
+        {
+          "ack": "approval"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "resolved",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "claimed_operation_cannot_be_reprompted",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "indeterminate": "approval"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "indeterminate",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "indeterminate_operation_stays_consumed",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "indeterminate": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "indeterminate",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "resolved_operation_stays_consumed",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "ack": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "resolved",
+          "approval_second": "absent"
+        },
+        "resolver_calls": 1
+      }
+    },
+    {
+      "name": "unclaimed_supersession_releases_operation",
+      "actions": [
+        {
+          "create": "approval",
+          "pending_operation": "operation_a"
+        },
+        {
+          "supersede": "approval"
+        },
+        {
+          "create": "approval_second",
+          "pending_operation": "operation_a"
+        },
+        {
+          "answer": "allow"
+        },
+        {
+          "answer": "allow_second"
+        },
+        {
+          "ack": "approval_second"
+        }
+      ],
+      "expect": {
+        "states": {
+          "approval": "superseded",
+          "approval_second": "resolved"
+        },
+        "resolver_calls": 1
+      }
+    }
+  ]
+}

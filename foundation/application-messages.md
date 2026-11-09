@@ -78,6 +78,10 @@ state or roll back other authenticated MLS processing.
 Kind `9` is Marmot's default ordinary chat-message kind. Its `content` is the chat body unless an owning optional
 feature, such as encrypted media, adds feature-specific tags or handling.
 
+The draft [structured interaction profile](./structured-interactions-v1.md) adds bounded kind-9 request, response,
+and resolution tags. Its [feature](../features/structured-interactions.md) owns the one-shot execution boundary;
+ordinary chat, labels, and message edits do not grant approval.
+
 The registry is not an allowlist of inner event kinds. Any Nostr-shaped event that satisfies the shared encoding and
 receiver-authentication rules is a valid Marmot app payload unless an active required feature imposes another check.
 Protocol processing MUST NOT reject an otherwise-valid app payload merely because its event kind is unknown.
@@ -137,6 +141,10 @@ overlaid body. A history surface MAY list each version with its timestamp.
 
 A client receiving an edit whose target it has not yet ingested MAY hold the edit for a bounded window and apply it
 when the target arrives, or drop it. Either choice is acceptable.
+
+For the optional draft [structured interaction profile](./structured-interactions-v1.md#author-withdrawal), an edit
+does not replace executable semantics. The profile defines when an authenticated mutation cancels an open request
+or invalidates a response, and requires controls to be disabled rather than paired with edited request prose.
 
 ## Group system events (kind 1210)
 
