@@ -226,10 +226,10 @@ For `open`, setup first establishes a valid owner, then applies the context over
 | `group_choices_reviewed: true` | The group-choice use case has received the required nonsensitive-content review. |
 | `known_responses` | Fixture names already delivered to the app but not yet offered to the owner's serialized claim path. |
 
-Each action is a table string, exactly `{"event": NAME}` to deliver a named event into the owner's candidate path, or
-`{"context": OBJECT}` to apply observations before the next candidate. Eligible delivery immediately attempts claim,
-invokes the bound resolver once if successful, and waits for `ack`. `claim_only` stops before invocation as defined
-below. Wire parsing alone does not claim a response.
+Each action is a table string (such as `claim` or `ack`), or exactly `{"event": NAME}` to deliver a named event
+into the owner's candidate path, or exactly `{"context": OBJECT}` to apply observations before the next candidate.
+Eligible delivery immediately attempts claim, invokes the bound resolver once if successful, and waits for `ack`.
+`claim_only` stops before invocation as defined below. Wire parsing alone does not claim a response.
 
 | Action | Meaning |
 | --- | --- |
