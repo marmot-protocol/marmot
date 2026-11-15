@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-15: An abandoned publish completes the relays it never reached
+
+Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
+
+- A client that abandons a publish obligation with no possible external publish
+  ([durability.md](./protocol-core/durability.md#publish-interruption-boundaries) case 1) now completes every target to
+  which it has recorded that no event was ever sent. Before, the section kept such a target outstanding until a
+  publication attempt, so it left open whether an abandoned obligation still owed that relay the event.
+- A rejecting `OK` is not a record that nothing was sent: the relay received the event. A target that answered with one
+  is complete because it was attempted, not by this rule.
+
 ## 2026-11-15: A relay that returns the exact event acknowledges it
 
 Pull request: [marmot#504](https://github.com/marmot-protocol/marmot/pull/504), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
