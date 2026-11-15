@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-15: An abandoned publish completes the relays it never reached
 
-Pull request: pending, for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
 Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
 
 - A client that abandons a publish obligation with no possible external publish
