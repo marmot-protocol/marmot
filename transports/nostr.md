@@ -561,10 +561,17 @@ token records for that notification server. If none of those records carries a r
 server account's inbox relay set. The trigger and token-record shapes are defined by
 [../features/push-notifications.md](../features/push-notifications.md).
 
-A publish to a relay is acknowledged when the relay returns a NIP-01 `OK` response accepting the event; anything else —
-a rejecting `OK`, an error, a timeout, or no response — is not an acknowledgement. The transport MAY report
+A publish to a relay is acknowledged when the relay returns a NIP-01 `OK` response accepting the event, or when the
+relay returns that exact event, with a valid id and signature, in answer to a REQ, including a subscription the client
+already holds. Anything else (a rejecting `OK`, an error, a timeout, no response, or a REQ that ends without the event)
+is not an acknowledgement. A REQ that does not return the event shows nothing about whether the relay stored or
+forwarded it earlier, and a client MUST NOT treat it as evidence that publication failed. The transport MAY report
 endpoint-level acceptances and failures. Publish acknowledgement is not group consensus. The protocol-core publish
 lifecycle defines when locally created MLS work MAY be applied.
+
+A kind `445` event is signed by a fresh per-event ephemeral key that is never the sender's account identity
+("Metadata exposed to the transport"). A client that asks a relay for its own kind `445` event SHOULD do so without
+authenticating as its account, because an authenticated read would link the account to the event.
 
 ## Validation before peeling
 

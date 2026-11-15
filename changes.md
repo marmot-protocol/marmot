@@ -13,6 +13,20 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-15: A relay that returns the exact event acknowledges it
+
+Pull request: [marmot#PR](https://github.com/marmot-protocol/marmot/pull/PR), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
+
+- A publish to a relay is now also acknowledged when the relay returns that exact event, with a valid id and
+  signature, in answer to a REQ, including a subscription the client already holds. A client whose publish got no
+  accepting `OK`, for example after a timeout, can confirm the publish from such a copy instead of retrying it for good.
+- A REQ that ends without the event is not an acknowledgement, and it is no evidence that publication failed: the relay
+  may have stored or forwarded the event before. A client must not roll back or abandon work because a read came back
+  empty.
+- A client that asks a relay for its own kind `445` event should do so without authenticating as its account, because
+  an authenticated read would link the account to the event.
+
 ## 2026-11-09: A departing admin enters Leaving before its step-down
 
 Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
