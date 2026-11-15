@@ -21,9 +21,8 @@ Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowle
 - A publish to a relay is now also acknowledged when the relay returns that exact event, with a valid id and
   signature, in answer to a REQ, including a subscription the client already holds. A client whose publish got no
   accepting `OK`, for example after a timeout, can confirm the publish from such a copy instead of retrying it for good.
-- A REQ that ends without the event is not an acknowledgement, and it is no evidence that publication failed: the relay
-  may have stored or forwarded the event before. A client must not roll back or abandon work because a read came back
-  empty.
+- A REQ that ends without the event is not an acknowledgement. It shows nothing about whether the relay stored or
+  forwarded the event earlier, so a client must not treat it as evidence that publication failed.
 - A client that asks a relay for its own kind `445` event should do so without authenticating as its account, because
   an authenticated read would link the account to the event.
 
