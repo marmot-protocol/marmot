@@ -551,6 +551,10 @@ is complete or the transport object reaches its authenticated expiration. That l
 group to `PendingPublish`, undo canonical apply, or re-stage the Commit; retrying a target after its required first
 attempt is transport or local policy.
 
+When a client abandons an obligation under
+[durability.md](../protocol-core/durability.md#publish-interruption-boundaries) case 1, a target to which it has
+recorded that no event was ever sent is complete. A rejecting `OK` is not such a record: the relay received the event.
+
 Welcome messages are published to the recipient's inbox relay set ("Account inbox relays" above).
 
 KeyPackage events, KeyPackage slot deletion requests and the backup pointer are published to the account's NIP-65
