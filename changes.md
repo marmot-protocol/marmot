@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-15: A relay that returns the exact event acknowledges it
 
-Pull request: [marmot#PR](https://github.com/marmot-protocol/marmot/pull/PR), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Pull request: [marmot#504](https://github.com/marmot-protocol/marmot/pull/504), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
 Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
 
 - A publish to a relay is now also acknowledged when the relay returns that exact event, with a valid id and
