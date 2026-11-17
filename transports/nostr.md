@@ -73,6 +73,7 @@ first matching tag and ignore later duplicates.
 | kind `1059` welcome or pairing gift wrap | `p` | exactly one tag, exactly one value: lowercase hex account identity of the recipient |
 | kind `444` welcome rumor | `e` | exactly one tag, exactly one value: lowercase hex Nostr event id of the claimed KeyPackage event |
 | kind `444` welcome rumor | `relays` | exactly one tag, one or more relay URL values using the relay URL profile |
+| kind `444` welcome rumor | `ratchet_tree` | zero or one tag; when present, seven to ten values as defined in "Welcome delivery" |
 | kind `30443` KeyPackage | `d` | exactly one tag, exactly one 64-character lowercase hex value decoding to 32 bytes |
 | kind `30443` KeyPackage | `mls_protocol_version` | exactly one tag, exactly one value: `1.0` |
 | kind `30443` KeyPackage | `i` | exactly one tag, exactly one value: lowercase hex KeyPackageRef |
@@ -246,6 +247,29 @@ The inner kind `444` rumor MUST include:
 - `e` tag: the Nostr event id of the KeyPackage event used for the invite;
 - `relays` tag: relay URLs, using the relay URL profile above, where the new member SHOULD fetch group messages.
 
+The inner kind `444` rumor MAY include one `ratchet_tree` tag, the delivery's ratchet tree reference
+([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md), "Reference"). It carries the
+reference's fields in this order:
+
+```text
+["ratchet_tree", "1", <blob_sha256>, <key>, <blob_size>, <available_until>, <locator>, ...]
+```
+
+- `"1"` is the reference version;
+- `blob_sha256` and `key` are each 64 lowercase hex characters;
+- `blob_size` and `available_until` are decimal integers with no sign, no leading zeros and no other characters;
+- each `locator` is a locator kind, one space, and the locator value, as in an encrypted-media `locator` field; there
+  are one to four, in the order the joiner tries them.
+
+The tag sits inside the seal, so the seal's signature authenticates the account that sent the reference. It does not
+authenticate the Welcome beside it, which anyone holding those bytes can send under another reference. A rumor whose
+`ratchet_tree` tag breaks one of these rules is malformed. A locator whose kind the receiver does not support is not a
+malformation; the receiver skips it.
+
+For choosing the tree source ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md),
+"Choosing the tree source"), the event-size limits that matter are those of the inbox relays a Welcome's kind `1059`
+event targets.
+
 The inner kind `444` rumor MUST NOT have a `sig` field. The kind `13` seal and kind `1059` gift wrap are signed by
 NIP-59.
 
@@ -255,8 +279,9 @@ A rumor whose `e` tag names a KeyPackage event this device did not publish is no
 addressed to another device of the same account. The receiving device does not join through it and handles it under
 [../protocol-core/joining.md](../protocol-core/joining.md) ("Delivery"), not as a failed join.
 
-A receiver MUST reject a kind `444` rumor that does not satisfy its `e` and `relays` rows in "Event identity and tag
-cardinality" or whose content is not valid base64-encoded `MLSMessage` bytes with the `mls_welcome` wire format.
+A receiver MUST reject a kind `444` rumor that does not satisfy its `e`, `relays` and `ratchet_tree` rows in "Event
+identity and tag cardinality" or whose content is not valid base64-encoded `MLSMessage` bytes with the `mls_welcome`
+wire format.
 
 ## Push notification delivery
 

@@ -65,6 +65,7 @@ carriers and MUST NOT be treated as interchangeable merely because both use a `C
 | `0xf2d1`       | `marmot.feature.agent_text_stream_quic.receive.v1` | [doc](../app-components/agent-text-stream-quic-v1.md)    |
 | `0xf2d2`       | `marmot.feature.agent_text_stream_quic.send.v1`    | [doc](../app-components/agent-text-stream-quic-v1.md)    |
 | `0xf2d4`       | `marmot.feature.agent_text_stream_quic.fanout.v1`  | [doc](../app-components/agent-text-stream-quic-v1.md)    |
+| `0xf2e1`       | `marmot.feature.ratchet_tree_reference.v1`      | [doc](../features/ratchet-tree-reference.md)                |
 | `0xf2f1`       | `marmot.account-identity-proof.v1`              | [doc](./account-identity-proof-v1.md)                       |
 
 `0xf2d3` is intentionally unassigned and has no reserved meaning. A future use MUST claim it in this registry before
@@ -80,6 +81,10 @@ opening a live-preview transport. The `send` and `fanout` roles are live-preview
 These three extension types are capability markers only: v1 defines no extension data for them. They appear solely in
 `LeafNode.capabilities.extensions` to advertise role support and are never emitted as LeafNode or GroupContext
 extension bodies.
+
+`0xf2e1` is a capability marker too. A KeyPackage lists it in its LeafNode `capabilities.extensions` when its client
+can join from a ratchet tree reference ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md));
+it is never emitted as an extension body.
 
 `0xf2f1` is the superseded v1 account-identity-proof extension. It is not required or emitted by the current profile;
 component id `0x8009` replaces it. It remains registered so the legacy wire value is never reassigned.

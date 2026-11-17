@@ -72,6 +72,7 @@ features/
   agent-text-streams-quic.md
   push-notifications.md
   device-pairing.md
+  ratchet-tree-reference.md
 ideas/
   README.md
   account-sync.md

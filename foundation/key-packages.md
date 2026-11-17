@@ -66,6 +66,12 @@ Last-resort status is not an MLS capability or extension type. A last-resort Key
 `app_data_dictionary` in its KeyPackage extensions, separate from the dictionary in its embedded LeafNode, with an
 empty-data `last_resort_key_package` component entry. A KeyPackage that is not last-resort MUST NOT contain that entry.
 
+A KeyPackage whose client can join from a Welcome that delivers the ratchet tree by reference lists the capability
+marker `marmot.feature.ratchet_tree_reference.v1` (`0xf2e1`) in its LeafNode `capabilities.extensions`. An inviter
+reads the marker from the decoded KeyPackage, not from a transport tag, and sends a reference only to a KeyPackage that
+lists it ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md)). The marker is not a group
+requirement.
+
 A member can join only if its KeyPackage advertises support for every MLS primitive, app component, and component-owned
 role capability the group requires. For example, an agent-stream-ready group may require the agent text stream `receive`
 role, whose fallback behavior is defined by the owning feature and component documents.

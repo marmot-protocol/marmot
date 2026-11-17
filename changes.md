@@ -13,6 +13,36 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-17: A Welcome can deliver its ratchet tree by reference
+
+Pull request: marmot#TBD, for [mdk#2336](https://github.com/marmot-protocol/mdk/issues/2336).
+Changes [protocol-core/joining.md](./protocol-core/joining.md#ratchet-tree-source),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md),
+[features/ratchet-tree-reference.md](./features/ratchet-tree-reference.md) (new),
+[transports/nostr.md](./transports/nostr.md#welcome-delivery),
+[foundation/key-packages.md](./foundation/key-packages.md#capability-advertising) and
+[foundation/registries.md](./foundation/registries.md#marmot-custom-mls-extension-types).
+
+- A Welcome delivery now takes the group's ratchet tree from exactly one source: the GroupInfo `ratchet_tree`
+  extension, as before, or a ratchet tree reference that the delivery carries, naming one encrypted blob. A joiner
+  rejects a delivery with both or neither. Before, every Welcome had to carry the tree inline.
+- An inviter may use a reference only when every KeyPackage its Commit adds lists the new capability marker
+  `0xf2e1` (`marmot.feature.ratchet_tree_reference.v1`). Clients that do not implement the feature change nothing: they
+  never receive a reference and keep sending inline trees.
+- A client that implements it lists `0xf2e1` in its KeyPackages, uploads and maintains blobs as the feature document
+  describes, and handles a reference failure as the failure of that delivery, not of the Welcome bytes inside it.
+- A refusal that depends on anything but the Welcome message, such as the delivery's sender or timestamps, a ratchet
+  tree reference, or local state that can change, now rejects only its delivery, for inline Welcomes too: it must not
+  stop another delivery of the same Welcome from being processed. A user's decision to decline the invitation may
+  still cover every delivery of it.
+- Each Welcome delivery should now carry only its own KeyPackage's `EncryptedGroupSecrets` entry, and must when it
+  carries a reference. Receivers must accept inline Welcomes with one entry or several, as MLS already allows.
+- A founding creation adds every initial invitee with one tree source, or leaves out the invitees that cannot use it
+  and reports them as not invited; it never adds them with a second, unpublished Commit. The founding Commit's
+  automatic requirements follow its own KeyPackages, so a left-out invitee that lacks one of them cannot be added
+  afterward.
+- On Nostr, the kind `444` rumor gains an optional `ratchet_tree` tag.
+
 ## 2026-11-15: An abandoned publish completes the relays it never reached
 
 Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).

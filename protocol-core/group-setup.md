@@ -58,7 +58,8 @@ Every current-profile group MUST list the `app_data_update` proposal type (`0x00
 requirement is lifetime-wide because every current-profile group carries mutable GroupContext component state.
 
 Separately, `ratchet_tree` is a per-Welcome GroupInfo extension, not a GroupContext extension. The GroupInfo encrypted
-in every Marmot Welcome carries the ratchet tree inline, as [joining.md](./joining.md) requires.
+in a Marmot Welcome carries the ratchet tree inline unless the Welcome's delivery carries a ratchet tree reference
+instead ([joining.md](./joining.md), "Ratchet tree source").
 
 ## Creation flow
 

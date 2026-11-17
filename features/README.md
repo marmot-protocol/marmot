@@ -25,6 +25,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
 - [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
   account's existing devices.
+- [ratchet-tree-reference.md](./ratchet-tree-reference.md) - draft Welcomes whose ratchet tree is fetched from one
+  encrypted blob, so they do not grow with the group.
 
 ## Relationship to app components
 

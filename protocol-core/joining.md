@@ -28,9 +28,22 @@ initial invitees. That Add Commit has no group-message publication obligation be
 The creator then attempts the independent per-invitee epoch-1 Welcome deliveries defined in
 [publish-lifecycle.md](./publish-lifecycle.md).
 
-The GroupInfo encrypted in every Marmot Welcome MUST include the `ratchet_tree` extension. Marmot does not support
-out-of-band ratchet tree distribution for the Welcome join path. A joiner MUST reject a Welcome whose GroupInfo does
-not carry the ratchet tree.
+## Ratchet tree source
+
+Every Welcome delivery gives the joiner the group's ratchet tree from exactly one source:
+
+- **inline**: the GroupInfo encrypted in the Welcome includes the `ratchet_tree` extension, and the delivery carries no
+  ratchet tree reference; or
+- **by reference**: the GroupInfo omits the `ratchet_tree` extension, and the delivery carries exactly one ratchet
+  tree reference ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md)).
+
+The inviter MUST use the inline source unless every KeyPackage the Commit adds advertises
+`marmot.feature.ratchet_tree_reference.v1`. Marmot defines no other out-of-band tree distribution. A joiner MUST
+reject a delivery that offers both sources or neither.
+
+The reference never chooses group state. MLS Welcome processing binds whichever tree the joiner supplies to the
+GroupInfo: it verifies the GroupInfo signature against the signer's leaf in that tree and the tree hash against the
+GroupContext `tree_hash`.
 
 ## Delivery
 
@@ -38,14 +51,20 @@ The active transport binding owns the Welcome delivery envelope, recipient addre
 for a Welcome that consumes a published KeyPackage. A KeyPackage that was never published has no publication for a
 binding to name, so the feature that hands it over owns its delivery: the device group's sibling Welcome
 ([../features/device-group.md](../features/device-group.md), "Sibling Welcomes"). Protocol core requires that the
-receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and can identify which local
-KeyPackage was consumed.
+receiver can recover the serialized MLSMessage whose wire format is `mls_welcome`, can identify which local
+KeyPackage was consumed, and can recover the delivery's ratchet tree reference when it carries one.
 
 Each delivery names exactly one consumed KeyPackage: a binding's delivery by the binding's reference to the
 KeyPackage's publication, a sibling Welcome by the KeyPackage's `KeyPackageRef`. An inviter whose Commit added several
 KeyPackages, including several of one account's
 ([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), MUST make one delivery for
 each of them, so that every added device receives a delivery naming its own KeyPackage.
+
+The Welcome in a delivery SHOULD contain only the `EncryptedGroupSecrets` entry for the KeyPackage the delivery names,
+and MUST when the delivery carries a ratchet tree reference. Each entry is encrypted to its own KeyPackage with the
+encrypted GroupInfo as context, not the list of entries (RFC 9420 §12.4.3.1), so a Welcome with one entry is complete
+for its recipient, does not grow with the number of invitees, and does not show a recipient the other invitees'
+KeyPackage references. A receiver MUST accept an inline Welcome with one entry or with several.
 
 An account's devices can share delivery addressing, so a device can receive a delivery that names another device's
 KeyPackage. That delivery fails step 2 of the receiving flow below for this device, but it is not a failed join: the
@@ -62,7 +81,9 @@ After unwrapping a Welcome, the receiver:
 1. verifies that the Welcome is addressed to its account identity;
 2. verifies that the referenced KeyPackage belongs to this account/device;
 3. decodes the transport-carried content as an MLSMessage with `mls_welcome` wire format;
-4. processes the MLS Welcome, taking the group's ratchet tree from the GroupInfo `ratchet_tree` extension;
+4. processes the MLS Welcome, taking the group's ratchet tree from its one source ("Ratchet tree source" above): the
+   GroupInfo `ratchet_tree` extension, or the tree obtained and checked under the reference's fetch rules
+   ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md), "Fetching and verification");
 5. validates every resulting member identity and account identity proof;
 6. identifies the Welcome author from the MLS GroupInfo signer leaf and validates that author's Marmot account identity;
 7. validates the resulting Marmot group state and required components;
@@ -87,6 +108,12 @@ every one of its checks succeeds. If the MLS Welcome-processing operation consum
 the resulting group id and state, the receiver MUST stage that mutation or provide equivalent rollback so rejection
 restores the exact pre-processing KeyPackage state. Durable group storage and KeyPackage rotation begin only at steps 10
 through 12.
+
+Obtaining a referenced tree is part of that tentative operation. A tree that no locator serves is not a rejection: the
+receiver keeps the delivery, leaves its KeyPackage state unchanged, and retries under the reference's failure rules
+([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md), "Failures"). A delivery's sender
+authenticates the reference it carries, not the Welcome inside it, so every failure of the reference depends on the
+delivery and rejects that delivery only ("Failure behavior").
 
 A new member SHOULD perform the post-join self-update before sending application payloads when feasible, and SHOULD do
 so promptly after joining. This carries forward the MIP-02 post-join rotation guidance; this spec keeps it as a
@@ -137,13 +164,25 @@ If Welcome processing or any tentative validation through step 9 fails, the rece
 KeyPackage and its `init_key` material exactly as they were before processing. The inviter MAY retry or choose another
 KeyPackage.
 
+A receiver MUST NOT let its refusal of one delivery stop it from processing another delivery of the same Welcome,
+unless that other delivery would necessarily be refused the same way. Only a refusal that follows from the Welcome
+message alone meets that condition. A refusal that depends on anything else, such as the delivery's sender or
+timestamps, a ratchet tree reference it carries, or local state that can change, rejects only that delivery. Remembering
+refusals per delivery always satisfies this rule. The rule covers refusals by the checks of the receiving flow. A user's
+decision about the invitation itself, such as declining it after seeing its MLS-authenticated author, MAY apply to every
+delivery of the same Welcome.
+
 A receiver rejects the Welcome if:
 
 - transport unwrapping fails;
 - the Welcome is not addressed to the local account identity;
 - the MLSMessage is not an MLS Welcome;
 - the referenced KeyPackage is not local to this account/device;
-- the GroupInfo does not include the `ratchet_tree` extension;
+- the delivery offers both ratchet tree sources or neither ("Ratchet tree source" above), or carries a reference with
+  a Welcome of more than one `EncryptedGroupSecrets` entry;
+- bytes that match a ratchet tree reference's hash fail its decryption, padding or decoding checks, or MLS does not
+  accept the tree they carry ([../features/ratchet-tree-reference.md](../features/ratchet-tree-reference.md),
+  "Failures");
 - any resulting member leaf is missing a valid account identity proof;
 - the Welcome author cannot be identified as a member leaf in the resulting group;
 - the resulting group state lacks required Marmot state;

@@ -137,8 +137,14 @@ inviter's human identity or an external group-continuity anchor. The current Wel
 root. Even another account speaking on the received branch is only an activity signal, not continuity proof.
 
 Owners: [Welcome-bootstrap trust](protocol-core/joining.md#welcome-bootstrap-trust),
-[Welcome failures](protocol-core/joining.md#failure-behavior), and
-[KeyPackage selection](foundation/key-packages.md#selection-and-lifecycle). Under A3, inviter presentation and user
+[Welcome failures](protocol-core/joining.md#failure-behavior),
+[ratchet tree source](protocol-core/joining.md#ratchet-tree-source), and
+[KeyPackage selection](foundation/key-packages.md#selection-and-lifecycle). A ratchet tree reference is authenticated
+by its delivery's sender, not by the Welcome's author; anyone who holds a recipient's Welcome bytes can carry them under
+another reference. MLS still binds the accepted tree to the GroupInfo, and a failed reference rejects only its delivery
+([draft reference failures](features/ratchet-tree-reference.md#failures)). More generally, a refusal that depends on
+anything but the Welcome message rejects only its delivery, so a party that re-carries a recipient's Welcome bytes
+cannot make the honest delivery of them fail ([Welcome failures](protocol-core/joining.md#failure-behavior)). Under A3, inviter presentation and user
 decisions matter; valid package publication does not prove user-approved device enrollment.
 
 ### T4. Device, account-key, and reusable KeyPackage compromise
@@ -226,6 +232,12 @@ permanent `Unrecoverable` are distinct safe outcomes, not equivalent claims of a
 Blob services can suppress or replace bytes and correlate uploads/downloads. The owning media authentication/hash
 rules protect accepted content under A1–A2, independently of the locator; they do not force a service to serve it.
 Authenticated locators can still direct a client toward a tracking or unsafe endpoint (A8).
+
+A ratchet tree blob adds a pre-join contact: an invitee fetches it before accepting and before any MLS signature
+check, from a host the delivery's sender chose, and the blob's size tracks the group's. The host can link the co-invitees of one Commit and withhold the blob until the
+reference's deadline, which leaves the invitee in the roster without having joined. MLS's tree hash protects the tree a
+joiner accepts; fetch rules and bounds confine fetching to deliveries the client would process
+([draft ratchet tree reference](features/ratchet-tree-reference.md#privacy)).
 
 The group-image v1 upload credential is shared with members. A former member retaining it can continue using the
 server's accepted write/delete authority; an admin gate on group-state updates cannot revoke that capability.
@@ -2148,6 +2160,7 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
 | [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
+| [Ratchet tree reference](features/ratchet-tree-reference.md) | A1–A2, A8, T3, T6, T8; draft, delivery-scoped reference authentication, MLS tree binding, pre-join blob contact and availability deadline. |
 
 ## Formalization and review boundary
 
