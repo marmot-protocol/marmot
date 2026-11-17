@@ -25,6 +25,7 @@ foundation/
   key-packages.md
   canonical-encoding.md
   application-messages.md
+  message-expiry-v1.md
   wire-envelopes.md
   mls-protocol.md
   conformance.md
@@ -71,6 +72,7 @@ features/
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+  message-expiry.md
   device-pairing.md
 ideas/
   README.md

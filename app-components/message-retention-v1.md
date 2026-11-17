@@ -25,7 +25,7 @@ Each application message pins the retention state from its own MLS source epoch.
 not shorten, extend, or restore that message's expiry. A retry or transport republication of the same MLS message uses
 the same pinned duration and expiry value.
 
-The retention duration is signed group state, and the transport-level expiry timestamp uses the exact calculation
+The retention duration is signed group state, and its group-derived expiry timestamp uses the exact calculation
 defined below. Transport expiry applies to application messages only: group-state history — commits and proposals —
 never carries a transport expiry hint, so retention does not affect group-state catch-up. The duration is authenticated;
 the base timestamp is the sender's own `created_at`, so a sender that backdates or forward-dates `created_at` shifts
@@ -44,6 +44,11 @@ when `created_at` is a non-negative integer representable as `uint64` and the su
 implementation MUST NOT wrap, saturate, or compute through an inexact JSON number. When the calculation is undefined or
 the active transport cannot represent the exact result, the sender omits the transport expiry hint; the component state
 and application message remain valid.
+
+The optional [per-message expiry v1](../foundation/message-expiry-v1.md) profile may independently shorten this
+deadline, including when this component is absent, disabled, or contributes no finite checked sum. It cannot extend
+the group-derived deadline. Its feature owns local read countdowns; the active transport owns combining absolute
+caps into a deletion hint. Neither changes this component's bytes, authorization, or valid duration range.
 
 ## Update
 

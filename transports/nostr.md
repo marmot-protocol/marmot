@@ -184,23 +184,30 @@ candidate keys tried for an accepted envelope.
 
 ## Message expiration
 
-The `expiration` tag applies to MLS application messages only. When the message's source-epoch
-`marmot.group.message-retention.v1` state enables a retention duration, the sender of its kind `445` event SHOULD attach
-a NIP-40 `expiration` tag whose value is the exact `expiry_timestamp` defined by
-[../app-components/message-retention-v1.md](../app-components/message-retention-v1.md). If that value is undefined or
-unrepresentable, the sender omits the tag. A kind `445` event that carries a commit or proposal MUST NOT carry an
-`expiration` tag, regardless of the retention policy: group-state history stays fetchable for members catching up. A
-message whose source epoch has no enabled retention emits no `expiration` tag.
+The `expiration` tag applies to MLS application messages only. For its kind `445` event, the sender computes the
+earliest finite value of the source-epoch group `expiry_timestamp`
+([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) and a validated absolute
+per-message cap ([../foundation/message-expiry-v1.md](../foundation/message-expiry-v1.md)). It SHOULD attach one
+NIP-40 `expiration` tag with that exact value. An edit of an expiring message also uses its target's inherited
+absolute cap ([../features/message-expiry.md](../features/message-expiry.md#derived-surfaces-and-updates)).
+If neither deadline exists, or the minimum is unrepresentable, the sender omits the tag. An undefined group sum does
+not erase a valid per-message cap. A local read countdown is never published as an updated relay deadline.
+
+A kind `445` event carrying a commit or proposal MUST NOT carry `expiration`, regardless of either policy:
+group-state history stays fetchable. Retry or republication of the same application message retains its original
+absolute expiry; a shorter local read countdown does not rewrite or republish that event.
 
 The `expiration` tag is relay-facing transport metadata that asks relays to delete the event after the expiry time.
-Receivers MUST NOT use the tag for message validity, ordering, or branch selection, and a missing or mismatched tag
-does not invalidate a message. A sender-supplied expiration tag on the inner app payload is replaced or removed
-according to the active retention component ([../protocol-core/group-setup.md](../protocol-core/group-setup.md),
-"Message retention").
+Receivers MUST NOT use the outer tag for message validity, ordering, or branch selection, and a missing or mismatched
+outer tag does not invalidate a message. Senders refuse invalid per-message policy before creating an app event.
+After authentication, receivers preserve the inner bytes and apply the profile's invalid-policy handling rather
+than rewriting the event or silently stripping the requested expiry.
 
 Enabling retention is a trade-off the group accepts:
 
-- Privacy: the `expiration` tag reveals the group's retention policy to every relay and reader of the event.
+- Privacy: `expiration` reveals an absolute deletion time to every relay and reader. It may reveal a shorter
+  per-message lifetime. The original envelope does not publish device-local read times or the after-read duration.
+  No new outer tag identifies burn mode. A forwarded message's shorter cap may reveal a source countdown boundary.
 - Availability: relays delete expired events. An application message that has expired from every relay is unrecoverable
   for a member that did not fetch it in time. Commits and proposals never carry the tag, so retention does not block
   group-state catch-up.

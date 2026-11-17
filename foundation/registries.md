@@ -135,6 +135,9 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 
 Kind `4891` is allocated by Marmot for admin deletion inside MLS app payloads.
 
+The draft [per-message expiry v1](./message-expiry-v1.md) profile assigns inner tag name `marmot-expiry`, version
+string `1`, alongside standard inner `expiration` for kind `9`. It allocates no new event kind or MLS component id.
+
 The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
 chunks are transient QUIC records.
 

@@ -31,7 +31,10 @@ Marmot app payloads use an unsigned Nostr event shape inside MLS.
 Marmot-defined app-payload kinds and their owning documents are listed in
 [../foundation/registries.md](../foundation/registries.md) ("Nostr event kinds used by Marmot").
 
-The inner app event has an `id` but no `sig`. The active transport binding owns the outer envelope and builds its routing tags — the tags that address, route, or expire it — from canonical group state, never from the inner app event (the Nostr binding's routing tags are defined in [../transports/nostr.md](../transports/nostr.md)). An inner tag therefore carries application content only: it never affects addressing, routing, expiry, or branch selection. The inner event's structural rules are in [../foundation/application-messages.md](../foundation/application-messages.md), "Encoding".
+The [inner app event](../foundation/application-messages.md) is distinct from its transport envelope. Delivery
+addressing and routing derive from canonical group state, never from inner application tags. A validated
+[per-message expiry](../features/message-expiry.md) cap may shorten an application's transport deletion hint as the
+active binding defines. It does not change delivery addressing, group state, or branch selection.
 
 Receiver authentication follows [../foundation/application-messages.md](../foundation/application-messages.md)
 ("Receiver authentication").
@@ -78,8 +81,10 @@ evidence MUST NOT choose the winning branch, and digest ordering is only the fin
 
 When message retention is enabled, the active transport binding applies its own retention hint if it has one.
 
-When retention is disabled, a sender cannot force retention data onto the group message envelope. The sender removes or
-replaces retention data so the on-wire behavior is determined by group state.
+A sender may select a stricter per-message lifetime through [per-message expiry](../features/message-expiry.md),
+including when group retention is disabled. The active binding derives its hint from the pinned group decision and
+validated per-message cap, never from arbitrary unvalidated application metadata. Local expiry does not release
+protocol evidence before [retained-history](./retained-history.md) rules allow it.
 
 ## Migration notes
 

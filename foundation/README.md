@@ -16,6 +16,7 @@ Foundation docs SHOULD change slowly. A change here usually means the whole prot
 - [key-packages.md](./key-packages.md) - KeyPackage meaning, discovery requirements, and lifecycle.
 - [canonical-encoding.md](./canonical-encoding.md) - byte encoding rules used across Marmot-owned structures.
 - [application-messages.md](./application-messages.md) - the unsigned Nostr-shaped payload inside MLS messages.
+- [message-expiry-v1.md](./message-expiry-v1.md) - draft authenticated per-message expiry and burn-after-read tags.
 - [wire-envelopes.md](./wire-envelopes.md) - the split between application payloads, MLS bytes, and transport envelopes.
 - [mls-protocol.md](./mls-protocol.md) - the MLS protocol pieces Marmot builds on.
 - [conformance.md](./conformance.md) - canonical protocol-state equivalence and crash/restart scenarios for

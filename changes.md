@@ -13,6 +13,31 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-17: Draft per-message expiry and burn-after-read
+
+For [mdk#1326](https://github.com/marmot-protocol/mdk/issues/1326).
+Changes [foundation/message-expiry-v1.md](./foundation/message-expiry-v1.md),
+[features/message-expiry.md](./features/message-expiry.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[foundation/registries.md](./foundation/registries.md),
+[app-components/message-retention-v1.md](./app-components/message-retention-v1.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md#message-retention),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md#message-retention),
+[transports/nostr.md](./transports/nostr.md#message-expiration), and
+[features/account-sync.md](./features/account-sync.md#history-bundles).
+[security-considerations.md](./security-considerations.md#sc-010) records the trust and deletion limits.
+
+- The draft defines bounded inner absolute expiry and a versioned burn-after-read tag with a mandatory unopened cap.
+  A sender may shorten a message's pinned group ceiling, including when the group timer is off. The existing
+  group-retention component's bytes and valid duration range do not change.
+- Supporting clients withhold unopened burn content from passive surfaces and retain a device-local deadline before
+  explicit reveal. Expired state survives replay and restart. Unread messages cannot outlive their absolute cap.
+- The proposed Nostr rule replaces stripping sender expiry with the earliest validated absolute cap. Relay hints
+  still never affect group state or release cryptographic material, and reveal deadlines are not sent to relays.
+- Supporting history and backup paths exclude burn content and preserve original absolute expiry for other expiring
+  messages. Old clients may ignore the feature. No capability negotiation or hostile-recipient deletion guarantee
+  is introduced; the profile remains draft pending agreement.
+
 ## 2026-11-15: An abandoned publish completes the relays it never reached
 
 Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
