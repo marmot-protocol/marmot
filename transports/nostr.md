@@ -298,6 +298,26 @@ not a pairing message.
 
 A device receives its own pairing messages back from its inbox relays and ignores them under the session rules.
 
+## NIP-44 and event size
+
+Every NIP-44 payload in this binding, each layer of a Welcome, pairing or push-notification gift wrap, is
+[NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) version 2 in full, including its extended length
+format: a plaintext of 65,536 bytes or more carries a 6-byte length prefix (two zero bytes, then the plaintext length as
+a big-endian 32-bit integer) in place of the 2-byte one, for plaintexts of up to 4,294,967,295 bytes. A Marmot client,
+and any signer a Marmot client uses for NIP-44 (such as a NIP-46 remote signer, a NIP-55 Android signer or a NIP-07
+browser extension), MUST encrypt and decrypt such payloads; for a NIP-46 signer that includes the request and response
+events that carry them. A notification server MUST decrypt them. A receiver MAY still discard an object that exceeds a
+local resource limit, as "Group message delivery" allows; that is an availability outcome, not a decryption failure.
+
+Relays in a group's relay list (`marmot.transport.nostr.routing.v1`) and in an account's inbox relay set ("Account
+inbox relays") SHOULD accept events of at least 2 MiB (2,097,152 bytes of serialized event). Relays don't decrypt, so
+this concerns event size only.
+
+A Welcome carries the group's ratchet tree, and gift wrapping makes its event about three times the size of the MLS
+Welcome. Without the extended format, a Welcome for one invitee stops at about 81 members even on a relay that accepts
+the larger event, and a relay that stops at 64 KiB stops it at about 56. With both rules, it fits up to roughly 1,900
+members (measured with blank parent nodes; a populated tree is about 20% larger per member).
+
 ## KeyPackage publication
 
 Nostr KeyPackages use kind `30443`.
