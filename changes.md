@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-17: Nostr payloads use NIP-44's extended length format; relays should take 2 MiB events
 
-Pull request: [marmot#TBD](https://github.com/marmot-protocol/marmot/pulls), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).
+Pull request: [marmot#508](https://github.com/marmot-protocol/marmot/pull/508), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).
 Changes [transports/nostr.md](./transports/nostr.md#nip-44-and-event-size).
 
 - Every NIP-44 payload in the Nostr binding is NIP-44 version 2 in full, including its extended length format (a
