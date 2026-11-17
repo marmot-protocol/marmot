@@ -13,6 +13,20 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-17: Nostr payloads use NIP-44's extended length format; relays should take 2 MiB events
+
+Pull request: [marmot#TBD](https://github.com/marmot-protocol/marmot/pulls), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).
+Changes [transports/nostr.md](./transports/nostr.md#nip-44-and-event-size).
+
+- Every NIP-44 payload in the Nostr binding is NIP-44 version 2 in full, including its extended length format (a
+  6-byte length prefix for plaintexts of 65,536 bytes or more). Marmot clients, the signers they use for NIP-44 and
+  notification servers must encrypt and decrypt it. Code or signers that stop at 65,535 bytes have to accept the longer
+  prefix; until now a Welcome to a group of more than about 81 members silently failed to open there.
+- Group and inbox relays should accept events of at least 2 MiB, so a one-invitee Welcome fits up to roughly 1,900
+  members.
+- No versioning hook: the wire format is NIP-44 version 2's own, which already defines the extended prefix, and MDK
+  has sent it since 0.11.0.
+
 ## 2026-11-15: An abandoned publish completes the relays it never reached
 
 Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
