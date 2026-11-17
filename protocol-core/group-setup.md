@@ -132,5 +132,6 @@ When message retention is enabled, the transport binding applies its own retenti
 component [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md) defines the pinned
 source-epoch state, exact expiry calculation, overflow behavior, and sender-timestamp caveat.
 
-Retention is group state, not a sender preference. A sender-supplied expiration tag is replaced or removed according to
-the message's source-epoch retention component.
+The group timer is group state. The optional [per-message expiry](../features/message-expiry.md) feature may select a
+stricter lifetime for an individual app payload without changing that state. Its validated absolute cap can shorten,
+but never extend or disable, the pinned group deadline. A transport binding combines these caps for its own hint.

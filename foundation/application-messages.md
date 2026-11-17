@@ -60,7 +60,9 @@ Decoders MUST reject a payload that:
 - contains duplicate object keys;
 - has an `id` that does not match the canonical Nostr event id computed from the other members ("Shape" above).
 
-Decoders do not police inner tag names. Tags carry application content; the active transport binding builds the outer envelope's routing tags from group state, never from the inner event, so an inner tag never affects delivery (see [../protocol-core/group-messaging.md](../protocol-core/group-messaging.md), "App payloads").
+Structural decoders do not police inner tag names. Tags carry application content, not delivery addresses or branch
+selection inputs. The optional [per-message expiry v1](./message-expiry-v1.md) profile authenticates a stricter app
+retention cap. A transport may use that validated cap only for its deletion hint, as its owning binding defines.
 
 If a future message kind needs binary content, canonical JSON, or another encoding rule, that rule belongs in the
 message-kind document and MUST name the exact bytes carried inside MLS.
@@ -77,6 +79,9 @@ state or roll back other authenticated MLS processing.
 
 Kind `9` is Marmot's default ordinary chat-message kind. Its `content` is the chat body unless an owning optional
 feature, such as encrypted media, adds feature-specific tags or handling.
+
+The optional [per-message expiry](../features/message-expiry.md) feature defines shorter per-message lifetimes and
+burn-after-read presentation. Its [v1 profile](./message-expiry-v1.md) owns the authenticated policy tags.
 
 The registry is not an allowlist of inner event kinds. Any Nostr-shaped event that satisfies the shared encoding and
 receiver-authentication rules is a valid Marmot app payload unless an active required feature imposes another check.
@@ -137,6 +142,9 @@ overlaid body. A history surface MAY list each version with its timestamp.
 
 A client receiving an edit whose target it has not yet ingested MAY hold the edit for a bounded window and apply it
 when the target arrives, or drop it. Either choice is acceptable.
+
+For a target using per-message expiry, [expiry inheritance](../features/message-expiry.md#derived-surfaces-and-updates)
+also applies. An edit cannot restart its target's countdown or resurrect expired content.
 
 ## Group system events (kind 1210)
 

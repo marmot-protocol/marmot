@@ -230,12 +230,16 @@ Authenticated locators can still direct a client toward a tracking or unsafe end
 The group-image v1 upload credential is shared with members. A former member retaining it can continue using the
 server's accepted write/delete authority; an admin gate on group-state updates cannot revoke that capability.
 Replacement under a fresh credential can restore the reference's availability but cannot erase copied content.
-Disappearing messages and moderation affect conforming applications, not hostile recipients, screenshots or backups.
+Disappearing messages and moderation affect conforming applications, not hostile recipients, screenshots or saved
+external copies. Draft per-message expiry adds an authenticated absolute cap and device-local reveal countdown. It
+depends on conforming projections, durable reveal decisions, bounded local cleanup, and usable local time. It does
+not provide a trusted clock, rollback-resistant device storage, or a way to erase another device's captured content.
 
 Owners: [group-image capability](app-components/group-blossom-image-v1.md),
 [media validation](features/encrypted-media.md#validation),
 [media nonce rules](features/encrypted-media.md#encryption),
 [retention](app-components/message-retention-v1.md#state), and
+[draft per-message expiry](features/message-expiry.md), and
 [draft moderation](features/content-moderation.md). Retroactive deletion proposals remain
 [#418](https://github.com/marmot-protocol/marmot/issues/418).
 
@@ -511,16 +515,24 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Affected property and assumptions:** G1 excludes member disclosure. G3 authenticates the retention policy
   but cannot force hostile erasure; A2 excludes uncontrolled copies.
 - **Mitigations:** Apply the source-epoch retention policy and preserve protocol evidence until its own release
-  conditions. Draft moderation governs conforming display only.
+  conditions. Draft per-message expiry also bounds the absolute cap, withholds unopened burn content from passive
+  surfaces, durably establishes a local deadline before reveal, and excludes burn content from automatic history
+  and backups. Expired state prevents replay or import from recreating content. Draft moderation governs conforming
+  display only.
 - **Residual risk:** Sender-chosen timestamps can shift advisory expiry; local deletion does not erase backups
-  or external blobs. No database setting is mandated here.
+  or external blobs already copied. Old clients may ignore the app profile. Undetectable clock manipulation or
+  restoration of an older entire device state may defeat local timers. Relay-facing absolute caps expose expiry
+  timing, but no new outer tag carries the read duration or a local read deadline.
 - **Normative owners:** [Message retention](app-components/message-retention-v1.md#state), [Message
   retention](app-components/message-retention-v1.md#validation), [Draft
   moderation](features/content-moderation.md#authorization-and-existing-protocol-rules), [Retained
-  history](protocol-core/retained-history.md#retained-cryptographic-material).
+  history](protocol-core/retained-history.md#retained-cryptographic-material), [Per-message profile](foundation/message-expiry-v1.md),
+  [Explicit reveal](features/message-expiry.md#explicit-reveal), [Expiry cleanup](features/message-expiry.md#time-and-expiry),
+  [History and backups](features/message-expiry.md#history-backups-and-compatibility).
 - **Verification status:** Unverified — candidate check: check source-epoch expiry, sender timestamp boundaries
-  and separation of app cleanup from retained protocol facts; hostile-recipient erasure is not testable as a
-  guarantee.
+  and separation of app cleanup from retained protocol facts; race first reveal against crash and expiry, import
+  against tombstones, and attachment completion against cleanup. Check offline caps, clock rollback, and unsupported
+  clients. Hostile-recipient erasure is not testable as a guarantee.
 
 <a id="sc-011"></a>
 

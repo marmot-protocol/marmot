@@ -425,7 +425,9 @@ of the chat that the sender holds in the stretch, as the inner event it received
 history or a backup, except:
 
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
-  expired; a retention of `0`, disappearing messages off, never expires;
+  expired; a retention of `0`, disappearing messages off, contributes no group deadline;
+- a burn-after-read message, or its derived edit or preview content, as
+  [per-message expiry](./message-expiry.md#history-backups-and-compatibility) requires; this also applies to backups;
 - an event whose epoch, `created_at` or retention is larger than 9007199254740991, which no bundle number can hold;
 - an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
   the sender sent and no relay accepted;
@@ -436,6 +438,12 @@ history or a backup, except:
   message back once the receiver holds the removal's authority.
 
 A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
+
+For expire-after-send messages, export and import also enforce the original authenticated per-message cap and
+source-epoch group decision ([per-message expiry](./message-expiry.md#history-backups-and-compatibility)). Missing
+group-retention metadata is not evidence that the group ceiling was disabled: omit a per-message-expiring event if
+its pinned decision cannot be preserved. An edit inherits its known target's cap. A client unable to preserve that
+association omits the edit. An import cannot undo a retained local expired decision or establish a fresh countdown.
 
 **Encoding.** A bundle is one UTF-8 JSON object, and no object in it repeats a member name. Every number in it is a
 decimal integer from 0 to 9007199254740991, without leading zeros. Its encoding is at most 8,388,608 bytes long. The
@@ -480,7 +488,8 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
   or `keys` is empty. It does not check whitespace or member order, which only the sender's rule fixes;
 - checks each event on its own, and drops one whose `id` does not match its content
   ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
-  bundle's stretch, that has `grant` on another kind, or whose retention has expired;
+  bundle's stretch, that has `grant` on another kind, whose retention or per-message absolute cap has expired, or
+  whose per-message profile is malformed, unsupported, or burn-after-read;
 - adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
 - takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
@@ -490,7 +499,8 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
 - keeps every other attachment key, and opens the file it names with it, as that file's `file_key`, when it does not
   hold the media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
 - has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
-  does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
+  does for live messages. An event whose `retention` is `0`, or that has none, contributes no group deadline. A valid
+  per-message absolute cap still applies, and an inherited edit cap cannot be extended by import.
 
 An imported event did not reach the receiver as an MLS message in the chat. Where a rule checks the account of an
 event's MLS sender, such as an edit's authorship ([../foundation/application-messages.md](../foundation/application-messages.md)),
@@ -822,7 +832,7 @@ without whitespace, with its members in the order shown.
 | --------- | ----- |
 | `from`    | the bundle's `from` |
 | `to`      | the bundle's `to` |
-| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, capped at 9007199254740991, and `0` when it has no events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `expires` | when every event in the bundle has expired: the greatest effective absolute expiry over its events, using the earlier finite group-retention and per-message cap, capped at 9007199254740991, and `0` when it has no events; absent when any event has no finite absolute expiry |
 | `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
 | `size`    | the blob's length in bytes, from 1 to 8,388,624 |
 | `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
