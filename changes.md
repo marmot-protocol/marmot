@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-17: A Welcome can deliver its ratchet tree by reference
 
-Pull request: marmot#TBD, for [mdk#2336](https://github.com/marmot-protocol/mdk/issues/2336).
+Pull request: [marmot#507](https://github.com/marmot-protocol/marmot/pull/507), for [mdk#2336](https://github.com/marmot-protocol/mdk/issues/2336).
 Changes [protocol-core/joining.md](./protocol-core/joining.md#ratchet-tree-source),
 [protocol-core/group-setup.md](./protocol-core/group-setup.md),
 [features/ratchet-tree-reference.md](./features/ratchet-tree-reference.md) (new),
