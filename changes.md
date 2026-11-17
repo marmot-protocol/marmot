@@ -15,7 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-17: Draft per-message expiry and burn-after-read
 
-For [mdk#1326](https://github.com/marmot-protocol/mdk/issues/1326).
+Pull request: [marmot#506](https://github.com/marmot-protocol/marmot/pull/506),
+for [mdk#1326](https://github.com/marmot-protocol/mdk/issues/1326).
 Changes [foundation/message-expiry-v1.md](./foundation/message-expiry-v1.md),
 [features/message-expiry.md](./features/message-expiry.md),
 [foundation/application-messages.md](./foundation/application-messages.md),
