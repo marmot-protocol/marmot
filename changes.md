@@ -15,6 +15,8 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-18: Post-link chat progress
 
+Pull request: [marmot#511](https://github.com/marmot-protocol/marmot/pull/511).
+
 The approving device can report the eligible chats it knows to the new device. Each can show how much of the link's
 chat work remains. The new device counts its own completed joins. Implementations can ignore this optional message.
 [Device-group flow](./features/device-group.md#post-link-chat-inventory-kind-477) · [Kind registry](./foundation/registries.md) · [MDK issue 3532](https://github.com/marmot-protocol/mdk/issues/3532)
