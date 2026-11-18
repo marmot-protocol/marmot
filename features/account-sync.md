@@ -424,6 +424,10 @@ event the receiver does not hold, or one the bundle leaves out.
 of the chat that the sender holds in the stretch, as the inner event it received, sent or imported from a sibling's
 history or a backup, except:
 
+- any event carrying a `view-once` marker or an `encrypted-media-view-once-v1` attachment, even if malformed, unopened,
+  or consumed. [View-once v1](view-once-v1.md#media-references-and-content-free-history) forbids transferring its content,
+  original event, usable references, file keys, or consumption state. This bundle schema has no content-free
+  presentation-record type, so the whole event is omitted rather than redacted under its original id;
 - an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
   expired; a retention of `0`, disappearing messages off, never expires;
 - an event whose epoch, `created_at` or retention is larger than 9007199254740991, which no bundle number can hold;
@@ -481,6 +485,9 @@ repeats under a key. The key and the SHA-256 of the ciphertext reach the receivi
 - checks each event on its own, and drops one whose `id` does not match its content
   ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
   bundle's stretch, that has `grant` on another kind, or whose retention has expired;
+- drops any event carrying a `view-once` marker or an `encrypted-media-view-once-v1` attachment, including malformed
+  combinations, together with all its attachment keys. History import never creates a view-once opening or resets a
+  terminal consumption decision on the receiving device;
 - adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
   newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
 - takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the

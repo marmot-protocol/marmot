@@ -320,10 +320,11 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
 
-The following adopted component carries no data. A group lists it among its required components to let members add and
-remove leaves of their own account:
+The following adopted components carry no data:
 
-- [marmot.group.account-devices.v1](./account-devices-v1.md)
+- [marmot.group.account-devices.v1](./account-devices-v1.md) lets members add and remove leaves of their own account.
+- [marmot.group.view-once.v1](./group-view-once-v1.md) activates the additional view-once media profile by explicit
+  decision, with no removal once required.
 
 The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
 

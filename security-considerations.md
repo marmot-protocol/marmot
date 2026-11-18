@@ -232,9 +232,23 @@ server's accepted write/delete authority; an admin gate on group-state updates c
 Replacement under a fresh credential can restore the reference's availability but cannot erase copied content.
 Disappearing messages and moderation affect conforming applications, not hostile recipients, screenshots or backups.
 
+[View-once v1](features/view-once-v1.md) adds one durably claimed, bounded opening per receiving account-device and a
+45-day unopened cap measured from the receiver's admission-time wall-clock reading. A future-dated sender cannot extend
+that stored cap, but an inaccurate receiver clock and later correction can change the lifetime in true elapsed time;
+this is not a trusted-time guarantee. Its domain-separated KDF and AAD prevent an ordinary media path from decrypting a
+reference whose marker was stripped. They do not revoke the reusable epoch exporter or prevent a malicious recipient
+from deriving the file key again. A crash after the claim consumes the opening even if display never succeeded.
+Consumed and expired decisions survive replay and history rebuild only while the device's durable state remains
+intact. A whole-state rollback, hostile host, camera, screenshot, or copied plaintext remains outside that guarantee.
+Content-free history excludes usable media references and file keys, and no consumption message or shared-blob deletion
+is sent. A blob server can still observe an opening attempt's fetch time, network address, and authentication metadata,
+not successful display; [SC-059](#sc-059-authenticated-external-locator-reaches-an-unsafe-or-tracking-endpoint) applies.
+Screenshot suppression and local buffer cleanup are best effort, not physical-erasure claims.
+
 Owners: [group-image capability](app-components/group-blossom-image-v1.md),
 [media validation](features/encrypted-media.md#validation),
 [media nonce rules](features/encrypted-media.md#encryption),
+[view-once v1](features/view-once-v1.md),
 [retention](app-components/message-retention-v1.md#state), and
 [draft moderation](features/content-moderation.md). Retroactive deletion proposals remain
 [#418](https://github.com/marmot-protocol/marmot/issues/418).
@@ -511,13 +525,19 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Affected property and assumptions:** G1 excludes member disclosure. G3 authenticates the retention policy
   but cannot force hostile erasure; A2 excludes uncontrolled copies.
 - **Mitigations:** Apply the source-epoch retention policy and preserve protocol evidence until its own release
-  conditions. Draft moderation governs conforming display only.
-- **Residual risk:** Sender-chosen timestamps can shift advisory expiry; local deletion does not erase backups
+  conditions. View-once uses a distinct media cryptographic domain, claims before decryption, and expires unopened
+  access at the earliest of its authenticated deadlines and stored first-receipt cap. Replay cannot recompute that
+  local cap. Draft moderation governs conforming display only.
+- **Residual risk:** Sender-chosen timestamps can shift ordinary advisory expiry, but cannot extend view-once beyond
+  its stored first-receipt cap. Local deletion does not erase backups
   or external blobs. No database setting is mandated here.
 - **Normative owners:** [Message retention](app-components/message-retention-v1.md#state), [Message
   retention](app-components/message-retention-v1.md#validation), [Draft
   moderation](features/content-moderation.md#authorization-and-existing-protocol-rules), [Retained
-  history](protocol-core/retained-history.md#retained-cryptographic-material).
+  history](protocol-core/retained-history.md#retained-cryptographic-material),
+  [View-once v1](features/view-once-v1.md#per-device-consumption), including its
+  [expiry and bounded viewing](features/view-once-v1.md#expiry-and-bounded-viewing) and
+  [content-free history](features/view-once-v1.md#media-references-and-content-free-history) requirements.
 - **Verification status:** Unverified — candidate check: check source-epoch expiry, sender timestamp boundaries
   and separation of app cleanup from retained protocol facts; hostile-recipient erasure is not testable as a
   guarantee.
@@ -743,15 +763,19 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Affected property and assumptions:** G1 and forward-secrecy arguments depend on A2; protocol pruning does
   not certify physical erasure of uncontrolled copies.
 - **Mitigations:** Follow protocol release conditions and use appropriate host/backup protection. Treat restore
-  as a recovery boundary and retain uncertain publication facts consistently.
+  as a recovery boundary and retain uncertain publication facts consistently. View-once omits usable references and
+  keys from portable history and keeps terminal device-local decisions outside disposable history projections.
 - **Residual risk:** No SQLite setting, file deletion, or removal event guarantees erasure from snapshots,
   storage hardware or hostile recipients. Account backups keep each chat's history on Blossom servers, sealed to the
   recovery words, until a writer deletes them or the servers expire them; deletes are best effort, backups under
   replaced words are never deleted, and anyone holding the recovery key's public half, a removed device included,
   reads which chats and stretches each backup holds.
+  View-once does not protect against whole-state rollback. Its shared source-epoch exporter is not erased when one
+  attachment is consumed.
 - **Normative owners:** [Retained history](protocol-core/retained-history.md#retained-cryptographic-material),
   [Durability](protocol-core/durability.md#recoverable-protocol-facts), [Message
-  retention](app-components/message-retention-v1.md#validation), [Backups](features/account-sync.md#backups).
+  retention](app-components/message-retention-v1.md#validation), [Backups](features/account-sync.md#backups),
+  [View-once limits](features/view-once-v1.md#migration-and-failure-limits).
 - **Verification status:** Unverified — candidate check: inventory backup contents and replay restored work
   against durability rules; physical erasure and backup confidentiality need platform evidence.
 

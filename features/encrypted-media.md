@@ -22,7 +22,12 @@ Blob upload and download are outside MLS group state. A failed upload or failed 
 
 The current media format is `encrypted-media-v2`.
 
-New media references MUST use `encrypted-media-v2`. A legacy v1 reference is processed only under the frozen
+New ordinary reusable media references MUST use `encrypted-media-v2`. The additional negotiated
+[view-once v1 profile](view-once-v1.md) uses `encrypted-media-view-once-v1` with a distinct cryptographic domain and
+bounded, per-device access. Ordinary media paths MUST NOT reinterpret or decrypt that format, and MUST NOT bypass its
+marker or access rules. Its separate component must be required before sending it.
+
+A legacy v1 reference is processed only under the frozen
 [v1 profile](./encrypted-media-v1.md) when the client supports it; a receiver MUST NOT reinterpret another version as
 v2.
 
@@ -51,6 +56,10 @@ A V2 attachment `imeta` tag contains:
 
 The source epoch is not an `imeta` field. It is the MLS epoch of the application message that carried the media tag.
 Clients need that epoch to select the correct media exporter secret.
+
+This section describes ordinary v2 messages. View-once uses the field profiles here only as constrained by its
+[authenticated message format](view-once-v1.md#authenticated-message-format). A `view-once` marker with an ordinary v2
+reference is not usable media and MUST NOT be rendered as an ordinary attachment.
 
 ## Locator Kinds
 
@@ -119,6 +128,10 @@ SHOULD protect cached source-epoch media secrets at rest with confidentiality co
 Clients SHOULD retain recent epoch media secrets long enough to decrypt delayed media references according to local
 retention policy. If a past-epoch media secret is no longer available, media from that epoch cannot be decrypted.
 
+The history-bundle permission above is for ordinary reusable files only. View-once keys and usable references MUST NOT
+be exported or transferred to siblings ([content-free history](view-once-v1.md#media-references-and-content-free-history)).
+Consuming a view-once attachment MUST NOT erase the shared source-epoch exporter to enforce its access restriction.
+
 ## Encryption
 
 `encrypted-media-v2` uses ChaCha20-Poly1305.
@@ -147,7 +160,7 @@ A receiver MUST reject an encrypted media reference when its authenticated field
 reference-level locator rule below. A receiver MUST reject a reference if:
 
 - the `imeta` tag cannot be decoded
-- the version is absent or not `encrypted-media-v2`
+- the version is absent or, for the ordinary v2 path, not `encrypted-media-v2`
 - no locator is present
 - a locator has an empty kind or an empty value, or its value does not parse as a URL
 - a `blossom-v1` locator uses a URL scheme other than `http` or `https`
@@ -164,7 +177,9 @@ reference-level locator rule below. A receiver MUST reject a reference if:
 - `blurhash` is present
 
 Rejecting a reference is attachment-local: the receiver omits that `imeta` attachment from rendering. It MUST NOT
-invalidate or drop the carrying app payload, its caption, or any other valid attachment.
+invalidate or drop the carrying app payload, its caption, or any other valid attachment. An event carrying a
+`view-once` marker or `encrypted-media-view-once-v1` attachment is instead presented only as
+[view-once v1](view-once-v1.md#media-references-and-content-free-history) requires, including malformed combinations.
 
 After a reference passes those checks, fetching and rendering are attachment-availability decisions. Any of the
 following makes that attachment unavailable and MUST NOT retroactively invalidate the reference or its carrying app

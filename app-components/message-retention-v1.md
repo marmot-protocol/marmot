@@ -41,9 +41,28 @@ expiry_timestamp = checked_u64(app_payload.created_at + disappearing_message_sec
 
 `app_payload.created_at` and `expiry_timestamp` are integer Unix timestamps in seconds. The calculation is defined only
 when `created_at` is a non-negative integer representable as `uint64` and the sum is no greater than `2^64 - 1`. An
-implementation MUST NOT wrap, saturate, or compute through an inexact JSON number. When the calculation is undefined or
-the active transport cannot represent the exact result, the sender omits the transport expiry hint; the component state
-and application message remain valid.
+implementation MUST NOT wrap, saturate, or compute through an inexact JSON number. A disabled duration or undefined
+calculation contributes no finite group-expiry bound; the component state and application message remain valid.
+The sender composes the finite bounds below before encoding the transport expiry hint. It omits the hint
+only when no finite bound remains or the active transport cannot represent the selected exact bound.
+
+### Additional authenticated expiry caps
+
+The [view-once v1 profile](../features/view-once-v1.md#authenticated-message-format) adds an authenticated absolute
+unopened deadline. The sender's expiry decision and the application message's transport expiry hint use the earliest finite
+bound among the source-epoch group expiry above and that view-once deadline.
+A disabled or arithmetically undefined group duration contributes no finite bound and MUST NOT erase a
+valid view-once deadline. This composition does not add authority to an arbitrary inner `expiration` tag.
+
+Receivers additionally apply view-once's
+[durable first-receipt cap](../features/view-once-v1.md#authenticated-message-format); retention never extends it.
+
+The authenticated deadline is derived from the inner event, never from an unauthenticated transport wrapper or a
+caller's substitute attachment reference. Direct delivery, replay, and republication MUST use the same source-epoch
+retention decision and authenticated deadline. A later group policy cannot extend either bound.
+
+These caps apply to application messages only. They MUST NOT attach expiry to commits, proposals, or required
+convergence evidence, and MUST NOT force deletion of a shared remote media blob or an epoch secret.
 
 ## Update
 
