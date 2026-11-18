@@ -391,6 +391,58 @@ two leaves that read as that device's, which "Reading tags" there counts as misu
 toward `max_leaves_per_account` while it stays. Avoiding this, whether the account's devices then treat the two leaves
 as misuse, and who removes the extra leaf are not specified yet.
 
+### Post-link chat inventory (kind 477)
+
+After a link is made, the approving device MAY tell the new device which of the approver's chats it can expect to
+join. This optional report travels inside their trusted device group. It applies while the recipient is active with
+“add to all my chats” enabled. The approver includes each chat eligible for its direct post-link flow and each such
+chat that already holds this device, including when its Add filled the last account leaf. A temporary wait for a
+Commit or private stock keeps a chat pending. A scan missing some of the approver's chats cannot supersede a complete
+inventory. Exclude chats the approver has quarantined. When an Add is still needed, exclude a chat if neither the
+new device’s available KeyPackages nor its advertised capabilities meet the requirements. Reassess eligibility when a chat recovers or the
+new device’s capabilities change. If a storage error prevents the approver from determining eligibility, retry the scan.
+
+Use a Marmot application event with empty tags. Its content is a UTF-8 JSON object with the following fields.
+Field order is insignificant. Send and accept only lowercase hexadecimal without a prefix. Reject duplicate or extra fields.
+
+| Field | Meaning |
+| --- | --- |
+| `v` | Integer 1 |
+| `to` | The new device's 32-byte slot, in hex |
+| `link` | Hex of the KeyPackageRef confirmed in this pairing |
+| `revision` | Positive unsigned 32-bit integer. Increase on a changed inventory for this link and retain across restart. |
+| `expires_at` | Exclusive Unix-seconds deadline for the approver's direct-add work |
+| `total` | Number of distinct expected chats, an unsigned 32-bit integer |
+| `page` | Zero-based page index, an unsigned 32-bit integer |
+| `chats` | Hex of the concatenated 32-byte chat tokens on this page |
+
+For each 32-byte chat token, hash the following concatenation with SHA-256: the fixed ASCII bytes of
+`marmot.link-chat-inventory.v1`, then the confirmed KeyPackageRef and the raw MLS GroupId, each prefixed by its
+byte length as a canonical QUIC variable-length integer. For the 32 reference bytes `00` through `1f` and the
+64 group-id bytes `00` through `3f` in ascending order, the prefixes are `20` and `4040` (hex) and the token is
+`40851b595a738955daa54e7b6bf77c5b9314d4a62af3559982f4c06192cea75b`.
+
+Sort the resulting tokens in ascending byte order and partition them
+into pages of 128. Only the last page can be short. Send one empty page numbered zero for an empty inventory.
+Above 262144 chats, send only page zero with empty `chats` and the actual total to indicate that per-chat progress is
+unavailable. A recipient bounds each content string to 8704 bytes and the assembled inventory to 8 MiB. Device-group
+members can see the count and recognize tokens for chats whose ids they already know.
+
+Accept a page only inside the selected trusted device group, addressed to the receiver's own current link. Authenticate
+the sending leaf as the roster's `linked_by` device at the message epoch, as for private sibling messages. Compare
+`link` to the original confirmed KeyPackageRef even if the device subsequently announced a fresh public KeyPackage.
+Ignore expired pages. Version 1 senders use at most a seven-day report lifetime. Receivers allow one additional hour of
+clock skew when checking a future deadline.
+
+A newer revision supersedes every page of the preceding revision. Accept pages of one revision in any order with a
+consistent total and deadline. An invalidated carrier no longer supplies its page. Senders SHOULD repeat the latest
+inventory during the direct-add window so a missed or withdrawn page can be recovered. After the first complete
+transmission, repeat after an hour and back off to at most one day between repeats. A changed inventory or a known
+withdrawal of its carrier SHOULD trigger prompt transmission. A recipient with an incomplete
+or unavailable inventory cannot establish completion. With the whole inventory it counts distinct locally joined chats
+whose tokens match, including a chat another sibling added. Missing reports, opt-out, unlink, expiry and history import
+are separate from successful completion. Inventory messages are advisory and grant no membership.
+
 ### Filling a missing chat
 
 A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its

@@ -13,6 +13,14 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-18: Post-link chat progress
+
+Pull request: [marmot#511](https://github.com/marmot-protocol/marmot/pull/511).
+
+The approving device can report the eligible chats it knows to the new device. Each can show how much of the link's
+chat work remains. The new device counts its own completed joins. Implementations can ignore this optional message.
+[Device-group flow](./features/device-group.md#post-link-chat-inventory-kind-477) · [Kind registry](./foundation/registries.md) · [MDK issue 3532](https://github.com/marmot-protocol/mdk/issues/3532)
+
 ## 2026-11-17: Nostr payloads use NIP-44's extended length format; relays should take 2 MiB events
 
 Pull request: [marmot#508](https://github.com/marmot-protocol/marmot/pull/508), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).
