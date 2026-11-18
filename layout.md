@@ -75,6 +75,7 @@ features/
 ideas/
   README.md
   account-sync.md
+  agents-in-chats.md
   multi-device.md
 implementation-model.md
 ```
