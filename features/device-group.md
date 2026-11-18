@@ -398,10 +398,12 @@ join. This optional report travels inside their trusted device group. It applies
 “add to all my chats” enabled. The approver includes each chat eligible for its direct post-link flow and each such
 chat that already holds this device, including when its Add filled the last account leaf. A temporary wait for a
 Commit or private stock keeps a chat pending. A scan missing some of the approver's chats cannot supersede a complete
-inventory. The set can change as the approver's chats change.
+inventory. Exclude chats the approver has quarantined. When an Add is still needed, exclude a chat if neither the
+new device’s available KeyPackages nor its advertised capabilities meet the requirements. Reassess eligibility when a chat recovers or the
+new device’s capabilities change. If a storage error prevents the approver from determining eligibility, retry the scan.
 
 Use a Marmot application event with empty tags. Its content is a UTF-8 JSON object with the following fields.
-Field order is insignificant. Send lowercase hexadecimal without a prefix. Reject duplicate or extra fields.
+Field order is insignificant. Send and accept only lowercase hexadecimal without a prefix. Reject duplicate or extra fields.
 
 | Field | Meaning |
 | --- | --- |
@@ -414,8 +416,13 @@ Field order is insignificant. Send lowercase hexadecimal without a prefix. Rejec
 | `page` | Zero-based page index, an unsigned 32-bit integer |
 | `chats` | Hex of the concatenated 32-byte chat tokens on this page |
 
-For each chat, hash the ASCII bytes of `marmot.link-chat-inventory.v1`, the confirmed KeyPackageRef bytes and the
-raw MLS GroupId bytes, in order, with SHA-256. Sort the resulting tokens in ascending byte order and partition them
+For each 32-byte chat token, hash the following concatenation with SHA-256: the fixed ASCII bytes of
+`marmot.link-chat-inventory.v1`, then the confirmed KeyPackageRef and the raw MLS GroupId, each prefixed by its
+byte length as a canonical QUIC variable-length integer. For the 32 reference bytes `00` through `1f` and the
+64 group-id bytes `00` through `3f` in ascending order, the prefixes are `20` and `4040` (hex) and the token is
+`40851b595a738955daa54e7b6bf77c5b9314d4a62af3559982f4c06192cea75b`.
+
+Sort the resulting tokens in ascending byte order and partition them
 into pages of 128. Only the last page can be short. Send one empty page numbered zero for an empty inventory.
 Above 262144 chats, send only page zero with empty `chats` and the actual total to indicate that per-chat progress is
 unavailable. A recipient bounds each content string to 8704 bytes and the assembled inventory to 8 MiB. Device-group
@@ -429,7 +436,9 @@ clock skew when checking a future deadline.
 
 A newer revision supersedes every page of the preceding revision. Accept pages of one revision in any order with a
 consistent total and deadline. An invalidated carrier no longer supplies its page. Senders SHOULD repeat the latest
-inventory during the direct-add window so a missed or withdrawn page can be recovered. A recipient with an incomplete
+inventory during the direct-add window so a missed or withdrawn page can be recovered. After the first complete
+transmission, repeat after an hour and back off to at most one day between repeats. A changed inventory or a known
+withdrawal of its carrier SHOULD trigger prompt transmission. A recipient with an incomplete
 or unavailable inventory cannot establish completion. With the whole inventory it counts distinct locally joined chats
 whose tokens match, including a chat another sibling added. Missing reports, opt-out, unlink, expiry and history import
 are separate from successful completion. Inventory messages are advisory and grant no membership.
