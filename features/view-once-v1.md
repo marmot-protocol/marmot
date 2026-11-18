@@ -54,12 +54,13 @@ The cap is relative to the receiver's admission-time wall-clock reading, not ind
 clock and later correction can lengthen or shorten the lifetime in true elapsed time; the high-water does not correct
 that initial reading. This profile does not provide a trusted-time maximum across such clock errors.
 
-The device MUST durably record first application admission, including an unopened message. The sample or resulting cap
-MUST commit atomically with that first application-visible admission, or before it. Admission records share the durability
+The device MUST commit first application admission and its sample or resulting cap in one durable admission record,
+including for an unopened message, before any application-visible projection. That commit is the first application
+admission even if the projection has not committed. A crash or re-emission MUST NOT replace that record's sample or cap.
+Admission records share the durability
 and cleanup boundary of retained source-epoch secret access; ordinary history deletion or projection rebuild MUST NOT
-remove them while that access remains. An earlier
-durably recorded local receipt sample MAY supply a stricter cap. Protocol persistence alone is not application admission:
-a delivery never admitted to the application may be re-emitted and sampled for that first admission. A message already
+remove them while that access remains. Protocol persistence alone is not application admission: a delivery without a
+first admission record may be re-emitted and sampled for that first admission. A message already
 admitted never gets another sample or cap. A previously admitted message missing its admission record or stored cap while
 source-epoch secrets remain MUST fail closed rather than initialize another cap. These guarantees assume intact durable
 device state, not arbitrary erasure or corruption of admission evidence while retaining the keys.
@@ -153,9 +154,11 @@ A conforming client maintains these local outcomes:
 
 The receiver MUST commit a claim only against one coherent eligibility decision covering every ciphertext-independent
 rule in [authenticated message format](#authenticated-message-format), the configured MIME allowlist, current locator-kind
-fetchability, expiry, source visibility, and exclusive admission to the account's single viewer. If any check fails,
+fetchability and endpoint-contact policy, expiry, source visibility, and exclusive admission to the account's single viewer. If any check fails,
 the receiver MUST refuse without committing consumption. This includes a malformed event or reference, unsupported MIME,
-no usable locator or fallback endpoint, or a busy viewer.
+no locator or fallback endpoint that the client's current policy will contact, or a busy viewer. Contact-policy checks
+include permitted schemes, blocked endpoints, and locally unsafe destinations. A local refusal does not invalidate the
+authenticated message or its media reference; it leaves the opening unclaimed.
 
 A separate metadata preflight MUST either keep the checked metadata and policy stable through the claim or recheck
 them before committing; a stale preflight result cannot authorize a claim. Serialization can establish that coherence;
