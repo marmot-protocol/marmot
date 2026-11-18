@@ -198,7 +198,7 @@ applies; see [SC-059](../security-considerations.md#sc-059-authenticated-externa
 
 ## Expiry and bounded viewing
 
-The effective unopened deadline is the earliest finite bound from the marker, the durable first-receipt cap,
+The effective unopened deadline is the earliest finite bound from the marker, the durable first-admission cap,
 and the absolute source-epoch `expiry_timestamp` calculated by
 [message retention](../app-components/message-retention-v1.md#state). A disabled duration or undefined calculation
 supplies no finite group bound. An arbitrary inner `expiration` tag has no independent authority and is not permitted

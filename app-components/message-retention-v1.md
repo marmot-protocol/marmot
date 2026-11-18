@@ -55,7 +55,7 @@ A disabled or arithmetically undefined group duration contributes no finite boun
 valid view-once deadline. This composition does not add authority to an arbitrary inner `expiration` tag.
 
 Receivers additionally apply view-once's
-[durable first-receipt cap](../features/view-once-v1.md#authenticated-message-format); retention never extends it.
+[durable first-admission cap](../features/view-once-v1.md#authenticated-message-format); retention never extends it.
 
 The authenticated deadline is derived from the inner event, never from an unauthenticated transport wrapper or a
 caller's substitute attachment reference. Direct delivery, replay, and republication MUST use the same source-epoch

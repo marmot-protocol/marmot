@@ -526,10 +526,10 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   but cannot force hostile erasure; A2 excludes uncontrolled copies.
 - **Mitigations:** Apply the source-epoch retention policy and preserve protocol evidence until its own release
   conditions. View-once uses a distinct media cryptographic domain, claims before decryption, and expires unopened
-  access at the earliest of its authenticated deadlines and stored first-receipt cap. Replay cannot recompute that
+  access at the earliest of its authenticated deadlines and stored first-admission cap. Replay cannot recompute that
   local cap. Draft moderation governs conforming display only.
 - **Residual risk:** Sender-chosen timestamps can shift ordinary advisory expiry, but cannot extend view-once beyond
-  its stored first-receipt cap. Local deletion does not erase backups
+  its stored first-admission cap. Local deletion does not erase backups
   or external blobs. No database setting is mandated here.
 - **Normative owners:** [Message retention](app-components/message-retention-v1.md#state), [Message
   retention](app-components/message-retention-v1.md#validation), [Draft
