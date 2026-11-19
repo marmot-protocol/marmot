@@ -1446,10 +1446,12 @@ struct {
 
 A sender uses version 3 only when it forwards something, an `inviter` or `confirmed` `1`; otherwise it uses version 2 or
 1 as above. Like the generation, the forwarded fields are the sending sibling's assertion about its own copy, bound when
-the obligation is created and kept unchanged on every retry and repair. The receiver shows `inviter` as the invitation's
-sender in place of its own account, which authored the MLS Welcome. With `confirmed` `1` it does not ask its user to
-confirm the joined copy, unless its own local policy, such as blocking that inviter, holds the invitation pending. That
-is presentation only: it records no invitation generation and no decision, and the copy stays local-only. A confirmation
+the obligation is created and kept unchanged on every retry and repair. They describe the sender's copy when it makes
+the Add; if that copy changes before a delayed Add is sent, the Welcome can carry facts that no longer hold, which the
+receiver shows until its user resolves the invitation there. The receiver shows `inviter` as the invitation's sender in
+place of its own account, which authored the MLS Welcome. With `confirmed` `1` it does not ask its user to confirm the
+joined copy, unless its own local policy, such as blocking that inviter, holds the invitation pending. That is
+presentation only: it records no invitation generation and no decision, and the copy stays local-only. A confirmation
 that local policy held pending is not retained, so if that policy later changes, for example the inviter is unblocked,
 the copy is shown as a pending invitation from that inviter. A version-2 receiver rejects version 3 and may miss its
 Welcome, under the same updated-receiver boundary as version 2.
