@@ -183,7 +183,9 @@ explicit discard/rejoin boundary. A replay of the identical retained Welcome kee
 Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
 from its current epoch, time, route, account presence or a decision carrying only the same chat id. A sibling Add of
 an unidentified copy forwards only whether the sender's copy is confirmed, in a version-3 sibling Welcome; the new copy
-is shown confirmed or pending accordingly and stays local-only. This feature
+is shown confirmed or pending accordingly and stays local-only. A device whose copy is confirmed and identified but
+holds no decision for its generation, for example one accepted while it trusted no device group, records the founder's
+implicit accepted value before it adds a sibling to that chat, so the sibling's copy settles through that generation. This feature
 requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
 mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
 

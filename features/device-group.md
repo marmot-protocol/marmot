@@ -1448,7 +1448,8 @@ A sender uses version 3 only when it forwards something, an `inviter` or `confir
 or 1 as above. Like the generation, the forwarded fields are the sending sibling's assertion about its own copy, bound
 when the obligation is created and kept unchanged on every retry and repair. The receiver shows `inviter` as the
 invitation's sender in place of its own account, which authored the MLS Welcome. With `confirmed` `1` it does not ask
-its user to confirm the joined copy. That is presentation only: it records no invitation generation and no decision,
+its user to confirm the joined copy, unless its own local policy, such as blocking that inviter, holds the invitation
+pending. That is presentation only: it records no invitation generation and no decision,
 and the copy stays local-only. A version-2 receiver rejects version 3 and may miss its Welcome, under the same
 updated-receiver boundary as version 2.
 

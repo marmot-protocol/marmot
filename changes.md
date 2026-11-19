@@ -27,6 +27,9 @@ Changes [features/device-group.md](./features/device-group.md#message) and
   `confirmed` beside a generation.
 - An unidentified copy stays local-only: a forwarded confirmation records no generation or decision, so accepting or
   declining an older unanswered invitation later still settles only the device it was made on.
+- A device adding a sibling to a confirmed, identified chat for whose generation it holds no decision, such as one
+  accepted while it trusted no device group, first records the implicit accepted value a founder records.
+- A receiver's own block of the inviter still governs a forwarded confirmation, as it governs a shared acceptance.
 - Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
   mixed-version promise.
 
