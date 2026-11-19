@@ -21,22 +21,22 @@ Changes [features/device-group.md](./features/device-group.md#message) and
 
 - A newly linked device used to show every chat it joined through a sibling Welcome as an invitation from its own
   account. Version 3 of the sibling Welcome adds the original inviter, and for a copy with no invitation generation,
-  whether the sender's copy is confirmed. Receivers show that inviter, and show such a chat confirmed without asking.
-- Senders use version 3 only when they forward something, and otherwise keep versions 1 and 2. Receivers read all three
-  and drop a version 3 that forwards nothing, has a byte other than 0 or 1 in a presence or `confirmed` field, or is
-  `confirmed` beside a generation.
-- An unidentified copy stays local-only: a forwarded confirmation records no generation or decision, so accepting or
-  declining an older unanswered invitation later still settles only the device it was made on.
-- A device adding a sibling to a confirmed, identified chat for whose generation it holds no decision, such as one
-  accepted while it trusted no device group, first records the implicit accepted value a founder records.
-- A receiver's own block of the inviter still governs a forwarded confirmation, as it governs a shared acceptance.
-  Unlike a shared decision, a confirmation held pending this way is not retained: after an unblock the copy is shown
-  as a pending invitation from that inviter.
-- The forwarded fields describe the sender's copy when it makes the Add, so a sender does not queue an Add that
-  forwards anything; it tries again later. A Welcome whose sending is delayed after the Add, when the copy changes
-  meanwhile (for example accepted there), can still forward facts that no longer hold.
+  whether the sender's copy is confirmed. Senders use version 3 when they forward either, version 2 when they have only
+  a generation, and version 1 otherwise. Receivers read all three and drop a version 3 that forwards nothing, has a
+  byte other than 0 or 1 in a presence or `confirmed` field, or is `confirmed` beside a generation.
+- Senders read the forwarded fields from their copy when they prepare the Add's Commit and keep the bound bytes on
+  retry and repair. A Welcome sent after its copy changed can forward facts that no longer hold.
+- Receivers ignore an invalid inviter or their own account, keep the forwarded inviter with the installed copy and
+  present it as reported by the sibling, and apply local policy such as a block to it before resolving the copy. A
+  forwarded confirmation not held by local policy is recorded as a local confirmation, with no generation or
+  decision, and forwarded again by a later sibling Add; one held pending is not retained, while a user's own answer
+  on that device stands.
+- A device adding a sibling to a confirmed chat with a generation but no decision, such as one accepted while it
+  trusted no device group, first applies the founder rule to that generation. A chat id beyond the decision bound
+  records nothing.
 - Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
-  mixed-version promise.
+  mixed-version promise. [T5](./security-considerations.md#t5-malicious-members-administrators-and-same-account-devices)
+  now notes that a linked device can assert any inviter and a confirmation no decision can undo.
 
 ## 2026-11-18: Post-link chat progress
 

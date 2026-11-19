@@ -171,7 +171,10 @@ chat it is not in: matching local copies request their own ordinary Leave and ho
 by a legal later acceptance; removing its sender does not undo retained state. Native departure/consent checks still
 apply, and unrelated generations are not an account-wide removal target. Retained generations have no expiry or
 count limit: a malicious linked device can fabricate generations to enlarge stored state and rebroadcast work, with
-at least one update per generation of the same chat. Removing the sender does not clear those values.
+at least one update per generation of the same chat. Removing the sender does not clear those values. A linked device
+can also put any inviter and, for a chat with no invitation generation, a confirmation on a [sibling
+Welcome](features/device-group.md#receiving-forwarded-fields): the new device shows that inviter and shows such a chat
+confirmed, and no invitation decision can later undo that confirmation.
 
 [Moving one device](features/device-group.md#moving-between-device-groups) requires another code-confirmed link.
 Old roster membership grants no destination authority; trust changes only when the destination's selected first-own
