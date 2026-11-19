@@ -32,8 +32,9 @@ Changes [features/device-group.md](./features/device-group.md#message) and
 - A receiver's own block of the inviter still governs a forwarded confirmation, as it governs a shared acceptance.
   Unlike a shared decision, a confirmation held pending this way is not retained: after an unblock the copy is shown
   as a pending invitation from that inviter.
-- The forwarded fields describe the sender's copy when it makes the Add. A delayed Add whose copy changes first, for
-  example accepted there meanwhile, can forward facts that no longer hold.
+- The forwarded fields describe the sender's copy when it makes the Add, so a sender does not queue an Add that
+  forwards anything; it tries again later. A Welcome whose sending is delayed after the Add, when the copy changes
+  meanwhile (for example accepted there), can still forward facts that no longer hold.
 - Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
   mixed-version promise.
 
