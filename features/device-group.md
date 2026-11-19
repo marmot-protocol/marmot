@@ -1422,14 +1422,20 @@ does:
 
 ```text
 struct {
+  uint8 present;  // 0 or 1; any other value is invalid
+  select (present) {
+    case 0: struct {};
+    case 1: opaque value[32];
+  };
+} OptionalBytes32;
+
+struct {
   uint8 version;  // exactly 3
   SlotId from;
   SlotId to;
-  uint8 has_invitation_generation;   // 0 or 1
-  opaque invitation_generation[32];  // only when has_invitation_generation is 1
-  uint8 has_inviter;                 // 0 or 1
-  opaque inviter[32];                // only when has_inviter is 1
-  uint8 confirmed;                   // 0 or 1
+  OptionalBytes32 invitation_generation;
+  OptionalBytes32 inviter;
+  uint8 confirmed;  // 0 or 1
   KeyPackageRefV1 key_package_ref;
   MLSMessage welcome;
   SiblingWelcomeRelayV1 relays<V>;
@@ -1472,14 +1478,16 @@ decision for it, the sender does what [account sync](./account-sync.md#invitatio
 
 #### Receiving forwarded fields
 
-A receiver uses `inviter` and `confirmed` only from a sibling Welcome whose validated GroupInfo signer is its own
-account; from any other, it treats both as absent. It treats an `inviter` that is not a valid x-only secp256k1 public
-key ([../foundation/identity.md](../foundation/identity.md)) or is its own account as absent: it stores, shows, matches
-and forwards no inviter for it. It keeps an `inviter` that remains with the copy it installs, durably and recoverably
-with the successful admission, including a Welcome it installs later from retention, and presents it as the invitation's
-original sender as its sibling reported it; the authenticated Welcome author stays its own account. It applies its local
-policy, such as a block of that inviter, before it resolves the copy's presentation, including when it applies an
-invitation decision it already holds.
+A receiver uses `inviter` and `confirmed` only from a sibling Welcome whose Welcome author account, as
+[joining](../protocol-core/joining.md#receiving-flow) identifies it from the GroupInfo signer leaf, is its own account;
+from any other, it treats both as absent. Both apply only to the copy that Welcome installs, including a later install
+from retention; a copy the Welcome did not install is left unchanged. It treats an `inviter` that is not a valid x-only
+secp256k1 public key ([../foundation/identity.md](../foundation/identity.md)) or is its own account as absent: it
+stores, shows, matches and forwards no inviter for it. It keeps an `inviter` that remains with the copy it installs,
+durably and recoverably with the successful admission, including a Welcome it installs later from retention, and
+presents it as the invitation's original sender as its sibling reported it; the authenticated Welcome author stays its
+own account. It applies its local policy, such as a block of that inviter, before it resolves the copy's presentation,
+including when it applies an invitation decision it already holds.
 
 With `confirmed` `1` and no local policy holding the copy pending, the receiver does not ask its user to confirm it, and
 durably records the copy as confirmed as a local acceptance does, without an invitation generation or a decision; the
@@ -1583,8 +1591,8 @@ A device reads a sibling Welcome only from the device group it trusts ([Trust](#
 other group. It drops one unless:
 
 - its content decodes exactly as [Message](#message) gives it: `version` `1`, `2` or `3`, a `welcome` whose
-  `wire_format` is `mls_welcome`, and no bytes left over; for version 3, each presence byte and `confirmed` is `0` or
-  `1`, `confirmed` is `0` beside an `invitation_generation`, and `has_inviter` or `confirmed` is `1`; whether an
+  `wire_format` is `mls_welcome`, and no bytes left over; for version 3, each `OptionalBytes32` `present` byte and `confirmed` is
+  `0` or `1`, `confirmed` is `0` beside an `invitation_generation`, and `inviter` is present or `confirmed` is `1`; whether an
   `inviter` counts is decided only when the fields are used ([Receiving forwarded fields](#receiving-forwarded-fields));
 - `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
 - `to` is its own slot;
