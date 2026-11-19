@@ -171,7 +171,7 @@ restart neither creates a new user action nor increments its version. No public 
 for the identity.
 
 **Inherited identity.** An automatic same-account sibling Add carries its sender's stored original generation in the
-version-2 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
+version-2 or version-3 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
 later sibling Add's context. The authenticated device-group sender asserts that inheritance for the exact Welcome and
 KeyPackageRef; this is a trusted sibling's assertion, not independent proof of the earlier external admission. The
 receiver records the installed association only with successful native admission. If it retains the Welcome while an
@@ -180,10 +180,18 @@ active local copy prevents installation, it retains the asserted generation with
 never authorizes active-copy replacement; [Welcome receiving](../protocol-core/joining.md#receiving-flow) keeps its
 explicit discard/rejoin boundary. A replay of the identical retained Welcome keeps the same generation.
 
-Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
-from its current epoch, time, route, account presence or a decision carrying only the same chat id. This feature
-requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
-mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
+Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them from
+its current epoch, time, route, account presence or a decision carrying only the same chat id. For an unidentified copy,
+a sibling Add can forward whether the sender's copy is confirmed, beside any inviter, in a version-3 sibling Welcome;
+the new copy is shown as [Receiving forwarded fields](./device-group.md#receiving-forwarded-fields) says, and stays
+local-only. A device whose copy is confirmed and has an original generation but holds no decision for it, for example
+one accepted while it trusted no device group, applies the founder rule above to that generation before it adds a
+sibling to that chat: one implicit accepted value at version 1 only if it holds no decision, never replacing a held
+value and never repeated on restart, retained and owed its ordinary broadcast before the Add. A chat whose raw MLS group
+id is outside the one-to-256-byte bound of an invite item records no value; its sibling's copy, which carries the
+generation and so no forwarded confirmation, stays a pending invitation there. This feature requires updated
+experimental senders and receivers before use; it adds no capability negotiation and makes no mixed-version
+compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
 
 **Values.** A decision has a version from 1 through 9007199254740991 and value `accept` or `decline`. A local user
 change takes one more than the highest held version for this exact generation. A device that holds no value for that
