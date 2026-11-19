@@ -1437,9 +1437,10 @@ struct {
 ```
 
 - `invitation_generation` is as in version 2, and absent where version 1 would carry none.
-- `inviter` is the raw 32-byte x-only public key of the other account whose Welcome admitted the sender's copy, as the
-  sender recorded it. It is absent when the sender founded the chat, or when it knows no inviter other than its own
-  account.
+- `inviter` is the raw 32-byte x-only public key of the other account that invited the sender's copy, as the sender
+  recorded it: the author of the Welcome that admitted it, or, for a copy that joined from a sibling Welcome, the
+  `inviter` that Welcome forwarded, so the original inviter carries through every sibling Add. It is absent when the
+  sender founded the chat, or when it knows no inviter other than its own account.
 - `confirmed` is `1` when the sender's copy is confirmed (founded, or its invitation accepted) and the copy has no
   invitation generation. It is `0` whenever `invitation_generation` is present: that generation's shared decision
   settles the new copy ([account-sync.md](./account-sync.md#invitation-decisions)).

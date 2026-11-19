@@ -180,13 +180,14 @@ active local copy prevents installation, it retains the asserted generation with
 never authorizes active-copy replacement; [Welcome receiving](../protocol-core/joining.md#receiving-flow) keeps its
 explicit discard/rejoin boundary. A replay of the identical retained Welcome keeps the same generation.
 
-Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
-from its current epoch, time, route, account presence or a decision carrying only the same chat id. A sibling Add of
-an unidentified copy forwards only whether the sender's copy is confirmed, in a version-3 sibling Welcome; the new copy
-is shown confirmed or pending accordingly and stays local-only. A device whose copy is confirmed and identified but
-holds no decision for its generation, for example one accepted while it trusted no device group, records the founder's
-implicit accepted value before it adds a sibling to that chat, so the sibling's copy settles through that generation. This feature
-requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
+Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them from
+its current epoch, time, route, account presence or a decision carrying only the same chat id. For an unidentified copy,
+a sibling Add can also forward whether the sender's copy is confirmed, beside any inviter, in a version-3 sibling
+Welcome ([device-group.md](./device-group.md#message)); with neither to forward it uses version 1. The new copy is shown
+confirmed or pending accordingly and stays local-only. A device whose copy is confirmed and identified but holds no
+decision for its generation, for example one accepted while it trusted no device group, records the founder's implicit
+accepted value before it adds a sibling to that chat, so the sibling's copy settles through that generation. This
+feature requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
 mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
 
 **Values.** A decision has a version from 1 through 9007199254740991 and value `accept` or `decline`. A local user
