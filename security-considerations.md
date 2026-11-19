@@ -172,9 +172,9 @@ by a legal later acceptance; removing its sender does not undo retained state. N
 apply, and unrelated generations are not an account-wide removal target. Retained generations have no expiry or
 count limit: a malicious linked device can fabricate generations to enlarge stored state and rebroadcast work, with
 at least one update per generation of the same chat. Removing the sender does not clear those values. A linked device
-can also put any inviter and, for a chat with no invitation generation, a confirmation on a [sibling
-Welcome](features/device-group.md#receiving-forwarded-fields): the new device shows that inviter and shows such a chat
-confirmed, and no invitation decision can later undo that confirmation.
+can also put any inviter and a confirmation on a [sibling Welcome](features/device-group.md#receiving-forwarded-fields)
+that omits an invitation generation: unless local policy holds it pending, the new device shows that inviter and the
+chat confirmed, and no invitation decision, including one the sender's own copy may hold, can later undo it.
 
 [Moving one device](features/device-group.md#moving-between-device-groups) requires another code-confirmed link.
 Old roster membership grants no destination authority; trust changes only when the destination's selected first-own

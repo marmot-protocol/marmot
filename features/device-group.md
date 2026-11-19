@@ -1414,8 +1414,8 @@ struct {
 Version 2 inserts the fixed 32-byte original invitation generation after `to`, with no length prefix; every other field,
 bound and admission check is the same as version 1. An unknown original generation remains local-only in every version;
 [Choosing the version](#choosing-the-version) says which version a sender uses. A receiver supporting
-invitation-decision sync reads both versions; an older version-1 receiver rejects version 2 and may miss its Welcome, so
-this is not a mixed-receiver rollout guarantee.
+invitation-decision sync reads all three versions; an older version-1 receiver rejects versions 2 and 3, and a version-2
+receiver rejects version 3, so either may miss its Welcome: this is not a mixed-receiver rollout guarantee.
 
 Version 3 also forwards how the sender's own copy of the chat stands, so the new device shows the chat as the sender
 does:
@@ -1445,23 +1445,26 @@ struct {
   invitation generation. It is `0` whenever `invitation_generation` is present: that generation's shared decision
   settles the new copy ([account-sync.md](./account-sync.md#invitation-decisions)).
 
-Version 3 adds nothing a receiver must trust beyond the sibling that sent it: `inviter` and `confirmed` are the sending
-sibling's assertion about its own copy, like the inherited generation, and the MLS Welcome they arrive with is authored
-by the receiver's own account.
+`inviter` and `confirmed` are the sending sibling's assertion about its own copy, like the inherited generation; the MLS
+Welcome they arrive with is authored by the receiver's own account ([Receiving forwarded
+fields](#receiving-forwarded-fields)).
 
 #### Choosing the version
 
 A sender uses version 3 when it forwards an `inviter` or `confirmed` `1`, with `confirmed` `0` whenever it carries an
 original generation. Otherwise it uses version 2 when it has an original generation, and version 1 when it has neither.
-Version-2 receivers reject version 3 and may miss its Welcome, under the same updated-receiver boundary as version 2.
+A founding Add carries the post-founding generation ([account-sync.md](./account-sync.md#invitation-decisions)) and
+forwards nothing, so its sibling Welcomes use version 2.
 
 #### Sending forwarded fields
 
-The sender reads `inviter` and `confirmed` from its own copy when it prepares the Add's Commit, and binds them, with the
-version and original generation, when it creates the Add/Welcome obligation; retrying or repairing the Welcome keeps its
-exact bytes. If the copy changes after that, for example its user accepts the invitation there before the Welcome is
-sent, the Welcome can carry facts that no longer hold: a stale pending invitation stays one the receiver's user can
-answer, and a stale `confirmed` `1` stays a locally confirmed copy.
+For an Add to a chat this device already holds, the sender reads `inviter` and `confirmed` from its own copy when it
+prepares the Add's Commit, and binds them, with the version and original generation, when it creates the Add/Welcome
+obligation; retrying or repairing the Welcome keeps its exact bytes. An outstanding version-1 obligation remains version
+1: it MUST NOT be upgraded, reseeded from a later epoch, or accompanied by a second carrier to retrofit invitation
+metadata. If the copy changes after the obligation is created, for example its user accepts the invitation there before
+the Welcome is sent, the Welcome can carry facts that no longer hold: for a Welcome without a generation, a stale
+pending invitation stays one the receiver's user can answer, and a stale `confirmed` `1` stays a locally confirmed copy.
 
 Before it prepares an Add of a chat whose copy is confirmed and has an original generation but holds no invitation
 decision for it, for example one accepted while it trusted no device group, the sender applies the founder rule of
@@ -1469,22 +1472,21 @@ decision for it, for example one accepted while it trusted no device group, the 
 
 #### Receiving forwarded fields
 
-A receiver ignores an `inviter` that is not a valid x-only public key or is its own account. It keeps the forwarded
-`inviter` with the copy it installs, durably and recoverably with the successful admission, including a Welcome it
-installs later from retention, and presents it as the invitation's original sender as its sibling reported it; the
-authenticated Welcome author stays its own account. It applies its local policy, such as a block of that inviter, before
-it resolves the copy's presentation, including when it applies an invitation decision it already holds.
+A receiver uses `inviter` and `confirmed` only from a sibling Welcome whose validated GroupInfo signer is its own
+account; from any other, it treats both as absent. It treats an `inviter` that is not a valid x-only secp256k1 public
+key ([../foundation/identity.md](../foundation/identity.md)) or is its own account as absent: it stores, shows, matches
+and forwards no inviter for it. It keeps an `inviter` that remains with the copy it installs, durably and recoverably
+with the successful admission, including a Welcome it installs later from retention, and presents it as the invitation's
+original sender as its sibling reported it; the authenticated Welcome author stays its own account. It applies its local
+policy, such as a block of that inviter, before it resolves the copy's presentation, including when it applies an
+invitation decision it already holds.
 
 With `confirmed` `1` and no local policy holding the copy pending, the receiver does not ask its user to confirm it, and
 durably records the copy as confirmed as a local acceptance does, without an invitation generation or a decision; the
 copy stays local-only. A later sibling Add from that device forwards the same `inviter` and confirmation. A forwarded
 confirmation that local policy holds pending is not retained: the copy is a pending invitation from the retained
 inviter, and if the policy later changes, an answer the user gave on this device stands and an unanswered copy stays a
-pending invitation.
-
-An outstanding version-1 obligation remains version 1: it MUST NOT be upgraded, reseeded from a later epoch, or accompanied by a second
-carrier to retrofit invitation metadata. Retrying or repairing a retained Welcome keeps its exact bytes. This is a
-sender/authoring rule; it adds no new receiver validity rule beyond the versioned encoding and existing checks.
+pending invitation. These are the receiver's only presentation rules for forwarded fields; account sync refers to them.
 
 
 The structure uses the Marmot binary profile
@@ -1822,9 +1824,9 @@ its device group.
 ## Security considerations
 
 - A sibling Welcome's `inviter` and `confirmed` are the sending device's assertion ([Receiving forwarded
-  fields](#receiving-forwarded-fields)). A stolen linked device can name any inviter on a chat it adds a sibling to, and
-  for a chat with no invitation generation show it confirmed there; no invitation decision can later undo that
-  confirmation.
+  fields](#receiving-forwarded-fields)). A stolen linked device can name any inviter on a chat it adds a sibling to,
+  and with a Welcome that omits an invitation generation show the chat confirmed there, unless the receiver's local
+  policy holds it pending; no invitation decision can later undo that confirmation.
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
   add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
 - Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the

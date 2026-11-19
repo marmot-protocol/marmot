@@ -22,11 +22,12 @@ Changes [features/device-group.md](./features/device-group.md#message) and
 - A newly linked device used to show every chat it joined through a sibling Welcome as an invitation from its own
   account. Version 3 of the sibling Welcome adds the original inviter, and for a copy with no invitation generation,
   whether the sender's copy is confirmed. Senders use version 3 when they forward either, version 2 when they have only
-  a generation, and version 1 otherwise. Receivers read all three and drop a version 3 that forwards nothing, has a
+  a generation (including every founding Add), and version 1 otherwise. Receivers read all three and drop a version 3 that forwards nothing, has a
   byte other than 0 or 1 in a presence or `confirmed` field, or is `confirmed` beside a generation.
 - Senders read the forwarded fields from their copy when they prepare the Add's Commit and keep the bound bytes on
   retry and repair. A Welcome sent after its copy changed can forward facts that no longer hold.
-- Receivers ignore an invalid inviter or their own account, keep the forwarded inviter with the installed copy and
+- Receivers use the forwarded fields only from a Welcome their own account authored, treat an invalid inviter or
+  their own account as absent, keep the forwarded inviter with the installed copy and
   present it as reported by the sibling, and apply local policy such as a block to it before resolving the copy. A
   forwarded confirmation not held by local policy is recorded as a local confirmation, with no generation or
   decision, and forwarded again by a later sibling Add; one held pending is not retained, while a user's own answer
