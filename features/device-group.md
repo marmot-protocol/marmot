@@ -1438,9 +1438,10 @@ struct {
 
 - `invitation_generation` is as in version 2, and absent where version 1 would carry none.
 - `inviter` is the raw 32-byte x-only public key of the other account that invited the sender's copy, as the sender
-  recorded it: the author of the Welcome that admitted it, or, for a copy that joined from a sibling Welcome, the
-  `inviter` that Welcome forwarded, so the original inviter carries through every sibling Add. It is absent when the
-  sender founded the chat, or when it knows no inviter other than its own account.
+  recorded it: the validated author of the Welcome that admitted it when that is another account, or, when that author
+  is its own account (a sibling Welcome), the `inviter` that Welcome forwarded and it kept, so the original inviter
+  carries through every sibling Add. It is absent when the sender founded the chat, or when it knows no inviter other
+  than its own account.
 - `confirmed` is `1` when the sender's copy is confirmed (founded, or its invitation accepted) and the copy has no
   invitation generation. It is `0` whenever `invitation_generation` is present: that generation's shared decision
   settles the new copy ([account-sync.md](./account-sync.md#invitation-decisions)).
@@ -1467,8 +1468,7 @@ the Welcome is sent, the Welcome can carry facts that no longer hold: for a Welc
 pending invitation stays one the receiver's user can answer, and a stale `confirmed` `1` stays a locally confirmed copy.
 
 Before it prepares an Add of a chat whose copy is confirmed and has an original generation but holds no invitation
-decision for it, for example one accepted while it trusted no device group, the sender applies the founder rule of
-[account sync](./account-sync.md#invitation-decisions) to that generation, so the new copy settles through it.
+decision for it, the sender does what [account sync](./account-sync.md#invitation-decisions) requires for that case.
 
 #### Receiving forwarded fields
 
@@ -1584,7 +1584,8 @@ other group. It drops one unless:
 
 - its content decodes exactly as [Message](#message) gives it: `version` `1`, `2` or `3`, a `welcome` whose
   `wire_format` is `mls_welcome`, and no bytes left over; for version 3, each presence byte and `confirmed` is `0` or
-  `1`, `confirmed` is `0` beside an `invitation_generation`, and it forwards an `inviter` or `confirmed` `1`;
+  `1`, `confirmed` is `0` beside an `invitation_generation`, and `has_inviter` or `confirmed` is `1`; whether an
+  `inviter` counts is decided only when the fields are used ([Receiving forwarded fields](#receiving-forwarded-fields));
 - `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
 - `to` is its own slot;
 - `from` is another device in its current roster;
