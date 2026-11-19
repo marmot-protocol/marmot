@@ -30,6 +30,8 @@ Changes [features/device-group.md](./features/device-group.md#message) and
 - A device adding a sibling to a confirmed, identified chat for whose generation it holds no decision, such as one
   accepted while it trusted no device group, first records the implicit accepted value a founder records.
 - A receiver's own block of the inviter still governs a forwarded confirmation, as it governs a shared acceptance.
+  Unlike a shared decision, a confirmation held pending this way is not retained: after an unblock the copy is shown
+  as a pending invitation from that inviter.
 - Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
   mixed-version promise.
 
