@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-19: A sibling Welcome forwards how the sender holds the chat
 
-Pull request: PENDING, for [mdk#3546](https://github.com/marmot-protocol/mdk/issues/3546).
+Pull request: [marmot#512](https://github.com/marmot-protocol/marmot/pull/512), for [mdk#3546](https://github.com/marmot-protocol/mdk/issues/3546).
 Changes [features/device-group.md](./features/device-group.md#message) and
 [features/account-sync.md](./features/account-sync.md#invitation-decisions).
 
