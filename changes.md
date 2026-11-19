@@ -13,6 +13,23 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-19: A sibling Welcome forwards how the sender holds the chat
+
+Pull request: PENDING, for [mdk#3546](https://github.com/marmot-protocol/mdk/issues/3546).
+Changes [features/device-group.md](./features/device-group.md#message) and
+[features/account-sync.md](./features/account-sync.md#invitation-decisions).
+
+- A newly linked device used to show every chat it joined through a sibling Welcome as an invitation from its own
+  account. Version 3 of the sibling Welcome adds the original inviter, and for a copy with no invitation generation,
+  whether the sender's copy is confirmed. Receivers show that inviter, and show such a chat confirmed without asking.
+- Senders use version 3 only when they forward something, and otherwise keep versions 1 and 2. Receivers read all three
+  and drop a version 3 that forwards nothing, has a byte other than 0 or 1 in a presence or `confirmed` field, or is
+  `confirmed` beside a generation.
+- An unidentified copy stays local-only: a forwarded confirmation records no generation or decision, so accepting or
+  declining an older unanswered invitation later still settles only the device it was made on.
+- Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
+  mixed-version promise.
+
 ## 2026-11-18: Post-link chat progress
 
 Pull request: [marmot#511](https://github.com/marmot-protocol/marmot/pull/511).

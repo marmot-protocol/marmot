@@ -171,7 +171,7 @@ restart neither creates a new user action nor increments its version. No public 
 for the identity.
 
 **Inherited identity.** An automatic same-account sibling Add carries its sender's stored original generation in the
-version-2 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
+version-2 or version-3 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
 later sibling Add's context. The authenticated device-group sender asserts that inheritance for the exact Welcome and
 KeyPackageRef; this is a trusted sibling's assertion, not independent proof of the earlier external admission. The
 receiver records the installed association only with successful native admission. If it retains the Welcome while an
@@ -181,7 +181,9 @@ never authorizes active-copy replacement; [Welcome receiving](../protocol-core/j
 explicit discard/rejoin boundary. A replay of the identical retained Welcome keeps the same generation.
 
 Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them
-from its current epoch, time, route, account presence or a decision carrying only the same chat id. This feature
+from its current epoch, time, route, account presence or a decision carrying only the same chat id. A sibling Add of
+an unidentified copy forwards only whether the sender's copy is confirmed, in a version-3 sibling Welcome; the new copy
+is shown confirmed or pending accordingly and stays local-only. This feature
 requires updated experimental senders and receivers before use; it adds no capability negotiation and makes no
 mixed-version compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
 
