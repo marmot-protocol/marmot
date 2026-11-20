@@ -77,6 +77,7 @@ ideas/
   account-sync.md
   agents-in-chats.md
   multi-device.md
+  group-permissions.md
 implementation-model.md
 ```
 
