@@ -27,6 +27,7 @@ Marmot app components use MLS private-use component ids.
 | `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
 | `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
 | `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
+| `0x8010`     | `marmot.group.view-once.v1`                     | [doc](../app-components/group-view-once-v1.md)                       |
 
 `0x800a` was `marmot.authorization.multi-device-join.v1`, the join authorization of an earlier multi-device draft that
 [#427](https://github.com/marmot-protocol/marmot/pull/427) withdrew. It has no meaning, and data under it is
@@ -197,8 +198,12 @@ used below the exporter output.
 | Label      | Context                        | Length   | Consumer                               |
 | ---------- | ------------------------------ | -------- | -------------------------------------- |
 | `"marmot"` | `"group-event"`                | `32`     | kind `445` outer encryption key        |
-| `"marmot"` | `"encrypted-media"`            | `32`     | encrypted-media per-file key schedule  |
+| `"marmot"` | `"encrypted-media"`            | `32`     | ordinary and view-once media per-file key schedules |
 | `"marmot"` | `"agent-text-stream-quic"`     | `32`     | agent text stream QUIC record crypto   |
 | `"marmot"` | `"convergence-conformance-v1"` | `32`     | synthetic conformance state commitment |
 
 Fixed `32`-byte outputs are used where the owning document feeds a 32-byte AEAD key or feature key schedule.
+
+[View-once v1](../features/view-once-v1.md#cryptographic-domain) reuses the source-epoch `encrypted-media` exporter.
+Its HKDF info and AEAD AAD use `encrypted-media-view-once-v1`, distinct from ordinary `encrypted-media-v2`.
+It does not allocate an additional exporter or redefine the ordinary media domain.

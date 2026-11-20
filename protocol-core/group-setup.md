@@ -132,5 +132,7 @@ When message retention is enabled, the transport binding applies its own retenti
 component [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md) defines the pinned
 source-epoch state, exact expiry calculation, overflow behavior, and sender-timestamp caveat.
 
-Retention is group state, not a sender preference. A sender-supplied expiration tag is replaced or removed according to
-the message's source-epoch retention component.
+The group retention policy is group state, not a sender preference. An arbitrary sender-supplied expiration tag is
+replaced or removed according to the message's source-epoch retention component.
+[Message retention](../app-components/message-retention-v1.md#additional-authenticated-expiry-caps) owns composition
+with view-once's authenticated deadline.

@@ -60,7 +60,10 @@ Decoders MUST reject a payload that:
 - contains duplicate object keys;
 - has an `id` that does not match the canonical Nostr event id computed from the other members ("Shape" above).
 
-Decoders do not police inner tag names. Tags carry application content; the active transport binding builds the outer envelope's routing tags from group state, never from the inner event, so an inner tag never affects delivery (see [../protocol-core/group-messaging.md](../protocol-core/group-messaging.md), "App payloads").
+Decoders do not police inner tag names. Tags carry application content; the active transport binding derives addressing
+and routing from group state, never from inner tags.
+[Message retention](../app-components/message-retention-v1.md#additional-authenticated-expiry-caps) owns expiry composition
+with the source-epoch-enabled view-once deadline; it grants no authority to arbitrary inner expiration tags.
 
 If a future message kind needs binary content, canonical JSON, or another encoding rule, that rule belongs in the
 message-kind document and MUST name the exact bytes carried inside MLS.
@@ -77,6 +80,11 @@ state or roll back other authenticated MLS processing.
 
 Kind `9` is Marmot's default ordinary chat-message kind. Its `content` is the chat body unless an owning optional
 feature, such as encrypted media, adds feature-specific tags or handling.
+
+The negotiated [view-once v1 profile](../features/view-once-v1.md#authenticated-message-format) uses kind `9` with one
+attachment and an authenticated `view-once` marker. It owns the exact grammar, expiry, and fail-closed media handling.
+Its [content-free history rules](../features/view-once-v1.md#media-references-and-content-free-history) apply to
+application projections and portable history even when a malformed marker or media-version combination prevents opening.
 
 The registry is not an allowlist of inner event kinds. Any Nostr-shaped event that satisfies the shared encoding and
 receiver-authentication rules is a valid Marmot app payload unless an active required feature imposes another check.
@@ -137,6 +145,10 @@ overlaid body. A history surface MAY list each version with its timestamp.
 
 A client receiving an edit whose target it has not yet ingested MAY hold the edit for a bounded window and apply it
 when the target arrives, or drop it. Either choice is acceptable.
+
+View-once messages are not editable. A receiver MUST ignore edits targeting them, and MUST NOT use an edit to introduce
+or remove the view-once marker or change an attachment's access profile
+([view-once v1](../features/view-once-v1.md#migration-and-failure-limits)).
 
 ## Group system events (kind 1210)
 

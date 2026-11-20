@@ -47,6 +47,41 @@ The approving device can report the eligible chats it knows to the new device. E
 chat work remains. The new device counts its own completed joins. Implementations can ignore this optional message.
 [Device-group flow](./features/device-group.md#post-link-chat-inventory-kind-477) · [Kind registry](./foundation/registries.md) · [MDK issue 3532](https://github.com/marmot-protocol/mdk/issues/3532)
 
+## 2026-11-17: Explicitly negotiated view-once media v1
+
+Pull request: [marmot#509](https://github.com/marmot-protocol/marmot/pull/509), for [mdk#1327](https://github.com/marmot-protocol/mdk/issues/1327).
+Changes [features/view-once-v1.md](./features/view-once-v1.md),
+[app-components/group-view-once-v1.md](./app-components/group-view-once-v1.md),
+[foundation/registries.md](./foundation/registries.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[features/encrypted-media.md](./features/encrypted-media.md),
+[app-components/group-encrypted-media-v2.md](./app-components/group-encrypted-media-v2.md),
+[app-components/message-retention-v1.md](./app-components/message-retention-v1.md),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md),
+[transports/nostr.md](./transports/nostr.md), [features/account-sync.md](./features/account-sync.md), and the
+non-normative [security model](./security-considerations.md#t8-external-media-shared-credentials-and-deletion-limits).
+
+- Advertise the no-data `marmot.group.view-once.v1` component and activate it only by explicit decision when every leaf
+  supports it. Once required, it cannot be removed, and ordinary encrypted-media v2 stays required.
+- Send exactly one image or video in an empty kind `9` event with the `view-once-v1` marker, an absolute deadline at
+  most 45 days after creation, and `encrypted-media-view-once-v1`. Use the existing epoch exporter with the distinct
+  view-once KDF and AAD domain. Marker stripping or changing the format must not enable an ordinary media download.
+- Durably record each message's first-admission cap from the receiver's local wall clock, including unopened messages,
+  and a non-decreasing wall-clock high-water for expiry. Preserve admission records with retained secret access;
+  previously admitted missing records fail closed. Clock errors can change true elapsed lifetime or expire new messages
+  after correction; this is not a trusted-time guarantee.
+- Claim before ciphertext fetch, read, decryption, or validation. Keep claims across crash, replay, projection rebuild,
+  and ordinary history deletion. Opening is per receiving account-device, bounded to 60 seconds including transfer
+  and validation, and fails closed after a claim even if display fails.
+  No receipt, consumption broadcast, epoch-secret erasure, or shared remote-blob deletion is introduced.
+- Compose the authenticated view-once deadline with source-epoch retention using the earliest finite bound, including
+  in Nostr expiration hints when group retention is disabled. Do not expire commits or proposals or accept arbitrary
+  inner expiration tags as new authority.
+- Keep ordinary history and previews content-free and omit view-once events and keys from portable history bundles
+  and backups. Do not restore an opening through import. Document best-effort cleanup and screenshot suppression,
+  adversarial-recipient limits, and the absence of whole-state rollback protection.
+
 ## 2026-11-17: Nostr payloads use NIP-44's extended length format; relays should take 2 MiB events
 
 Pull request: [marmot#508](https://github.com/marmot-protocol/marmot/pull/508), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).

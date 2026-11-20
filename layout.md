@@ -58,6 +58,7 @@ app-components/
   device-roster-v1.md
   account-identity-proof-v2.md
   device-tag-v1.md
+  group-view-once-v1.md
 transports/
   README.md
   nostr.md
@@ -69,6 +70,7 @@ features/
   device-group.md
   encrypted-media.md
   encrypted-media-v1.md
+  view-once-v1.md
   agent-text-streams-quic.md
   push-notifications.md
   device-pairing.md

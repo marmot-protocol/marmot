@@ -128,6 +128,16 @@ announcer's next announce, and a reset rate limit costs at most one extra reply.
 The size budget applies to the group message as the transport publishes it, after encryption and encoding, not to the
 JSON content alone. A sender that measures only the content can exceed the limit it meant to respect.
 
+## View-once viewer admission
+
+[View-once v1](./features/view-once-v1.md#per-device-consumption) owns exclusive viewer admission, durable consumption,
+and the opening budget. One implementation reserves the account's viewer slot after metadata preflight and before the
+atomic claim, then holds that slot through the claim and resulting viewer. It releases the slot on refusal, failure,
+cancellation, close, timeout, or teardown, even if no viewer was created. Releasing it never resets a terminal decision.
+
+Bound plaintext reads to at most 1 MiB each within the profile's total memory limits. A viewer may support seeking
+within the active session; seeking does not restart or extend its budget.
+
 ## Diagnostics
 
 Logs, errors, metrics, and traces should avoid account ids, group ids, message ids, relay URLs, pubkeys, payloads,

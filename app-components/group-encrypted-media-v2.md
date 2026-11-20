@@ -38,6 +38,10 @@ struct {
 cannot select another format under component id `0x800b`; another breaking format requires a new component id and
 document.
 
+The separately negotiated [view-once v1 component](group-view-once-v1.md) requires this policy as its locator and
+endpoint policy. It does not change `media_format`, reinterpret ordinary v2 references, or let v2 support alone imply
+view-once support. The view-once feature owns its additional attachment format and cryptographic domain.
+
 `allowed_locator_kinds` is the list of locator kinds that media messages MAY use. The initial v2 locator kind is
 `blossom-v1`.
 
@@ -113,6 +117,9 @@ This component MAY be removed in the same authorized Commit that removes it from
 `app_components`; it is invalid if the resulting state still lists it as required. Application-profile policy is not
 authenticated group state and MUST NOT independently make otherwise-valid component removal invalid.
 
+The authenticated [view-once support invariant](group-view-once-v1.md#activation-and-authorization) requires this
+component to remain present and required while view-once is required. Such a group cannot remove or stop requiring it.
+
 ## Migration
 
 This component supersedes [`marmot.group.encrypted-media.v1`](./group-encrypted-media-v1.md). Component id `0x8008`
@@ -121,3 +128,5 @@ remains the frozen v1 policy and MUST NOT be reinterpreted as v2.
 An authorized Commit MAY atomically add this component, replace `0x8008` with `0x800b` in resulting
 `app_components`, and remove the v1 component. That migration does not rewrite historical v1 media references. A client
 MAY retain legacy v1 rendering support; current-profile senders create only v2 references.
+The additional [view-once v1 profile](../features/view-once-v1.md) is an explicitly negotiated exception, not a new
+meaning of ordinary v2.

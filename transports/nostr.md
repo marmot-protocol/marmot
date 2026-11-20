@@ -185,12 +185,15 @@ candidate keys tried for an accepted envelope.
 ## Message expiration
 
 The `expiration` tag applies to MLS application messages only. When the message's source-epoch
-`marmot.group.message-retention.v1` state enables a retention duration, the sender of its kind `445` event SHOULD attach
-a NIP-40 `expiration` tag whose value is the exact `expiry_timestamp` defined by
-[../app-components/message-retention-v1.md](../app-components/message-retention-v1.md). If that value is undefined or
-unrepresentable, the sender omits the tag. A kind `445` event that carries a commit or proposal MUST NOT carry an
+`marmot.group.message-retention.v1` state enables a retention duration, or view-once v1 supplies an absolute
+deadline, the sender of its kind `445` event SHOULD attach a NIP-40 `expiration` tag with the earliest finite timestamp
+defined by [retention composition](../app-components/message-retention-v1.md#additional-authenticated-expiry-caps).
+The [view-once v1 marker](../features/view-once-v1.md#authenticated-message-format) supplies such a cap even when group
+retention is disabled. Select the earliest finite bound first. If that exact value cannot be represented, omit the
+tag; never substitute a later bound. Omit the tag if there is no finite bound.
+A kind `445` event that carries a commit or proposal MUST NOT carry an
 `expiration` tag, regardless of the retention policy: group-state history stays fetchable for members catching up. A
-message whose source epoch has no enabled retention emits no `expiration` tag.
+message with neither enabled source-epoch retention nor a view-once deadline emits no `expiration` tag.
 
 The `expiration` tag is relay-facing transport metadata that asks relays to delete the event after the expiry time.
 Receivers MUST NOT use the tag for message validity, ordering, or branch selection, and a missing or mismatched tag
@@ -198,9 +201,16 @@ does not invalidate a message. A sender-supplied expiration tag on the inner app
 according to the active retention component ([../protocol-core/group-setup.md](../protocol-core/group-setup.md),
 "Message retention").
 
+View-once consumption sends no receipt, broadcast, outer deletion event, or remote media deletion request. The marker
+and attachment remain inside MLS; the expiration timestamp is the relay-facing hint, not proof of consumption or a
+guarantee that a relay deletes the envelope or external blob.
+
 Enabling retention is a trade-off the group accepts:
 
-- Privacy: the `expiration` tag reveals the group's retention policy to every relay and reader of the event.
+- Privacy: the `expiration` tag reveals the selected expiry to every relay and reader of the event. It can reflect a
+  group retention policy or a shorter authenticated feature deadline. A shorter feature deadline can distinguish a
+  view-once message even when group retention is enabled; with retention disabled, tag presence can also identify it.
+  The inner marker being encrypted does not hide these expiry differences or the chosen deadline offset.
 - Availability: relays delete expired events. An application message that has expired from every relay is unrecoverable
   for a member that did not fetch it in time. Commits and proposals never carry the tag, so retention does not block
   group-state catch-up.
@@ -641,7 +651,7 @@ Relays see only transport-envelope metadata, never plaintext or MLS secrets:
 
 - kind `445` events expose the group's random `nostr_group_id` via the `h` tag (it is not derived from any member key,
   so it does not link members across groups), a fresh per-event ephemeral `pubkey` (never the sender's account identity
-  and never reused), the relay timestamp, and — when retention is enabled — the group's retention policy via the
+  and never reused), the relay timestamp, and — when retention or a feature cap applies — the selected expiry via the
   NIP-40 `expiration` tag ("Message expiration" above). Tag presence also reveals that the event carries an application
   message, because commits and proposals never carry it. Tag absence is not conclusive: the tag is a `SHOULD`, and an
   application message omits it when the exact expiry is unrepresentable. The MLS message is encrypted under the
