@@ -58,7 +58,7 @@ The surfaces, each with its own section README (human orientation) and `AGENTS.m
 - [foundation/](./foundation/README.md) - stable Marmot invariants: identity, encodings, registries, errors.
 - [protocol-core/](./protocol-core/README.md) - required group flows and group-state transitions.
 - [app-components/](./app-components/README.md) - versioned MLS `app_data_dictionary` component bytes.
-- [transports/](./transports/README.md) - how Marmot bytes move over a network (Nostr, QUIC).
+- [transports/](./transports/README.md) - how Marmot bytes move over a network (Nostr).
 - [features/](./features/README.md) - optional or user-visible flows that span surfaces.
 
 Non-normative work in progress lives in [ideas/](./ideas/README.md): future protocol directions published for early

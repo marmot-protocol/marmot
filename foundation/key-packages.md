@@ -67,8 +67,9 @@ Last-resort status is not an MLS capability or extension type. A last-resort Key
 empty-data `last_resort_key_package` component entry. A KeyPackage that is not last-resort MUST NOT contain that entry.
 
 A member can join only if its KeyPackage advertises support for every MLS primitive, app component, and component-owned
-role capability the group requires. For example, an agent-stream-ready group may require the agent text stream `receive`
-role, whose fallback behavior is defined by the owning feature and component documents.
+role capability the group requires. For example, many existing groups require the retired agent text stream component
+and its `receive` role, which clients keep advertising for that reason
+([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)).
 
 ## Devices and publication slots
 

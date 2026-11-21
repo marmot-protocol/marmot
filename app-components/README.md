@@ -325,9 +325,10 @@ remove leaves of their own account:
 
 - [marmot.group.account-devices.v1](./account-devices-v1.md)
 
-The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
+The following persistent GroupContext component is retired. New groups do not include it, but many existing groups
+require it, so clients keep supporting it as its Retirement section says:
 
-- [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md)
+- [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md#retirement)
 
 The following persistent GroupContext component is a draft. A group that requires it is an account's device group
 ([../features/device-group.md](../features/device-group.md)):
@@ -355,9 +356,8 @@ Every Marmot leaf uses the adopted
 - `marmot.group.blossom.image.v1` is Blossom-specific. Other image-reference models SHOULD use separate components.
 - `marmot.transport.nostr.routing.v1` is required for Nostr-routed Marmot groups.
 - Nostr relays in `marmot.transport.nostr.routing.v1` are canonical signed group state, not local hints.
-- Experimental application profiles MAY require `marmot.group.agent-text-stream.quic.v1` for agent-stream-ready
-  groups. Its `receive` role is final-message fallback compatibility, not a requirement to implement the raw QUIC
-  live-preview data plane.
+- `marmot.group.agent-text-stream.quic.v1` is retired. New groups MUST NOT include it. Clients keep supporting it,
+  and its `receive` role, for existing groups that require it; that support needs no QUIC code.
 - AppDataUpdate proposals MAY be inline or standalone. Inline is the default path when the committer is authorized;
   standalone MLS proposals are not the default non-admin request path for admin-gated component changes.
 - `marmot.group.encrypted-media.v2` owns the current group media policy. Individual media attachments remain message

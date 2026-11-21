@@ -1,6 +1,11 @@
 # Raw QUIC transport (agent text stream previews)
 
-Status: experimental.
+Status: retired.
+
+> **Retired.** This binding carried only the live previews of the retired
+> [agent text streams](../features/agent-text-streams-quic.md) feature. A client MUST NOT open a connection under this
+> binding or run a broker for it ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). The rest of this document records the retired design.
+> Implementations do not implement it. Its ALPN identifiers stay registered so they are never reassigned.
 
 Security context: [protocol threat model](../security-considerations.md#t9-preview-brokers-and-group-shared-stream-keys).
 

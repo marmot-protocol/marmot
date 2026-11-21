@@ -14,7 +14,7 @@ continuity.
 ## Scope and evidence
 
 The model covers the adopted foundation, protocol core, components, Nostr binding, and optional adopted features.
-Experimental QUIC previews, draft moderation, superseded profiles, and ideas are identified separately in the
+Retired QUIC previews, draft moderation, superseded profiles, and ideas are identified separately in the
 [coverage map](#surface-coverage). Supporting an optional feature brings its additional boundaries into scope.
 
 The identifiers below are local reference points for later formalization, not additional protocol requirements.
@@ -249,7 +249,12 @@ epoch; see [image bytes](app-components/group-blossom-image-v1.md#image-bytes) a
 
 ### T9. Preview brokers and group-shared stream keys
 
-Experimental QUIC previews add an untrusted endpoint and broker boundary. TLS authenticates the hop according to its
+QUIC previews are retired ([retirement](app-components/agent-text-stream-quic-v1.md#retirement)). A client that follows
+the retirement rules sends no preview and opens no QUIC connection, so this boundary applies only to clients that still
+run the retired profile. Such a client cannot make another client hide or replace a chat message, because a tagged
+kind `9` is an ordinary chat message to every client that follows those rules. The analysis below records the retired design.
+
+QUIC previews added an untrusted endpoint and broker boundary. TLS authenticates the hop according to its
 configured trust; it does not establish MLS authorship. The group-shared preview key protects content from outsiders
 and brokers without that key, but any current member can derive it and forge preview records. Sequence/transcript
 checks do not make a preview sender-authenticated against another member. The final MLS message is authoritative.
@@ -324,7 +329,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 | [SC-058](#sc-058)–[SC-068](#sc-068) | Welcome continuity, endpoint, crash, capability, preview, push and signer boundaries. |
 | [SC-069](#sc-069)–[SC-071](#sc-071) | Component activation, same-account authority and unresolved disband intent. |
 | [SC-072](#sc-072)–[SC-076](#sc-076) | Push record isolation, tombstones, repair abuse, retained wake capabilities and trigger freshness. |
-| [SC-077](#sc-077)–[SC-079](#sc-079) | Preview anchor invalidation, replay/context checks and broker resource exhaustion (experimental). |
+| [SC-077](#sc-077)–[SC-079](#sc-079) | Preview anchor invalidation, replay/context checks and broker resource exhaustion (retired). |
 | [SC-080](#sc-080)–[SC-081](#sc-081) | Message edits and the provenance of system notices. |
 | [SC-082](#sc-082)–[SC-084](#sc-084) | Moderation authority, reversible display effects and report privacy (draft). |
 | [SC-085](#sc-085) | Push record replay after a device leaf is removed. |
@@ -2125,11 +2130,12 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
   and parent [#75](https://github.com/marmot-protocol/marmot/issues/75) track the proposed canonical-only rule, removal
   of the free-text kind-1210 exception, compatibility handling, and withdrawal of superseded rows. Authored content
   cannot establish canonical provenance by assertion; the proposed restriction remains unadopted.
-- **Experimental broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
+- **Retired broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
   when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) and parent
   [#78](https://github.com/marmot-protocol/marmot/issues/78) explicitly defer this design until product adoption is
-  being pursued. Room routing and end-to-end ciphertext validation alone do not answer it; revisit admission and
-  any separate media/calling requirements before relying on the mechanism in a supported product.
+  being pursued. Room routing and end-to-end ciphertext validation alone do not answer it. The QUIC preview profile is
+  now [retired](app-components/agent-text-stream-quic-v1.md#retirement), so this question is not being pursued; a
+  future live-text or media design needs its own admission analysis.
 
 ## Surface coverage
 
@@ -2148,7 +2154,7 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | [Group profile](app-components/group-profile-v1.md), [avatar URL](app-components/group-avatar-url-v1.md), [group image](app-components/group-blossom-image-v1.md), [message retention](app-components/message-retention-v1.md) | A8, G3, T5, T8; authenticated data versus trusted endpoints, retained capabilities and deletion limits. |
 | [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8, T11; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
 | [Nostr routing component](app-components/nostr-routing-v1.md), [Nostr transport](transports/nostr.md) | A7–A8, G7, T1–T2, T6; signed routing, outer metadata, replay and availability. |
-| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; experimental, group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
+| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; retired, still supported in existing groups without QUIC; group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
 | [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
 

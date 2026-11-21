@@ -28,6 +28,11 @@ Marmot app components use MLS private-use component ids.
 | `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
 | `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
 
+`0x8006` is retired, still supported for existing groups. Clients no longer add it to new groups, but many existing
+groups require it, so clients keep supporting it as its
+[Retirement](../app-components/agent-text-stream-quic-v1.md#retirement) section says. It remains registered so the value
+is never reassigned.
+
 `0x800a` was `marmot.authorization.multi-device-join.v1`, the join authorization of an earlier multi-device draft that
 [#427](https://github.com/marmot-protocol/marmot/pull/427) withdrew. It has no meaning, and data under it is
 [unknown data](../app-components/README.md#unknown-data). Some deployed clients still reject GroupContext data under
@@ -70,12 +75,14 @@ carriers and MUST NOT be treated as interchangeable merely because both use a `C
 `0xf2d3` is intentionally unassigned and has no reserved meaning. A future use MUST claim it in this registry before
 emitting it.
 
-`0xf2d1`, `0xf2d2`, and `0xf2d4` are the agent-text-stream-QUIC member role capabilities. A member advertises a role by
-listing the matching extension type in its LeafNode capabilities; the `required_member_roles` mask in
-`marmot.group.agent-text-stream.quic.v1` is enforced against these ids at invite and join. The `receive` role
-(`0xf2d1`) means the member understands the component and can fall back to the durable final message; it does not require
-opening a live-preview transport. The `send` and `fanout` roles are live-preview data-plane roles. The bit values
-(`0x01`, `0x02`, `0x04`) are role-mask bits inside the component payload, distinct from these extension type ids.
+`0xf2d1`, `0xf2d2`, and `0xf2d4` are the member role capabilities of the retired component
+`marmot.group.agent-text-stream.quic.v1`. A member advertises a role by listing the matching extension type in its
+LeafNode capabilities; the component's `required_member_roles` mask is enforced against these ids at invite and join.
+The `receive` role (`0xf2d1`) is retired but still supported for existing groups: groups that require the component
+require it, and it needs no QUIC code. The `send` (`0xf2d2`) and `fanout` (`0xf2d4`) roles are retired, and clients
+stop advertising them ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). All three remain
+registered so the values are never reassigned. The bit values (`0x01`, `0x02`, `0x04`) are role-mask bits inside the
+component payload, distinct from these extension type ids.
 
 These three extension types are capability markers only: v1 defines no extension data for them. They appear solely in
 `LeafNode.capabilities.extensions` to advertise role support and are never emitted as LeafNode or GroupContext
@@ -127,7 +134,7 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
-| `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
+| `1200`  | Agent text stream start (retired)   | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1984`  | Content report (NIP-56)             | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#reports-kind-1984) |
 | `1985`  | Report dismissal labels (NIP-32)    | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#dismissal-labels-kind-1985) |
@@ -136,8 +143,9 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 
 Kind `4891` is allocated by Marmot for admin deletion inside MLS app payloads.
 
-The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
-chunks are transient QUIC records.
+Kind `1200` was the stream start of the retired agent text stream feature. Clients no longer send it and SHOULD NOT
+display one they receive ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). It remains
+registered so the value is never reassigned.
 
 Kinds `1201` and `1202` are reserved for possible experimental agent activity and operation events. Marmot currently
 defines no payload schema or conformance behavior for them; application experiments use them under the ordinary
@@ -178,8 +186,11 @@ replacement onto the original row's body, never as a separate transcript row.
 
 | Identifier                    | Use                                      | Document                         |
 | ----------------------------- | ---------------------------------------- | -------------------------------- |
-| `marmot.quic_stream.v1`       | direct-path QUIC ALPN                    | [quic.md](../transports/quic.md) |
-| `marmot.quic_broker.v1`       | broker QUIC ALPN and control identifier  | [quic.md](../transports/quic.md) |
+| `marmot.quic_stream.v1`       | direct-path QUIC ALPN (retired)                   | [quic.md](../transports/quic.md) |
+| `marmot.quic_broker.v1`       | broker QUIC ALPN and control identifier (retired) | [quic.md](../transports/quic.md) |
+
+Both identifiers belong to the retired QUIC binding for agent text previews. They remain registered so they are never
+reassigned.
 
 An incompatible transport or control protocol registers a new identifier rather than reinterpreting one of these
 strings.
@@ -198,7 +209,7 @@ used below the exporter output.
 | ---------- | ------------------------------ | -------- | -------------------------------------- |
 | `"marmot"` | `"group-event"`                | `32`     | kind `445` outer encryption key        |
 | `"marmot"` | `"encrypted-media"`            | `32`     | encrypted-media per-file key schedule  |
-| `"marmot"` | `"agent-text-stream-quic"`     | `32`     | agent text stream QUIC record crypto   |
+| `"marmot"` | `"agent-text-stream-quic"`     | `32`     | retired agent text stream QUIC record crypto; never reassigned |
 | `"marmot"` | `"convergence-conformance-v1"` | `32`     | synthetic conformance state commitment |
 
 Fixed `32`-byte outputs are used where the owning document feeds a 32-byte AEAD key or feature key schedule.
