@@ -2008,8 +2008,10 @@ entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830
 - **Attack sequence:** It sends a kind `1200` stream start whose endpoint candidates point at a host it watches, a kind
   `9` whose stream tags claim to replace or verify another message, or an authorized update to the component that a
   client wrongly rejects as a Commit the retirement rules forbid.
-- **Affected property and assumptions:** A8 and G7 if the client contacts a candidate; G2 if stream tags let one
-  message hide or stand in for another; G3–G4 if clients disagree on whether the update is valid.
+- **Affected property and assumptions:** A8 and G7 if the client contacts a candidate. If stream tags make the client
+  hide, delay or replace a message, or mark one verified, while every author it shows is the authenticated one, the
+  client breaks the retirement's ordinary-chat rule, not a G property. G2 is affected when the client shows one
+  member's text under another member's name. G3–G4 if clients disagree on whether the update is valid.
 - **Mitigations:** Never contact a stream start's candidates, and avoid displaying stream starts. Keep a tagged kind
   `9` as an ordinary chat message whose tags do not hide, delay, replace or verify it. The retirement's bans on
   proposing and committing updates leave inbound Commit validity unchanged, so accept an update that passes
@@ -2019,8 +2021,10 @@ entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830
 - **Normative owners:** [Retirement](app-components/agent-text-stream-quic-v1.md#retirement),
   [Validation](app-components/agent-text-stream-quic-v1.md#validation).
 - **Verification status:** Unverified — candidate check: give a client that follows the retirement rules a stream
-  start with reachable candidates and require no connection attempt; tagged kind `9` messages with mismatched anchors
-  and hashes and require ordinary chat display; an authorized, valid legacy component update and require acceptance;
+  start with reachable candidates and require no connection attempt. Give it tagged kind `9` messages whose `stream`
+  and `stream-start` tags refer to an earlier kind `1200` and whose `stream-hash` and `stream-chunks` match a legacy
+  preview transcript fixture, and ones whose tags refer to nothing; require that neither set hides, delays, replaces
+  or verifies that message or any other. Give it an authorized, valid legacy component update and require acceptance,
   and an unauthorized or invalid one and require rejection.
 
 ## Questions for maintainer review
@@ -2060,7 +2064,7 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | [Group profile](app-components/group-profile-v1.md), [avatar URL](app-components/group-avatar-url-v1.md), [group image](app-components/group-blossom-image-v1.md), [message retention](app-components/message-retention-v1.md) | A8, G3, T5, T8; authenticated data versus trusted endpoints, retained capabilities and deletion limits. |
 | [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8, T11; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
 | [Nostr routing component](app-components/nostr-routing-v1.md), [Nostr transport](transports/nostr.md) | A7–A8, G7, T1–T2, T6; signed routing, outer metadata, replay and availability. |
-| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A8, G2–G4, T9; retired, still supported in existing groups without QUIC; legacy preview data from older clients; [SC-086](#sc-086). |
+| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A8, G2–G4, G7, T9; retired, still supported in existing groups without QUIC; legacy preview data from older clients; [SC-086](#sc-086). |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
 | [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
 
