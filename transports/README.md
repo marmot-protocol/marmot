@@ -16,6 +16,9 @@ publish and fetch rules, and transport-specific validation.
 
 ## Transport document checklist
 
+A retired binding, such as [quic.md](./quic.md), is kept as a stub: its name, what clients must not do, the identifiers
+it reserves and a link to its last full version. The checklist below applies to current bindings.
+
 Each transport document MUST define:
 
 - transport name and version;
