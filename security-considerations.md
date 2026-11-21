@@ -256,9 +256,10 @@ connection, so those risks no longer apply to them. Clients that still run the r
 themselves until they update.
 
 What remains for a client that follows the retirement rules is legacy preview data from older clients: endpoint
-candidates it must not contact, stream tags it must not act on, and updates to the retired component that it validates
-like any other Commit ([SC-086](#sc-086)). The analysis of the retired design is in the
-[last version with the full analysis](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830b8bd0c4c7a8e5438/security-considerations.md#t9-preview-brokers-and-group-shared-stream-keys).
+candidates it must not contact, stream tags that must not change how a message is kept or displayed, and updates to the
+retired component that it validates like any other Commit ([SC-086](#sc-086)). The analysis of the retired design is in
+the [last version with the full
+analysis](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830b8bd0c4c7a8e5438/security-considerations.md#t9-preview-brokers-and-group-shared-stream-keys).
 
 Owners: [retirement](app-components/agent-text-stream-quic-v1.md#retirement) and [component
 validation](app-components/agent-text-stream-quic-v1.md#validation).
@@ -2001,24 +2002,26 @@ entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830
 
 ### SC-086. Legacy preview data steers a client that follows the retirement rules
 
-- **Attacker and prerequisites:** A current member that still runs the retired preview profile, or crafts its data,
-  in a group that requires the retired component.
+- **Attacker and prerequisites:** A current member that still runs the retired preview profile, or crafts its data.
+  Stream starts and tagged kind `9` messages need no particular group state. A component update needs a group whose
+  state holds the retired component, and an active admin to commit it.
 - **Attack sequence:** It sends a kind `1200` stream start whose endpoint candidates point at a host it watches, a kind
   `9` whose stream tags claim to replace or verify another message, or an authorized update to the component that a
-  client mistakes for a Commit the retirement rules forbid.
+  client wrongly rejects as a Commit the retirement rules forbid.
 - **Affected property and assumptions:** A8 and G7 if the client contacts a candidate; G2 if stream tags let one
   message hide or stand in for another; G3–G4 if clients disagree on whether the update is valid.
-- **Mitigations:** Never contact a stream start's candidates; treat a tagged kind `9` as an ordinary chat message and
-  do not display stream starts; apply the retirement rules only to what the client sends, and accept a component
-  update that passes authorization and validation.
+- **Mitigations:** Never contact a stream start's candidates, and avoid displaying stream starts. Keep a tagged kind
+  `9` as an ordinary chat message whose tags do not hide, delay, replace or verify it. The retirement's bans on
+  proposing and committing updates leave inbound Commit validity unchanged, so accept an update that passes
+  authorization and validation.
 - **Residual risk:** Clients that still run the retired profile keep its preview risks among themselves until they
   update. A member can still post misleading ordinary content.
 - **Normative owners:** [Retirement](app-components/agent-text-stream-quic-v1.md#retirement),
   [Validation](app-components/agent-text-stream-quic-v1.md#validation).
 - **Verification status:** Unverified — candidate check: give a client that follows the retirement rules a stream
-  start with reachable candidates, tagged kind `9` messages with mismatched anchors and hashes, and a legacy component
-  update; require no connection attempt, ordinary display, and the same Commit decision as a client that still runs
-  the profile.
+  start with reachable candidates and require no connection attempt; tagged kind `9` messages with mismatched anchors
+  and hashes and require ordinary chat display; an authorized, valid legacy component update and require acceptance;
+  and an unauthorized or invalid one and require rejection.
 
 ## Questions for maintainer review
 

@@ -15,8 +15,8 @@ Status: retired; still supported for existing groups.
 The raw QUIC live preview of agent text is retired. Clients no longer send or watch live previews. Clients that
 implemented it added this component to every group they created, with the `receive` role required, so many existing
 groups still require it. This section says what clients stop doing and what they keep doing so those groups keep
-working. It overrides the rest of this document wherever they disagree. A future design for live agent text will use
-new ids; it will not revive this one.
+working. This section overrides the rest of this document where the two disagree. A future design for live agent text
+will use new ids; it will not revive this one.
 
 ### What clients stop doing
 
