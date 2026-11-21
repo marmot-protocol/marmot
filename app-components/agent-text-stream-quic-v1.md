@@ -43,8 +43,9 @@ Older clients may still send stream starts and tagged final messages.
 ### What clients keep doing
 
 A group that requires this component can add only members whose KeyPackage advertises support for its component id
-(`0x8006`) and for the `receive` role capability (`0xf2d1`). A client that stopped advertising them could no longer be
-added to such a group, or add its own new devices to it.
+(`0x8006`) and for every role capability in its `required_member_roles`. The known groups that require it require only
+the `receive` role capability (`0xf2d1`). A client that stopped advertising these could no longer be added to such a
+group, or add its own new devices to it.
 
 - A client SHOULD keep advertising support for this component and the `receive` role capability in its KeyPackages and
   in its leaves.

@@ -29,7 +29,8 @@ still supported for existing groups rather than withdrawn.
 
 Stop:
 
-- Do not add `0x8006` to new groups, to an existing group's required components, or update its state.
+- Do not add `0x8006` to new groups or to an existing group's required components, and do not propose or commit an
+  update to its state. Keep validating and applying a valid update that an older client commits.
 - Do not send kind `1200` stream starts or QUIC preview records, and do not put `stream`, `stream-start`,
   `stream-hash` or `stream-chunks` tags on kind `9` messages you send.
 - Do not connect to the QUIC endpoint candidates in a stream start. Remove any QUIC preview or broker code.
