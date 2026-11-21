@@ -2008,10 +2008,10 @@ entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830
 - **Attack sequence:** It sends a kind `1200` stream start whose endpoint candidates point at a host it watches, a kind
   `9` whose stream tags claim to replace or verify another message, or an authorized update to the component that a
   client wrongly rejects as a Commit the retirement rules forbid.
-- **Affected property and assumptions:** A8 and G7 if the client contacts a candidate. If stream tags hide a message
-  or let one stand in for another, the client breaks the retirement's ordinary-chat rule rather than a G property; G2
-  is affected only if it then shows one member's text as another's. G3–G4 if clients disagree on whether the update is
-  valid.
+- **Affected property and assumptions:** A8 and G7 if the client contacts a candidate. If stream tags make the client
+  hide, delay or replace a message, or mark one verified, while every author it shows is the authenticated one, the
+  client breaks the retirement's ordinary-chat rule, not a G property. G2 is affected when the client shows one
+  member's text under another member's name. G3–G4 if clients disagree on whether the update is valid.
 - **Mitigations:** Never contact a stream start's candidates, and avoid displaying stream starts. Keep a tagged kind
   `9` as an ordinary chat message whose tags do not hide, delay, replace or verify it. The retirement's bans on
   proposing and committing updates leave inbound Commit validity unchanged, so accept an update that passes
@@ -2021,10 +2021,11 @@ entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830
 - **Normative owners:** [Retirement](app-components/agent-text-stream-quic-v1.md#retirement),
   [Validation](app-components/agent-text-stream-quic-v1.md#validation).
 - **Verification status:** Unverified — candidate check: give a client that follows the retirement rules a stream
-  start with reachable candidates and require no connection attempt; tagged kind `9` messages whose anchors and hashes
-  match an earlier stream start, and ones whose anchors and hashes do not, and require ordinary chat display for both;
-  an authorized, valid legacy component update and require acceptance; and an unauthorized or invalid one and require
-  rejection.
+  start with reachable candidates and require no connection attempt. Give it tagged kind `9` messages whose `stream`
+  and `stream-start` tags refer to an earlier kind `1200` and whose `stream-hash` and `stream-chunks` match a legacy
+  preview transcript fixture, and ones whose tags refer to nothing; require that neither set hides, delays, replaces
+  or verifies that message or any other. Give it an authorized, valid legacy component update and require acceptance,
+  and an unauthorized or invalid one and require rejection.
 
 ## Questions for maintainer review
 
