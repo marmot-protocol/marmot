@@ -15,9 +15,8 @@ Status: retired; still supported for existing groups.
 The raw QUIC live preview of agent text is retired. Clients no longer send or watch live previews. Clients that
 implemented it added this component to every group they created, with the `receive` role required, so many existing
 groups still require it. This section says what clients stop doing and what they keep doing so those groups keep
-working. It overrides the rest of this document, the [feature document](../features/agent-text-streams-quic.md) and
-the [QUIC binding](../transports/quic.md) wherever they disagree. A future design for live agent text will use new ids;
-it will not revive this one.
+working. It overrides the rest of this document wherever they disagree. A future design for live agent text will use
+new ids; it will not revive this one.
 
 ### What clients stop doing
 
@@ -144,8 +143,8 @@ never used. These three fields no longer affect anything, but clients still chec
 
 This component version pins these maximums:
 
-- `max_plaintext_frame_len <= 65519`, so a maximum-length frame's ciphertext (`plaintext_len + 16` AEAD tag bytes)
-  fits the record's `ciphertext<0..2^16-1>` field bound;
+- `max_plaintext_frame_len <= 65519`, so a maximum-length frame plus its 16-byte AEAD tag fitted the retired preview
+  record's 16-bit ciphertext length;
 - `replay_ttl_secs <= 300`;
 - `padding_bucket_bytes <= 4096`.
 

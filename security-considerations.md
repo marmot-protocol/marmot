@@ -66,7 +66,7 @@ and [surface coverage](#surface-coverage) to follow individual risks and their o
 | A5 | Clients continue executing, revisit required work, and have the resources and recovery material needed by the claimed progress property. Fairness is a premise to justify, not something that timers or a proof can supply. | [Convergence guarantees](protocol-core/convergence.md#guarantees-and-assumptions), [durability](protocol-core/durability.md). |
 | A6 | The client can recover or reconstruct the protocol facts required at an observer boundary. Permanent corruption or loss of required facts is different from a normal process crash. | [Recoverable facts](protocol-core/durability.md#recoverable-protocol-facts), [missing material](protocol-core/durability.md#missing-or-corrupt-material). |
 | A7 | A transport binding accurately exposes its specified acknowledgement to the client. That signal proves neither honest long-term retention nor recipient delivery, and cannot force a hostile service to retain bytes. | [Publish obligation](protocol-core/publish-lifecycle.md#publish-obligation), [Nostr acknowledgements](transports/nostr.md#publish-targets-and-acknowledgements). |
-| A8 | Local connection policy and host protections are enforced at the point of network access. Component validity and a valid signature alone do not establish endpoint safety. | [Relay URL policy](transports/nostr.md#relay-url-profile), [media validation](features/encrypted-media.md#validation), [QUIC trust](transports/quic.md#connection-and-trust); shared policy work remains [#74](https://github.com/marmot-protocol/marmot/issues/74). |
+| A8 | Local connection policy and host protections are enforced at the point of network access. Component validity and a valid signature alone do not establish endpoint safety. | [Relay URL policy](transports/nostr.md#relay-url-profile), [media validation](features/encrypted-media.md#validation); shared policy work remains [#74](https://github.com/marmot-protocol/marmot/issues/74). |
 
 The current required MLS suite and account proof are classical constructions. This model makes no end-to-end
 post-quantum claim. Changing only an MLS suite would not, by itself, establish a new security argument for account
@@ -249,26 +249,19 @@ epoch; see [image bytes](app-components/group-blossom-image-v1.md#image-bytes) a
 
 ### T9. Preview brokers and group-shared stream keys
 
-QUIC previews are retired ([retirement](app-components/agent-text-stream-quic-v1.md#retirement)). A client that follows
-the retirement rules sends no preview and opens no QUIC connection, so this boundary applies only to clients that still
-run the retired profile. Such a client cannot make another client hide or replace a chat message, because a tagged
-kind `9` is an ordinary chat message to every client that follows those rules. The analysis below records the retired design.
+The live QUIC preview of agent text is [retired](app-components/agent-text-stream-quic-v1.md#retirement). It added an
+untrusted broker boundary and a preview key that every current member could derive, so any member could forge a preview;
+only the final MLS message was authoritative. Clients that follow the retirement rules send no previews and open no QUIC
+connection, so those risks no longer apply to them. Clients that still run the retired profile keep them among
+themselves until they update.
 
-QUIC previews added an untrusted endpoint and broker boundary. TLS authenticates the hop according to its
-configured trust; it does not establish MLS authorship. The group-shared preview key protects content from outsiders
-and brokers without that key, but any current member can derive it and forge preview records. Sequence/transcript
-checks do not make a preview sender-authenticated against another member. The final MLS message is authoritative.
+What remains for a client that follows the retirement rules is legacy preview data from older clients: endpoint
+candidates it must not contact, stream tags it must not act on, and updates to the retired component that it validates
+like any other Commit ([SC-086](#sc-086)). The analysis of the retired design is in the
+[last version with the full analysis](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830b8bd0c4c7a8e5438/security-considerations.md#t9-preview-brokers-and-group-shared-stream-keys).
 
-Owners: [preview authenticity](features/agent-text-streams-quic.md#preview-authenticity),
-[final message](features/agent-text-streams-quic.md#final-message), and
-[QUIC trust](transports/quic.md#connection-and-trust). Room routing, injection and access-control questions remain
-[#344](https://github.com/marmot-protocol/marmot/issues/344) and
-[#78](https://github.com/marmot-protocol/marmot/issues/78). G1 here depends on the experimental construction and A1–A2;
-it adds no stronger member-authentication or availability guarantee.
-
-Publisher admission was never designed, and with the profile retired it is not being pursued. A later live-text or
-media design needs its own admission and threat analysis; the text-preview broker is not a selected calling
-architecture.
+Owners: [retirement](app-components/agent-text-stream-quic-v1.md#retirement) and [component
+validation](app-components/agent-text-stream-quic-v1.md#validation).
 
 ### T10. Notification service and platform trust
 
@@ -318,6 +311,13 @@ runs cannot establish. A proposed check is work to perform, not a result. The do
 links only. Mitigations summarize current owners or explicitly identify local implementation choices; this catalogue
 adds no protocol requirement and contains no claim of an exhaustive universe of attacks.
 
+<a id="sc-063"></a><a id="sc-064"></a><a id="sc-077"></a><a id="sc-078"></a><a id="sc-079"></a>
+
+**Retired identifiers:** SC-063, SC-064 and SC-077 to SC-079 covered the live QUIC preview of agent text, which is
+[retired](app-components/agent-text-stream-quic-v1.md#retirement). They are not reused. What remains for clients that
+follow the retirement rules is [SC-086](#sc-086). The retired entries are in the [last version with the full
+entries](https://github.com/marmot-protocol/marmot/blob/91617ebd6be614dd1ea56830b8bd0c4c7a8e5438/security-considerations.md#sc-063).
+
 | Scenarios | Subject |
 | --- | --- |
 | [SC-001](#sc-001)–[SC-010](#sc-010) | Admission, discovery, network observation, relay/member abuse and saved content. |
@@ -325,13 +325,14 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 | [SC-019](#sc-019)–[SC-030](#sc-030) | Device/account compromise, retained secrets, recovery and join lifecycle. |
 | [SC-031](#sc-031)–[SC-045](#sc-045) | Event keys, replay, media and transport metadata. |
 | [SC-046](#sc-046)–[SC-057](#sc-057) | Cryptographic assumptions, parser/version boundaries, updates and device privacy. |
-| [SC-058](#sc-058)–[SC-068](#sc-068) | Welcome continuity, endpoint, crash, capability, preview, push and signer boundaries. |
+| [SC-058](#sc-058)–[SC-062](#sc-062) | Welcome continuity, endpoint, crash, convergence and blob capability boundaries. |
+| [SC-065](#sc-065)–[SC-068](#sc-068) | Push, signer, application-effect and authorization-evidence boundaries. |
 | [SC-069](#sc-069)–[SC-071](#sc-071) | Component activation, same-account authority and unresolved disband intent. |
 | [SC-072](#sc-072)–[SC-076](#sc-076) | Push record isolation, tombstones, repair abuse, retained wake capabilities and trigger freshness. |
-| [SC-077](#sc-077)–[SC-079](#sc-079) | Preview anchor invalidation, replay/context checks and broker resource exhaustion (retired). |
 | [SC-080](#sc-080)–[SC-081](#sc-081) | Message edits and the provenance of system notices. |
 | [SC-082](#sc-082)–[SC-084](#sc-084) | Moderation authority, reversible display effects and report privacy (draft). |
 | [SC-085](#sc-085) | Push record replay after a device leaf is removed. |
+| [SC-086](#sc-086) | Legacy preview data reaching a client that follows the retirement rules. |
 
 <a id="sc-001"></a>
 
@@ -1349,8 +1350,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Residual risk:** A few observed unique samples do not prove entropy or crash/clone safety; compromise
   recovery still depends on which secrets were exposed.
 - **Normative owners:** [Encrypted media v2](features/encrypted-media.md#encryption), [Nostr
-  transport](transports/nostr.md#group-message-delivery), [Experimental
-  previews](features/agent-text-streams-quic.md#key-derivation).
+  transport](transports/nostr.md#group-message-delivery).
 - **Verification status:** Unverified — candidate check: test forced repeat/failure behavior and lifecycle
   boundaries, and separately document the randomness source assurance.
 
@@ -1500,7 +1500,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 ### SC-059. Authenticated external locator reaches an unsafe or tracking endpoint
 
 - **Attacker and prerequisites:** A member, compromised service or DNS responder influences a relay, media,
-  avatar, broker or push endpoint that a client contacts.
+  avatar or push endpoint that a client contacts.
 - **Attack sequence:** The locator passes protocol-byte/authorship checks but directs the client to an unwanted
   host, changes address during resolution, or reveals its IP on contact.
 - **Affected property and assumptions:** G3 authentication does not establish A8 endpoint safety or G7
@@ -1510,8 +1510,7 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
 - **Residual risk:** Automatic fetching can disclose metadata even for a valid public host; rejecting a contact
   cannot silently rewrite group routing or invalidate the carrying message.
 - **Normative owners:** [Nostr transport](transports/nostr.md#relay-url-profile), [Encrypted media
-  v2](features/encrypted-media.md#validation), [Avatar locator](app-components/group-avatar-url-v1.md), [QUIC
-  binding](transports/quic.md#connection-and-trust), [Push
+  v2](features/encrypted-media.md#validation), [Avatar locator](app-components/group-avatar-url-v1.md), [Push
   notifications](features/push-notifications.md#validation).
 - **Verification status:** Unverified — candidate check: exercise allowed/refused endpoints and address changes
   in an implementation-specific harness, checking separation of contact policy from canonical validity.
@@ -1574,46 +1573,6 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   image](app-components/group-blossom-image-v1.md#update).
 - **Verification status:** Unverified — candidate check: retain the old credential, remove the leaf and attempt
   server actions; verify a failed fetch does not invalidate authenticated group state.
-
-<a id="sc-063"></a>
-
-### SC-063. Group member forges a provisional agent preview
-
-- **Attacker and prerequisites:** A current member knows the group-shared preview key; broker or outsider
-  injection without that key is a separate case.
-- **Attack sequence:** It encrypts plausible records for another stream and a receiver mistakes provisional text
-  for authenticated final authorship or an executable instruction.
-- **Affected property and assumptions:** G1 can exclude an outsider under A1–A2; G2's authoritative sender
-  binding comes from the final MLS payload, not group-shared preview AEAD.
-- **Mitigations:** Keep preview presentation provisional and respect the explicit automation-input risk
-  boundary; validate the final MLS message and its anchoring.
-- **Residual risk:** TLS, transcript hashing and sequence numbers do not provide sender authentication against
-  another current member. Broker room policy remains an additional transport boundary.
-- **Normative owners:** [Experimental previews](features/agent-text-streams-quic.md#preview-authenticity),
-  [Experimental previews](features/agent-text-streams-quic.md#final-message), [QUIC
-  binding](transports/quic.md#connection-and-trust).
-- **Verification status:** Unverified — candidate check: inject key-valid forged preview text and compare
-  final-authenticated content; ensure preview status cannot silently authorize durable actions.
-
-<a id="sc-064"></a>
-
-### SC-064. Preview publisher reuses sequence-derived nonces after restart
-
-- **Attacker and prerequisites:** An experimental preview publisher loses its next sequence value or two
-  publishers use one start/key context.
-- **Attack sequence:** It restarts seq at one and encrypts different content with the same
-  context/sequence-derived nonce.
-- **Affected property and assumptions:** A2 is necessary for G1; receiver duplicate rejection does not undo
-  nonce reuse in already observed ciphertext.
-- **Mitigations:** Retain the next unused sequence or stop that preview and rely on the final message; a new
-  attempt uses a new start payload and stream identity.
-- **Residual risk:** A broker cannot confer exclusive cryptographic publisher identity merely by routing a room,
-  and another current member knows the shared key.
-- **Normative owners:** [Experimental previews](features/agent-text-streams-quic.md#quic-records), [Experimental
-  previews](features/agent-text-streams-quic.md#key-derivation), [QUIC
-  binding](transports/quic.md#broker-relayed).
-- **Verification status:** Unverified — candidate check: crash/reconnect at each publisher sequence boundary and
-  check that uncertain state stops publication or starts a fresh context.
 
 <a id="sc-065"></a>
 
@@ -1894,78 +1853,6 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   records, rewrap an identical one, reuse padding, inject a real token as padding and exceed the chunk cap;
   distinguish construction defects from server-valid advisory input.
 
-<a id="sc-077"></a>
-
-### SC-077. A preview survives its epoch or a losing start anchor
-
-- **Attacker and prerequisites:** A member is removed or convergence invalidates the experimental stream's MLS
-  start payload while a broker still holds records.
-- **Attack sequence:** The sender continues using old epoch keys, or a receiver leaves withdrawn preview text
-  visible and treats its checkpoint/hash as belonging to a new start or later final message.
-- **Affected property and assumptions:** G1 access boundaries require the epoch discipline under A1–A2; G4–G5
-  require withdrawal with the authenticated branch.
-- **Mitigations:** Close the sender's old stream on accepted epoch change. When the start is invalidated, sender
-  and receivers stop and withdraw its preview; bind records, checkpoints and transcript to that exact start and
-  never reuse them for another.
-- **Residual risk:** Previously delivered text and copied keys cannot be erased. Broker deletion cannot be
-  verified, and a current member can still forge provisional data as in [SC-063](#sc-063).
-- **Normative owners:** [Epoch behavior](features/agent-text-streams-quic.md#epoch-behavior), [Key
-  derivation](features/agent-text-streams-quic.md#key-derivation), [Short
-  replay](transports/quic.md#short-replay).
-- **Verification status:** Unverified — candidate check: remove the sender/recipient, change epoch and supersede
-  the start branch during live delivery and reconnect; require proper stop/withdrawal and refusal to attach old
-  records to a fresh start.
-
-<a id="sc-078"></a>
-
-### SC-078. Broker replay, missing records or context confusion changes the preview transcript
-
-- **Attacker and prerequisites:** An untrusted experimental broker can replay, omit, reorder or cross-deliver
-  ciphertext records and choose reconnect backlog.
-- **Attack sequence:** A receiver uses arrival order, mixes rooms or start anchors, skips non-text records in
-  hashing, or presents a gapped stream as verified against an unrelated final.
-- **Affected property and assumptions:** G1 relies on the exact AEAD/key context under A1–A2; authoritative G2
-  remains the final MLS payload, not a broker or transcript hash.
-- **Mitigations:** Bind raw MLS group id, epoch, account, stream and start in the specified context. Accept each
-  sequence once and in order, backfill gaps or mark unverifiable, hash every record type, and check final
-  anchors/hash/count; progress/status are not answer text or automation input.
-- **Residual risk:** Correct sequence/transcript checks detect corruption or incompleteness but cannot force
-  backfill or authenticate previews against a current member. Receivers without preview support can still
-  display the final message.
-- **Normative owners:** [Key derivation](features/agent-text-streams-quic.md#key-derivation), [QUIC
-  records](features/agent-text-streams-quic.md#quic-records), [Transcript
-  hash](features/agent-text-streams-quic.md#transcript-hash), [Final
-  message](features/agent-text-streams-quic.md#final-message), [Reconnect](transports/quic.md#reconnect).
-- **Verification status:** Unverified — candidate check: duplicate/drop/reorder frames, mutate each context
-  field including variable-length MLS group ids, switch brokers, omit status records from hashing and substitute
-  final anchors; require no false verified preview or durable side effect.
-
-<a id="sc-079"></a>
-
-### SC-079. Unauthenticated broker clients exhaust rooms, queues or framing budgets
-
-- **Attacker and prerequisites:** An outsider can connect to an experimental broker, or learns a stream/start
-  room pair; broker availability is the asset.
-- **Attack sequence:** It opens many rooms/subscriptions, stalls frame reads, sends oversized length prefixes or
-  claims a room to interfere with the real publisher.
-- **Affected property and assumptions:** G6 remains conditional on resources and fairness (A5); TLS hop
-  authentication and room knowledge do not establish MLS publisher authority.
-- **Mitigations:** Enforce ALPN/control roles, exact room separation, the fixed framed-record ceiling, read/idle
-  timeouts and bounded queues, backlog bytes, rooms and connections. End-to-end validation still protects
-  preview consumers.
-- **Residual risk:** A room pair is a routing key, not an authorization credential. Publisher admission and
-  room-claim interference remain a design boundary tracked in
-  [#344](https://github.com/marmot-protocol/marmot/issues/344), under
-  [#78](https://github.com/marmot-protocol/marmot/issues/78). This work is explicitly deferred until renewed product
-  use; publisher-key binding is a candidate design, not an adopted mitigation. Ciphertext integrity does not
-  ensure broker availability.
-- **Normative owners:** [Broker-relayed delivery](transports/quic.md#broker-relayed), [Record
-  framing](transports/quic.md#record-framing), [Limits](transports/quic.md#limits), [Preview
-  authenticity](features/agent-text-streams-quic.md#preview-authenticity).
-- **Verification status:** Unverified — candidate check: flood rooms/subscribers, stall partial frames, exceed
-  length/backlog budgets and race a publisher claim; measure bounded resource use and document admission
-  behavior without claiming a membership-authenticated broker.
-
 <a id="sc-080"></a>
 
 ### SC-080. An edit changes another account's text or becomes new conversation activity
@@ -2110,6 +1997,29 @@ adds no protocol requirement and contains no claim of an exhaustive universe of 
   records/tombstones, then relay the removed leaf's old proof and an owner-signed nonexistent leaf index; record
   the current ambiguity and require a specified result before claiming removed-device record exclusion.
 
+<a id="sc-086"></a>
+
+### SC-086. Legacy preview data steers a client that follows the retirement rules
+
+- **Attacker and prerequisites:** A current member that still runs the retired preview profile, or crafts its data,
+  in a group that requires the retired component.
+- **Attack sequence:** It sends a kind `1200` stream start whose endpoint candidates point at a host it watches, a kind
+  `9` whose stream tags claim to replace or verify another message, or an authorized update to the component that a
+  client mistakes for a Commit the retirement rules forbid.
+- **Affected property and assumptions:** A8 and G7 if the client contacts a candidate; G2 if stream tags let one
+  message hide or stand in for another; G3–G4 if clients disagree on whether the update is valid.
+- **Mitigations:** Never contact a stream start's candidates; treat a tagged kind `9` as an ordinary chat message and
+  do not display stream starts; apply the retirement rules only to what the client sends, and accept a component
+  update that passes authorization and validation.
+- **Residual risk:** Clients that still run the retired profile keep its preview risks among themselves until they
+  update. A member can still post misleading ordinary content.
+- **Normative owners:** [Retirement](app-components/agent-text-stream-quic-v1.md#retirement),
+  [Validation](app-components/agent-text-stream-quic-v1.md#validation).
+- **Verification status:** Unverified — candidate check: give a client that follows the retirement rules a stream
+  start with reachable candidates, tagged kind `9` messages with mismatched anchors and hashes, and a legacy component
+  update; require no connection attempt, ordinary display, and the same Commit decision as a client that still runs
+  the profile.
+
 ## Questions for maintainer review
 
 These are limits or ambiguities found while reviewing the current scenario paths, not new requirements or claims that
@@ -2129,12 +2039,6 @@ an implementation is vulnerable. Resolve a protocol change in its owning surface
   and parent [#75](https://github.com/marmot-protocol/marmot/issues/75) track the proposed canonical-only rule, removal
   of the free-text kind-1210 exception, compatibility handling, and withdrawal of superseded rows. Authored content
   cannot establish canonical provenance by assertion; the proposed restriction remains unadopted.
-- **Retired broker admission ([SC-079](#sc-079)):** What authorizes a publisher to claim a room, and what happens
-  when a competing client claims it first? [#344](https://github.com/marmot-protocol/marmot/issues/344) and parent
-  [#78](https://github.com/marmot-protocol/marmot/issues/78) explicitly defer this design until product adoption is
-  being pursued. Room routing and end-to-end ciphertext validation alone do not answer it. The QUIC preview profile is
-  now [retired](app-components/agent-text-stream-quic-v1.md#retirement), so this question is not being pursued; a
-  future live-text or media design needs its own admission analysis.
 
 ## Surface coverage
 
@@ -2153,7 +2057,7 @@ the document indexes; non-normative [ideas](ideas/README.md) are not adopted sec
 | [Group profile](app-components/group-profile-v1.md), [avatar URL](app-components/group-avatar-url-v1.md), [group image](app-components/group-blossom-image-v1.md), [message retention](app-components/message-retention-v1.md) | A8, G3, T5, T8; authenticated data versus trusted endpoints, retained capabilities and deletion limits. |
 | [Component framework](app-components/README.md), [media v2 component](app-components/group-encrypted-media-v2.md), [legacy media component](app-components/group-encrypted-media-v1.md), [media v2 feature](features/encrypted-media.md), [legacy media feature](features/encrypted-media-v1.md) | A1–A2, A8, G1, G3, T8, T11; capability negotiation, bytes and content/locator separation. Legacy v1 is deprecated. |
 | [Nostr routing component](app-components/nostr-routing-v1.md), [Nostr transport](transports/nostr.md) | A7–A8, G7, T1–T2, T6; signed routing, outer metadata, replay and availability. |
-| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A1–A2, A8, T9; retired, still supported in existing groups without QUIC; group-shared authenticity and authoritative final content; [SC-077](#sc-077)–[SC-079](#sc-079). |
+| [Preview component](app-components/agent-text-stream-quic-v1.md), [preview feature](features/agent-text-streams-quic.md), [QUIC binding](transports/quic.md) | A8, G2–G4, T9; retired, still supported in existing groups without QUIC; legacy preview data from older clients; [SC-086](#sc-086). |
 | [Push notifications](features/push-notifications.md) | A1–A2, A8, T10; optional service/platform boundary; [SC-072](#sc-072)–[SC-076](#sc-076), [SC-085](#sc-085). |
 | [Content moderation](features/content-moderation.md) | T5, T8; draft, source-state authority, reversible display effects and report privacy; [SC-082](#sc-082)–[SC-084](#sc-084). |
 
