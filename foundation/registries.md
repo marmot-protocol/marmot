@@ -78,8 +78,8 @@ emitting it.
 `0xf2d1`, `0xf2d2`, and `0xf2d4` are the member role capabilities of the retired component
 `marmot.group.agent-text-stream.quic.v1`. A member advertises a role by listing the matching extension type in its
 LeafNode capabilities; the component's `required_member_roles` mask is enforced against these ids at invite and join.
-The `receive` role (`0xf2d1`) is retired but still supported for existing groups: groups that require the component
-require it, and it needs no QUIC code. The `send` (`0xf2d2`) and `fanout` (`0xf2d4`) roles are retired, and clients
+The `receive` role (`0xf2d1`) is retired but still supported for existing groups: the known groups that require the
+component require it, and it needs no QUIC code. Admission checks use the group's `required_member_roles` mask. The `send` (`0xf2d2`) and `fanout` (`0xf2d4`) roles are retired, and clients
 stop advertising them ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). All three remain
 registered so the values are never reassigned. The bit values (`0x01`, `0x02`, `0x04`) are role-mask bits inside the
 component payload, distinct from these extension type ids.

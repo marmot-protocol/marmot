@@ -266,10 +266,9 @@ Owners: [preview authenticity](features/agent-text-streams-quic.md#preview-authe
 [#78](https://github.com/marmot-protocol/marmot/issues/78). G1 here depends on the experimental construction and A1–A2;
 it adds no stronger member-authentication or availability guarantee.
 
-Publisher-admission work is explicitly deferred in those issues until QUIC streaming is being brought into a supported
-product or a concrete future media/calling design needs related machinery. Deferral does not resolve the known risks
-or promote this experimental profile to an adopted mechanism. Future voice/video use needs its own threat analysis;
-the text-preview broker is not a selected calling architecture.
+Publisher admission was never designed, and with the profile retired it is not being pursued. A later live-text or
+media design needs its own admission and threat analysis; the text-preview broker is not a selected calling
+architecture.
 
 ### T10. Notification service and platform trust
 

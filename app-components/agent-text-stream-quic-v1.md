@@ -27,6 +27,10 @@ it will not revive this one.
   `stream-start`, `stream-hash` or `stream-chunks` tag on a kind `9` message it sends.
 - A client MUST NOT connect to an endpoint candidate in a kind `1200` stream start.
 
+These rules govern what a client sends and does. They do not change which Commits are valid: a client still accepts a
+Commit from an older client that updates this component, if the Commit passes [Authorization](#authorization) and
+[Validation](#validation).
+
 ### Receiving from older clients
 
 Older clients may still send stream starts and tagged final messages.

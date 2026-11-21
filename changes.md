@@ -15,12 +15,13 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-21: Agent text streams over QUIC are retired
 
-Pull request: [marmot#PR](https://github.com/marmot-protocol/marmot/pull/PR).
+Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
 Changes [app-components/agent-text-stream-quic-v1.md](./app-components/agent-text-stream-quic-v1.md#retirement),
 [features/agent-text-streams-quic.md](./features/agent-text-streams-quic.md),
 [transports/quic.md](./transports/quic.md), [foundation/registries.md](./foundation/registries.md),
-[foundation/key-packages.md](./foundation/key-packages.md) and
-[protocol-core/group-setup.md](./protocol-core/group-setup.md).
+[foundation/key-packages.md](./foundation/key-packages.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md) and
+[app-components/README.md](./app-components/README.md#resolved-direction).
 
 The live QUIC preview of agent text is retired. Nobody used it in practice. Many existing groups still require its
 component, `marmot.group.agent-text-stream.quic.v1` (`0x8006`), with the `receive` role, so the component is retired but
