@@ -13,6 +13,47 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-21: Agent text streams over QUIC are retired
+
+Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
+Changes [app-components/agent-text-stream-quic-v1.md](./app-components/agent-text-stream-quic-v1.md#retirement),
+[features/agent-text-streams-quic.md](./features/agent-text-streams-quic.md),
+[transports/quic.md](./transports/quic.md), [foundation/registries.md](./foundation/registries.md),
+[foundation/key-packages.md](./foundation/key-packages.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md) and
+[app-components/README.md](./app-components/README.md#resolved-direction).
+
+The live QUIC preview of agent text is retired. Nobody used it in practice. Many existing groups still require its
+component, `marmot.group.agent-text-stream.quic.v1` (`0x8006`), with the `receive` role, so the component is retired but
+still supported for existing groups rather than withdrawn.
+
+Stop:
+
+- Do not add `0x8006` to new groups or to an existing group's required components, and do not propose or commit an
+  update to its state. Keep validating and applying a valid update that an older client commits.
+- Do not send kind `1200` stream starts or QUIC preview records, and do not put `stream`, `stream-start`,
+  `stream-hash` or `stream-chunks` tags on kind `9` messages you send.
+- Do not connect to the QUIC endpoint candidates in a stream start. Remove any QUIC preview or broker code.
+- Stop advertising the `send` (`0xf2d2`) and `fanout` (`0xf2d4`) role capabilities, except in a group whose state
+  still requires them. No such group is known.
+- Do not hide, replace or verify a kind `9` message because of its stream tags. Treat it as an ordinary chat message.
+- Drop any plan to build against the promised test vectors for preview records and transcript hashes. They will not be
+  published.
+
+Keep:
+
+- Keep advertising support for `0x8006` and the `receive` role capability (`0xf2d1`) in KeyPackages and leaves.
+  Without them a client can no longer be added to, or add its devices to, a group that requires the component.
+- Keep validating the 12-byte component state on every Commit, including the check that every member advertises the
+  required roles. This needs no QUIC code.
+- Hide kind `1200` stream starts that older clients still send.
+
+An admin may stop requiring the component in a group, in one Commit that also removes its state, but no client has to,
+and a client must not do so unless its user asks. `0x8006`, its name, `0xf2d1`, `0xf2d2`, `0xf2d4`, kind `1200`, the
+exporter context `"agent-text-stream-quic"` and the ALPN identifiers `marmot.quic_stream.v1` and
+`marmot.quic_broker.v1` are never reassigned. Kinds `1201` and `1202` stay reserved for agent events. A future design
+for live agent text will use new ids.
+
 ## 2026-11-19: A sibling Welcome forwards how the sender holds the chat
 
 Pull request: [marmot#512](https://github.com/marmot-protocol/marmot/pull/512), for [mdk#3546](https://github.com/marmot-protocol/mdk/issues/3546).

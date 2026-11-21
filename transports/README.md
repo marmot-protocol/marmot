@@ -11,7 +11,7 @@ publish and fetch rules, and transport-specific validation.
 ## Current transports
 
 - [nostr.md](./nostr.md) - the primary binding: MLS group messages, welcomes, and KeyPackages over Nostr relays.
-- [quic.md](./quic.md) - experimental raw QUIC binding for transient agent text stream previews (companion to
+- [quic.md](./quic.md) - retired raw QUIC binding for agent text stream previews (companion to the retired
   [../features/agent-text-streams-quic.md](../features/agent-text-streams-quic.md)).
 
 ## Transport document checklist

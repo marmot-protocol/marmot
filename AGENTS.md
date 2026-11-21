@@ -22,7 +22,7 @@ top-level file stays cross-surface only.
 | Stable invariants: identity, encodings, registries, errors | `foundation/AGENTS.md` |
 | Required group flows and group-state transitions | `protocol-core/AGENTS.md` |
 | Versioned MLS `app_data_dictionary` component bytes | `app-components/AGENTS.md` |
-| How Marmot bytes move over a network (Nostr, QUIC) | `transports/AGENTS.md` |
+| How Marmot bytes move over a network (Nostr) | `transports/AGENTS.md` |
 | Optional or user-visible flows that span surfaces | `features/AGENTS.md` |
 | Non-normative future directions for early feedback | `ideas/AGENTS.md` |
 | Where new text belongs (canonical tree + ownership) | `layout.md` |

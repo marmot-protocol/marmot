@@ -1,30 +1,94 @@
 # marmot.group.agent-text-stream.quic.v1
 
-Status: experimental.
+Status: retired; still supported for existing groups.
 
 ## Registry
 
 - Component id: `0x8006`
 - Name: `marmot.group.agent-text-stream.quic.v1`
 - Location: GroupContext `app_data_dictionary`
-- Default requirement: required for groups that are agent-stream-ready under the raw QUIC profile
-- Owning feature: [agent-text-streams-quic.md](../features/agent-text-streams-quic.md)
+- Default requirement: none. New groups MUST NOT include it ([Retirement](#retirement)).
+- Owning feature: [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) (retired)
+
+## Retirement
+
+The raw QUIC live preview of agent text is retired. Clients no longer send or watch live previews. Clients that
+implemented it added this component to every group they created, with the `receive` role required, so many existing
+groups still require it. This section says what clients stop doing and what they keep doing so those groups keep
+working. It overrides the rest of this document, the [feature document](../features/agent-text-streams-quic.md) and
+the [QUIC binding](../transports/quic.md) wherever they disagree. A future design for live agent text will use new ids;
+it will not revive this one.
+
+### What clients stop doing
+
+- A client MUST NOT include this component in a new group. It MUST NOT add this component to an existing group's
+  required `app_components`, and MUST NOT propose or commit an update that replaces this component's state.
+- A client MUST NOT send a kind `1200` stream start or a QUIC preview record. It MUST NOT put a `stream`,
+  `stream-start`, `stream-hash` or `stream-chunks` tag on a kind `9` message it sends.
+- A client MUST NOT connect to an endpoint candidate in a kind `1200` stream start.
+
+These rules govern what a client sends and does. They do not change which Commits are valid: a client still accepts a
+Commit from an older client that updates this component, if the Commit passes [Authorization](#authorization) and
+[Validation](#validation).
+
+### Receiving from older clients
+
+Older clients may still send stream starts and tagged final messages.
+
+- A client SHOULD NOT display a kind `1200` stream start.
+- A client MUST treat a kind `9` message that carries the `stream`, `stream-start`, `stream-hash` or `stream-chunks`
+  tags as an ordinary chat message. It MAY ignore those tags, and MUST NOT use them to hide, delay, replace or verify
+  the message.
+
+### What clients keep doing
+
+A group that requires this component can add only members whose KeyPackage advertises support for its component id
+(`0x8006`) and for every role capability in its `required_member_roles`. The known groups that require it require only
+the `receive` role capability (`0xf2d1`). A client that stopped advertising these could no longer be added to such a
+group, or add its own new devices to it.
+
+- A client SHOULD keep advertising support for this component and the `receive` role capability in its KeyPackages and
+  in its leaves.
+- A client that advertises support for this component MUST validate its state as in [Validation](#validation) on
+  every Commit, including the member role check. Validation decides whether a Commit is valid, so a client that skipped
+  it could accept a Commit that other members reject.
+- Supporting `receive` needs no QUIC code: it is this validation and the receiving rules above.
+- As for any required component, a client MUST keep supporting this component while it is a member of a group that
+  requires it ([README.md](./README.md#advertising-support)).
+
+The `send` (`0xf2d2`) and `fanout` (`0xf2d4`) roles are retired. A client SHOULD stop advertising them, in new
+KeyPackages and in its next replacement LeafNode in each group. It cannot drop a role from its leaf in a group whose
+state still requires that role ([Validation](#validation)). No group is known to require either role: groups were
+created with `required_member_roles` set to `receive` and `allowed_member_roles` set to `receive` and `send`, and no
+client offered a way to change that.
+
+### Removing the component from a group
+
+An active admin MAY stop requiring this component and remove its state, in one Commit, as in
+[Removal](#removal). No client is required to. A client MUST NOT commit this removal unless its user asks it to. The
+removal changes nothing a client following this section does, and a removal made automatically would have every
+admin's client committing in the same groups at once. After the removal, members MAY stop advertising support for this
+component in that group ([README.md](./README.md#advertising-support)), and the group can add members that do not
+support it.
+
+### Reserved identifiers
+
+None of these is ever reassigned:
+
+- component id `0x8006` and the name `marmot.group.agent-text-stream.quic.v1`;
+- extension types `0xf2d1`, `0xf2d2` and `0xf2d4`, and their role capability names;
+- app event kind `1200`;
+- the exporter label and context `"marmot"`, `"agent-text-stream-quic"`;
+- the ALPN identifiers `marmot.quic_stream.v1` and `marmot.quic_broker.v1`.
+
+They stay listed in [../foundation/registries.md](../foundation/registries.md). Kinds `1201` and `1202` are not part
+of this retirement; the registry keeps them reserved for agent events.
 
 ## State
 
-This component records the group-level policy for the raw QUIC live-preview path of agent text streams.
+This component records the group-level policy for the retired raw QUIC live preview of agent text. It does not store stream transcripts, endpoint candidates, broker URLs, or app-event kinds.
 
-Embedding the transport name (`quic`) in the component id and name is a deliberate exception to the usual layering: the
-bytes this component owns are generic group policy (role masks and frame/replay/padding caps), but the role capabilities
-and live-stream behavior it gates are specific to the raw QUIC binding, so a non-QUIC stream profile (WebTransport,
-HTTP/3, WebSocket) gets its own component id and file rather than reusing this one.
-
-It does not store stream transcripts, endpoint candidates, broker URLs, or app-event kinds. Live stream records stay
-transient, and final content is carried by normal Marmot app payloads. A group can require this component so every member
-understands the stream start/final-message contract without requiring every member to open QUIC connections.
-
-Stream record keys use the reusable `MLS-Exporter("marmot", "agent-text-stream-quic", 32)` secret defined by the feature
-document because send, watch, retry, and resume paths MAY need the same epoch secret more than once.
+The state is 12 bytes:
 
 ```text
 uint8 MarmotAgentTextStreamQuicRoleMaskV1;
@@ -52,13 +116,11 @@ extension type in its LeafNode capabilities; the extension type ids are register
 | `0x02` | `send`    | `marmot.feature.agent_text_stream_quic.send.v1`    | `0xf2d2`       |
 | `0x04` | `fanout`  | `marmot.feature.agent_text_stream_quic.fanout.v1`  | `0xf2d4`       |
 
-`receive` means the member understands this component and the MLS-delivered start/final stream anchors. A `receive`
-member can ignore raw QUIC endpoint candidates and wait for the final kind `9` message; it is still a valid participant.
-`receive` does not mean the member can open raw QUIC streams or render live deltas.
+`receive` means the member validates this component and follows the receiving rules in
+[Retirement](#retirement). It never required opening QUIC connections or rendering live text.
 
-`send` means the member can originate raw QUIC preview records for this profile and publish the matching durable
-start/final messages. `fanout` means the member or helper can forward stream records for others, for example through a
-broker.
+`send` and `fanout` named the retired roles of members that sent live preview records and of members or helpers that
+forwarded them. They are retired ([Retirement](#retirement)).
 
 `required_member_roles` is the set of role capabilities every current member MUST advertise. Invite and join checks
 enforce it before a new member enters the group:
@@ -76,24 +138,9 @@ For a component replacement, the subset check compares `required_member_roles` a
 complete resulting state. The prior allowed-role mask determines neither mask in the replacement. Commit authorization
 is still evaluated against the candidate-parent state, so a replacement cannot grant its own committer authority.
 
-For the first user-to-agent profile:
-
-- `required_member_roles` includes `receive` so every member can process agent-stream start/final semantics;
-- `allowed_member_roles` includes `receive` and `send`;
-- `send` and `fanout` are advertised only by members or helpers that implement the live raw QUIC data plane;
-- `fanout` is included in `allowed_member_roles` only when the group permits a later policy update to require forwarding
-  support from every member.
-
-`max_plaintext_frame_len` caps the plaintext bytes in one stream frame before record encryption.
-
-`replay_ttl_secs` is the group's requested maximum retention time for short replay at a broker advertised in a start
-payload. v1 has no separate group-level broker approval mechanism.
-`0` means no retained replay.
-
-`padding_bucket_bytes` is reserved in v1. No padding mechanism is defined, and senders MUST NOT emit padding. The field
-stays in the byte layout as a forward-compatibility reservation, so already-deployed state remains valid; a future
-version that defines a padding construction will state how padded bytes relate to the transcript hash. Until then a
-producer SHOULD write `0`, and a decoder accepts any value within the v1 bound without acting on it.
+`max_plaintext_frame_len` capped the plaintext bytes in one live preview frame. `replay_ttl_secs` was the group's
+requested maximum time a broker kept preview records for replay; `0` meant none. `padding_bucket_bytes` was reserved and
+never used. These three fields no longer affect anything, but clients still check them against the bounds below.
 
 This component version pins these maximums:
 
@@ -102,13 +149,10 @@ This component version pins these maximums:
 - `replay_ttl_secs <= 300`;
 - `padding_bucket_bytes <= 4096`.
 
-This component does not store QUIC endpoints or broker URLs. Endpoint discovery, broker discovery, broker authentication,
-and direct-path probing belong in the raw QUIC transport binding ([../transports/quic.md](../transports/quic.md)).
-Per-stream candidates are carried by the start payload.
-
 ## Update
 
-The update payload is a full replacement state:
+The update payload is a full replacement state. Clients no longer send updates ([Retirement](#retirement)), but still
+validate one they receive:
 
 ```text
 MarmotAgentTextStreamQuicV1 MarmotAgentTextStreamQuicUpdateV1;
@@ -131,10 +175,6 @@ this component, adds or updates a member leaf, or carries the prior component st
 update that adds a required role is therefore invalid unless every member in the resulting epoch already advertises
 that role, and a member leaf update cannot drop a role that the carried-forward component still requires.
 
-This component is for the raw QUIC live-preview profile. WebTransport, HTTP/3, and WebSocket live-preview profiles
-require another component or a later component version. The durable final kind `9` message remains ordinary Marmot chat
-content regardless of the live-preview transport.
-
 ## Authorization
 
 Only an active admin MAY send a standalone agent text stream QUIC update proposal.
@@ -151,10 +191,10 @@ Only an active admin MAY commit removal of this component.
 This component MAY be removed in the same authorized Commit that removes it from resulting GroupContext
 `app_components`; it is invalid if the resulting state still lists it as required.
 
-If removed from a group that no longer requires it, live QUIC text streams are disabled for that group. Existing durable
-Marmot messages and final kind `9` stream messages remain valid.
+Existing Marmot messages, including kind `9` messages that carry stream tags, remain valid after removal.
+[Retirement](#retirement) says when a client commits a removal.
 
 ## Migration
 
-There is no MIP-era component to migrate from. v1 is the first versioned form; a breaking change gets a new component
-id and file.
+There is no MIP-era component to migrate from, and there is no successor. A future design for live agent text gets new
+ids ([Retirement](#retirement)).

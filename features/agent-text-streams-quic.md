@@ -1,6 +1,14 @@
 # Agent text streams over QUIC
 
-Status: experimental.
+Status: retired.
+
+> **Retired.** Clients no longer send or watch live previews of agent text. A client MUST NOT send a kind `1200` stream
+> start or a QUIC preview record, and MUST NOT connect to the endpoint candidates in a stream start it receives. It
+> treats a kind `9` message that carries stream tags as an ordinary chat message. Many existing groups still require
+> `marmot.group.agent-text-stream.quic.v1`; what clients keep doing for those groups is in the component's
+> [Retirement](../app-components/agent-text-stream-quic-v1.md#retirement) section, which overrides this document. The rest of this document records the retired design.
+> Implementations do not implement it. Kinds `1201` and `1202` are not retired; the
+> [registry](../foundation/registries.md) keeps them reserved for agent events.
 
 This feature adds live text previews for agent output in an existing Marmot group. MLS remains the membership,
 authentication, epoch, and durable-message layer. QUIC carries only transient preview records. Live preview delivery is a
@@ -281,8 +289,7 @@ struct {
 The AAD is the canonical encoding of `AgentTextStreamRecordAadV1` and binds records to the group, sender, epoch, stream
 id, sequence number, type, and flags. The raw group id is not sent on the wire; `group_id_hash` is `SHA-256(group_id)`,
 the 32-byte digest of the raw MLS group id. `version` is the record wire version — the single byte `0x01`, never the
-`"v1"` key-context text bytes. The `stream_id` and `sender_id` fields are fixed 32-byte values in this profile. Fixed
-test vectors for the AAD bytes and record encryption will be published with the conformance fixtures.
+`"v1"` key-context text bytes. The `stream_id` and `sender_id` fields are fixed 32-byte values in this profile.
 
 ## Preview authenticity
 
@@ -310,7 +317,6 @@ ASCII bytes with no length prefix. Every `len(...)` in this construction is the 
 variable-length integer (the same encoding the QUIC record uses for `stream_id`), never a fixed-width integer: a
 32-byte id's length prefix is the single byte `0x20`. `seq` is `uint64` big-endian and `record_type` is `uint8`, as in
 the record. `plaintext_frame` is the decrypted frame bytes with no extra prefix beyond what `H_n` already concatenates.
-Fixed test vectors for `H_0` and `H_n` will be published with the conformance fixtures.
 
 The final message carries `H_final`. `H_final` covers every accepted transcript record, including records a receiver did
 not render as text. A receiver that saw the live preview compares its local hash to the final message and marks the

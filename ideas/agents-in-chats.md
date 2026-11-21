@@ -303,8 +303,9 @@ tool call sent once and edited once, that is about 35 events for a turn.
 - **Several agents in one group.** Every agent in a group reads every message. How they are set up, named and kept
   from answering at once needs product work.
 - **Changing the owner's rules from the chat**, and how a client learns who may prompt before someone tries.
-- **Word-by-word text.** This design does not need it. What happens to the existing
-  [agent text streams](../features/agent-text-streams-quic.md) feature is undecided.
+- **Word-by-word text.** This design does not need it. The earlier
+  [agent text streams](../features/agent-text-streams-quic.md) feature is retired; any later word-by-word design would
+  use new ids.
 - **Whose rules win in a gateway.** Hermes and OpenClaw have their own lists of who may speak and who may use
   commands, separate from the owner's rules in the connector.
 

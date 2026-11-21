@@ -81,10 +81,9 @@ If the application profile supports encrypted media, creation MUST include `marm
 an application-profile choice: the encrypted-media component is required for new app groups created under a
 media-capable profile, not by the bare protocol. A non-media group MAY omit it.
 
-If an experimental application profile enables raw QUIC agent previews, creation MUST include
-`marmot.group.agent-text-stream.quic.v1` and MUST require the `receive` role. This is an application-profile choice that
-makes groups agent-stream-ready without exposing a user-facing enable switch. The component and feature documents own
-the exact role semantics and fallback behavior.
+Creation MUST NOT include the retired `marmot.group.agent-text-stream.quic.v1`. Its
+[Retirement](../app-components/agent-text-stream-quic-v1.md#retirement) section says how clients keep supporting it in
+existing groups that require it.
 
 The component documents in [../app-components/](../app-components/) own the exact bytes, authorization, and removal
 rules for each component named here.
