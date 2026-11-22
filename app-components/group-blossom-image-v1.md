@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t8-external-media-shared-credentials-and-deletion-limits).
+
 ## Registry
 
 - Component id: `0x8002`

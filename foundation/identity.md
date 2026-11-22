@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#actors-and-trust-boundaries).
+
 Marmot account identity is a Nostr public key.
 
 The protocol identity is the raw 32-byte x-only secp256k1 public key. Human formats such as `npub` are presentation
@@ -16,6 +18,22 @@ identity when the account has multiple devices in the group.
 
 Group policy MAY talk about accounts or leaves. A rule that targets an account applies to every current leaf whose
 credential identity is that account. A rule that targets a leaf applies only to that leaf.
+
+## Devices
+
+A device is one installation of a Marmot client signed in to an account. The word means the client installation, not
+the hardware: two different Marmot clients signed in to the same account on one phone are two devices, and reinstalling
+a client creates a new device even on the same hardware.
+
+Each device holds its own MLS state: its own leaves, its own KeyPackages, and their private key material. A client
+MUST NOT copy MLS group state, leaf secrets, or KeyPackage private key material to another device. Two devices acting
+from one leaf's state would reuse that leaf's secrets.
+
+No device has protocol authority over another device of the same account, with one exception: in a group that requires
+[`marmot.group.account-devices.v1`](../app-components/account-devices-v1.md), any device may add leaves of its own
+account and remove its other leaves. Rules that target the account, such as admin rights, apply equally to the leaves of
+every device. KeyPackage publication per device is defined in [key-packages.md](./key-packages.md) ("Devices and
+publication slots").
 
 ## MLS credential identity
 
@@ -82,8 +100,14 @@ Account-level inbox addressing is the deliberate exception. A transport MAY addr
 account's public key, because reaching a specific account is the purpose of an inbox. The active transport binding owns
 the concrete inbox-addressing mechanism; the Nostr rule is defined in [../transports/nostr.md](../transports/nostr.md).
 
+An account's backup pointer is the other exception. Its address derives from the public half of the account's recovery
+key ([../features/account-sync.md](../features/account-sync.md), "Backup pointer"), so that a device holding that half
+computes the address and reads the pointer, and new words move it. Anyone can still see the account's events at that
+address. It addresses the account's own records, never a group or a conversation.
+
 Examples of delivery addresses include a Nostr group `h` tag, an account inbox, a relay list, a topic, or an endpoint
-set. The owning transport document defines how those addresses are generated, updated, validated, and used.
+set. The owning transport document defines how those addresses are generated, updated, validated, and used, except the
+backup pointer's address, which the feature that owns the pointer defines and the transport only carries.
 
 ## Application content
 

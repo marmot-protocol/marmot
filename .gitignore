@@ -2,6 +2,9 @@
 .DS_Store
 .Trashes
 
+# Python documentation checks
+__pycache__/
+
 # AI Assistant directories
 .claude/
 .opencode/

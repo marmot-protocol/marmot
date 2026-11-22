@@ -8,7 +8,7 @@ group state by itself. Requests and decisions are visible to group members, not 
 
 ## Surfaces and terminology
 
-This feature owns kind `458` inner app events and their request/decision semantics. It uses the existing
+This feature owns kind `467` inner app events and their request/decision semantics. It uses the existing
 [application payload contract](../foundation/application-messages.md), [admin policy](../app-components/admin-policy-v1.md),
 [component updates](../app-components/README.md#groupcontext-update-processing), [KeyPackages](../foundation/key-packages.md),
 [Welcome flow](../protocol-core/joining.md), [convergence](../protocol-core/convergence.md),
@@ -58,7 +58,7 @@ unchanged; no new Joined receipt or first-contact authenticity guarantee is defi
 
 ## Message format
 
-All actions use kind `458`, the ordinary six-field unsigned app-event envelope, and `tags: []`. `content` is UTF-8 JSON
+All actions use kind `467`, the ordinary six-field unsigned app-event envelope, and `tags: []`. `content` is UTF-8 JSON
 with the exact members below; unknown members, duplicate keys, unsupported actions/operations/versions, wrong types,
 noncanonical encodings, and content longer than 65,536 UTF-8 bytes have no request/decision effect. This does not reject
 otherwise-valid MLS processing or create a group-state authorization check.
@@ -195,7 +195,7 @@ not rejection. A request is not an invitation or consent from the requested acco
 
 ## Examples
 
-These are canonical `content` strings inside kind `458` events; the ordinary envelope still applies.
+These are canonical `content` strings inside kind `467` events; the ordinary envelope still applies.
 
 ```json
 {"action":"request","data":{"pubkey":"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"},"nonce":"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f","operation":"invite_account","v":1}
@@ -204,8 +204,8 @@ These are canonical `content` strings inside kind `458` events; the ordinary env
 The nonce above is a fixture only; real clients generate it randomly.
 
 With envelope author `79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798`, `created_at: 1700000000`,
-kind `458`, empty tags, and the exact invitation content above, the canonical NIP-01 app-event id is
-`e5ab295cece5e1a951e8d0c591f42f4a0666c26f9f7f7d34d9e09fe21ab36d31`.
+kind `467`, empty tags, and the exact invitation content above, the canonical NIP-01 app-event id is
+`025a91f407e94a7a59c330431dfa7b0c533c6a81cdb75bc8da1446cfc6434daa`.
 This example author/subject equality demonstrates encoding only; an already-member subject fails invitation preflight.
 
 A proposed timer change:

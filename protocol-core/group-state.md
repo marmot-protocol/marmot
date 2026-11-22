@@ -32,9 +32,10 @@ transition. A replacement conversation creates a new group.
 held while convergence input is unresolved, because they MUST be encrypted against the selected canonical state.
 
 A member that has sent a SelfRemove proposal also enters the local `Leaving` gate defined in
-[member-departure.md](./member-departure.md). `Leaving` is not a canonical group lifecycle state: the MLS group state
-still contains the member until a commit removes it. It is a durable outbound restriction on the leaving client and may
-span multiple epoch-bound SelfRemove proposals.
+[member-departure.md](./member-departure.md); a departing admin enters it earlier, once it durably records its leave
+and before its step-down. `Leaving` is not a canonical group lifecycle state: the MLS group state still contains the
+member until a commit removes it. It is a durable outbound restriction on the leaving client and may span multiple
+epoch-bound SelfRemove proposals.
 
 An admin whose irreversible disband request is unresolved enters the durable
 local `Disbanding` gate defined in
@@ -199,5 +200,5 @@ outbound work.
 Queued group-state changes are regenerated after convergence status reaches `Settled` and the lifecycle state allows
 outbound work. A staged commit created before branch selection MUST NOT be reused after convergence changes the
 canonical state. After a bounded pass, the fair scheduling rule in [convergence.md](./convergence.md) gives one
-already-queued admin-authorized group-state intent a preparation opportunity before queued inbound input alone starts
-another pass.
+already-queued admin-authorized or same-account group-state intent a preparation opportunity before queued inbound input
+alone starts another pass.

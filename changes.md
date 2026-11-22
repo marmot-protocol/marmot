@@ -1,0 +1,1224 @@
+# Changes
+
+Status: adopted.
+
+This log lists changes to the specification that implementers need to know about, newest first. Each entry says what
+changed, every document whose rules it changed, what an implementation has to do differently, and which pull request
+made the change. Index-only edits to surface `README.md` files and `layout.md` are not named; the pull request has the
+full file list. Idea documents, editorial fixes, and repository housekeeping are not listed.
+
+The specification has no version number, and this log does not version the protocol. An interop-visible breaking change
+still needs an explicit versioning hook, as [layout.md](./layout.md#features) requires.
+
+The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
+[mip-coverage.md](./mip-coverage.md).
+
+## 2026-11-21: Agent text streams over QUIC are retired
+
+Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
+Changes [app-components/agent-text-stream-quic-v1.md](./app-components/agent-text-stream-quic-v1.md#retirement),
+[features/agent-text-streams-quic.md](./features/agent-text-streams-quic.md),
+[transports/quic.md](./transports/quic.md), [foundation/registries.md](./foundation/registries.md),
+[foundation/key-packages.md](./foundation/key-packages.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md) and
+[app-components/README.md](./app-components/README.md#resolved-direction).
+
+The live QUIC preview of agent text is retired. Nobody used it in practice. Many existing groups still require its
+component, `marmot.group.agent-text-stream.quic.v1` (`0x8006`), with the `receive` role, so the component is retired but
+still supported for existing groups rather than withdrawn.
+
+Stop:
+
+- Do not add `0x8006` to new groups or to an existing group's required components, and do not propose or commit an
+  update to its state. Keep validating and applying a valid update that an older client commits.
+- Do not send kind `1200` stream starts or QUIC preview records, and do not put `stream`, `stream-start`,
+  `stream-hash` or `stream-chunks` tags on kind `9` messages you send.
+- Do not connect to the QUIC endpoint candidates in a stream start. Remove any QUIC preview or broker code.
+- Stop advertising the `send` (`0xf2d2`) and `fanout` (`0xf2d4`) role capabilities, except in a group whose state
+  still requires them. No such group is known.
+- Do not hide, replace or verify a kind `9` message because of its stream tags. Treat it as an ordinary chat message.
+- Drop any plan to build against the promised test vectors for preview records and transcript hashes. They will not be
+  published.
+
+Keep:
+
+- Keep advertising support for `0x8006` and the `receive` role capability (`0xf2d1`) in KeyPackages and leaves.
+  Without them a client can no longer be added to, or add its devices to, a group that requires the component.
+- Keep validating the 12-byte component state on every Commit, including the check that every member advertises the
+  required roles. This needs no QUIC code.
+- Hide kind `1200` stream starts that older clients still send.
+
+An admin may stop requiring the component in a group, in one Commit that also removes its state, but no client has to,
+and a client must not do so unless its user asks. `0x8006`, its name, `0xf2d1`, `0xf2d2`, `0xf2d4`, kind `1200`, the
+exporter context `"agent-text-stream-quic"` and the ALPN identifiers `marmot.quic_stream.v1` and
+`marmot.quic_broker.v1` are never reassigned. Kinds `1201` and `1202` stay reserved for agent events. A future design
+for live agent text will use new ids.
+
+## 2026-11-19: A sibling Welcome forwards how the sender holds the chat
+
+Pull request: [marmot#512](https://github.com/marmot-protocol/marmot/pull/512), for [mdk#3546](https://github.com/marmot-protocol/mdk/issues/3546).
+Changes [features/device-group.md](./features/device-group.md#message) and
+[features/account-sync.md](./features/account-sync.md#invitation-decisions).
+
+- A newly linked device used to show every chat it joined through a sibling Welcome as an invitation from its own
+  account. Version 3 of the sibling Welcome adds the original inviter, and for a copy with no invitation generation,
+  whether the sender's copy is confirmed. Senders use version 3 when they forward either, version 2 when they have only
+  a generation (including every founding Add), and version 1 otherwise. Receivers read all three and drop a version 3
+  that forwards nothing, has a byte other than 0 or 1 in a presence or `confirmed` field, or is `confirmed` beside a
+  generation.
+- Senders read the forwarded fields from their copy when they prepare the Add's Commit and keep the bound bytes on retry
+  and repair. A Welcome sent after its copy changed can forward facts that no longer hold.
+- Receivers use the forwarded fields only from a Welcome their own account authored, treat an invalid inviter or their
+  own account as absent, keep the forwarded inviter with the installed copy and present it as reported by the sibling,
+  and apply local policy such as a block to it before resolving the copy. A forwarded confirmation not held by local
+  policy is recorded as a local confirmation, with no generation or decision, and forwarded again by a later sibling
+  Add; one held pending is not retained, while a user's own answer on that device stands.
+- A device adding a sibling to a confirmed chat with a generation but no decision, such as one accepted while it trusted
+  no device group, first applies the founder rule to that generation. A chat id beyond the decision bound records
+  nothing.
+- Version-2 receivers reject version 3, as version-1 receivers reject version 2. This feature still makes no
+  mixed-version promise. [T5](./security-considerations.md#t5-malicious-members-administrators-and-same-account-devices)
+  now notes that a linked device can assert any inviter and a confirmation no decision can undo.
+
+## 2026-11-18: Post-link chat progress
+
+Pull request: [marmot#511](https://github.com/marmot-protocol/marmot/pull/511).
+
+The approving device can report the eligible chats it knows to the new device. Each can show how much of the link's
+chat work remains. The new device counts its own completed joins. Implementations can ignore this optional message.
+[Device-group flow](./features/device-group.md#post-link-chat-inventory-kind-477) · [Kind registry](./foundation/registries.md) · [MDK issue 3532](https://github.com/marmot-protocol/mdk/issues/3532)
+
+## 2026-11-17: Nostr payloads use NIP-44's extended length format; relays should take 2 MiB events
+
+Pull request: [marmot#508](https://github.com/marmot-protocol/marmot/pull/508), for [mdk#2335](https://github.com/marmot-protocol/mdk/issues/2335).
+Changes [transports/nostr.md](./transports/nostr.md#nip-44-and-event-size).
+
+- Every NIP-44 payload in the Nostr binding is NIP-44 version 2 in full, including its extended length format (a
+  6-byte length prefix for plaintexts of 65,536 bytes or more). Marmot clients and the signers they use for NIP-44 must
+  encrypt and decrypt it, and notification servers must decrypt it. Code or signers that stop at 65,535 bytes have to
+  accept the longer prefix; until now they failed to decrypt a Welcome to a group of more than about 81 members.
+- Group and inbox relays should accept events of at least 2 MiB, so a one-invitee Welcome fits up to roughly 1,900
+  members.
+- No additional versioning hook: NIP-59 already delegates its encryption to NIP-44, whose version 2 defines the
+  extended prefix, so this makes support for an existing format explicit.
+- The threat model is unchanged: there is still no universal maximum event size
+  ([SC-029](./security-considerations.md#sc-029)), and 2 MiB is a size relays should accept, not a limit.
+
+## 2026-11-15: An abandoned publish completes the relays it never reached
+
+Pull request: [marmot#505](https://github.com/marmot-protocol/marmot/pull/505), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
+
+- A client that abandons a publish obligation with no possible external publish
+  ([durability.md](./protocol-core/durability.md#publish-interruption-boundaries) case 1) now completes every target to
+  which it has recorded that no event was ever sent. Before, the section kept such a target outstanding until a
+  publication attempt, so it left open whether an abandoned obligation still owed that relay the event.
+- A rejecting `OK` is not a record that nothing was sent: the relay received the event. A target that answered with one
+  is complete because it was attempted, not by this rule.
+
+## 2026-11-15: A relay that returns the exact event acknowledges it
+
+Pull request: [marmot#504](https://github.com/marmot-protocol/marmot/pull/504), for [mdk#2332](https://github.com/marmot-protocol/mdk/issues/2332).
+Changes [transports/nostr.md](./transports/nostr.md#publish-targets-and-acknowledgements).
+
+- A publish to a relay is now also acknowledged when the relay returns that exact event, with a valid id and
+  signature, in answer to a REQ, including a subscription the client already holds. A client whose publish got no
+  accepting `OK`, for example after a timeout, can confirm the publish from such a copy instead of retrying it for good.
+- A REQ that ends without the event is not an acknowledgement. It shows nothing about whether the relay stored or
+  forwarded the event earlier, so a client must not treat it as evidence that publication failed.
+- A client that asks a relay for its own kind `445` event should do so without authenticating as its account, because
+  an authenticated read would link the account to the event.
+
+## 2026-11-09: A departing admin enters Leaving before its step-down
+
+Pull request: [marmot#502](https://github.com/marmot-protocol/marmot/pull/502), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md#authorization).
+
+- A leave starts when the client accepts the request to leave, and a client must not accept one for an account that
+  canonical state makes the last active admin. Once a leave has started, the client designates no other admin for it.
+- A departing admin enters `Leaving` as soon as it durably records a leave it accepted, before any admin-policy update,
+  instead of after its SelfRemove. Other members still enter it after their SelfRemove. `group-state.md` names this
+  second way into `Leaving`.
+- The step-down and blocked-leave rules no longer wait for canonical state to make the account an admin again: they
+  apply whenever canonical state makes a `Leaving` member's account an active admin. So a step-down that is refused,
+  never published or lost to another branch should be sent again from the selected state's admin list, and a leave whose
+  account canonical state makes the last active admin is blocked, including one accepted while another admin remained.
+- The account must be off the admin list in canonical state before its SelfRemove. An update another admin committed
+  counts as its step-down while canonical state contains it, and the client then sends no admin-policy update and
+  publishes its SelfRemove. `admin-policy-v1.md`'s SelfRemove summary now says the account is removed from `admins` by
+  an accepted update, not necessarily its own.
+- Every step-down sent while `Leaving`, the first one included, is an ordinary admin-policy update under
+  publish-before-apply.
+- A client that refuses an admin's leave until its account has been demoted stays conformant: its leave then starts as a
+  non-admin's. The bytes on the wire do not change.
+
+## 2026-11-08: Repeated step-down, blocked leave and Cancel
+
+Pull request: [marmot#501](https://github.com/marmot-protocol/marmot/pull/501), for [mdk#3014](https://github.com/marmot-protocol/mdk/issues/3014).
+Changes [protocol-core/member-departure.md](./protocol-core/member-departure.md#behavior),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md) and
+[features/account-sync.md](./features/account-sync.md#invitation-decisions).
+
+- A `Leaving` member publishes a fresh SelfRemove only while canonical state does not make its account an active admin.
+  Group states on different branches that share an epoch number count as different source epochs for the rule against
+  new SelfRemove bytes for the same source epoch. A prior SelfRemove is stale wherever canonical state reaches a source
+  epoch it is not valid for, after a later Commit or a branch change; the client retries a SelfRemove it already
+  generated for the current source epoch and otherwise should send a fresh one.
+- A `Leaving` member whose account canonical state makes an active admin again, while another active admin remains,
+  should repeat its step-down from that state's admin list. While the state it produces is canonical, the client
+  retries a SelfRemove it already generated for that source epoch or sends a fresh one. That Commit carries only the
+  admin-policy update, is exempt from the `Leaving` ban on group-state Commits, and follows publish-before-apply.
+- If canonical state makes the account the last active admin, the leave is blocked: the client keeps the leave request,
+  stays `Leaving`, must generate nothing new in that group (transport retries of a SelfRemove already generated for
+  another source epoch may continue), and must not show the group as joined again or reverse an invitation decision on
+  its own. A blocked leave is not a new leave attempt: the last-admin refusal and the designate-first requirement
+  apply when a leave starts, and a blocked leave designates no other admin.
+- A blocked leave unblocks only when canonical state leaves another active admin (repeat the step-down) or no longer
+  makes the account an active admin. In the second case the client sends no admin-policy update and retries a
+  SelfRemove it already generated for that source epoch, generating a fresh one only when it has none.
+- Its user may cancel a blocked leave, on that client only. The client must refuse unless the lifecycle is `Stable`,
+  convergence status is `Settled`, and that state still makes the account the last active admin. Cancel replaces the
+  earlier "future explicit cancel flow", is not replicated to sibling devices, and leaves an invitation decline in
+  place; the account stays the last active admin. It does not withdraw SelfRemove proposals or Commits already
+  published on other branches; a later selected branch that removes the account still applies. Cancel is for the
+  last-admin block only, where nothing the client sends can finish the leave; with another active admin the client
+  repeats the step-down instead.
+- A copy owes decline work once per winning value; receiving the same value again, a rebroadcast, a restart or a
+  replayed admission owes none, so the decline that stands after a Cancel does not request the Leave again. Only a new
+  winning value or a new native admission owes new decline work. No new bytes or version.
+
+## 2026-11-08: Marking and removing inactive devices
+
+Pull request: [marmot#500](https://github.com/marmot-protocol/marmot/pull/500), for [mdk#2628, item 3.6b-2](https://github.com/marmot-protocol/mdk/issues/2628).
+Changes [features/device-group.md](./features/device-group.md#marking-and-removing-inactive-devices).
+
+- Each device keeps an inactivity clock per sibling that counts only while it is caught up with its device group;
+  a gap of more than 24 hours restarts every clock. A counted heartbeat restarts a sibling's clock at the time it is
+  counted, and so does seeing the sibling clear its own mark.
+- At 30 days a caught-up device sets the sibling's status to `inactive`; a marked device that is caught up and has sent
+  a heartbeat sets itself back to `active`. At 90 days, while the roster still says `inactive` and "keep while inactive"
+  is off, a caught-up device removes it with the ordinary removal Commit, rechecking before every attempt and keeping no
+  decision.
+- Departure from the user-removal rule: no device deletes the slot of a device removed for inactivity.
+- A device that cannot catch up, because it missed a Commit it can no longer fetch, cannot clear its mark and is removed
+  at 90 days; it should offer its user the explicit local reset and a fresh link. No new bytes or version.
+
+## 2026-11-05: Explicit local device-group reset and prior-link context
+
+Pull request: [marmot#499](https://github.com/marmot-protocol/marmot/pull/499), for [mdk#2847](https://github.com/marmot-protocol/mdk/issues/2847).
+Changes [features/device-group.md](./features/device-group.md#explicit-local-reset).
+
+- Permit user-controlled discard of an active local hidden device-group copy before fresh, code-confirmed pairing,
+  including a fresh join to the same group id. Keep ordinary local chat data and account credentials; preserve all
+  current Welcome authentication, removal and rejection rules. An interrupted attempt need not restore old trust;
+  an already-confirmed fresh link retains its ordinary durable Welcome wait across restart. No new bytes or version.
+- Permit narrowly qualified prior-linked-slot context on existing sign-in listings. It reports current local roster
+  absence, not permanent loss, physical-device identity or authority to reset automatically. Reset repairs no ordinary
+  chat membership and guarantees neither history backfill nor recall of admitted work.
+
+## 2026-11-03: Moving one device between device groups
+
+Pull request: [marmot#498](https://github.com/marmot-protocol/marmot/pull/498), for [mdk#2628, D102](https://github.com/marmot-protocol/mdk/issues/2628).
+Changes [features/device-group.md](./features/device-group.md#moving-between-device-groups),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md), and
+[features/account-sync.md](./features/account-sync.md#starting); updates the non-normative
+[threat model](./security-considerations.md#t5-malicious-members-administrators-and-same-account-devices).
+
+- Move only this device through an ordinary code-confirmed link. Keep the original group trusted through Welcome
+  admission; record Made, capture the old rejected slots and switch sole trust together once the destination's first
+  own Commit is selected with no pending group input. Forget only the destination when linking fails before Made;
+  do not restore old trust or hold old work for resumption. An unrecoverable destination can stay pending with old
+  trust while ordinary repair applies. Corrupt/unreadable local move facts can fail progress/status reads and need
+  manual local recovery or reset/relink; no automatic unlinked signal is promised.
+  One confirmed pending link is retained. A fresh comparison after restart can end in late refusal while that move is
+  pending; it creates no second approval, Add or Welcome expectation.
+- Carry rejected slots with original fields/ages, destination precedence and device-collision notice; carry no
+  rejected KeyPackages or old roster settings. Preserve small-state versions/invitation winners and use ordinary
+  destination broadcast/request. Old delivery/completion cannot become or satisfy destination work. An old admitted
+  chat Add can leave an unusable leaf that needs manual membership repair; moving adds no duplicate-leaf cleanup.
+- Add draft `moved(3)` with a coordinated updated-participant boundary. The mover uses destination tag context only
+  for its first-own Commit, then preserves its key and preserves or produces a valid old-roster tag only for the old
+  moved-status inline Commit. Old siblings
+  clean up old membership without rejection, chat removal, slot deletion or sign-out. Old admitted work settles
+  ordinarily; cleanup need not be immediately quiet and does not delay eligible destination KeyPackage publication. Old
+  siblings can race that cleanup, costing extra Commits and convergence passes.
+- Recognition guidance suppresses sign-in questions only on the mover. Old siblings may still ask about its sign-in
+  after cleanup; users can dismiss that prompt.
+
+## 2026-11-03: Leaving takes the account out, and a simpler sibling-Welcome repair
+
+[#497](https://github.com/marmot-protocol/marmot/pull/497), for
+[mdk#2628](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/account-sync.md](./features/account-sync.md) and [features/device-group.md](./features/device-group.md).
+
+- **Leaving a chat.** A user leaving a chat now also records a decline for the device's own invitation generation, so
+  the siblings admitted by that generation leave too and automatic sibling Adds from it stop. The device leaves by
+  SelfRemove, first taking the account off the admin list if it is an active admin; a sibling's Remove is not used for
+  it, and stays for other departures such as signing out. A held value already at the maximum version means the device
+  leaves without a new decline. While the account is the chat's last active admin, leaving is refused on all its
+  devices, with no decline and no departure; the user first makes another member an admin. A departure that cannot be
+  requested for another reason, a copy with no identified generation, a device that trusts no device group, signing out
+  and removing a device record no decline, and a device that leaves because a decline reached it records nothing new.
+  Private sibling Add admission gains one check: a device that applied a Commit removing a sibling's leaf by that leaf's
+  own SelfRemove makes no automatic Add of that sibling to that chat until a leaf of that sibling is in it again.
+  Implementers record the decline before publishing anything for the departure, and keep, for the device's current
+  membership of each chat and across restarts, the siblings that left it; a device that rejoins through a new Welcome
+  starts without that record. Stated limit: a device that never applied that Commit and is in the chat under a
+  generation the user did not leave may add the sibling back.
+- **Private KeyPackages under a decline.** The decline hold now covers only starting automatic sibling Adds. The hold
+  neither forbids nor requires a private KeyPackage request; requests follow the ordinary stock rules, and the rule
+  against requesting them solely for held Adds is removed.
+- **Repairing a published sibling Welcome.** A Welcome is due again once the target's last activity (its heartbeats) is
+  at least 600 seconds after the latest accepted publication of a carrier. This replaces the wait armed by the first
+  newly observed message, the source observations kept through replay and rewrapping, and the upgrade activity cutoff.
+  Implementers no longer record observation order or content identity for device-group messages. A Welcome with no
+  recorded publication time is not repaired. A repair can now come up to an hour after the target is back, later by
+  however far the target's clock runs behind, and the target drops a duplicate because joining consumed its KeyPackage.
+  Participation evidence, the origin and readiness checks and the one-unresolved-carrier rule are unchanged.
+
+## 2026-11-02: Invitation decisions for a shared admission
+
+[PR #496](https://github.com/marmot-protocol/marmot/pull/496) updates
+[features/account-sync.md](./features/account-sync.md), [features/device-group.md](./features/device-group.md) and
+[security-considerations.md](./security-considerations.md).
+Invitation generations hash the account and validated original admission context and are explicitly inherited in
+version-2 sibling Welcomes. A kind-475 invite item retains per-generation decisions, with higher version then equal
+version decline winning. Implementers persist decisions and required Leave work before sends, preserve membership,
+archive and rejoin guards, enumerate all retained generations in bounded pages, and leave unidentified legacy invites
+local-only. Experimental senders and receivers must update before using this feature; old V1 obligations are not
+converted, no capability negotiation is added, and kind477 remains reserved. A decline does not promise departure
+across unrelated external admission batches/forks or undo an already requested Leave.
+A known winning decline for the current generation holds new automatic sibling Adds and stock demand solely for
+those Adds. A later winning accept rechecks existing opted-in work without creating an Add obligation or recalling
+already admitted traffic; other generations and receiver validity remain independent.
+The item identity includes its generation while each kind-475 page keeps `(chat,item)` uniqueness. The existing single
+backup small-state blob remains limited to read/pin/mute/archive; invitation generations are not added to that format.
+The clarified nonempty chat bound matches the existing client rule and this feature's approved profile; prior general
+prose omitted its minimum. The security model now names remote-decline, new-Add hold and maximum-version consequences.
+
+## 2026-11-02: Restore backup history for current device memberships
+
+[#494](https://github.com/marmot-protocol/marmot/pull/494), for
+[mdk#2628, D49/D71/D93](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/account-sync.md](./features/account-sync.md).
+
+- Restore history on demand using the existing recovery key, pointer and archive formats, including older listed
+  backups in exact pointer order, newest first, preserving listed tie order.
+  Bind each decrypted bundle to its index-entry chat and serialize the current-own-leaf check with import; an index
+  never grants membership, creates a chat or triggers a join or re-add.
+- Keep the original global history-blob number when filtering chats, and use existing insert-only history validation,
+  retention and attachment-key rules with honest backup provenance and existing first-imported-authority semantics.
+  Restored history counts as held history for later sibling exports and backups. Importing it does not mark it read or
+  create unread counts.
+- Leave archived small state unused in this version. Restore changes neither the current recovery key nor backup
+  settings; old words and their pointers remain independently usable. Private index metadata may prompt for words
+  after a real later join, without making an unknown chat into a transcript or route.
+- Keep plaintext restore/archive/derived keys in memory only, never in persistent storage, logs, debug output,
+  diagnostics or off-device exports. Existing sealed encrypted keys remain part of the archive format. Report
+  partial/incomplete outcomes; no new wire format, automatic secret-backed resume or full account disaster recovery.
+- Clarify the narrower adopted scope in [ideas/account-sync.md](./ideas/account-sync.md) and
+  [ideas/multi-device.md](./ideas/multi-device.md); their broader pre-join transcript and recovery-key retention
+  proposals remain non-normative future directions.
+
+## 2026-11-02: Repairing a published sibling Welcome
+
+[#493](https://github.com/marmot-protocol/marmot/pull/493), for
+[mdk#2628, D70, D89, D90 and D91](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/device-group.md](./features/device-group.md#resending-a-published-sibling-welcome).
+
+- Retain the original adder's exact Welcome and private KeyPackage reference through expiry. Repair sends a new
+  carrier for those bytes, without another Add or KeyPackage, after the first new authenticated target-device
+  activity observed after durably confirmed publication and a fixed 600-second wait. Later activity cannot slide
+  that deadline; each successfully published carrier generation needs fresh activity before another wait.
+- Preserve each successful generation’s publication boundary and immutable first authenticated source observations,
+  including application messages and accepted member Commits/Proposals, across replay, rewrapping and restart; unknown legacy timing
+  holds repair. A selected matching device leaf advanced to Update or Commit suppresses repair, while the Add's
+  tagged KeyPackage leaf alone is inconclusive. New carriers retain the originating Add/readiness checks and the
+  one-unresolved-carrier boundary; handed-off targets still finish under the transport's publication rules.
+- On upgrade of existing experimental local device groups, freeze the selected branch’s current epoch as an activity cutoff: only
+  later-epoch activity qualifies, after the next ordinary committed update. Fresh local groups qualify immediately;
+  initial Welcome delivery is unchanged, and no extra Commit is made just for repair. Hold fresh carrier preparation
+  across a backward clock until its timestamp can exceed earlier prepared carriers; exact unexposed retries remain safe.
+- State the best-effort limit: delayed traffic is not proof of live post-publication activity or Welcome receipt,
+  and a delayed target update can cause a harmless duplicate Welcome. No new receipt, wire format, history backfill,
+  expired-package re-add, or duplicate-leaf cleanup is introduced.
+
+## 2026-11-02: Edit linked-device settings with user-edit recovery
+
+[#492](https://github.com/marmot-protocol/marmot/pull/492), for
+[mdk#2628, D86](https://github.com/marmot-protocol/mdk/issues/2628), changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md), and
+[features/account-sync.md](./features/account-sync.md).
+
+- Allow post-link changes to all three device settings. Omitted values come from current roster state. Newly created
+  founding and linked entries start with "keep while inactive" off; later choices and their recovery are preserved.
+- Generalize existing `rename_id` provenance to label/settings user edits without changing its encoding. Recover a
+  prior lost edit before accepting a later one; the user can try again once it resolves. Non-user updates preserve
+  the id and values, and a competing user edit wins as a whole. User label/settings edits must be inline in the editing device's
+  own Commit; non-user roster updates may still be standalone. Preserve legacy label-only recovery and safe no-op
+  cancellation, and resolve later requests only after the earlier intention settles, is dropped or is cancelled.
+- Enabling history affects future sibling Adds and remaining obligations; it starts no retroactive backfill.
+- This is a coordinated development transition for settings writers: clients using the earlier draft's unchanged-id
+  settings updates must adopt the expanded marker rule before writing post-link settings. Existing retained label-only
+  renames remain label-only. No new wire encoding or mixed-draft preservation guarantee is introduced.
+
+## 2026-11-02: Filling missing sibling memberships
+
+[#491](https://github.com/marmot-protocol/marmot/pull/491) changes
+[features/device-group.md](./features/device-group.md), updates its reference in
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md), and allocates kind `458` in
+[foundation/registries.md](./foundation/registries.md), for
+[mdk#2628, 3.5e](https://github.com/marmot-protocol/mdk/issues/2628).
+
+- A linked device fills a sibling's missing chat membership with private KeyPackages, rechecking the selected tree
+  at actual Add preparation. Kind `458` carries a ten-minute advisory claim; claims reduce races without granting
+  exclusive ownership and may be forgotten across restart.
+- Gap filling initially requires "add to all my chats" on. With it off, missed later invitations await re-invite.
+  New-chat founding inclusion remains separate. Automatic cleanup of duplicate leaves is deferred.
+- This defines no Welcome resend mechanism. Ordinary sibling-Welcome delivery and removal cleanup remain in force.
+
+## 2026-11-02: Linked siblings in a chat's founding Add
+
+[#490](https://github.com/marmot-protocol/marmot/pull/490) changes
+[features/device-group.md](./features/device-group.md) for [mdk#2628, 3.5d](https://github.com/marmot-protocol/mdk/issues/2628).
+
+- A creator includes linked siblings opportunistically in the founding Add with private KeyPackages, and retains their
+  sibling Welcome deliveries independently of ordinary Welcome deliveries. It never weakens the requirements selected
+  for the other accounts or uses its account's public KeyPackages. The public-KeyPackage ban binds every client
+  implementing this feature, even with no device group; other clients keep the generic founding exemption.
+- The old-chat setting does not exclude a sibling from new chats. Leaving, keyless, pending-removal and remembered
+  removed devices are omitted; inactive devices remain eligible. One shared admission contract covers post-link and
+  founding Adds: sender tag readiness, the current approver's link outcome, private KeyPackages and constructible Welcome
+  delivery. Another approver's later link is not blocked by stale local failure. Missing private stock does not delay
+  creation, and an initial Welcome waits while the sender's leaf is unclaimed.
+
+## 2026-11-02: Withdrawing a sibling Welcome whose Add lost
+
+[#489](https://github.com/marmot-protocol/marmot/pull/489) changes
+[features/device-group.md](./features/device-group.md) for [mdk#2628, 3.5f](https://github.com/marmot-protocol/mdk/issues/2628).
+
+- Before a new sibling Welcome delivery, establish that its originating Add is selected in the chat it joins,
+  retaining that association across restart. A deferred Add holds delivery because it may be selected again;
+  terminal ineligibility or a terminal chat ends the old Welcome's obligation. Temporarily unavailable state holds.
+- A founding Add needs no competing-branch check because only its creator holds the parent epoch. An already
+  handed-off application message finishes under its transport's publication rules and can arrive after branch loss.
+  Completed joins are not undone. Resending a delivered sibling Welcome remains unspecified.
+
+## 2026-11-01: When the approving device holds back a new device's chat Adds
+
+[#488](https://github.com/marmot-protocol/marmot/pull/488) changes
+[features/device-group.md](./features/device-group.md).
+
+- The approving device adds the new device to no chat while the new device's entry has no `tag_signature_key`, as
+  when branch selection drops the key after the link is made, since it cannot tell which chats already hold the device.
+  It holds back every Add until the key is back, including one to a chat it creates meanwhile.
+- It adds the new device to no chat once a roster state it applied has held a `removed` record for the new device's
+  slot, even if branch selection later drops that record and the roster lists the device again. It keeps that fact as
+  long as it keeps the key that record carried, so a later link of the same slot gets no Add from it meanwhile.
+
+## 2026-11-01: Writing backups (draft)
+
+[#487](https://github.com/marmot-protocol/marmot/pull/487) changes
+[features/account-sync.md](./features/account-sync.md), [transports/nostr.md](./transports/nostr.md),
+[foundation/identity.md](./foundation/identity.md), [foundation/registries.md](./foundation/registries.md) and
+[security-considerations.md](./security-considerations.md).
+
+- The device the account entry names as `backup_writer`, or a device that trusts no device group under the key it
+  keeps, writes the account's backup once the newest one its backup pointer lists is a day old. A backup is Blossom
+  blobs: each history bundle of each chat it holds, other than its device group, its small-state items, and a head
+  that holds the archive key sealed to the recovery key and an index of the blobs. Every key derives from a fresh
+  archive key or from the recovery key's public half, as "Backup archives" gives it, with test vectors.
+- The account's backup pointer lists the backups kept under one recovery key, at most 16, newest first. It is a kind
+  `30078` event signed by the account, at a `d` address the public half derives, with content encrypted under a key the
+  public half derives, published to the account's NIP-65 write relays. A backup counts only once a relay accepts the
+  pointer that lists it; until then the writer publishes it again for up to a day. A writer builds a pointer only from a
+  fetch without `since` that a relay answered in full.
+- Retention keeps the newest two backups, any older one whose index cannot be read, and any older one that is the last
+  to hold an unexpired stretch of some chat. A writer condemns the blobs of each backup a pointer it builds drops, and
+  of each backup it abandons, and deletes a condemned blob with BUD-02 an hour later at the earliest, only while the
+  pointer it fetched in that pass lists no backup the blob belongs to. Backups under other words are never deleted.
+- A device that is not the writer takes over, through the account entry's compare-and-set, at once when no writer is
+  named or the writer has left the roster or is `leaving`, and when the writer has listed nothing for 7 days since this
+  device first saw it named for the key.
+- The backup pointer's address is the second named exception to delivery addresses not derived from keys. Kind `30078`
+  joins the reused standard kinds in the registry, and SC-020, SC-021 and SC-035 name backups.
+
+## 2026-11-01: Cleanup after every device the roster stops listing
+
+[#486](https://github.com/marmot-protocol/marmot/pull/486) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md).
+
+- A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or
+  a `removed` record, for 30 days by its own clock from the last time it applied a roster state that listed them,
+  including states a later Commit applied at the same time replaces and states on a branch that branch selection later
+  drops. It may keep fewer for one slot, but no fewer than the four that the roster states it applied listed most
+  recently. A slot's latest key is the most recent key that a roster state it applied listed for the slot; a state that
+  listed the slot with no key does not change it. Only the cleanup below reads with them; every other tag reading is
+  against the roster alone.
+- A slot other than the device's own is gone for it while its roster records the slot as `removed`, and now also while
+  its state for the device group is settled, the roster lists no device in the slot and it keeps a key for the slot. The
+  device removes that slot's tagged leaves from groups that require `0x800d` and deletes the private KeyPackages it
+  exchanged with the slot; the same-account Remove sender rule now covers that cleanup. This now covers a `removed`
+  record dropped before the device acted on it, a link that failed after the new device set its key, and a made link
+  that a later branch dropped, none of which got any cleanup before. Untagged leaves stay. The private KeyPackages
+  exchanged with a sibling now end when its slot is gone, not only when it is recorded as `removed`. What the cleanup
+  removed stays removed if a later branch lists the slot again; adding the device back follows only "Adding the new
+  device to chats".
+- When a failed link's undo takes the entry of a device the user decided to remove, the deciding device commits the
+  `removed` record alone, with the decision's time and the slot's latest key, while the decision is less than 30 days
+  old, once its settled roster lists the slot neither as a device nor as a rejected slot; with no key kept for the slot,
+  it makes none. Once it does, that slot is `removed`, not a sign-in again, and its device comes back only as a new
+  slot. Once a roster state it applied has held the record, it SHOULD NOT make that lone record again, whether another
+  device or branch selection dropped it; until then, a record whose Commit failed is made again. Once the record is
+  gone, the slot reads as a sign-in again, as after any `removed` record goes. A `removed` record's `rejected_at` is
+  when the removal was decided; a `not_me` record's is unchanged.
+
+## 2026-11-01: The approving device adds a new device to its chats
+
+[#485](https://github.com/marmot-protocol/marmot/pull/485) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md).
+
+- The link's Commit sets the new device's entry status to `active`.
+- Once a link is made, the approving device, the one the new device's entry names in `linked_by`, adds the new device
+  to the chats it is in while it is still adding, including ones it joins or creates after the link, while the roster
+  lists the new device as `active` with "add to all my chats" on. A chat it creates gets the new device by a
+  same-account Add after the creating Commit. No other device adds the new device, under the link, to a chat the
+  approving device is in.
+- Each Add is a same-account Add of a private KeyPackage the new device handed the approving device, and its Welcome
+  goes out as a sibling Welcome. The account's devices do not use the founding exemption for the new device: no device
+  adds it to a chat by a KeyPackage it published, in the Commit that creates the chat or after it.
+- A chat where a leaf of the account carries a tag that reads as the new device's slot, or has the new device's
+  `tag_signature_key`, gets no Add. A leaf from before the link whose signature key is not that key is not found, so
+  such a chat can get a second leaf for the device, which counts toward `max_leaves_per_account` while it stays.
+  Avoiding that, whether the two leaves are then treated as key misuse, and who removes the extra leaf are not
+  specified yet.
+- A chat that does not require `0x800d`, names no relay list a sibling Welcome may carry, already holds
+  `max_leaves_per_account` leaves of the account, or has requirements the new device's KeyPackages do not meet is
+  skipped. The approving device removes no leaf to make room and adds the new device there in no other way; it adds it
+  if the chat can take the Add later, while it is still adding.
+- The approving device asks for as many private KeyPackages as the Adds need, and MAY spread the Adds over time.
+  Turning "add to all my chats" off stops further Adds and removes the device from no chat.
+
+## 2026-10-31: A device signs out through its siblings
+
+[#484](https://github.com/marmot-protocol/marmot/pull/484) changes
+[features/device-group.md](./features/device-group.md) and [foundation/key-packages.md](./foundation/key-packages.md).
+
+- A device that trusts a device group signs out through its siblings when its own entry in that group's roster has its
+  `tag_signature_key` and the roster lists another device whose status is not `leaving`. It commits its own entry with
+  status `leaving`. Once that Commit is confirmed, it leaves itself every group except the device group and the groups
+  that require `0x800d` where its own leaf is tagged as its slot and another leaf as such a sibling, then deletes its
+  slot and its local state. If the `leaving` Commit is not confirmed within about 30 seconds, it leaves every chat
+  itself and tells its user. A device never sets another device's entry to `leaving`.
+- A device that finds a sibling `leaving` on its selected branch, with its `tag_signature_key`, removes it as if its
+  user had decided to, and SHOULD first wait a random delay of up to 30 seconds.
+- A device that started signing out before its device group's removal of it reached it is not unlinked, whatever the
+  removal was, the undo of a failed link included, and tells its user neither that it was unlinked nor that linking
+  failed. It sends only what its sign-out still has to send, a SelfRemove in each chat it was to leave and the deletion
+  of its own slot, and then deletes its local state. A removal that reaches a device before it starts signing out is
+  handled as before.
+- A chat a signing-out device cannot leave, for example because its account is the chat's last active admin, keeps its
+  leaf, and the device tells its user. A device removed while signing out makes no admin-policy update, so a chat whose
+  SelfRemove needs one keeps its leaf too.
+- A device that signs out on its own cannot leave its device group, where its account is the admin, and its leaf there
+  stays until a sibling removes it. When the roster lists no other device, or only `leaving` ones, no device runs that
+  device group any more, and the account's next link founds a new one.
+- An unlinked device's sign-out leaves no group and deletes no slot.
+  [foundation/key-packages.md](./foundation/key-packages.md) ("Stopping publication") makes that exception, since the
+  device that decided its removal deletes the slot.
+
+## 2026-10-31: History bundles through Blossom (draft)
+
+[#483](https://github.com/marmot-protocol/marmot/pull/483) changes
+[features/account-sync.md](./features/account-sync.md). A kind `473` history delivery now carries exactly one of
+`bundle`, the ciphertext inline as before, and `blossom`, a JSON array of one to four Blossom servers that hold the
+ciphertext as one blob. Each is a base URL valid as an encrypted-media endpoint's is, and none appears twice. The sender
+uploads the ciphertext to `server_root || "/upload"` with BUD-02, sends the delivery only once each upload it names has
+succeeded, still owes the history after a failed upload, and does not delete the blob. The receiver checks the `blossom`
+values as it checks the rest of the encoding, fetches `server_root || "/" || hash_hex` with BUD-01, reads no more than
+8,388,624 bytes, checks the SHA-256 it opened, and tries a failed fetch again, from any of the servers. It keeps a
+delivery whose blob it has not fetched, as it keeps one for a chat it has not joined, and drops either 7 days after
+reading it. A bundle sent this way may be as long as any bundle. A sender that bounds a history's deliveries now sends
+its newest bundles and leaves the older history out, or sends none of it. A Blossom server keeps a blob, its size and
+when it was uploaded and fetched until the server expires it, and every sibling sees which servers hold it; "Security
+considerations" says so. The receiver also reads a delivery's sender as that leaf was in the epoch the delivery was sent
+in, from the member state it retains for that epoch, against its current roster, not in the tree of the epoch it holds.
+A delivery read after a later device-group Commit is no longer dropped while the device still retains the member state
+of the epoch it was sent in and the sender's `tag_signature_key` in the current roster still verifies its tag. A
+receiver that predates this change drops a delivery that names Blossom servers, as it drops any content that is not
+exactly the encoding. Clients that do not support device groups change nothing.
+
+## 2026-10-31: A device its device group removes is unlinked
+
+[#479](https://github.com/marmot-protocol/marmot/pull/479) changes
+[features/device-group.md](./features/device-group.md).
+
+- A device that its device group removes is unlinked, unless the removal undid a failed link. The roster the removal
+  leaves tells the two apart: only a removal leaves a `removed` rejected slot for the device's slot. It realizes the
+  removal once the removing Commit is on the selected branch, records that durably before discarding its copy, then
+  stops acting for the account: no Commits, messages, Welcomes accepted, publications or pairing answers, until it
+  deletes its local state for the account. It tells its user it was unlinked, and neither leaves its chats nor deletes
+  its slot: its siblings remove its leaves where they can, and the device that decided the removal deletes its slot. It
+  runs the account again only as a new sign-in: it deletes its local state for the account and links again with a new
+  slot, even if branch selection later drops the removal. A failed link stays failed: until it approves a later link of
+  the slot, the approving device commits the undo whenever the roster on its selected branch lists the slot as a device
+  it linked, again if that Commit failed or branch selection dropped it, even if the new device's first Commit is then
+  selected. A slot recorded as `removed` needs no undo, and a later link of the slot is not undone. One case is left
+  open ([#482](https://github.com/marmot-protocol/marmot/issues/482)): once the approving device's later link of the
+  slot is made, a failed link's entry that branch selection brings back is not undone, and holds its slot. Unlinking is
+  the removed device's own work: it can still sign as the account, and one that misses its removal keeps acting for the
+  account until it next notices it.
+
+## 2026-10-31: The recovery key backups are sealed to (draft)
+
+[#476](https://github.com/marmot-protocol/marmot/pull/476) gives the device roster's account entry its meaning in
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "Backups" section of
+[features/account-sync.md](./features/account-sync.md). An account's recovery key is 12 BIP-39 English words carrying
+128 bits of entropy, which derive an HPKE key pair under DHKEM(X25519, HKDF-SHA256) through HKDF-SHA256 with the salt
+`"marmot recovery key v1"` and the info `"marmot recovery key pair"`, whatever the device group's ciphersuite; the
+section gives test vectors. Values are sealed to it with `EncryptWithLabel` under the label `"Marmot Backup"`. Devices
+keep only the public half, in the account entry's `recovery_public_key`, and never store the words or the private half.
+A device turns backups on, or replaces the words, after the user types two of them back, in an update that sets the
+account entry: turning backups on names it as `backup_writer`, and new words keep the writer. Turning backups off clears
+the account entry the same way; backups already written stay until they are deleted. The account entry changes only by
+compare-and-set: a device commits such an update only on the account entry it read, at the tip of the selected branch,
+and commits it again only when branch selection drops the Commit that carried it, under the same compare-and-set, never
+because the roster does not hold what the user chose. It forgets the words once the update is committed; how it holds
+them until then, retries, and holds back its other changes to the account entry is local. A dropped update the
+compare-and-set refuses, or one whose publication fails, stays lost until the user makes the change again, and after a
+fork the rule may commit an earlier change again and refuse a later one; a device shows backups as the branch selected
+now holds them. A device with no device group keeps the key itself
+and founds its device group with it; one that joins a device group instead leaves the group's settings as they are, and
+forgets the key it kept. A `recovery_public_key` that is not an X25519 key, or a `backup_writer` naming no listed slot,
+leaves the roster valid. The account entry's encoding does not change. Clients that do not support device groups change
+nothing.
+
+## 2026-10-31: History keys and history deliveries for an account's devices (draft)
+
+[#467](https://github.com/marmot-protocol/marmot/pull/467) gives the device roster's `history_key` its meaning in
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and adds the "History" section of
+[features/account-sync.md](./features/account-sync.md). Each device has one history key, an HPKE key pair under the
+device group's ciphersuite, and writes its public half into its own roster entry in a roster update it already makes:
+the founder in the founding roster, a joining device in the update that first sets its `tag_signature_key`, and a device
+whose entry lacks its key, or holds another, in a later update of its own entry. A device never changes another device's
+`history_key`. Siblings seal to it with `EncryptWithLabel` under the label `"Marmot History"` and a context the carrying
+message defines. A `history_key` that is not a public key of the KEM still leaves the roster valid; that device gets no
+history. `history_key` adds nothing to the roster's encoding: it was already a reserved field of `DeviceEntryV1`. It
+also adds "History bundles": one stretch of one chat's history as a UTF-8 JSON object (`v`, `chat`, `from`, `to`,
+`events`) of at most 8,388,608 bytes, each event the raw inner event with its epoch, its retention, a moderation `grant`
+for kinds `1985` and `4891`, and per-file attachment `keys`, each named by the encrypted file's `ciphertext_sha256`.
+Deleted and admin-removed messages and every event that targets them stay out; the deletions themselves go in. Each
+bundle is encrypted with ChaCha20-Poly1305 under a fresh one-use key and a zero nonce, longer histories split into
+bundles over consecutive stretches, and a receiver checks a bundle's content but not its layout, only adds events it
+lacks, never moves its read position for them, and should not count them as unread.
+[features/encrypted-media.md](./features/encrypted-media.md) and
+[features/encrypted-media-v1.md](./features/encrypted-media-v1.md) let a client send a `file_key`, never the media
+exporter secret, to its own account's devices in a bundle, and forbid logging a `file_key` or exposing it in
+diagnostics. A receiver drops an attachment key that names none of its event's media references, and keeps the event. It
+also adds "History deliveries": the device whose own Commit adds a sibling's leaf to a chat, and no other, owes that
+sibling the chat's history once the Commit's publish obligation succeeds, while the sibling's entry has "bring chat
+history" on and a history key. It sends each bundle as a kind `473` device-group message (`v`, `from`, `to`, `chat`,
+`sealed`, `bundle`) of at most 32,768 bytes: the bundle inline, and its key and ciphertext SHA-256 sealed to the
+receiver's history key under a context binding both slots and the chat. A delivery that reached no relay, or that branch
+selection withdraws, is owed again, for at most 7 days. The receiver reads one only in its trusted device group,
+addressed to it, from a sibling whose leaf's tag reads as `from` in the tree it holds, and opening with its history key;
+it keeps one for a chat it has not joined yet for up to 7 days. A withdrawal by branch selection neither undoes an
+import nor drops a kept delivery.
+An event too large for one delivery is left out. An imported event is judged by its `pubkey` and `grant`, not by an
+MLS sender, as [features/content-moderation.md](./features/content-moderation.md) and
+[foundation/application-messages.md](./foundation/application-messages.md) now note. A bundle's `retention` of `0` means disappearing messages were off,
+so the imported event does not expire. [features/device-group.md](./features/device-group.md) lets a slot announcement
+also set the device's own `history_key`. There are no offers, receipts or requests: kinds `470` to `472` stay
+reserved, and
+[foundation/registries.md](./foundation/registries.md) registers `473`. Clients that do not support device groups change
+nothing.
+
+## 2026-10-31: Compromise handling narrowed to the own-slot warning (draft)
+
+[#480](https://github.com/marmot-protocol/marmot/pull/480) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+[foundation/key-packages.md](./foundation/key-packages.md),
+[foundation/registries.md](./foundation/registries.md) and [ideas/multi-device.md](./ideas/multi-device.md).
+
+- A stolen account signing key is out of scope: nothing evicts whoever holds it, and the warning only tells the user.
+  `not_me` rejected slots, sign-in classification, starting fresh and slot announcements are unchanged.
+- A device that finds, in its own slot, a valid current-profile KeyPackage of the account that it did not make still
+  replaces it, and now only warns its user, on that device only, however it handles the publication: it records nothing
+  in the roster and tells no sibling. Anything else there, an invalid or legacy publication or a copy of one of its own
+  KeyPackages, raises no warning. Whether a device made a KeyPackage is now decided by the signature key of the
+  KeyPackage's LeafNode ([features/device-group.md](./features/device-group.md#a-keypackage-the-device-did-not-make)),
+  so a device no longer keeps the `KeyPackageRef` of every KeyPackage it publishes for this.
+- Siblings no longer act on a KeyPackage the roster does not announce. The anomaly alert is gone and kind `462` is
+  unassigned; no device alerts, settles an alert or rejects a sibling's KeyPackage, and no device keeps each announced
+  `KeyPackageRef` for 7,261,200 seconds.
+- Rejected KeyPackages are gone. `DeviceRosterV1` drops `rejected_key_packages`, with `RejectedKeyPackageV1`,
+  `LeafSignatureKeyV1` and their ordering and eight-per-slot rules, and `RosterOperationType` drops
+  `set_rejected_key_package(4)` and `remove_rejected_key_package(5)`. Values 4 and 5 are reserved, never reused, and
+  invalid to a decoder; `set_account` stays 6. This changes the roster's encoding under the same id `0x800e`, so
+  existing device-group rosters must be recreated. The test vectors drop the `rejected_key_packages<V>` byte and the
+  rejected-KeyPackage update, and gain an update that announces a KeyPackage. A complete check no longer rejects the
+  KeyPackages it finds in `not_me` slots, and a device with no device group carries no rejected KeyPackages into the
+  device group it creates or joins.
+- Leaves tied to a rejection are gone: a device no longer records which KeyPackage each of its account's leaves joined
+  with, and no longer removes leaves for a rejection, by same-account Remove or as an admin. The same-account Remove
+  sender rule of `marmot.group.account-devices.v1` no longer names that case. A device still never warns about or
+  removes a leaf only because no device claims it.
+- A device warns its user when it rejects a sign-in itself, when its roster gains a `not_me` rejected slot, and when it
+  finds a KeyPackage it did not make in its own slot. One warning stays open per account, it never claims the key holder
+  was stopped, and dismissing it marks what it gathers as seen on that device only; a seen own-slot KeyPackage is kept
+  by `KeyPackageRef` for 7,261,200 seconds after it was found.
+
+## 2026-10-31: A device removed from a group its account stays in
+
+[#475](https://github.com/marmot-protocol/marmot/pull/475) changes
+[protocol-core/member-departure.md](./protocol-core/member-departure.md) and
+[features/device-group.md](./features/device-group.md).
+
+- When a removing commit that does not disband the group leaves a state that still holds a leaf with the removed
+  device's account identity, the device still realizes its removal, but must not present the group as one its account
+  was removed from, and shows no member-removal row for itself. It presents the group as no longer active on this
+  device, without saying whose the remaining leaf is, and presents other members the commit removed as usual. A
+  disband still shows only its `group_disbanded` row. This covers a sibling removing a removed device's leaves from the
+  account's chats.
+
+## 2026-10-31: Refilling a device's emptied KeyPackage slot
+
+[#477](https://github.com/marmot-protocol/marmot/pull/477) changes
+[foundation/key-packages.md](./foundation/key-packages.md).
+
+- A device keeps, with its latest KeyPackage publication and across restarts, the places that accepted it, and SHOULD
+  keep sending that publication to a place that has not accepted it yet.
+- When a read of its own slot from a place that accepted the latest publication, with no time bound, reaches the end of
+  what that place serves and finds nothing in the slot, the device SHOULD publish a new KeyPackage into the slot. This
+  covers a deletion the device never saw acknowledged and a slot deletion by someone else holding the account key. A
+  read that failed, stopped short or was bounded in time does not count.
+- The device publishes a new KeyPackage, not its latest one again, since a slot deletion covers every publication in the
+  slot up to its time.
+- It SHOULD NOT publish one this way before its latest publication is a day old, so that a place that accepts
+  publications and keeps none costs one KeyPackage a day.
+- The device makes this publication only while it is neither signing out nor signed out and, in a device group, only
+  while its trusted roster lists its own slot as a device.
+- "Stopping publication" now defines signing out: it starts when the device decides to sign out, before it deletes its
+  slot. It ends when the sign-out finishes, after which the device is signed out, or when the device abandons it, after
+  which it is neither signing out nor signed out.
+- A slot deletion dated ahead of the device's clock also covers a KeyPackage published this way before that time; a
+  place that honored it serves nothing in the slot until the device publishes there again after that time.
+
+## 2026-10-30: Devices: renaming, client and platform, heartbeats and inactive devices (draft)
+
+[#462](https://github.com/marmot-protocol/marmot/pull/462) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- Any device may rename any device in the roster. `DeviceEntryV1` gains `rename_id` after `label`: every entry, founding
+  and linked ones included, is created with 16 fresh random bytes. Any update that changes `label` is a rename: it
+  changes only `label` and `rename_id`, writing a fresh one, a clear included, and no other update changes either field.
+  This changes the encoding of `0x800e` in place: while the component is a draft, its encoding can change, with no
+  promise that revisions work together. A device keeps the ids its rename wrote and the ids it replaced, and never
+  forgets the newest it wrote or the one the entry held when it last built the rename. Once its device group is `Stable`
+  with no Commit of its own unresolved, it renames again where the canonical roster holds one it kept as replaced, and
+  drops its rename where the roster holds any id it did not keep.
+- Each device keeps its own entry's `client` (its KeyPackage `client` tag name) and `platform` current in the update
+  that announces its next KeyPackage, the one exception to that update leaving every other field unchanged.
+- Each running device sends a heartbeat (kind `457`, new, content `{"v":1}`) in the device group it trusts whenever it
+  has sent none or its last one is at least an hour old, once its own leaf there is tagged. A receiver counts one only
+  when the sending leaf's device tag reads as a device in the roster, in the tree it holds when it reads the heartbeat,
+  enforces no rate, ignores the content, and dates it `min(created_at, when it was read)`. Heartbeats never trigger push
+  notifications.
+- A sibling's last activity is the latest `min(created_at, when it was read)` over its counted heartbeats. A device
+  keeps it, and when it first found the sibling, for that roster entry, its slot and `linked_at`: it never carries
+  them to a later entry for the slot, and may forget them once its roster no longer lists the entry. A device treats a
+  sibling as inactive 30 days after its last activity, or after first finding it in the roster if that is later. That
+  judgment only decides what the device shows: a device must not set an entry's `inactive` status from it.
+
+## 2026-10-30: Removing a device (draft)
+
+[#472](https://github.com/marmot-protocol/marmot/pull/472) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and [transports/nostr.md](./transports/nostr.md).
+
+- The user removes a linked device from another device of the account with one device-group Commit: it removes the
+  device's leaf (the one whose tag reads as its slot) and carries `remove_device` and a `removed` rejected slot with
+  the entry's `tag_signature_key`. A device whose entry has no `tag_signature_key` yet is not removed this way. The
+  deciding device records the decision first, keeps it until it discards its copy of the device group, and commits
+  the removal again whenever the roster lists the device, keeping the decision's time as `rejected_at`.
+- The deciding device then deletes the removed device's KeyPackage slot once its settled device-group state no longer
+  lists the device, and again after committing a removal that branch selection dropped: the one case where a device
+  deletes a slot it did not create. It stamps the deletion as far ahead of its clock as it would date its own
+  publication.
+- Every device that trusts the device group removes the removed slot's tagged leaves from the groups it is in, with a
+  same-account Commit where the group requires `0x800d`, and tells its user about the others. It also deletes the
+  private KeyPackages it issued to a removed slot, with their keys, and those that slot handed it, before `not_after`.
+- A device does that cleanup only while its trusted roster records the slot as `removed`: none after a failed link,
+  which writes no such record, or for a record dropped before it acted
+  ([mdk#2761](https://github.com/marmot-protocol/mdk/issues/2761)).
+
+## 2026-10-30: Sibling Welcomes (draft)
+
+[#471](https://github.com/marmot-protocol/marmot/pull/471) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[transports/nostr.md](./transports/nostr.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A Welcome that consumes a private KeyPackage travels as a sibling Welcome (kind `461`, new), an app event in the
+  device group carrying the Welcome, the consumed KeyPackage's `KeyPackageRef` and the chat's relays. A device MUST NOT
+  deliver such a Welcome through the transport binding's Welcome delivery.
+- A device joins through a Welcome that consumes a private KeyPackage it issued only when it arrived as a sibling
+  Welcome in its trusted device group, from a leaf whose device tag reads as the sender's slot, for a KeyPackage it
+  recorded as handed to that slot and still keeps. Every other Welcome that consumes one is still rejected. The join
+  stands if branch selection later withdraws the sibling Welcome.
+- A sibling Welcome's relay list holds one to 16 entries, none repeated, each valid under the binding's relay rules.
+- A transport binding carries Welcomes only for published KeyPackages, and the Nostr binding sends no kind `444` rumor
+  for a never-published one. A sibling Welcome names its consumed KeyPackage by `KeyPackageRef`.
+- When a device adds a sibling to a chat, and when it sends a sibling Welcome again, are not specified yet.
+
+## 2026-10-30: Resending small state after a withdrawn device-group message (draft)
+
+[#470](https://github.com/marmot-protocol/marmot/pull/470) changes
+[features/account-sync.md](./features/account-sync.md).
+
+- A device that does not keep which items a withdrawn update carried may send every item it holds again instead of only
+  those items. A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request
+  may treat it as both. Receivers change nothing: each resent item keeps its version and change id, and merging a value
+  it already holds changes nothing.
+
+## 2026-10-30: Rejected KeyPackages, the compromise warning and leaves tied to a rejection (draft)
+
+[#469](https://github.com/marmot-protocol/marmot/pull/469) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md),
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md) and
+[foundation/registries.md](./foundation/registries.md).
+
+- A device that finds a valid KeyPackage it did not make in its own slot now also records it as a rejected KeyPackage in
+  its device group's roster, besides replacing it. `RejectedKeyPackageV1` gains `leaf_signature_key`, the raw
+  `signature_key` of the KeyPackage's LeafNode, and the roster's test vectors gain one. This changes the roster's
+  encoding under the same id `0x800e`: while the component is a draft, its encoding can change, with no promise that
+  revisions work together. A sibling that finds a valid KeyPackage, fresh or not, that no roster announced in a linked
+  device's slot catches up on the device group, sends that device an anomaly alert (kind `462`, new), and rejects the
+  KeyPackage itself if, a day later and caught up again, no roster has announced or rejected it, even when the slot no
+  longer serves it or is no longer a device's. Catching up counts only after a fetch of the device group that succeeded.
+  A device keeps each announcement it has seen for the longest time a KeyPackage can be valid. The slot's device answers
+  an alert by announcing a KeyPackage it made again, even one it has since replaced, or, while its slot still serves one
+  it did not make, by rejecting it; it never announces a current publication it did not make. Each device keeps the
+  `KeyPackageRef` of every KeyPackage it publishes for that. No device rejects a KeyPackage any roster it held
+  announced, or one whose LeafNode carries a device tag that reads as a device's, and each rejection is decided while
+  the device holds the KeyPackage, so that it can read that tag: a sibling reads it before it alerts. A device keeps
+  each rejected KeyPackage it records until the record lapses, committing it again when a branch selection drops the
+  update that recorded it, and a device with no device group brings the ones it keeps, its own slot's included, into the
+  device group it creates or joins.
+- A device whose check is complete rejects each valid KeyPackage it finds as the current publication of a `not_me` slot,
+  unless the same check finds it in another slot or a roster announced it. Answering This wasn't me starts a check. Each
+  rejected KeyPackage is dropped 30 days after it was recorded, and a roster, a founding one included, and the
+  rejections a device keeps each hold at most eight for one slot, the newest, so the roster stays bounded whatever the
+  key holder publishes.
+- A device warns its user whenever it rejects a sign-in or a KeyPackage, whenever its roster gains such a rejection,
+  whenever it removes a leaf tied to one, and whenever it finds such a leaf in a group it cannot clean up. One warning
+  stays open per account, it never claims the key holder was stopped, and dismissing it marks what it gathers as seen on
+  that device only.
+- Each device records the `KeyPackageRef` each of its account's leaves joined with, and removes, where it can, the
+  leaves that no device claims and that joined with a KeyPackage its roster rejects or it has rejected itself: by a
+  same-account Remove, now allowed for this by the sender rules of `marmot.group.account-devices.v1`, or as an admin. A
+  leaf that no device claims is not evidence by itself and is never removed or warned about for that alone.
+- A client that lets a new device start without the sign-ins its first check found answers Not now for every slot that
+  check returned, never This wasn't me.
+
+## 2026-10-30: Deleting a far-future publication in a device's own slot (draft)
+
+[#468](https://github.com/marmot-protocol/marmot/pull/468) changes
+[foundation/key-packages.md](./foundation/key-packages.md) and [transports/nostr.md](./transports/nostr.md).
+
+- A device whose own slot serves a publication it did not make, dated further ahead than the device would date its own,
+  cannot outrank it. The device may ask relays to delete that publication by id and then publish into its slot again.
+  On Nostr the request is a kind `5` event at the current time with exactly one `e` tag naming the event and one `k`
+  tag, `30443`. Receivers selecting KeyPackages still ignore `e` tags.
+
+## 2026-10-30: Slot announcements, the own-slot check and private KeyPackages (draft)
+
+[#459](https://github.com/marmot-protocol/marmot/pull/459) changes
+[features/device-group.md](./features/device-group.md),
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[foundation/key-packages.md](./foundation/key-packages.md) and [foundation/registries.md](./foundation/registries.md).
+
+- A device in a device group names each KeyPackage in its own roster entry (`announced_key_package`) before that
+  KeyPackage reaches its slot, publishes only once the Commit carrying the announcement is in its group state, and
+  never publishes an unannounced KeyPackage. The creating device's founding entry announces the KeyPackage it last
+  published, as the founding Add announces the linked one. A client should tell its user while a refresh is held back
+  for want of an announcement.
+- Every device, in a device group or not, now reads its own slot at start and about daily. A current publication
+  there other than its own latest, valid or not, is replaced by a newer KeyPackage of its own.
+- Siblings in a device group hand each other private KeyPackages: single-use, never published, consumed only by a
+  sibling's add; until sibling adds are specified, a device rejects any Welcome that consumes one. A device tops a
+  sibling's stock up to 10 when it falls below 5. A request (kind `459`) and a hand-off (kind `460`), both new, travel
+  only in the device group. A receiver keeps a hand-off only if every KeyPackage in it is its own account's, not
+  last-resort and unexpired, and carries a device tag that reads as the sender's. It reads either message only when the
+  sending leaf's device tag reads as the `from` slot the message names. A device may cap what it keeps for a sibling, at
+  no fewer than 300, and never deletes a private KeyPackage early; at the cap it may hand over unconsumed ones again,
+  without renewing them, and a holder never keeps one it has already used.
+- Devices without a device group publish as before.
+
+## 2026-10-30: Small-state sync between an account's devices (draft)
+
+[#466](https://github.com/marmot-protocol/marmot/pull/466) adds [features/account-sync.md](./features/account-sync.md)
+and registers kinds `475` and `476` in [foundation/registries.md](./foundation/registries.md). An account's devices keep
+each chat's read position, pin, mute and archive state the same by exchanging items in their device group: an update
+when the user changes one, and a broadcast of every item a device holds. Each item names its chat by raw MLS group id.
+Only chats whose MLS group id is at most 256 bytes have small state. The furthest read position wins, in chat order by
+epoch, `created_at` and `id`, a device's own position is the furthest message a position may name that its user has read
+there, and a receiver judges a position by its encoding alone; for the other items the highest version wins, then the
+lowest random change id, then the lowest value. A version stops at 9007199254740991, and no user can change an item held
+there. Each device broadcasts when it starts, at least every 24 hours, and whenever the device group's tip moves past
+the app-payload window since its last broadcast began. A starting device also sends a broadcast request, which each
+sibling answers with one broadcast, at most once an hour. No device asks a particular sibling or tracks what its
+siblings hold. A device reads these kinds only in its trusted device group, from any member, drops a message with a
+repeated member name or item, skips item names it does not know, and keeps what a withdrawn message set. It resends the
+items of every withdrawn update it sent or merged, and a new broadcast request for every withdrawn one it sent or read.
+[features/device-group.md](./features/device-group.md) now says small-state messages name other groups and leaves them
+to the new document, and [ideas/account-sync.md](./ideas/account-sync.md) and
+[ideas/multi-device.md](./ideas/multi-device.md) point to the feature for these rules. Clients that do not support
+device groups change nothing.
+
+## 2026-10-29: Linking a device into the device group (draft)
+
+[#456](https://github.com/marmot-protocol/marmot/pull/456) adds "Linking a device" to
+[features/device-group.md](./features/device-group.md). An existing device answers a pairing request only if it is not
+itself a new device in a session or waiting for its Welcome, and would link the named KeyPackage: its slot is not
+already a device or rejected, by the roster or by the device itself, it supports everything the device group requires,
+and the roster has room for another device. When the KeyPackage lacks something or the roster is full, it sends Cancel
+`cannot_link` instead. The existing device's Confirm names the device group it trusts, or a fresh 16-byte random id for
+the one it will create, and the signature key of its own leaf there, which it keeps through the Commit that adds the new
+device so that key signs the Welcome. Once the link is confirmed it adds exactly the confirmed KeyPackage, in one Commit
+that sets the new device's roster entry. A device that trusts no device group creates one first, and that Commit is the
+founding Add. Another device of the account may already have one it cannot see; merging two is not specified yet. The
+founding roster lists only the creating device, with the rejections it already holds, where #452's listed the linked
+device too. The creating device's own entry has the "add to all my chats" and "bring chat history" settings on, as a new
+device's are by default. Any Commit a device makes in the device group that adds a member, the founding Add included,
+adds exactly one, by value, with that device's roster entry for a new slot: a same-account Add with the roster update,
+committed as the group's admin, never a same-account Commit. It never adds a KeyPackage no confirmed link named,
+including when re-inviting after a founding Welcome that could not be delivered. A device that cannot commit the link at
+once may retry, but not after the new device stops waiting, counted from when the new device's Confirm arrived. Before
+it sends its Confirm, the new device records the link with the pairing session's id, and keeps it across restarts until
+it joins through the link's Welcome, 600 seconds have passed since that Confirm, a Cancel for that session arrives, or
+it confirms a newer link, which replaces it; each pairing session uses a KeyPackage no earlier link of the device
+confirmed. It joins only the Welcome from the named leaf into the named group that adds the confirmed KeyPackage, and
+only if that group requires `0x800e`, deciding before it joins; it refuses every other device-group Welcome, and while
+the link lasts any Welcome into the group id or that adds the confirmed KeyPackage, so a forged one or an invite to a
+chat leaves the KeyPackage and the id for the real one. The approving device treats the link as made only once the new
+device's first Commit there, which sets its tag signature key, is on the selected branch with no input for the group
+pending; the new device makes it as soon as it can once it has joined. Once made, a link stays made. If that Commit has
+not come 3600 seconds after the `linked_at` the approving device wrote in the new device's entry, and is still missing
+once it has processed the input it holds for the group, the approving device, and only it, removes the new device's leaf
+and roster entry in one Commit and stops delivering the Welcome. A device whose leaf is removed from its device group
+stops trusting the group and must discard its copy's active state, keeping at most its history and a removal tombstone,
+so a later link's Welcome into the same id is a first join; a new device removed before its first Commit there tells its
+user that linking failed. Clients that do not support `0x800e` change nothing.
+
+## 2026-10-29: Device pairing (draft)
+
+[#454](https://github.com/marmot-protocol/marmot/pull/454) adds
+[features/device-pairing.md](./features/device-pairing.md), registers kinds `452` to `456` and reserves `457` to `489`
+for multi-device accounts in [foundation/registries.md](./foundation/registries.md), adds "Pairing delivery" and its
+entry in "Validation before peeling" to [transports/nostr.md](./transports/nostr.md), and makes
+[protocol-core/joining.md](./protocol-core/joining.md) run any check a feature requires before a Welcome is joined
+inside the tentative validation, so a Welcome that fails one consumes no KeyPackage. The feature is a draft. A new
+device, the one whose user asks to link it and which has no device group, and an existing device, any other device of
+the same account, compare a code: Matrix's `m.sas.v1` verification, transcribed into Marmot encodings and shown as seven
+emoji from Matrix's table. The five messages are rumors gift-wrapped from the account to itself. The new device commits
+to its key in its request; the code binds the session, the account, the new device's `KeyPackageRef`, the answering
+device's slot and both keys; and the two confirmations cover the `KeyPackageRef`, and the id of the group the new device
+joins with the signature key of the existing device's leaf there, the only sender whose Welcome the new device accepts.
+While the link lasts, the new device joins no other Welcome into that group or that adds that KeyPackage, and joins the
+link's Welcome only if its group requires `0x800e`.
+The existing device confirms first, and the new device confirms only after verifying the existing device's confirmation.
+An existing device sends at most 10 Answers an hour, and none while more than one request is live. Clients that do not
+link devices need no changes.
+
+## 2026-10-29: New sign-ins in the device group (draft)
+
+[#465](https://github.com/marmot-protocol/marmot/pull/465) changes
+[features/device-group.md](./features/device-group.md) and
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md). A client that supports `0x800e` reads its
+account's KeyPackages as an inviter does, and treats a slot holding a valid, fresh KeyPackage that is not its own, not a
+roster device's and not a rejected slot as a sign-in to ask its user about. A Welcome naming a KeyPackage it did not
+publish is a reason to fetch and check that KeyPackage, never evidence by itself. Slots its first check returns, fresh
+or not, are devices that were signed in before it; others are new sign-ins, and a publication's time never decides
+which. "This wasn't me" commits a `not_me` rejected slot, never a rejected KeyPackage, since the KeyPackage may be a
+copy of a real device's. A device with no device group keeps its rejections and writes them into the roster it later
+creates or joins. A device keeps its rejections until the roster holds the slot as a device, commits one again whenever
+the roster has no entry for that slot, and never replaces an entry. A link or rejection on one device ends the question
+on all of them while the roster holds it. A device keeps its list of sign-ins and its answers across restarts. A sign-in
+whose slot a complete check finds holding no valid KeyPackage that a deletion does not cover stays listed as no longer
+signed in, and can be linked again once a complete check finds one; being no longer fresh never on its own signs a
+sign-in out. A check is complete only from one unbounded answer per query from every relay in the account's non-empty
+KeyPackage relay set, each short of the limit the device asked for; an account past one answer, and a relay capping
+below the request without advertising it, are stated limits. Clients that do not support `0x800e` change nothing.
+
+## 2026-10-28: Device roster component and device group (draft)
+
+[#452](https://github.com/marmot-protocol/marmot/pull/452) adds
+[app-components/device-roster-v1.md](./app-components/device-roster-v1.md),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md) and
+[features/device-group.md](./features/device-group.md), registers `0x800e` and `0x800f` in
+[foundation/registries.md](./foundation/registries.md), and changes
+[app-components/README.md](./app-components/README.md) to allow a component to define a diff-style update. All three
+new documents are drafts. A group that requires `0x800e` from creation is an account's device group. Its roster holds
+devices, rejected slots, rejected KeyPackages and the key that seals device tags; its update is a diff that sets or
+removes single entries against the candidate parent's roster, every leaf has the same credential identity, and no Commit
+or proposal may start or stop requiring it. A device SHOULD drop a `removed` slot record 30 days after it was recorded.
+A client that supports `0x800e` treats its entry and updates as unknown data in a group that does not require it, and
+MUST NOT write one there. A device trusts a group as its device group only if it created it or joined it through a
+Welcome a confirmed link named, MUST NOT join a group that requires `0x800e` through any other Welcome, and founds it
+with only the KeyPackage that link confirmed. A linked device puts a device tag (`0x800f`) in every KeyPackage and
+LeafNode it creates, so that its siblings can tell which of the account's leaves belongs to which device. A tag is
+verified with the tag signature key of the roster entry it names, or of the `removed` record that keeps that key. A tag
+never makes anything invalid, and a Commit or Welcome that requires `0x800f` is invalid. Clients that support neither
+component change nothing.
+
+## 2026-10-28: Activation eligibility reasons and lost activations
+
+[#453](https://github.com/marmot-protocol/marmot/pull/453) changes
+[app-components/README.md](./app-components/README.md) and
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md). A client does not commit an activation
+again on its own after it loses branch selection or fails its checks when regenerated from the queue; it activates only
+if its user asks again. A client MAY tell its user why a group cannot activate `marmot.group.account-devices.v1` yet,
+as a reason about the whole group that never names the members or devices holding it back.
+
+## 2026-10-27: Fair scheduling covers admin and same-account intents only
+
+[#450](https://github.com/marmot-protocol/marmot/pull/450) changes
+[protocol-core/convergence.md](./protocol-core/convergence.md) and
+[protocol-core/group-state.md](./protocol-core/group-state.md). The preparation attempt after a bounded pass goes to a
+queued admin-authorized intent or a same-account intent, not to every intent the member may commit; a self-update or a
+Leave does not receive it. [#443](https://github.com/marmot-protocol/marmot/pull/443) had widened the rule to every
+authorized intent. A client that gave a queued self-update or Leave the attempt stops doing so. Admin and same-account
+intents keep it.
+
+## 2026-10-26: Push token snapshots, announces, and repair
+
+[#447](https://github.com/marmot-protocol/marmot/pull/447) changes
+[features/push-notifications.md](./features/push-notifications.md) and says when members send push-token gossip. It also
+adds a non-normative note to [implementation-model.md](./implementation-model.md) on the per-group state a client keeps,
+keeping complete removal entries so tombstones can be relayed, and measuring the size budget on the published group
+message. A member that commits a Commit adding leaves, including a same-account device add, SHOULD send a snapshot after
+merging it: kind `448` lists of every active record it holds and kind `449`s relaying every tombstone it holds. A member
+that holds neither sends nothing. Kind `447` gains an optional `have` member, the first 8 bytes of
+`SHA-256(SignedRecord)` in standard base64 for every record and tombstone the sender holds, at most 4,096 of them; a
+`447` that carries it is an announce. A joined device has a join window lasting T (at least one minute) after its join
+completes, which includes fetching the group's messages from its join epoch on; offline time does not count. It sends no
+`have` inside the window, and SHOULD announce once when the window ends, whether or not snapshot events arrived. After
+the window, or at once for the group's creator, a device SHOULD also announce when its record changes, and with its next
+message in a group when it has not announced there within an implementation-defined interval, which a device that has
+never announced there has not. Members rank every non-blank leaf except the announcer's sender leaf by `SHA-256(announce
+id bytes || leaf_index)`. Only the devices at the top three leaves reply, after staggered waits, with only the missing
+records and tombstones. A reply is cancelled once entries carried in the announce's epoch or later cover it. A device
+SHOULD NOT send more than one repair reply per announcer's leaf per group in 24 hours, and treats an empty `447` without
+`have` as its sender's announce holding nothing. A device whose record is missing from a snapshot SHOULD re-share it,
+and while a group may contain clients without these rules, SHOULD re-share it after any Commit that adds leaves. Lists
+are split by a byte budget, 65,536 bytes per published message by default; the 32-entry maximums on `tokens` in kinds
+`447` and `448` and on `removals` in kind `449` are unchanged. Removal entries can be relayed by any member, and a
+winning removal writes its tombstone even when no record for the key is stored. Clients that do not implement these
+rules apply what they receive as before, and read an announce as a plain self-update.
+
+## 2026-10-26: Senders pad every push trigger
+
+[#445](https://github.com/marmot-protocol/marmot/pull/445) changes
+[features/push-notifications.md](./features/push-notifications.md). A sender must append at least one padding chunk to
+every kind `446` trigger: 1084 bytes from a cryptographically secure random generator, fresh for each trigger. A
+trigger therefore carries at most 31 `EncryptedToken`s, and padding counts toward any smaller per-trigger chunk limit a
+sender applies; a sender that splits its tokens across several triggers pads each one. Without padding, a sender's
+triggers that carry the same tokens have identical content, and a server deduplicating by content hash discards real
+triggers as replays. Notification servers do not change: the dedup hash covers every chunk, padding included, and a
+server must not ignore a structurally valid trigger because it appears to carry no padding.
+
+## 2026-10-26: Devices can add and remove their own account's leaves
+
+[#443](https://github.com/marmot-protocol/marmot/pull/443) adds
+[app-components/account-devices-v1.md](./app-components/account-devices-v1.md) and changes
+[app-components/README.md](./app-components/README.md),
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
+[foundation/identity.md](./foundation/identity.md), [foundation/registries.md](./foundation/registries.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[protocol-core/member-departure.md](./protocol-core/member-departure.md),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md),
+[protocol-core/convergence.md](./protocol-core/convergence.md), and
+[protocol-core/group-state.md](./protocol-core/group-state.md). It registers adopted component `0x800d`,
+`marmot.group.account-devices.v1`, which has no data. In a group that requires it, any member may commit a same-account
+Commit without admin authority: Add proposals for KeyPackages of its own account and Remove proposals for its account's
+other leaves, by value and with no other proposal. An added KeyPackage must advertise everything the resulting group
+requires, and no requirement may be dropped so that a device fits; while a group requires the component, every leaf must
+advertise it. `tip_priority` is now one test: a Commit is `ordinary` when one rule that permits a non-admin committer
+covers all of it, whoever commits it, and `privileged` otherwise. A same-account Commit is therefore `ordinary` even
+from an admin. Self-update and SelfRemove-only Commits were already `ordinary` under the earlier wording, an admin's
+included, so their scoring does not change. No account may have more than `max_leaves_per_account` leaves, a constant
+fixed at 20 that only a new component id can change. A group can never stop requiring the component. A joiner accepts a
+Welcome from its own account when the joined state requires the component. A creator whose client supports it must
+require it when every founding leaf advertises it; existing groups activate it by an admin Commit. In such a group a
+client must not add a KeyPackage of its own account only because it is published under the account's key, except in the
+founding Add Commit. A device of an admin account can leave through a Remove by its sibling, so the SelfRemove rule for
+admins is unchanged. A component may now have no data location. The fair scheduling rule now covers queued
+same-account intents as well as admin ones. Apart from that rule, groups that do not require the component are
+unaffected.
+
+## 2026-10-19: Several devices per account
+
+[#442](https://github.com/marmot-protocol/marmot/pull/442) changes [foundation/identity.md](./foundation/identity.md),
+[foundation/key-packages.md](./foundation/key-packages.md), [foundation/registries.md](./foundation/registries.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[protocol-core/member-departure.md](./protocol-core/member-departure.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md),
+[transports/nostr.md](./transports/nostr.md), and [transports/quic.md](./transports/quic.md). A device is one client
+installation, and it must not copy MLS state or KeyPackage private keys to another device. Each device must publish
+into exactly one KeyPackage slot for its lifetime; a client that used several keeps one and SHOULD delete the rest.
+Devices SHOULD use 30-day KeyPackage lifetimes, refresh their slot at least every 7 days, keep a superseded
+KeyPackage's `init_key` through the 24-hour replacement grace period, and delete their slot with a NIP-09 kind `5`
+request when they sign out. Inviters SHOULD add every KeyPackage an account published in the last 30 days, must not
+add more than 20 for one account in one Commit, must not select one covered by a deletion request they hold, and must
+not select one that lacks any capability the resulting group requires. The Nostr KeyPackageRef tie-break now only
+orders equal candidates and drops one only when selection has to cut. An inviter makes one Welcome delivery for each
+KeyPackage it adds; a device that receives a delivery naming a sibling's KeyPackage does not treat it as a failed join.
+Removing an account means removing all of its leaves in one Commit. KeyPackage events MAY carry a one-value `client`
+tag, which no other Nostr event shape in the binding may carry. The QUIC binding states that it carries no KeyPackages
+or Welcomes.
+
+## 2026-10-16: Replaced KeyPackage init keys outlive replacement by 24 hours
+
+[#440](https://github.com/marmot-protocol/marmot/pull/440) changes
+[foundation/key-packages.md](./foundation/key-packages.md). After a successful Welcome, a last-resort KeyPackage's
+`init_key` must now be deleted 24 hours after confirmed publication of its replacement, or at `Lifetime.not_after` if
+that is earlier. Before, it had to be deleted at confirmed replacement. Clients SHOULD keep the key for the whole grace
+period, so that a Welcome built from the old publication before the replacement reached the inviter can still be
+processed.
+
+## 2026-10-15: Existing groups can adopt new app components
+
+[#439](https://github.com/marmot-protocol/marmot/pull/439) changes [app-components/README.md](./app-components/README.md),
+[foundation/key-packages.md](./foundation/key-packages.md), and
+[app-components/group-lifecycle-v1.md](./app-components/group-lifecycle-v1.md). A client SHOULD replace its published
+KeyPackages when the set of component ids it supports changes, and keep advertising every id it still supports. It
+refreshes a stale own leaf after a randomized delay. Once every leaf advertises an id, an authorized member can activate
+the component in one Commit. Activation is always an explicit decision. Lifecycle-v1 enablement follows this process.
+
+## 2026-10-05: Nostr KeyPackage discovery without kind 10051
+
+[#422](https://github.com/marmot-protocol/marmot/pull/422) adds a migration subsection to
+[transports/nostr.md](./transports/nostr.md). It changes no requirement. It spells out that the kind `10002`
+write-capable relay set is where kind `30443` KeyPackages are published and fetched, with no kind `10051` step, and that
+kind `10050` stays the source of Welcome inbox relays. Relays where metadata was found are lookup locations, not
+advertised destinations.
+
+## 2026-09-20: Encrypted NIP-88 polls
+
+[#425](https://github.com/marmot-protocol/marmot/pull/425) changes
+[foundation/application-messages.md](./foundation/application-messages.md) and
+[foundation/registries.md](./foundation/registries.md). NIP-88 poll kinds `1068` and `1018` are ordinary Marmot app
+events inside MLS. Inner `relay` tags do not select relays; authenticated group routing does. Supporting polls is
+optional, and polls are neither anonymous nor fit for elections.
+
+## 2026-09-16: Group reports, dismissal labels, and admin deletion
+
+[#423](https://github.com/marmot-protocol/marmot/pull/423) adds
+[features/content-moderation.md](./features/content-moderation.md) and changes
+[foundation/application-messages.md](./foundation/application-messages.md) and
+[foundation/registries.md](./foundation/registries.md). It registers three app-event kinds: `1984` for
+NIP-56 reports of messages in the same group, `1985` for NIP-32 `marmot.report-review.v1` / `dismissed` labels on
+reports, and `4891` for an admin's deletion of any member's chat message with its edits and attachments. Admin
+authority is checked against the event's authenticated source-epoch state, and a dismissal does not override a deletion.
+
+## 2026-08-13: Durability and restart contract
+
+[#416](https://github.com/marmot-protocol/marmot/pull/416) adds [protocol-core/durability.md](./protocol-core/durability.md)
+and changes [protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md),
+[protocol-core/publish-lifecycle.md](./protocol-core/publish-lifecycle.md),
+[protocol-core/retained-history.md](./protocol-core/retained-history.md),
+[foundation/conformance.md](./foundation/conformance.md), and [foundation/errors.md](./foundation/errors.md). A restart must
+not change canonical branch selection, input dispositions, unresolved outbound gates, or the application-visible
+projection. Possible external acceptance without a recoverable acknowledgement remains `PendingPublish`. There are no
+wire, component, or registry changes.
+
+## 2026-07-30: Convergence assurance and deferred input
+
+[#410](https://github.com/marmot-protocol/marmot/pull/410) adds [foundation/conformance.md](./foundation/conformance.md)
+and changes [protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md),
+[protocol-core/retained-history.md](./protocol-core/retained-history.md),
+[foundation/errors.md](./foundation/errors.md), [foundation/registries.md](./foundation/registries.md), and
+[transports/nostr.md](./transports/nostr.md). Transport-deferred and resource-refused input is now distinct
+from stale, invalid, or deduplicated input. It must stay refetch-eligible instead of being discarded when a local retry
+or storage limit is reached, and the affected range must not be reported as synchronized. A change to state-selecting
+convergence policy needs an explicit capability or component. The conformance projection is test-only.
+
+## 2026-07-28: Group disbanding
+
+[#409](https://github.com/marmot-protocol/marmot/pull/409) adds
+[app-components/group-lifecycle-v1.md](./app-components/group-lifecycle-v1.md) and changes
+[app-components/README.md](./app-components/README.md),
+[app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[foundation/registries.md](./foundation/registries.md),
+[protocol-core/convergence.md](./protocol-core/convergence.md),
+[protocol-core/group-setup.md](./protocol-core/group-setup.md),
+[protocol-core/group-state.md](./protocol-core/group-state.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md), and
+[protocol-core/member-departure.md](./protocol-core/member-departure.md). It registers required app component `0x800c`,
+`marmot.group.lifecycle.v1`, with an irreversible `Active` to `Disbanded` transition made by an authenticated admin
+Commit. `Disbanded` becomes the sixth
+canonical group lifecycle state. New groups require the component and start `Active`. An existing group can disband only
+after an admin enables the component in one Commit and every current leaf advertises support.
+
+## 2026-07-23: Push owner proofs signed as unpublished Nostr events
+
+Commit [`dedeaf4`](https://github.com/marmot-protocol/marmot/commit/dedeaf4) changes
+[features/push-notifications.md](./features/push-notifications.md) and
+[foundation/registries.md](./foundation/registries.md), plus two multi-device documents that
+[#427](https://github.com/marmot-protocol/marmot/pull/427) later replaced with an idea document. A push token or removal entry's `owner_sig` is now a BIP-340
+signature over the id of an exact, unpublished kind `451` Nostr event. `SHA-256(SignedRecord)` remains only the ordering
+tie-breaker, and the legacy signature preimage is not reinterpreted.
+
+## 2026-07-23: Specification issue sweep
+
+[#408](https://github.com/marmot-protocol/marmot/pull/408) resolves 200 specification issues, one commit each, across
+[53 files](https://github.com/marmot-protocol/marmot/pull/408/files). The changes implementers most often need:
+
+- Membership and admin authority is checked against candidate parent state. A group has a non-empty admin policy from
+  creation, and losing every admin freezes governance.
+- Convergence is bounded and deterministic, with defined retained-history behavior and canonical-state-derived
+  self-removal.
+- Welcome, KeyPackage, publish-before-apply, rollback, Nostr routing, fetch, and acknowledgement rules are aligned. This
+  set the KeyPackage `init_key` deletion bound that #440 later relaxed.
+- Push v1 is stateless and best-effort. Service revocation, storage, and rate policy are outside the wire protocol.
+- Encrypted-media, group-image, retention, component, registry, identity-proof, and inner sender-binding rules are
+  repaired.
+- Endpoint reachability, DNS and SSRF policy, remote-fetch consent, storage, and application-event ordering are not
+  part of protocol validity.
+- The QUIC preview documents are corrected and are not required for Marmot operation.
+
+## 2026-07-05: Adopted baseline
+
+The oldest commit on `master` contains the adopted specification as it stood after
+[#236](https://github.com/marmot-protocol/marmot/pull/236) tightened the wire-boundary validation rules in
+[foundation/canonical-encoding.md](./foundation/canonical-encoding.md),
+[foundation/key-packages.md](./foundation/key-packages.md), and [transports/nostr.md](./transports/nostr.md). That
+specification was imported in [#71](https://github.com/marmot-protocol/marmot/pull/71), marked adopted in
+[#170](https://github.com/marmot-protocol/marmot/pull/170), and had its admin-policy, membership, and role-change rules
+aligned in [#171](https://github.com/marmot-protocol/marmot/pull/171). Later entries are relative to this baseline.
