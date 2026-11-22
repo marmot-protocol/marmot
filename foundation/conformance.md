@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#formalization-and-review-boundary).
+
 This document defines the protocol-state projection used to compare Marmot clients in deterministic conformance tests.
 It defines equality over protocol meaning, not equality over implementation storage.
 

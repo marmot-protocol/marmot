@@ -1,0 +1,1911 @@
+# Device group
+
+Status: draft.
+
+An account signed in on several devices keeps a hidden Marmot group that holds only those devices: its device group.
+The device group carries the account's device roster as group state, so every device agrees on which devices are
+linked, which sign-ins were rejected, and in which order those decisions were made. It never appears as a chat.
+
+The non-normative direction is described in [../ideas/multi-device.md](../ideas/multi-device.md). This document covers
+the device group itself: what makes a group one, how it is created, when a device trusts it, how a device is linked into
+it and which chats the device that linked it adds it to, how clients keep it out of sight, how the account's devices
+notice a new sign-in, how each device announces the KeyPackages it publishes, what a device does when its own slot holds
+a KeyPackage it did not make, how devices hand each other private KeyPackages, how the Welcome for an add that uses one
+reaches its sibling, how the user removes a device and what the removed device does, how a device signs out or moves
+between device groups, and how each device shows its siblings to its user. [account-sync.md](./account-sync.md)
+specifies the small-state messages devices exchange in the group, and the history deliveries a device sends a sibling
+it adds to a chat. This document
+also defines [gap filling](#filling-a-missing-chat) and its advisory [claims](#gap-fill-claims-kind-458). The original adder also
+[repairs a published sibling Welcome](#resending-a-published-sibling-welcome) that was lost.
+
+## Surfaces
+
+- App component: [marmot.account.device-roster.v1](../app-components/device-roster-v1.md) (`0x800e`), which owns the
+  roster's bytes, its update operations and their validation. Requiring it marks a group as a device group.
+- App component: [marmot.member.device-tag.v1](../app-components/device-tag-v1.md) (`0x800f`), the LeafNode tag that
+  tells the account's devices which of its leaves in any group belongs to which device.
+- App component: [marmot.group.account-devices.v1](../app-components/account-devices-v1.md) (`0x800d`), which a device
+  group requires under the ordinary creation rule, and whose same-account Remove takes the leaves of a removed or
+  otherwise gone device out of other groups ([Removing it from chats](#removing-it-from-chats)).
+- Feature: [device-pairing.md](./device-pairing.md), the exchange that authenticates a new device before it is
+  linked.
+- Protocol core: [../protocol-core/group-setup.md](../protocol-core/group-setup.md) and
+  [../protocol-core/joining.md](../protocol-core/joining.md).
+- Foundation: [../foundation/key-packages.md](../foundation/key-packages.md), whose publication slots each device's
+  roster entry announces into, and whose publications are the evidence of a new sign-in ([New sign-ins](#new-sign-ins)).
+- Marmot app events: kind `457` (heartbeat, [Heartbeats](#heartbeats)), kind `458` (gap-fill claim,
+  [Gap-fill claims](#gap-fill-claims-kind-458)), kind `459` (private KeyPackage request), kind
+  `460` (private KeyPackage hand-off, [Private KeyPackages](#private-keypackages)) and kind `461` (sibling Welcome,
+  [Sibling Welcomes](#sibling-welcomes)), each sent only in a device group. Their kinds are registered in
+  [../foundation/registries.md](../foundation/registries.md).
+
+## What a device group is
+
+A device group is a group whose GroupContext `app_components` required list contains `0x800e`. Its members are the
+devices of one account and no others ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Requirement").
+
+An account has no device group while it has one device. A device that trusts no device group creates one when it
+approves a link ("Creating the device group").
+
+The marker never makes a group trusted. Anyone holding the account's signing key can create a group that requires
+`0x800e` and send a Welcome for it to the account. A device acts on a group as its device group only under the trust
+rule below.
+
+## Creating the device group
+
+The device that approves a link creates the device group if it trusts none yet ("Trust"), and adds the newly linked
+device in the founding Add:
+
+- The founding state, the group's state at epoch 0, requires `0x800e` and carries a roster that lists only the creating
+  device, with the rejected sign-ins it already keeps ("Answers"), which never name the linked device's slot ("Before
+  answering"). The founding Add sets the linked device's roster entry, as every later Add sets the entry of the device
+  it adds. The creating device's entry has the "add to all my chats" and
+  "bring chat history" settings on, as a new device's are unless its user turns them off ("Approving"). Its
+  "keep while inactive" setting is off when this entry is created.
+- The group runs under the ordinary group rules. The creating device's account is its only admin: the creator passes
+  no other initial admin. Whether the founding state requires `0x800d` follows the ordinary creation rule
+  ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)).
+- The founding Add contains exactly one KeyPackage: the one the link confirmed, identified by its `KeyPackageRef`. A
+  client MUST NOT found a device group with any other KeyPackage, and MUST NOT select one from the account's
+  publications. This is narrower than the founding exemption in
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) ("Sender rules"), which lets a
+  creator add its own account's published KeyPackages to a new group. A device group never relies on that exemption.
+- The creating device's entry in the founding state sets `announced_key_package` to the `KeyPackageRef` of the
+  KeyPackage the creating device generated and last published to its own slot, if any, whatever the slot serves now
+  ([Slot announcements](#slot-announcements)). The founding Add sets the linked device's to the KeyPackage the link
+  confirmed ("Approving").
+
+A Commit that adds a device to the device group or removes one, the founding Add included, also writes that device's
+roster entry, so each change of membership and its record are one decision. Such a Commit carries an AppDataUpdate, so
+it is `privileged` in branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate
+branches").
+
+These are sender rules. A receiver cannot tell where a KeyPackage came from, so it does not reject a Commit or a
+Welcome for breaking them.
+
+## Trust
+
+A device treats a group as its device group only if:
+
+- it created the group itself, as above; or
+- it joined the group through the Welcome a confirmed link named: into the group the link named, from the leaf whose
+  signature key the link named, for the KeyPackage the link confirmed ([device-pairing.md](./device-pairing.md), "New
+  device", step 5), and the group requires `0x800e`.
+
+A device MUST NOT join a group that requires `0x800e` through any other Welcome, and decides that before it joins, so
+a refused Welcome uses up neither the KeyPackage nor the group id ("Joining"). The group id alone proves nothing:
+anyone holding the account's signing key can read it in the existing device's Confirm and found a group under it.
+
+A device records which group it trusts as its device group when it creates or joins it, except that a
+[move](#moving-between-device-groups) keeps the original trusted until the move is made. It does not infer trust later
+from group state.
+
+## Linking a device
+
+A device is linked through [device pairing](./device-pairing.md), which ends in a confirmed link: the new device's exact
+`KeyPackageRef`, the id of the group the existing device adds it to, and the signature key of the existing device's
+leaf in that group. This section covers what each device does around that exchange.
+
+### Before answering
+
+An existing device answers a pairing request only if it is not running a session as a new device itself or keeping a
+link that waits for its Welcome ("Joining"), and only if it would link the KeyPackage the request names
+([device-pairing.md](./device-pairing.md), "Existing device", step 2). It answers whether it trusts a device group or
+has none yet. An old-sibling guidance exception after a [move](#moving-between-device-groups) suppresses proactive
+sign-in questions, not an ordinary pairing Request from that sibling. It would not link the KeyPackage when:
+
+- the KeyPackage's slot is already a device in its roster, the roster rejects that slot, or the device rejected that
+  slot itself ("Answers");
+- the KeyPackage does not support everything its device group requires, or, when it has no device group, everything
+  the device group it would create will require;
+- its roster already lists `max_leaves_per_account` devices, the most a roster holds
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation").
+
+A device that would not link the KeyPackage does not offer Link, and tells its user why: what the new device's client
+lacks, or that the account has as many devices as it can, so the user removes one first. In those two cases it sends
+Cancel `cannot_link`, so the new device stops waiting. When the slot is rejected, it MAY send it.
+
+### Approving
+
+On the existing device, the user who confirms the link also names the new device and sets its "add to all my chats"
+and "bring chat history" settings ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State"). Both settings are on unless the user turns them off. The newly linked entry's "keep while inactive"
+setting is off when the entry is created. These initial values do not reset a later user choice or its recovery
+("Device settings"). The device's Confirm names:
+
+- the device group it trusts, if it has one, with the signature key of its own leaf there;
+- otherwise a fresh group id of 16 random bytes, for the device group it will create, with the signature key it will
+  create the group with.
+
+The new device accepts only a Welcome whose `GroupInfo` that key signs ("Joining"). So that key MUST still be the
+signature key of the device's own leaf in the epoch the Welcome joins: the device does not change it there until the
+Commit that adds the new device, founding Add included, and that Commit's UpdatePath keeps it.
+
+Once the link is confirmed, the device adds the new device:
+
+- to the device group it trusts, by one Commit that adds exactly the confirmed KeyPackage and sets the new device's
+  roster entry; or
+- with no device group, by creating it under the group id its Confirm named ("Creating the device group").
+
+The new device's entry carries the label and settings the user chose, status `active`, `linked_at`, `linked_by` set to
+the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no
+`tag_signature_key`: the new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a
+fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is
+the approval. Its Welcome is sent as for any other Add.
+
+The approving device treats the link as made once the new device's first Commit in the device group, which sets the
+`tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
+group, and it holds no unprocessed input for the group, unless the link has already failed. Neither the approving
+Commit's publication nor its Welcome's delivery shows that the new device joined; only a Commit from the new device's
+own leaf does. Once made, a link stays made, and once failed, it stays failed. Until then, anything that acts on the new
+device as a member of the account waits, and the link can still fail ("A link that is not taken up").
+
+A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
+a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
+same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage. That
+Commit is a same-account Add with the roster update, which the account commits as the group's only admin
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Authorization"); it is never a
+same-account Commit, whose shape cannot carry the roster update. A device never adds a KeyPackage there that no
+confirmed link named, by an invite or otherwise, and so never re-invites a member whose founding Welcome could not be
+delivered with a fresh KeyPackage ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md),
+"Publish obligation"). It never commits an Add proposal by reference there.
+
+A device that cannot commit the link at once, because the device group has a Commit still settling, MAY try again, but
+not once the new device has stopped waiting for its Welcome ("Joining"). It counts that wait from when the new device's
+Confirm arrived. A Confirm delayed on its way can still lead to an Add the new device refuses; that link is then not
+taken up ("A link that is not taken up"). It does not hold the link for later.
+
+Approval by any one device of the account is enough. Another device that showed the same request stops offering Link
+once the new device's entry is in its roster, and shows the labels of the new device and of the device that added it.
+
+### Joining
+
+By the time it sends its Confirm, the new device has recorded the link: the pairing session's id, the confirmed
+`KeyPackageRef`, the group id, the signature key of the sender's leaf, and when its wait ends. It keeps that record
+across restarts until the link ends, so that after a restart has erased the session's secrets it can still check a
+Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
+whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
+group requires `0x800e`. On joining it records the group as its device group ("Trust"), except during a
+[move](#moving-between-device-groups), whose trust switch waits until the move is made. While it waits, the group id is
+reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The confirmed
+KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite to a chat
+built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the group id for
+the real one, so a forged Welcome that arrives first does not make the link fail.
+
+A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
+confirmed, so a Welcome sent under an earlier link never matches a later one. The link ends, and the device accepts no
+Welcome under it, once:
+
+- it joins through the link's Welcome;
+- its wait ends, 600 seconds after it sent its Confirm;
+- a Cancel for the link's session arrives, whether or not the device still holds that session
+  ([device-pairing.md](./device-pairing.md), "Every session"); or
+- it confirms a newer link, which replaces this one. Starting a new pairing session does not end the link; confirming
+  one does.
+
+This is the only limit on how long a new device waits for its Welcome. It decides before joining. A Cancel after it has
+joined changes nothing: it keeps its device group and its leaf there. Once the link has ended, a Welcome into its group
+is one no link expects, refused if the group requires `0x800e`, and linking again starts a new pairing session. A device
+that already trusts a device group can run a pairing session as a new device only to
+[move this device](#moving-between-device-groups). Alternatively, its user can explicitly discard the local copy
+[before fresh pairing](#explicit-local-reset). Neither operation merges the groups.
+
+### Explicit local reset
+
+On the user's explicit choice, a device MAY discard its active local device-group copy to attempt a fresh
+code-confirmed link. It stops trusting that copy before the new link is confirmed. This is a local reset, not a
+removal Commit, an unlinked notification, or proof that the old link cannot return through ordinary
+[convergence](../protocol-core/convergence.md). It removes no device from any group and restores no chat membership.
+A client MAY refuse the reset while already-admitted work remains unsettled; no completion deadline is promised.
+
+After reset, joining the same device-group id is a fresh join and MUST satisfy [Joining](#joining)'s current confirmed
+KeyPackage, sender, group and wait checks. An earlier made link or account-key-authenticated traffic grants no
+admission authority. The device MUST NOT reuse the KeyPackage that installed the discarded copy or an earlier link's
+Welcome. The approving device applies its current roster's ordinary duplicate, rejection, capacity and admission rules; reset
+grants no exception for a rejected slot or removal.
+
+A user may discard a local copy whose slot is still listed elsewhere; ordinary admission can then refuse a fresh link.
+Removing that slot does not bypass the removal rules. If no other device retains the old group, a later first link can
+create a different device group; the discarded roster continuity is not restored. This does not erase independently
+retained account data or security decisions.
+
+Reset MAY precede successful pairing. Cancellation, failure or a restart before the fresh link is confirmed can leave
+the device without a trusted device group, requiring fresh pairing; it does not restore the discarded copy. A fresh
+link already confirmed keeps [Joining](#joining)'s durable Welcome wait and restart rules. Once that wait ends, another
+pairing may be needed. Implementations MUST distinguish discarding this hidden group's local continuity and abandoned
+link-bound preparations from erasing ordinary local chat data or account credentials. Retained shared values and
+security decisions keep their existing authority and can synchronize again under ordinary rules. Retained chat data does not
+prove current membership, guarantee missing history backfill, or recall already-admitted work. This differs from a
+[move](#moving-between-device-groups)'s preserved original copy and Made cut.
+
+### A link that is not taken up
+
+The approving device, the one the new device's entry names in `linked_by`, waits for the new device's first Commit until
+3600 seconds after the `linked_at` it wrote in that entry, so the deadline survives its restarts. That leaves the new
+device time to commit after the holds that can delay a device that has joined, such as a Commit still settling in the
+device group or one of its own still unconfirmed, and after a short suspension right after it joined. The new device
+makes that Commit as soon as it can once it has joined: this deadline, not the general post-join guidance
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), bounds it. Until the deadline the slot
+is a device in the roster, so a new request from it is not answered ("Before answering").
+
+If the link is not made by then, the approving device first processes the input it holds for the group. If the new
+device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
+acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
+restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
+lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
+and, with `remove_device`, that entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Update"): the first time, and again whenever such a Commit failed or branch selection dropped it. Rewriting the entry's
+other fields does not change that. The failure stands even when the new device's first Commit later reaches the selected
+branch, since the new device may already have realized the removal and discarded its copy, as the next paragraph says. A
+slot the roster records as `removed` holds no device entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
+user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
+removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again; a later link
+of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, the
+deciding device records the slot as `removed` while the decision is less than 30 days old and it keeps a key for the
+slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot is not a sign-in again, and a
+removed device comes back only as a new slot, as the decision already kept it from being linked again. The new device is
+not told; a pairing request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the
+slot, every device that applied the new device's first Commit cleans up after it as after a removed device, once its
+state for the device group is settled and its roster lists no device in the slot: the slot is then gone for it ([Devices
+the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked
+carry no tag and stay.
+
+For a [move](#moving-between-device-groups), distinguish a failed destination admission from removal of the preserved
+old copy as that section specifies. Neither is permission to apply the account sign-out effects of an ordinary removal.
+
+A device whose leaf a Commit on its selected branch removes from its device group, whenever that Commit reaches it, no
+longer has a device group. It stops trusting the group and MUST discard the active state of its copy, which a removed
+member may do ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"); it
+MAY keep the group's history and a removal tombstone. A later link's Welcome into the same group id is then a first join
+([../protocol-core/joining.md](../protocol-core/joining.md), "Receiving flow"), which a retained copy would make it
+refuse. The roster the removing Commit leaves alone decides why it was removed, not whether the device ever saw its own
+first Commit selected. When that roster has no entry for the device's slot, and the device joined the group rather than
+creating it, the removal undid a failed link: the device was not linked, tells its user that linking failed, and links
+again only through a new pairing session, unless it had started signing out ([Removed while signing
+out](#removed-while-signing-out)). Otherwise the user removed it ([On the removed
+device](#on-the-removed-device)): a removal leaves a `removed` rejected slot for the device's slot ([The removal
+Commit](#the-removal-commit)). This holds even when the device processes its first Commit and its removal together, and
+when it had selected its first Commit on a branch that the undo then superseded. A device that cannot read that roster
+treats its removal as the user's.
+
+Keeping a failed link failed leaves one case open ([#482](https://github.com/marmot-protocol/marmot/issues/482)). The
+approving device keeps one failure record per slot, and approving a later link of the slot ends it. If that later link
+is made and branch selection then drops it, together with the undo, and brings back the failed link's entry, the device
+no longer undoes that entry: the later link stays made, so the device records no new failure. That takes a branch that
+forks before the undo, the later link's Add and its new device's first Commit. If that branch does not also bring back
+the failed link's first Commit, the entry has no `tag_signature_key`, so no device may remove it ([The removal
+Commit](#the-removal-commit)), and while the roster lists it, no device answers a pairing request from its slot ("Before
+answering"). Nothing in this specification frees that slot then: removal for inactivity ([Inactive
+devices](#inactive-devices)) uses the same removal Commit, so it does not either. If it does, the entry has its
+`tag_signature_key`, and the user can remove that device like any other.
+
+### Private sibling Add admission
+
+A client implementing this feature MUST NOT add a device of its account to a chat with a KeyPackage that device
+published, in the founding Add or later; it adds a sibling only with a private KeyPackage under this contract.
+
+These sender requirements apply whenever a device adds a sibling to a chat with a private KeyPackage, including the
+founding Add ([Creating a chat](#creating-a-chat)), a later post-link Add
+([Adding the new device to chats](#adding-the-new-device-to-chats)), and
+[Filling a missing chat](#filling-a-missing-chat). The flow chooses which eligible devices to add;
+these requirements decide whether the device can carry out that Add.
+
+- The sender trusts the device group ([Trust](#trust)), and its own leaf there carries a device tag that reads as its
+  own slot ([Matching leaves to devices](#matching-leaves-to-devices)). Until that leaf is ready, it adds no sibling;
+  creating a chat may proceed without siblings. Possessing a sibling's private KeyPackages alone is not readiness.
+- The current trusted roster lists the target device with a `tag_signature_key`, and it is neither `leaving` nor
+  `moved`. The sender has not decided to remove it with that removal still pending. Nor has a roster state it applied held the slot as
+  `removed` while it keeps that record's key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)):
+  dropping that record on another branch does not end this exclusion, even after a later link of the same slot.
+- If the current entry names the sender in `linked_by`, the sender waits until the link it approved is made and never
+  adds it while that link's failure stands ([A link that is not taken up](#a-link-that-is-not-taken-up)). A local
+  pending or failed outcome is not a verdict on an entry whose `linked_by` names another device: that device's later
+  link stands under its own approver. This is the same ownership condition that controls undoing a failed link.
+- Before starting a new automatic Add from an existing admission, apply the current-generation decline hold in
+  [Invitation decisions](./account-sync.md#invitation-decisions). It does not recall admitted or signed traffic,
+  alter receiver validity, or block a separate new founding admission.
+- The target has not left the chat itself. A device that applies a Commit removing a leaf that reads as the target's
+  slot through that leaf's own SelfRemove ([../protocol-core/member-departure.md](../protocol-core/member-departure.md))
+  records that the target left that chat, keeps that record across restarts, and makes no automatic Add of the target
+  there until a leaf that reads as the target's slot is in the chat again. The record lasts only for this device's
+  current membership of the chat: a device that rejoins the chat through a new Welcome, as after a new invitation of the
+  account, starts without it. That SelfRemove is how a user leaving the chat on that device looks to its siblings
+  ([Invitation decisions](./account-sync.md#invitation-decisions), "Leaving"). A device that never applied that Commit,
+  such as one that joined the chat later, does not know the target left. If it joined through a new invitation of the
+  account, adding the target is intended: the target then answers that invitation like its siblings. If it joined under
+  a generation the user did not leave, because the account was in the chat under more than one generation and the user
+  left on only one device, it may add the target back. That is a stated limit.
+- The unused, unexpired private KeyPackage was handed to this sender by that target and passes
+  [Receiving](#receiving). A published KeyPackage of the sender's account never qualifies.
+- The chat requires `0x800d` (or its fixed founding requirements would require it), the KeyPackage meets its
+  requirements, and the Add stays within `max_leaves_per_account`
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)). The sender removes no leaf or
+  requirement to make room for it. The chat's routing names a relay list a sibling Welcome may carry
+  ([Message](#message)).
+
+A sibling Welcome follows [Sending a sibling Welcome](#sending-a-sibling-welcome) once its Add is canonical.
+If the sender's own leaf in the device group no longer reads as its slot then, it keeps the unsent Welcome and waits
+until the leaf is ready again; it does not send a carrier the receiver would drop. It checks readiness for the epoch
+that carries the message, not only for an earlier read. This readiness check applies to any new carrier, initial or
+[repair](#resending-a-published-sibling-welcome). The ordinary KeyPackage expiry and gone-slot rules still apply
+([Issuing](#issuing), [Its private KeyPackages](#its-private-keypackages)).
+
+### Adding the new device to chats
+
+Under this section, once a link is made, and while the roster lists the new device as `active` with "add to all my
+chats" on, the approving device, the one the new device's entry names in `linked_by`, adds the new device to the chats it is in. These are the
+chats it is in while it is still adding, including one it joins after the link. A chat it creates includes its linked
+siblings under [Creating a chat](#creating-a-chat); a sibling omitted there may get a same-account Add afterwards under
+this section. Only the approving device runs this direct post-link flow. Other devices can fill missing memberships
+through [Filling a missing chat](#filling-a-missing-chat), including in chats the approving device is in and while its
+direct flow is still running. Its Adds use the same selected-parent presence recheck described there; these flows can
+race and ordinary branch selection applies.
+
+- Each Add must pass [Private sibling Add admission](#private-sibling-add-admission). It uses one private KeyPackage
+  the new device handed the approving device, sends the Welcome as a sibling Welcome, and skips a chat that cannot take
+  that Add; it adds the device there in no other way.
+- It does not add the new device to a chat that already holds it: one where a leaf of the account carries a device tag
+  that reads as the new device's slot ([Matching leaves to devices](#matching-leaves-to-devices)), or has the new
+  device's `tag_signature_key` as its signature key.
+- It asks the new device for as many private KeyPackages as the Adds need, beyond the ones it keeps
+  ([Messages](#messages)).
+- It MAY spread the Adds over time. How long it goes on adding them is not specified yet.
+- Turning "add to all my chats" off stops beginning further automatic Add attempts under this section and takes the
+  new device out of no chat. An Add already admitted follows [Device settings](#device-settings). The setting does not
+  exclude the device from a new chat's founding Add ([Creating a chat](#creating-a-chat)).
+
+Each Add's history follows as [account-sync.md](./account-sync.md) gives it ("History deliveries"), when the new
+device's entry has "bring chat history" on. What the approving device shows its user about the chats it skips is not
+specified. The approving device can retry a skipped chat under this direct flow while it is still adding and the chat
+can take the Add. Any eligible holder can also cover a missing membership through
+[Filling a missing chat](#filling-a-missing-chat), whether or not the approving device is in that chat or still adding.
+
+The signature-key check finds a leaf the new device made before the link, which carries no tag, only when that leaf's
+signature key is the one the device later set as its `tag_signature_key`. A device whose earlier leaves have other
+signature keys can be added to a chat it is already in. It does not join from that sibling Welcome, as it already keeps
+the group ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 9). Once it tags its own
+leaf there ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), the chat holds
+two leaves that read as that device's, which "Reading tags" there counts as misuse of its keys. The extra leaf counts
+toward `max_leaves_per_account` while it stays. Avoiding this, whether the account's devices then treat the two leaves
+as misuse, and who removes the extra leaf are not specified yet.
+
+### Post-link chat inventory (kind 477)
+
+After a link is made, the approving device MAY tell the new device which of the approver's chats it can expect to
+join. This optional report travels inside their trusted device group. It applies while the recipient is active with
+“add to all my chats” enabled. The approver includes each chat eligible for its direct post-link flow and each such
+chat that already holds this device, including when its Add filled the last account leaf. A temporary wait for a
+Commit or private stock keeps a chat pending. A scan missing some of the approver's chats cannot supersede a complete
+inventory. Exclude chats the approver has quarantined. When an Add is still needed, exclude a chat if neither the
+new device’s available KeyPackages nor its advertised capabilities meet the requirements. Reassess eligibility when a chat recovers or the
+new device’s capabilities change. If a storage error prevents the approver from determining eligibility, retry the scan.
+
+Use a Marmot application event with empty tags. Its content is a UTF-8 JSON object with the following fields.
+Field order is insignificant. Send and accept only lowercase hexadecimal without a prefix. Reject duplicate or extra fields.
+
+| Field | Meaning |
+| --- | --- |
+| `v` | Integer 1 |
+| `to` | The new device's 32-byte slot, in hex |
+| `link` | Hex of the KeyPackageRef confirmed in this pairing |
+| `revision` | Positive unsigned 32-bit integer. Increase on a changed inventory for this link and retain across restart. |
+| `expires_at` | Exclusive Unix-seconds deadline for the approver's direct-add work |
+| `total` | Number of distinct expected chats, an unsigned 32-bit integer |
+| `page` | Zero-based page index, an unsigned 32-bit integer |
+| `chats` | Hex of the concatenated 32-byte chat tokens on this page |
+
+For each 32-byte chat token, hash the following concatenation with SHA-256: the fixed ASCII bytes of
+`marmot.link-chat-inventory.v1`, then the confirmed KeyPackageRef and the raw MLS GroupId, each prefixed by its
+byte length as a canonical QUIC variable-length integer. For the 32 reference bytes `00` through `1f` and the
+64 group-id bytes `00` through `3f` in ascending order, the prefixes are `20` and `4040` (hex) and the token is
+`40851b595a738955daa54e7b6bf77c5b9314d4a62af3559982f4c06192cea75b`.
+
+Sort the resulting tokens in ascending byte order and partition them
+into pages of 128. Only the last page can be short. Send one empty page numbered zero for an empty inventory.
+Above 262144 chats, send only page zero with empty `chats` and the actual total to indicate that per-chat progress is
+unavailable. A recipient bounds each content string to 8704 bytes and the assembled inventory to 8 MiB. Device-group
+members can see the count and recognize tokens for chats whose ids they already know.
+
+Accept a page only inside the selected trusted device group, addressed to the receiver's own current link. Authenticate
+the sending leaf as the roster's `linked_by` device at the message epoch, as for private sibling messages. Compare
+`link` to the original confirmed KeyPackageRef even if the device subsequently announced a fresh public KeyPackage.
+Ignore expired pages. Version 1 senders use at most a seven-day report lifetime. Receivers allow one additional hour of
+clock skew when checking a future deadline.
+
+A newer revision supersedes every page of the preceding revision. Accept pages of one revision in any order with a
+consistent total and deadline. An invalidated carrier no longer supplies its page. Senders SHOULD repeat the latest
+inventory during the direct-add window so a missed or withdrawn page can be recovered. After the first complete
+transmission, repeat after an hour and back off to at most one day between repeats. A changed inventory or a known
+withdrawal of its carrier SHOULD trigger prompt transmission. A recipient with an incomplete
+or unavailable inventory cannot establish completion. With the whole inventory it counts distinct locally joined chats
+whose tokens match, including a chat another sibling added. Missing reports, opt-out, unlink, expiry and history import
+are separate from successful completion. Inventory messages are advisory and grant no membership.
+
+### Filling a missing chat
+
+A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its
+device group, after a relevant roster eligibility change, when a sibling hands it private KeyPackages it was waiting
+for, when a claim that held back its attempt expires, and when a winning invitation decision changes the affected
+chat's automatic Add eligibility ([Invitation decisions](./account-sync.md#invitation-decisions)), even without an MLS
+epoch change. That recheck resumes only existing opt-in work, never creates a new Add obligation. It considers a sibling
+only while the selected trusted
+roster lists it as `active` or `inactive`, with a `tag_signature_key` and "add to all my chats"
+on, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive sibling remains
+linked. The shared admission contract governs sender readiness, the current approver's local outcome, and removal
+exclusions. Other siblings rely on the selected trusted roster and the new device's tag key, written by its first
+Commit ([Approving](#approving)); they do not know the approver's local outcome. If that approver later undoes the
+link, the ordinary [removal cleanup](#devices-the-roster-no-longer-lists) applies. No shared "link made" record is added.
+A device whose own roster entry is `leaving` or `moved` neither claims nor makes Adds through this flow.
+
+For each eligible sibling and chat:
+
+- The Add passes [Private sibling Add admission](#private-sibling-add-admission). A blocked or unreadable chat does
+  not prevent work on another chat.
+- A tagged leaf for the sibling, or an account leaf with its `tag_signature_key` as its signature key, means the chat
+  already holds it. A device MUST check this again on the selected parent state when it actually prepares the Add,
+  including after the Add waited for the group to settle. It never prepares another Add merely because an earlier
+  presence read found the sibling absent.
+- It uses an unused, unexpired private KeyPackage the sibling handed it, and checks that package against the chat
+  before spending it. With none, it requests private stock under [Messages](#messages) and waits. It never falls back
+  to a public KeyPackage.
+- Before claiming, it is ready under [Private sibling Add admission](#private-sibling-add-admission), has a qualifying
+  private KeyPackage, and both groups allow the respective operations now. It waits while a pending or settling
+  operation prevents the claim or Add. This does not prove that a relay will accept the Add.
+- Before making the Add it sends a [gap-fill claim](#gap-fill-claims-kind-458) in the device group. Among the live
+  claims it has observed for that chat and sibling, it proceeds only if its own slot is the lowest by unsigned
+  lexicographic comparison of the 32-byte slots. It then checks the current roster, readiness, private KeyPackage and
+  selected tree again. A claim never authorizes an Add.
+- It sends the Welcome through [Sibling Welcomes](#sibling-welcomes). History follows from the device whose own
+  confirmed Add added the sibling, under [account-sync.md](./account-sync.md#history-deliveries).
+
+An expired claim lets another device try. A device MAY forget claims across restart: they reduce competing attempts
+but are not exclusive ownership, and a lost claim, simultaneous attempts or different observed claim sets can still
+race. A previously observed claim MAY keep suppressing an attempt until its original expiry even if branch selection
+later withdraws its carrier: this delays work by at most ten minutes, never authorizes an Add, and replay cannot
+extend the delay. Normal branch selection applies. Automatic cleanup of duplicate device leaves is not defined here;
+the limit for an earlier untagged leaf described above still applies. Fresh publications are new claims: successive
+valid claims from a lower slot can keep another device deferring beyond one claim's lifetime, for example while that
+claimant cannot reach a chat's relays. This best-effort flow guarantees neither fairness nor eventual filling.
+
+Turning "add to all my chats" off stops beginning further automatic Add attempts through this gap filling and removes
+no existing leaf. An Add already admitted follows [Device settings](#device-settings). This initial rule does not
+distinguish an old chat from an invitation missed after the link: with the setting off, a missed invitation waits for
+a re-invite. Creating a new chat and including linked siblings in its founding Add is a separate flow; this limit
+does not exclude them from that founding Add.
+
+### Gap-fill claims (kind 458)
+
+A gap-fill claim is a Marmot app event
+([../foundation/application-messages.md](../foundation/application-messages.md)) sent only as an MLS application
+message in the trusted device group. Its `tags` is empty. A sender MUST encode its `content` as UTF-8 JSON, at most
+32 KiB, with exactly these members in this order and no whitespace:
+
+```json
+{"v":1,"from":"<claimant slot>","to":"<missing sibling slot>","chat":"<MLS group id>"}
+```
+
+`v` is written as the integer `1`, with no other numeric form. `from` and `to` are distinct device slots, each exactly
+64 lowercase hexadecimal characters. `chat` is the non-empty raw MLS group id in lowercase hexadecimal, never the
+transport routing id. The content limit bounds this coordination message only; it is not a new MLS group-id validity
+rule. A receiver MUST drop a claim unless its content is byte-for-byte this canonical encoding with valid members,
+types, values and bounds: repeated or unknown members, different order, whitespace and escaped spellings do not qualify.
+
+The event's `created_at` is when it was sent. The claim expires exactly 600 seconds later. A receiver ignores a claim
+dated after its current clock, one whose expiry has passed, and one whose expiry cannot be represented. Receiving or
+replaying it never moves that expiry. A future-dated claim is ignored at receipt, not held for later activation.
+Ordinary clock skew can therefore make devices observe different claim sets and attempt competing Adds; the
+best-effort rule adds no skew tolerance. It ignores kind `458` outside its trusted device group.
+
+A receiver accepts the claim only if both slots are current roster devices and the claimant is `active` or
+`inactive`. The leaf that sent it, as it was in the epoch the message was sent in, must carry a device tag that reads
+as `from` against the receiver's current trusted roster under [Matching leaves to devices](#matching-leaves-to-devices).
+The chat must be one the receiver already holds and considers for gap filling. An unknown chat never creates a local
+chat or work. For a known eligible pair, the receiver keeps the unexpired claims by claimant; repeated claims by one
+claimant keep the later expiry. A claim becomes irrelevant when its claimant or target leaves the roster or is listed
+as `leaving` or `moved`. A claim has no effect on membership or group state, and no effect outside this account's linked
+devices.
+
+### Creating a chat
+
+A client implementing this feature MUST NOT use its account's published KeyPackages in a chat's founding Add, whether
+or not it currently trusts a device group. Other clients retain the generic founding exemption
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Sender rules").
+
+A device that trusts a device group and creates a chat SHOULD include its linked siblings in the founding Add, using
+one private KeyPackage each sibling handed it. It selects other accounts under the ordinary rules
+([../foundation/key-packages.md](../foundation/key-packages.md)) and fixes the requirements the chat would have without
+those sibling KeyPackages ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)). It MUST NOT weaken those
+requirements to include a sibling.
+
+- Every included sibling must pass [Private sibling Add admission](#private-sibling-add-admission), against those fixed
+  requirements. If they would not require `0x800d`, no sibling qualifies.
+- It considers every other device in its trusted roster that is `active` or `inactive`. "Add to all my chats" covers
+  older chats and does not exclude a device from a new one. An inactive device is still linked until removed.
+- A sibling with no qualifying private KeyPackage is omitted; the creator does not wait for one or make the chat fail
+  because that sibling is missing. It asks that sibling for private KeyPackages under [Messages](#messages). Adding a
+  sibling omitted for lack of a qualifying KeyPackage later follows [Filling a missing chat](#filling-a-missing-chat)
+  in a chat that requires `0x800d`. No later automatic gap Add is made while "add to all my chats" is off; the omitted
+  device then waits for a re-invite of the account.
+- Each included sibling gets a sibling Welcome; other accounts receive theirs through the transport binding as usual.
+  The founding Add has an empty publication obligation
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md), "Group creation"), so its initial
+  sibling Welcome deliveries follow [Private sibling Add admission](#private-sibling-add-admission) once creation is
+  canonical, independently of other accounts' Welcome deliveries. This section adds no resend rule.
+
+## Moving between device groups
+
+A user moves this device to another device group through an ordinary code-confirmed
+[link](./device-pairing.md). The answering device's group survives. The same exact group, sender leaf and
+KeyPackage checks in [Joining](#joining) apply; possession of the account key or an old roster authorizes nothing.
+Only this device moves. Each old sibling needs its own confirmed link; there is no automatic group merge or new
+pairing message. The moving device keeps at most one confirmed pending link and, while awaiting its Welcome, that
+link's expectation. It uses a KeyPackage no earlier link of its own confirmed.
+
+After a restart, a fresh code comparison may begin even while the earlier move is pending. If that move is still
+pending when the new exchange reaches confirmation, the device cancels the new exchange before sending its own
+Confirm. The earlier confirmed link and any still-live Welcome expectation stay unchanged; the new exchange creates
+no second link approval or Add.
+
+### Joining and becoming made
+
+The original device group remains this device's sole trusted group until the move is **made**. Joining the exact
+confirmed Welcome records the destination admission, but does not change that trust. A cancelled or expired Welcome
+wait, or a refused Welcome, leaves original trust unchanged. After joining, a later Cancel does not undo that
+admission ([Joining](#joining)). While acting as the new device or waiting for that Welcome, the moving device does
+not answer pairing Requests ([Before answering](#before-answering)).
+
+The moving device makes its first own Commit in the destination, setting its tag signature key in its own roster
+entry and tagging that Commit's UpdatePath from the destination roster
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md#producing-tags)). This targets the confirmed
+destination only; it does not authorize other work there as a trusted group. Ordinary work continues to use the
+original trusted group until Made.
+
+The move is made once that first Commit is on the destination's selected branch, the destination is settled with no
+pending group input, and its roster lists this device with the signature key of its own leaf. This is the same
+first-Commit evidence as [Approving](#approving); Welcome admission, publication alone, elapsed time or a quiet
+transport is not enough. The ordinary first-Commit deadline and failed-link undo still apply
+([A link that is not taken up](#a-link-that-is-not-taken-up)).
+
+When recording Made, the device retains or can reconstruct the original authenticated group's identity, the selected
+old roster's rejected slots to carry, and the old-sibling guidance below. Recording Made, those facts and the switch
+of sole trust from the original to the destination MUST NOT be exposed partially, including after restart. It does not
+substitute an empty capture for unavailable old state, or infer a past Made point from a later removal. While the
+required present evidence is unavailable it waits without a partial trust switch.
+
+### Failure
+
+If the destination removes this device before Made, linking failed. The device intentionally forgets the destination,
+not its chats or account, and leaves the original trust unchanged. It does not restore trust, resume held old work,
+or treat another retained group as its original. An independent removal from the original follows its ordinary rules;
+a failed move does not reverse it. A destination removal after Made is ordinary unlinking, not a return to the old
+group.
+
+An unrecoverable destination before Made is not proof of a failed link. The original trust remains unchanged while
+ordinary group repair applies; the move can stay pending indefinitely if repair never completes. While pending, it
+cannot confirm another move or answer new pairing Requests. Manual local recovery before another confirmed link may
+be needed. This flow adds no automatic abort or terminal-state inference.
+
+If required local move facts are corrupt or unreadable, the device MUST NOT guess historical trust or membership.
+Progress or status reads can fail; this flow promises no automatic unlinked state or unlink notification for that
+condition. The user may need manual local recovery or reset and a new confirmed link. This is distinct from a known
+failure before Made, which leaves original trust unchanged, and does not excuse partial trust changes after a normal
+process crash with valid retained facts. No old-trust reconstruction or historical quiet proof is required.
+
+### What it brings
+
+At Made the device captures the rejected slots of its selected old roster, with each original reason, rejection time
+and optional tag signature key. It brings only `not_me` and `removed` records. It brings no rejected KeyPackages,
+device entries, old sealing key, account entry or old devices' settings. Its destination entry/settings come from the
+ordinary link choices.
+
+For each captured rejection it checks the destination again when it commits:
+
+- If the slot is a destination device, omit the old rejection and tell the user that the confirmed link overrode it.
+- If the destination already rejects the slot, keep that destination record unchanged, regardless of either record's
+  reason, age or key.
+- Otherwise import the original record unchanged, under its ordinary expiry rules. Importing does not refresh its age.
+
+The device retains enough facts to repeat each import, skip or expiry after restart without changing its result.
+Folding its own local rejection choices into the destination MUST NOT first give a carried rejection a fresh time.
+
+Small-state items, invitation winners and their versions stay unchanged. Destination activation broadcasts them and
+requests its siblings' state under [account-sync.md](./account-sync.md#starting); it neither starts their versions
+over nor imports an old account snapshot. Moving creates no retrospective history offer or backfill.
+
+### Leaving the old device group
+
+After Made the device commits its own old roster entry to `moved`, preserving every other field, including its
+`rename_id`. It uses its own inline Commit, not a standalone proposal. For this sole status operation in the original
+authenticated group, it preserves its old leaf signature key and preserves or produces a valid old-roster tag;
+it does not tag that leaf from the destination roster. Other new leaf updates use the currently trusted roster. These
+are sender rules, not new receiver validity checks.
+
+The device retries the status update whenever it can ordinarily commit, until `moved` is on the old selected branch
+with no pending input, or that branch no longer includes it. Only then may it intentionally discard the old active
+copy. Already-admitted work remains bound to that old group and can finish under ordinary settlement rules; the trust
+switch does not recall it or promise immediate quiet. Ordinary destination tag, announcement and publication gates
+still apply, with no timeout bypass. Destination KeyPackage publication does not additionally wait for old cleanup;
+an offline or changing old group can delay cleanup indefinitely.
+
+An old sibling that sees `moved` removes that device's old leaf and roster entry together in one Commit, using the old
+entry's key to identify the leaf as in [Matching leaves to devices](#matching-leaves-to-devices). It retries if branch
+selection drops that cleanup. It records no rejection, removes no chat leaves, deletes no publication slot and does
+not sign the moved device out. The moved device does not interpret removal from the old group as removal from its
+current group or account. Several old siblings may attempt this cleanup at once, costing extra Commits and
+convergence passes; normal branch selection applies. The moved device retains or can reconstruct why the selected
+branch removed that incarnation's entry,
+so restart does not reinterpret moved cleanup as ordinary removal. Seeing `moved` on a discarded branch is not a
+permanent exemption. A separate explicit removal keeps its ordinary effect.
+
+Old-sibling slots and display labels support private guidance on moving each sibling separately. On the moving
+device they suppress proactive Link/This wasn't me questions until the destination first lists that sibling as a
+device or the user ends the exception. They authenticate nothing and authorize no Add. That sibling can still start
+its own ordinary pairing Request ([Before answering](#before-answering)).
+
+These recognition hints apply on the moving device only. An old sibling left behind can ask “Was this you?” about the
+moved device after cleaning up its old entry; the user can dismiss that prompt. Moving does not grant a permanent
+sign-in exemption on the old siblings.
+
+### Old-group work
+
+At Made the device stops starting new work authorized by the old roster, except for the required `moved` status Commit
+and its retries ([Leaving the old device group](#leaving-the-old-device-group)). Outstanding old label/settings edits,
+private-KeyPackage exchange, sibling Welcome and history delivery work MUST NOT become destination work merely
+because it names the same slot or chat. Moving promises no delivery across that boundary. Already-admitted old-group
+traffic may settle normally in that group; its completion MUST NOT clear or recreate a destination obligation. New
+destination work arises only through an independently applicable existing flow. A completed old history upload does
+not itself authorize a new destination history delivery.
+
+An old-group Add already admitted near Made can leave a chat leaf whose Welcome no longer reaches the moving device.
+The destination's ordinary duplicate-Add checks can keep that leaf from being replaced automatically. Moving adds no
+duplicate-leaf cleanup; manual chat membership repair may be needed, as under [Filling a missing chat](#filling-a-missing-chat).
+
+Discard is intentional local cleanup, not missing material to recover
+([../protocol-core/durability.md](../protocol-core/durability.md#missing-or-corrupt-material)). Restart or late old
+input MUST NOT recreate the discarded active copy. A later ordinary confirmed link there is a fresh join. The device
+retains whatever its already-admitted publication outcomes still need under their ordinary rules; those outcomes
+neither restore old trust nor create replacement old deliveries.
+
+## Keeping it out of sight
+
+A device group is not a chat:
+
+- Clients MUST NOT show a device group, or any group that requires `0x800e`, in chat lists, chat counts, unread counts,
+  or notifications, and MUST NOT offer it as a destination for messages.
+- A client shows the roster of its own device group only to its own user, for example on a Devices screen. It never
+  shows another account's devices.
+
+## New sign-ins
+
+Each device publishes its KeyPackages into a slot of its own
+([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and publication slots"), so a slot that none
+of the account's devices accounts for is the account signed in somewhere new. That is how linking starts, and it is
+also what someone holding the account's signing key does. Only the user can tell the two apart, so a device asks and
+never decides. These rules apply to every device whose client supports `0x800e`, whether or not its account has a
+device group yet.
+
+### Evidence
+
+A device checks for sign-ins by reading its account's KeyPackage publications as an inviter reads them
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), under the transport
+binding's fetch, replacement and deletion rules. A slot counts only if its current publication is a valid, fresh
+KeyPackage of the account. Nothing else raises a sign-in: not a publication that fails validation, not a `client` tag,
+and not a Welcome on its own.
+
+A check is complete when the device found the relays the account publishes its KeyPackages to (on the Nostr binding, its
+write-capable relay set, [../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"), that set is not
+empty, and it read every relay in it with no time bound, each of them ending both of its answers, the one for the
+KeyPackages and the one for the deletion requests, without failing or timing out and with fewer events than the device
+asked for in that query, counting every event the relay sent. When the device cannot find that set, or it is empty, the
+device MAY read other relays, but no check is complete. An answer that holds as many events as the device asked for may
+have more behind it, so the check is not complete, and reading further back does not make it so. A relay that cuts its
+answer at a lower limit of its own looks whole, so a device SHOULD ask a relay for no more events than the limit it
+advertises (on the Nostr binding, the `max_limit` in its NIP-11 relay information document). A read with a time bound,
+such as one resumed with `since`, and what a live subscription delivers may show slots, but never complete a check. A
+check that is not complete still shows what it found, but proves nothing missing.
+
+This has two limits. An account with more KeyPackage publications or deletion requests than one answer holds never has a
+complete check: its sign-ins stay listed and can be answered, but none is marked as no longer signed in. And a relay
+that cuts its answer at a lower limit it does not advertise makes a check look complete when it is not: a listed sign-in
+whose slot that answer left out is marked as no longer signed in, and cannot be linked, until a complete check finds it
+again.
+
+A slot that counts is an unrecognized sign-in unless it is:
+
+- the device's own slot;
+- the slot of a device in the roster of its trusted device group ([Trust](#trust));
+- a rejected slot in that roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "State") or among the rejections the device keeps itself ([Answers](#answers)).
+
+A device with no device group has no roster, so it recognizes only its own slot and its own rejected slots.
+
+A Welcome that names a KeyPackage of the account that this device did not publish
+([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery") is a reason to look. The device SHOULD fetch
+the KeyPackage it names ([../transports/nostr.md](../transports/nostr.md), "Welcome delivery") and classify that
+KeyPackage's slot as above, once its first check ([Already signed in, or new](#already-signed-in-or-new)) has happened;
+before that, the Welcome waits for it. A fetch that fails, or a KeyPackage that is not valid and fresh, raises nothing:
+anyone can send a Welcome naming any KeyPackage.
+
+A device SHOULD check when its client starts, so that opening Marmot on a device already signed in is enough to see a
+new sign-in, and periodically while it runs. It MAY also check when a new publication of its account reaches it, for
+example on a live subscription; the check's read is the evidence, not the publication that prompted it.
+
+### Already signed in, or new
+
+Nothing published says which of two devices signed in first. A slot's only public time is its latest publication, and
+whoever holds the account's signing key chooses that time.
+
+- Every slot that a device's first check returns belongs to a device that was signed in before it, whether or not the
+  slot counts then. The first check is the first read of all the account's KeyPackages with no time bound, after the
+  device signs in or after its client gains these rules, that ends with at least one relay having answered. Like any
+  check, it ends only when every relay in it has ended its answers, failed or timed out. It covers every slot that one
+  read returns, from every relay that answered: the `d` of every KeyPackage publication in those answers, including one
+  that is not fresh, not valid, or covered by a deletion request. Fetching the one KeyPackage a Welcome names, a read
+  with a time bound and a live subscription are never the first check, and until the first check has happened the device
+  lists no sign-in. The device keeps, across restarts, that its first check happened and the id of every slot it
+  returned, so a later check is never taken for it and those slots keep their class. The first time such a slot is an
+  unrecognized sign-in, at the first check or later, the device lists it: it tells its user that the account is already
+  signed in elsewhere, with when that slot last published, and asks whether they still have that device.
+- Every unrecognized slot that the first check did not return is a new sign-in. The first time it is one, the device
+  lists it and asks its user whether it was them.
+- A device MUST NOT use a publication's time, freshness included, to decide which of the two a slot is. Freshness
+  decides only whether a slot counts. When a sign-in appeared and when it last published are for display only.
+
+A slot the first check missed, for example because a relay did not answer or an answer was full, is a new sign-in when a
+later check finds it. That errs toward asking.
+
+Once a sign-in is listed, a later check that finds it again does not ask about it again: only the user's answers and the
+roster change how it is listed ([Answers](#answers), [Any one device's answer](#any-one-devices-answer)).
+
+### Answers
+
+A device keeps each unrecognized sign-in listed for its user, with the `client` tag of its publication if it has one,
+when it appeared, and when it last published, until the user links or rejects it. It keeps that list across restarts,
+with each sign-in's answer and whether it is still signed in, so a restart neither drops a sign-in nor asks again about
+one the user put off. Like the roster, the list is shown only to the account's own user. The answers are:
+
+- **Link:** starts linking that slot's device ([Linking a device](#linking-a-device)).
+- **Not now:** the sign-in stays listed, without asking again. Nothing is written to the roster.
+- **This wasn't me:** the device rejects the sign-in. In its trusted device group, it commits a roster update that sets
+  a `not_me` rejected slot for the slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "Update"). It commits that update only while the roster has no entry for the slot, neither a device nor a rejected
+  slot, and never replaces an entry the roster has.
+
+A rejection names the slot alone, never the KeyPackage the device found there: whoever holds the account's signing key
+can copy a real device's KeyPackage into a slot the user then rejects.
+
+A device keeps its own rejections, across restarts, until the roster holds the slot as a device. While it keeps one, it
+commits it again whenever the roster has no entry for the slot: when its Commit fails, and when branch selection drops
+the update that recorded it, whichever device made that update.
+
+If the roster holds the slot as a device, the user confirmed linking it, on this device or another: the device commits
+nothing for the slot, forgets its rejection, and stops asking about it. If branch selection later drops that link, the
+device asks about the slot again ([Any one device's answer](#any-one-devices-answer)) rather than restore an answer the
+user's link overrode. What a rejection does beyond its record, warning the user, is in [Rejections](#rejections).
+
+A device with no device group keeps its rejections itself and never asks about those slots again. When it creates a
+device group, the founding roster carries them. When it joins one, it commits them once it trusts that group. Either way
+it leaves out, and forgets, a rejected sign-in whose slot the roster holds as a device, and keeps the others as above.
+
+A client MAY let a device whose first check found sign-ins ([Already signed in, or new](#already-signed-in-or-new))
+start without them, in groups it is invited to from then on. Starting that way answers Not now for every slot that first
+check returned, including one that does not count then and is listed only when it counts later. It MUST NOT reject them:
+one of them may be a device the user still has somewhere, which can link this one later, and a rejection would block
+that link and warn the user about a device they only lost.
+
+### A previously linked slot missing from this roster
+
+A device MAY add local context to an existing unrecognized-sign-in listing when it retains a made approval for that
+slot in its currently trusted device group, but its current settled selected roster no longer lists the slot. It
+describes this as a current local observation, not proof of permanent disconnection or removal. A remembered approval
+for a slot does not authenticate the device currently publishing in that slot. Known removal, rejection or movement
+is not a lost-link warning. Incomplete local records, expired removal evidence, slot reuse and discovery availability
+limit this context; its absence does not mean the slot was never linked. Silence or failure to decrypt traffic alone
+establishes no lost link and authorizes no automatic reset. The user may open both devices to check the link, or
+explicitly choose a [local reset](#explicit-local-reset) followed by fresh code pairing.
+
+### Any one device's answer
+
+A link or a rejection is written to the roster, so one device's answer reaches all of them. A device that finds the slot
+of a sign-in it lists among the roster's devices or rejected slots stops asking about it: the user answered on another
+device. It MAY keep telling its user so, and which device linked it, until the user dismisses it. That answer holds only
+while the roster does: when the slot is no longer among the roster's devices or rejected slots, a device with no
+rejection of its own for it lists it again as it did before, even if the user dismissed it. Not now is each device's own
+and is not shared.
+
+### A sign-in that goes away
+
+A slot holds a KeyPackage, fresh or not, when its current publication is a valid KeyPackage of the account and no
+deletion request the check found covers it. When a complete check finds that the slot of a listed sign-in no longer
+holds a KeyPackage, the device keeps the sign-in listed and marks it as no longer signed in. While it is, it cannot be
+linked, but it can still be rejected. Otherwise someone holding the account's signing key could publish, wait for the
+user to be asked, and delete the publication before the user saw it. Freshness plays no part in whether a slot holds a
+KeyPackage: a valid publication that no deletion request covers holds a KeyPackage however old it is. Freshness decides
+which KeyPackage an inviter picks and whether a slot raises a sign-in, but a device that has not been opened for a while
+has not signed out. When a later complete check finds that the slot holds a KeyPackage again, the sign-in is signed in
+again and can be linked; any answer the user gave it stands. A check that is not complete changes neither: only a
+complete check decides whether a slot holds a KeyPackage.
+
+## Matching leaves to devices
+
+Every leaf of the account in a group carries the same credential identity, so the group alone does not say which leaf
+belongs to which device. Each linked device tags its leaves instead
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md)), and a device that holds the roster reads
+those tags in the groups it is in. No roster commit records anything about other groups, so joining a group, leaving
+one, or replacing a leaf there never commits to the device group. Small-state messages
+([account-sync.md](./account-sync.md)) do name other groups, by MLS group id; that document's security considerations
+cover what this discloses.
+
+- Each device makes its own tag signature key pair and keeps the private key to itself.
+- The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
+  `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
+- A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
+  its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
+  it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
+  joined, unless the link has already failed, and removes it if it has not made it in time ("A link that is not taken
+  up"). That Commit also replaces its leaf in the device group with one tagged under that key
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
+  there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
+  leaf later.
+
+A leaf that no device claims is not evidence of anything by itself. A device's leaves from before it was linked stay
+unclaimed until it replaces them ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing
+tags"), and so do the leaves that other accounts' inviters gave a sign-in the user has not answered, or answered Not
+now. A device MUST NOT warn about a leaf, or remove one, only because no device claims it. Removing the leaves of a
+removed device, or of a device the roster no longer lists, is under [Removing a device](#removing-a-device): a leaf
+whose tag a device reads under a key it keeps for a gone slot is that slot's, not unclaimed, for that device. The
+approving device adds a newly linked device to its chats
+([Adding the new device to chats](#adding-the-new-device-to-chats)); adding a sibling to a group it is missing from
+otherwise follows [Filling a missing chat](#filling-a-missing-chat).
+
+## Removing a device
+
+The user removes a linked device from any other device of the account. A device never removes itself this way: a
+device the user is done with signs out ([Signing out](#signing-out)). The account's devices also remove a device that
+has been inactive for 90 days ([Marking and removing inactive devices](#marking-and-removing-inactive-devices)), with
+the same Commit.
+
+### The removal Commit
+
+A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaf, the one
+whose device tag reads as the sibling's slot ([Matching leaves to devices](#matching-leaves-to-devices)), and carries a
+roster update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two
+operations for that slot, in this order:
+
+1. `remove_device`;
+2. `set_rejected_slot` with reason `removed`, `rejected_at` the time the user decided, and the `tag_signature_key` the
+   entry had.
+
+If no leaf's tag reads as the slot, the Commit carries the same roster update and removes no leaf. A client MUST NOT
+remove a device whose entry has no `tag_signature_key` yet: its link may still fail, and the approving device undoes a
+failed link with `remove_device` alone ("A link that is not taken up").
+
+A device keeps each removal it decided, across restarts, until it discards its copy of the device group ([A link that is
+not taken up](#a-link-that-is-not-taken-up)), and removes the device again whenever the roster lists its slot. It
+records the decision before it commits. While its copy of the group is terminal or cannot be read, and it has not
+discarded it, the removal waits. It commits only while it can commit in the device group, so a Commit there still in
+flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
+selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
+as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
+alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and
+`tag_signature_key` the slot's latest key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)).
+If it keeps no key for the slot, it makes no record. It does so once its state for the device group is settled and lists
+the slot neither as a device nor as a rejected slot, only while it can commit there, and only while the decision is less
+than 30 days old, since a record older than that is dropped at the next pass that drops old `removed` records. Once a
+roster state it applied has held the record, it SHOULD NOT make that lone record again, whether another device dropped
+the record or branch selection did; the devices that applied that state keep the key it carried. A removal Commit it
+makes again because the roster lists the slot again carries the record as before. Until then, a record whose Commit
+failed or went nowhere is made again. Once the record is gone, the slot reads as a sign-in again, as after any `removed`
+record goes; if the user links it again, the deciding device removes it again, since its decision stands. Devices that
+never applied a roster listing the device's key learn it from the record, while it lasts: a record made long after the
+decision lasts only until 30 days after the decision, like any `removed` record. When a removal Commit that took the
+device's entry fails, or branch selection drops it, even after its `removed` record has been dropped, the roster lists
+the slot again and the device commits the removal again. A removed device comes back only as a new slot. A removal
+committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next
+pass that drops old `removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State").
+
+### The removed device's slot
+
+The device that decided the removal deletes the removed device's publication slot, with the transport's slot deletion
+(for Nostr, [../transports/nostr.md](../transports/nostr.md), "Slot deletion"). This is the one case in which a device
+deletes a slot it did not create ([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and
+publication slots"):
+
+- it sends the deletion once its state for the device group is settled and no longer lists the slot as a device,
+  whether it records the slot as `removed`, that record has since been dropped, or the entry went as a failed link
+  after the user decided;
+- the deletion covers only publications stamped at or before its own time, so the device stamps it as far ahead of its
+  clock as it would date a publication of its own ([../foundation/key-packages.md](../foundation/key-packages.md), "A
+  publication the device did not make"), since the removed device's clock may run ahead;
+- it sends it again until the transport accepts it;
+- when branch selection drops the removal after that, it commits the removal again and, once its state is settled and
+  no longer lists the slot as a device, deletes the slot again, since the removed device may have published to it in
+  between;
+- no other device deletes the slot, and nothing else lets a device delete another device's slot. A removal for
+  inactivity ([Inactive devices](#inactive-devices)) is not a user's decision: no device deletes the slot of a device
+  removed that way.
+
+The deletion stops inviters from selecting the KeyPackages the removed device published up to the deletion's time. It
+does not cover a later publication: what the account's devices do about a removed device that publishes again is not
+specified yet. It is cleanup, not revocation: a KeyPackage a relay keeps serving, or one an inviter already holds, can
+still be used until its `Lifetime` ends.
+
+### Devices the roster no longer lists
+
+A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
+a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
+listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
+time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
+catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
+states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
+unclaimed for it. A slot's latest key, for a device, is the most recent key that a roster state this device applied
+listed for the slot; a state that listed the slot with no key does not change it. What it keeps changes nothing about
+how it validates, applies or selects roster states.
+
+A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
+because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
+
+A slot other than the device's own is gone for it:
+
+- while its trusted roster records the slot as `removed`, read by the key that record keeps; and
+- while its state for the device group is settled and its roster lists no device in the slot, if it keeps a key for the
+  slot, read by every key it keeps for the slot.
+
+A slot both cover is read by every key either names.
+
+The second covers a `removed` record dropped before the device acted on it, including while the device was away, a link
+that failed after the new device set its key ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made
+link that a later branch dropped. In each the slot's device is not linked: no device lists it, and no removal can reach
+it. A device cleans up after every slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its
+private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
+[../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
+signature verifies under a key the slot is read by
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device that never applied
+a roster listing a key cannot read the leaves tagged under it, which then read as unclaimed for it.
+
+A later branch can list a gone slot again, as one can bring back a removed device ([The removal
+Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
+the cleanup removed stays removed: a device listed again is missing from the groups it was removed from, and the cleanup
+adds it back to none of them. A later Add follows [Adding the new device to chats](#adding-the-new-device-to-chats) or
+[Filling a missing chat](#filling-a-missing-chat), under that flow's conditions and the shared removal exclusions.
+
+### Removing it from chats
+
+For each slot that is gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)), a device
+removes from each group it is in, other than the device group, every leaf of its account that belongs to that slot.
+Every device that trusts the device group does this, whichever device decided the removal.
+
+- In a group that requires `0x800d`, it removes those leaves with one same-account Commit
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Same-account operations"). It
+  makes that Commit only while it can commit in the group, and otherwise tries again later. Two devices may both make
+  one; branch selection keeps one, and the other then finds nothing left to remove.
+- In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
+  in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
+- A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
+  there: no device of the account can see it.
+
+The removed device realizes each such removal in that group. The account stays a member there through the device that
+committed it, so the removed device does not tell its user the account was removed from the group
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
+
+The removed device's leaves stay readable as its old slot while the roster records it as `removed`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"), and, for a device that keeps
+that slot's tag signature key, for 30 days after the last roster state that device applied listing the key. A leaf left
+in a group after that reads as unclaimed.
+
+### Its private KeyPackages
+
+For each slot that is gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)), every
+device of the account deletes the private KeyPackages it exchanged with that slot ([Private
+KeyPackages](#private-keypackages)):
+
+- those it issued to the slot, with their private keys, so that a Welcome the removed device makes from one cannot add
+  this device to a group;
+- those the slot handed it, so that it never adds the removed device with one.
+
+### On the removed device
+
+Removal from a preserved old group after a [move](#leaving-the-old-device-group) is old membership cleanup, not this
+removed-device flow. Removal from the currently trusted destination after Made follows this flow normally.
+
+A device that its device group removes is unlinked from the account, unless it had started signing out before the
+removal reached it ([Removed while signing out](#removed-while-signing-out)), or the removal undid a failed link, which
+the roster the removal leaves tells apart ([A link that is not taken up](#a-link-that-is-not-taken-up)). An unlinked
+device realizes that removal as soon as the removing Commit is on the selected branch
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal"), before it sends
+anything more, and then:
+
+1. records that it was unlinked, durably, before it discards anything, so that a restart does not run the account
+   again;
+2. discards the active state of its copy of the device group, as any device its device group removes does;
+3. stops acting for the account until it deletes its local state for it (below): it makes no Commit and sends no
+   message in any group, accepts no Welcome, answers no pairing request, and publishes nothing, its slot included,
+   whatever [../foundation/key-packages.md](../foundation/key-packages.md) would otherwise have it publish;
+4. tells its user, durably, that this device was unlinked from the account.
+
+It neither leaves its chats nor deletes its slot. Its siblings remove its leaves where they can and leave the rest
+([Removing it from chats](#removing-it-from-chats)), and the device that decided the removal deletes its slot ([The
+removed device's slot](#the-removed-devices-slot)). A chat whose leaf for this device a sibling removed before the
+device group's removal reached it already reads as no longer active on this device, not as one the account was removed
+from ([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Realizing removal").
+
+The device runs the account again only as a new sign-in: it deletes its local state for the account, then links again
+through a new pairing session with a new slot ([Linking a device](#linking-a-device)). It does not undo the unlinked
+record any other way, even when branch selection later drops the removal that unlinked it; the device that decided the
+removal then commits it again ([The removal Commit](#the-removal-commit)).
+
+## Signing out
+
+A device that signs out leaves the account's groups, deletes its slot
+([../foundation/key-packages.md](../foundation/key-packages.md), "Stopping publication"), then deletes its local state
+for the account. In a device group, its siblings can take it out of its chats and of the device group instead, so its
+departure completes after it has deleted everything.
+
+Leaving a chat where its account is an active admin takes an admin-policy update before the SelfRemove
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md), "Behavior"). A chat the device cannot
+leave, for example because its account is the chat's last active admin, keeps its leaf, and the device tells its user
+which chats it could not leave.
+
+### Through its siblings
+
+A device signs out through its siblings only when all of these hold, and otherwise signs out on its own ([On its
+own](#on-its-own)):
+
+- it trusts a device group ([Trust](#trust));
+- its own entry in that group's roster has its `tag_signature_key`, since no device may remove an entry that has none
+  ([The removal Commit](#the-removal-commit));
+- the roster lists another device whose status is `active` or `inactive`.
+
+It then:
+
+1. commits, in its device group, a roster update that sets its own entry with status `leaving` and every other field
+   unchanged ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update");
+2. once that Commit is confirmed, leaves itself, as
+   [../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than
+   the device group, except one that requires `0x800d` in which its own leaf carries a device tag that reads as its
+   slot and another leaf carries one that reads as a device the roster lists as `active` or `inactive`
+   ([Matching leaves to devices](#matching-leaves-to-devices)). A sibling removes it from those groups with a
+   same-account Remove ([Removing it from chats](#removing-it-from-chats)), since only a leaf whose tag reads as its
+   slot is removed there, and from the device group ([Its siblings](#its-siblings));
+3. deletes its slot, then its local state for the account.
+
+It does not wait for its siblings to remove it. If the `leaving` Commit is not confirmed within about 30 seconds, the
+device leaves every chat itself instead, as on its own, and tells its user that it could not ask its siblings to take it
+out.
+
+A device MUST NOT set another device's entry to `leaving`.
+
+### On its own
+
+A device that does not sign out through its siblings leaves itself, as
+[../protocol-core/member-departure.md](../protocol-core/member-departure.md) allows, each group it is in other than its
+device group, then deletes its slot and its local state for the account. It cannot leave its device group that way: its
+account is that group's admin ([Creating the device group](#creating-the-device-group)), and an active admin's
+SelfRemove is invalid. Its leaf there stays until a sibling removes it: the approving device, if its link fails ([A
+link that is not taken up](#a-link-that-is-not-taken-up)); its siblings, if its `leaving` Commit reaches them after
+all; otherwise the user, from another device. When the roster lists no other device whose status is `active` or
+`inactive`, no device runs the device group once this one has signed out, and its leaf stays there. The account's next link founds a
+new device group, since the device that approves it trusts none ([Creating the device
+group](#creating-the-device-group)).
+
+A device that was unlinked ([On the removed device](#on-the-removed-device)) leaves no group and deletes no slot when it
+signs out. It deletes only its local state for the account.
+
+### Its siblings
+
+When the roster on a device's selected branch lists a sibling with status `leaving`, and that entry has its
+`tag_signature_key`, the device removes that sibling as if its user had decided to ([Removing a
+device](#removing-a-device)): it records the decision, makes the removal Commit with `rejected_at` the time it decided,
+removes the sibling's leaves from its chats, deletes the private KeyPackages it exchanged with it, and deletes its slot.
+It SHOULD first wait a random delay of up to 30 seconds, so that the siblings do not all commit at once. Branch
+selection keeps one removal either way, and the others then find nothing left to remove. The decision stands like a
+user's: if branch selection later drops the removal, the device commits it again, even when the dropped branch also
+held the `leaving` Commit.
+
+A chat keeps the signed-out device's leaf when no sibling removes it there: when each sibling it relied on there signs
+out or is removed before removing it, or when branch selection drops the `leaving` Commit before any sibling decided the
+removal. The device has deleted its state by then and cannot leave that chat itself. In the second case the roster
+lists it again, and the user can remove it from another device.
+
+### Removed while signing out
+
+A device that had started signing out before its device group's removal of it reached it is not unlinked ([On the
+removed device](#on-the-removed-device)), whatever the removal was: a user's, its siblings' after its `leaving` Commit,
+or the undo of a failed link ([A link that is not taken up](#a-link-that-is-not-taken-up)). It tells its user neither
+that it was unlinked nor that linking failed. It realizes the removal and discards the active state of its copy of the
+device group, as any removed device does. It then sends only what its sign-out still has to send:
+
+- a SelfRemove in each chat its sign-out leaves to it ([Through its siblings](#through-its-siblings), [On its
+  own](#on-its-own)) and that it has not left yet;
+- the deletion of its own slot.
+
+It sends nothing in the device group, and no application message, other proposal or Commit in any group, so a chat
+whose SelfRemove needs an admin-policy update first keeps its leaf ([Signing out](#signing-out)). Then it deletes its
+local state for the account. A removal that reaches a device before it starts signing out is handled as [On the
+removed device](#on-the-removed-device) says.
+
+## Slot announcements
+
+A device in a device group names each KeyPackage in its own roster entry before that KeyPackage reaches its slot
+([../foundation/key-packages.md](../foundation/key-packages.md), "Devices and publication slots"). The entry's
+`announced_key_package` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) holds the
+`KeyPackageRef` of the KeyPackage the device publishes there, so its siblings can read which KeyPackage the device
+publishes in its slot.
+
+- Before a device publishes a KeyPackage to its slot, whether a new one or the current one again, it MUST check that its
+  own entry in its device group's current roster names that KeyPackage. If the entry names another or none, the device
+  first commits an AppDataUpdate that sets its own entry, with every other field unchanged and `announced_key_package`
+  naming the KeyPackage. The exceptions: that update MAY also bring the device's own `client` and `platform` current
+  ([Labels, clients and platforms](#labels-clients-and-platforms)), and MAY set the device's own `history_key`
+  ([account-sync.md](./account-sync.md), "History keys").
+- The device publishes only once that Commit is part of the group state it holds. A Commit that fails, or that a
+  branch selection drops, leaves the entry as it was, so the device announces again before it publishes.
+- A device that cannot announce, for example because the device group's relays are unreachable, does not publish. It
+  MUST NOT publish an unannounced KeyPackage after a timeout; its slot ages instead
+  ([../foundation/key-packages.md](../foundation/key-packages.md), "Refreshing a slot"). While a refresh that section
+  calls for, or a replacement its "A publication the device did not make" calls for, is held back this way, a client
+  SHOULD tell its user, so that a device whose device group stays unwritable does not quietly become one that new
+  chats cannot add.
+- The founding state announces the KeyPackage the creating device last published, if any, and the founding Add the one
+  the link confirmed ([Creating the device group](#creating-the-device-group)), so neither device owes a Commit before
+  it publishes one of those KeyPackages again. Any other KeyPackage, including every refresh, is announced as above.
+- A device with no device group publishes as before, unless its device group unlinked it ([On the removed
+  device](#on-the-removed-device)).
+
+The roster keeps one announcement per device. Between an announcement and its publication, while some relays still serve
+the previous publication, and after branch selection drops an announcement whose KeyPackage the device had already
+published, a sibling can find a KeyPackage in a device's slot that the roster does not name. In the last case the device
+announces again before it next publishes, whether the same KeyPackage or a new one. A sibling does nothing about such a
+KeyPackage: only the slot's own device acts on what its slot serves ([A KeyPackage the device did not
+make](#a-keypackage-the-device-did-not-make)).
+
+### A KeyPackage the device did not make
+
+A device made a KeyPackage when the signature key of the KeyPackage's LeafNode is one the device holds, or has held, as
+its own. A valid KeyPackage is signed under its LeafNode's signature key, so only the device can produce one that
+carries its key: the test needs no record of what the device published, and it holds for KeyPackages the device
+published before it had a device group and after it restores older local state that holds the same key. A device that
+changes the signature key it puts in its KeyPackages still made the older ones. The test has one gap: whoever holds the
+account's signing key can republish a copy of one of the device's own KeyPackages without a warning, which gains them
+nothing, since only the device can open a Welcome to it.
+
+A device that finds a publication in its own slot that it did not make replaces it
+([../foundation/key-packages.md](../foundation/key-packages.md), "A publication the device did not make"), announcing
+the replacement first as in [Slot announcements](#slot-announcements). When that publication holds a valid
+current-profile KeyPackage of the account ([../foundation/key-packages.md](../foundation/key-packages.md)), fresh or
+not, that the device did not make, the device also warns its user ([The warning](#the-warning)), on that device only,
+whether it outranks that publication, deletes it or leaves it: it records nothing in the roster and tells no sibling.
+Anything else raises no warning: a publication that is not such a KeyPackage, such as an invalid or legacy one, and a
+copy of one of the device's own KeyPackages. This applies whether or not the device has a device group.
+
+## Rejections
+
+A `not_me` rejected slot records that someone holding the account's signing key may have published where the account's
+devices did not: a sign-in the user rejected ([Answers](#answers)). A valid current-profile KeyPackage of the account
+that a device finds in its own slot and did not make shows the same ([A KeyPackage the device did not
+make](#a-keypackage-the-device-did-not-make)). Neither the
+rejection nor the device's replacement stops them. Other accounts' inviters read only published KeyPackages, never the
+roster, so they can still add whoever holds the key to new groups; and whoever holds it can still send as the account,
+remove the account's devices, and publish more KeyPackages. A stolen account signing key is out of scope: Marmot builds
+nothing to evict whoever holds it, and the warning only tells the user. A `removed` rejected slot is not a rejection in
+this sense.
+
+### The warning
+
+A device warns its user when it rejects a sign-in itself ([Answers](#answers)); when the roster of its trusted device
+group gains a `not_me` rejected slot, whichever device recorded it; and when it finds in its own slot a valid
+current-profile KeyPackage of the account that it did not make ([A KeyPackage the device did not
+make](#a-keypackage-the-device-did-not-make)).
+
+- The warning says that the account's signing access may be in someone else's hands: the account's signing key, or a
+  session with a remote signer. It MUST NOT claim that the account's devices stopped whoever holds it. For a signing
+  key, the only complete fix is moving to a new account.
+- A device keeps at most one warning open for the account, which gathers every rejection and every such KeyPackage that
+  its user has not yet seen, so a run of them does not become a run of warnings. It records, across restarts, each of
+  them its user has seen, and does not warn about one again when a branch selection drops and restores it. It keeps a
+  seen KeyPackage from its own slot, by its `KeyPackageRef`, for 7,261,200 seconds after it found it, the longest a
+  KeyPackage can be valid, so that one its slot serves again does not warn again either.
+- Dismissing the warning on a device marks every rejection and KeyPackage the warning then gathers as seen on that
+  device, so the warning stays closed there until something it has not seen arrives. It dismisses it there only: another
+  device's warning is unchanged.
+- Like the roster, the warning is shown only to the account's own user.
+
+## Private KeyPackages
+
+Devices in a device group are to add each other to chats only with private KeyPackages: single-use KeyPackages that one
+device hands to one sibling inside the device group. A private KeyPackage never reaches a slot or any other publication.
+The Welcome for an add that uses one reaches its sibling only inside the device group ([Sibling
+Welcomes](#sibling-welcomes)). The device that approves a link adds the new device to its chats this way ([Adding the
+new device to chats](#adding-the-new-device-to-chats)); a device that creates a chat includes siblings under
+[Creating a chat](#creating-a-chat).
+
+### Issuing
+
+A private KeyPackage is a KeyPackage of the device that issues it
+([../foundation/key-packages.md](../foundation/key-packages.md)), with the lifetime and capabilities that device gives
+the KeyPackages it publishes. It MUST NOT be last-resort, so a Welcome consumes it once. It carries the issuer's device
+tag ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), so a device issues
+private KeyPackages only once it can tag.
+
+- The issuer records which sibling, by slot, it handed each one to. It keeps the private key material until a Welcome
+  consumes the KeyPackage, until its `Lifetime.not_after`, or until that sibling's slot is gone for it ([Devices the
+  roster no longer lists](#devices-the-roster-no-longer-lists)), whichever comes first.
+- Only a sibling's add may consume a private KeyPackage. A device MUST reject every Welcome that consumes a private
+  KeyPackage it issued unless it arrived as a sibling Welcome that passes [Receiving a sibling
+  Welcome](#receiving-a-sibling-welcome). It decides that within the tentative validation of
+  [../protocol-core/joining.md](../protocol-core/joining.md) (steps 4 through 9), so a refused Welcome leaves the
+  KeyPackage and its `init_key` in place.
+- Halfway is `not_before + (not_after - not_before) / 2` in integer seconds, from the KeyPackage's `Lifetime`.
+- A device's stock with a sibling is the private KeyPackages it handed that sibling that no Welcome has consumed and
+  that have not reached halfway, counting, once that sibling has sent a request, only those it handed over in its answer
+  to that sibling's latest request or after it ([Sending](#sending)). When the stock falls below 5, the device issues
+  enough new ones to bring it to 10 and hands them over.
+- A device tops up its siblings before it asks for its own, so a device back after a long gap serves the others first.
+- A device MAY cap how many unexpired private KeyPackages it keeps for one sibling, but the cap MUST be at least 300:
+  that leaves room for a full answer of 100 beside the ones a device at the default stock keeps until `not_after`. Once
+  it reaches that cap it issues fewer than a top-up or a request calls for, and a top-up waits for room. It MUST NOT
+  delete one before `not_after` to make room. At the cap it MAY make up the rest of an answer to a request by handing
+  over again private KeyPackages it already handed that sibling that no Welcome has consumed, the most recently issued
+  first, so a sibling whose hand-offs were all lost still gets some. Handing one over again does not change its
+  `Lifetime`: it counts toward the stock again only until it reaches halfway.
+- At `not_after`, the issuer deletes the private key material and the holder deletes the KeyPackage. A gone slot ends
+  both sooner ([Its private KeyPackages](#its-private-keypackages)).
+
+### Messages
+
+| Kind  | Message  | Sent by                                   |
+| ----- | -------- | ----------------------------------------- |
+| `459` | Request  | a device that wants private KeyPackages   |
+| `460` | Hand-off | the device that issued them               |
+
+Both are Marmot app events ([../foundation/application-messages.md](../foundation/application-messages.md)) sent as MLS
+application messages in the device group. Both name the sender's slot (`from`) and the addressee's slot (`to`), each a
+`SlotId` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+A request's content is one UTF-8 JSON object with exactly these members, written in this order without whitespace.
+Slots are JSON strings of lowercase hexadecimal, 64 characters. `v` and `want` are JSON numbers, written as decimal
+integers without leading zeros.
+
+| Member | Value |
+| ------ | ----- |
+| `v`    | `1` |
+| `from` | the requesting device's slot |
+| `to`   | the slot of the device asked |
+| `want` | how many new private KeyPackages it asks for, from 1 to 100 |
+
+A hand-off's content is the standard base64 encoding, with padding
+([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)), of:
+
+```text
+struct {
+  uint8 version;
+  SlotId from;
+  SlotId to;
+  MLSMessage key_packages<V>;
+} PrivateKeyPackageHandOffV1;
+```
+
+The structure uses the Marmot binary profile
+([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). Each MLSMessage is encoded as MLS defines
+it, and `key_packages<V>` is the byte length of their concatenation followed by that concatenation. `version` is `1`.
+`key_packages` holds 1 to 20 MLSMessages, each with `wire_format` `mls_key_package`. An answer of more than 20 goes out
+as several hand-offs.
+
+### Sending
+
+- A device asks a sibling for private KeyPackages when it holds no usable one from that sibling, or when it needs more
+  than it holds. A usable one has not reached halfway. While the need lasts, it sends the request again at most once an
+  hour. Each request, first or repeated, is a new Marmot app event with a later `created_at` than the one before, so its
+  `id` differs and the sibling answers it.
+- A device answers a request by issuing `want` new private KeyPackages to the requester and handing them over. The ones
+  it handed the requester before stop counting toward the stock, since they may have been lost, but keep their key
+  material until one of the ends in [Issuing](#issuing): a Welcome consumes them, they expire, or the requester's slot
+  is gone for it. A device at its cap answers as [Issuing](#issuing) allows. A device answers
+  each request, by its Marmot app event `id`, once.
+- There are no receipts. A lost hand-off is repaired by the requester's next request.
+
+### Receiving
+
+A device reads a request or a hand-off only from the device group it trusts ([Trust](#trust)), and ignores both kinds
+in any other group. It drops one unless:
+
+- its content decodes exactly as [Messages](#messages) gives it: a request with `v` `1` and `want` from 1 to 100, or a
+  hand-off with `version` `1` and 1 to 20 `mls_key_package` MLSMessages, with no bytes left over;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it carries a device tag that reads as `from`'s
+  ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
+  roster's `leaf_tag_key`, names `from`, and verifies under the `tag_signature_key` in `from`'s roster entry.
+
+A device whose leaf in the device group carries no tag yet, such as a new device before its post-join self-update, has
+its requests and hand-offs dropped and not counted. It sends them again once it has tagged its leaf.
+
+A removed device still holds `leaf_tag_key`, and its `removed` record keeps its `tag_signature_key`, so its tags still
+read as its old slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Security
+considerations"). That slot is no longer a device in the roster, so the receiver drops whatever it sends.
+
+It drops a whole hand-off unless every KeyPackage in it:
+
+- is a valid MLS KeyPackage whose `Lifetime` is current and no longer than a published KeyPackage's may be, and whose
+  credential is its own account's Marmot account identity with a valid account identity proof
+  ([../foundation/key-packages.md](../foundation/key-packages.md)). The checks there on a publication's transport
+  author, transport encoding and KeyPackageRef hint do not apply, and capabilities are checked when the KeyPackage is
+  used;
+- is not last-resort;
+- has not reached its `Lifetime.not_after`;
+- carries a device tag that reads as `from`'s, as above.
+
+The tag checks are the device group's rules for accepting a request or a hand-off, not validity rules: a KeyPackage or
+leaf without a tag stays valid everywhere else
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Validity"). The receiver keeps the
+KeyPackages it accepts by `from` until it uses one, discards them, `from`'s slot is gone for it ([Its private
+KeyPackages](#its-private-keypackages)), or they expire. A device MUST NOT keep a private KeyPackage it has already
+used, even when a sibling hands it over again. It remembers each one it used until that KeyPackage's `not_after`, and
+keeps the rest of such a hand-off.
+
+## Sibling Welcomes
+
+A device that adds a sibling to a chat with a private KeyPackage that sibling handed it sends the Welcome inside the
+device group, as a sibling Welcome. A private KeyPackage has no publication for a transport binding's Welcome delivery
+to name, and only the device group can show the receiver that a sibling sent it.
+
+### Message
+
+| Kind  | Message         | Sent by                                                   |
+| ----- | --------------- | --------------------------------------------------------- |
+| `461` | Sibling Welcome | the device that added a sibling with its private KeyPackage |
+
+A sibling Welcome is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group. Its content is the standard base64 encoding, with padding
+([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)), of:
+
+```text
+struct {
+  opaque url<1..512>;
+} SiblingWelcomeRelayV1;
+
+struct {
+  uint8 version;
+  SlotId from;
+  SlotId to;
+  KeyPackageRefV1 key_package_ref;
+  MLSMessage welcome;
+  SiblingWelcomeRelayV1 relays<V>;
+} SiblingWelcomeV1;
+```
+
+Invitation-decision sync ([account-sync.md](./account-sync.md#invitation-decisions)) also defines:
+
+```text
+struct {
+  uint8 version;  // exactly 2
+  SlotId from;
+  SlotId to;
+  opaque invitation_generation[32];
+  KeyPackageRefV1 key_package_ref;
+  MLSMessage welcome;
+  SiblingWelcomeRelayV1 relays<V>;
+} SiblingWelcomeV2;
+```
+
+Version 2 inserts the fixed 32-byte original invitation generation after `to`, with no length prefix; every other field,
+bound and admission check is the same as version 1. An unknown original generation remains local-only in every version;
+[Choosing the version](#choosing-the-version) says which version a sender uses. A receiver supporting
+invitation-decision sync reads all three versions; an older version-1 receiver rejects versions 2 and 3, and a version-2
+receiver rejects version 3, so either may miss its Welcome: this is not a mixed-receiver rollout guarantee.
+
+Version 3 also forwards how the sender's own copy of the chat stands, so the new device shows the chat as the sender
+does:
+
+```text
+struct {
+  uint8 present;  // 0 or 1; any other value is invalid
+  select (present) {
+    case 0: struct {};
+    case 1: opaque value[32];
+  };
+} OptionalBytes32;
+
+struct {
+  uint8 version;  // exactly 3
+  SlotId from;
+  SlotId to;
+  OptionalBytes32 invitation_generation;
+  OptionalBytes32 inviter;
+  uint8 confirmed;  // 0 or 1
+  KeyPackageRefV1 key_package_ref;
+  MLSMessage welcome;
+  SiblingWelcomeRelayV1 relays<V>;
+} SiblingWelcomeV3;
+```
+
+- `invitation_generation` is as in version 2, and absent where version 1 would carry none.
+- `inviter` is the raw 32-byte x-only public key of the other account that invited the sender's copy, as the sender
+  recorded it: the validated author of the Welcome that admitted it when that is another account, or, when that author
+  is its own account (a sibling Welcome), the `inviter` that Welcome forwarded and it kept, so the original inviter
+  carries through every sibling Add. It is absent when the sender founded the chat, or when it knows no inviter other
+  than its own account.
+- `confirmed` is `1` when the sender's copy is confirmed (founded, or its invitation accepted) and the copy has no
+  invitation generation. It is `0` whenever `invitation_generation` is present: that generation's shared decision
+  settles the new copy ([account-sync.md](./account-sync.md#invitation-decisions)).
+
+`inviter` and `confirmed` are the sending sibling's assertion about its own copy, like the inherited generation; the MLS
+Welcome they arrive with is authored by the receiver's own account ([Receiving forwarded
+fields](#receiving-forwarded-fields)).
+
+#### Choosing the version
+
+A sender uses version 3 when it forwards an `inviter` or `confirmed` `1`, with `confirmed` `0` whenever it carries an
+original generation. Otherwise it uses version 2 when it has an original generation, and version 1 when it has neither.
+A founding Add carries the post-founding generation ([account-sync.md](./account-sync.md#invitation-decisions)) and
+forwards nothing, so its sibling Welcomes use version 2.
+
+#### Sending forwarded fields
+
+For an Add to a chat this device already holds, the sender reads `inviter` and `confirmed` from its own copy when it
+prepares the Add's Commit, and binds them, with the version and original generation, when it creates the Add/Welcome
+obligation; retrying or repairing the Welcome keeps its exact bytes. An outstanding version-1 obligation remains version
+1: it MUST NOT be upgraded, reseeded from a later epoch, or accompanied by a second carrier to retrofit invitation
+metadata. If the copy changes after the obligation is created, for example its user accepts the invitation there before
+the Welcome is sent, the Welcome can carry facts that no longer hold: for a Welcome without a generation, a stale
+pending invitation stays one the receiver's user can answer, and a stale `confirmed` `1` stays a locally confirmed copy.
+
+Before it prepares an Add of a chat whose copy is confirmed and has an original generation but holds no invitation
+decision for it, the sender does what [account sync](./account-sync.md#invitation-decisions) requires for that case.
+
+#### Receiving forwarded fields
+
+A receiver uses `inviter` and `confirmed` only from a sibling Welcome whose Welcome author account, as
+[joining](../protocol-core/joining.md#receiving-flow) identifies it from the GroupInfo signer leaf, is its own account;
+from any other, it treats both as absent. Both apply only to the copy that Welcome installs, including a later install
+from retention; a copy the Welcome did not install is left unchanged. It treats an `inviter` that is not a valid x-only
+secp256k1 public key ([../foundation/identity.md](../foundation/identity.md)) or is its own account as absent: it
+stores, shows, matches and forwards no inviter for it. It keeps an `inviter` that remains with the copy it installs,
+durably and recoverably with the successful admission, including a Welcome it installs later from retention, and
+presents it as the invitation's original sender as its sibling reported it; the authenticated Welcome author stays its
+own account. It applies its local policy, such as a block of that inviter, before it resolves the copy's presentation,
+including when it applies an invitation decision it already holds.
+
+With `confirmed` `1` and no local policy holding the copy pending, the receiver does not ask its user to confirm it, and
+durably records the copy as confirmed as a local acceptance does, without an invitation generation or a decision; the
+copy stays local-only. A later sibling Add from that device forwards the same `inviter` and confirmation. A forwarded
+confirmation that local policy holds pending is not retained: the copy is a pending invitation from the retained
+inviter, and if the policy later changes, an answer the user gave on this device stands and an unanswered copy stays a
+pending invitation. These are the receiver's only presentation rules for forwarded fields; account sync refers to them.
+
+
+The structure uses the Marmot binary profile
+([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)). `SlotId` and `KeyPackageRefV1` are as the
+roster defines them
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+
+- `version` is `1` for SiblingWelcomeV1, `2` for SiblingWelcomeV2 or `3` for SiblingWelcomeV3.
+- `from` is the sender's slot and `to` the slot of the sibling it added.
+- `key_package_ref` is the `KeyPackageRef` of the private KeyPackage the Commit consumed, computed as
+  [../foundation/key-packages.md](../foundation/key-packages.md) gives it.
+- `welcome` is one MLSMessage with `wire_format` `mls_welcome`, encoded as MLS defines it.
+- `relays` lists, in order, where the new member SHOULD fetch the chat's group messages, as the active transport
+  binding names them: one to 16 entries, none repeated. On Nostr each entry is a relay URL under the relay URL profile
+  ([../transports/nostr.md](../transports/nostr.md), "Relay URL profile"), as in a kind `444` rumor's `relays` tag. The
+  list is a fetch hint, not group state: the chat's routing component inside the Welcome stays authoritative.
+
+### Sending a sibling Welcome
+
+- A device sends one sibling Welcome for each private KeyPackage its Commit added, each naming its own KeyPackage
+  ([../protocol-core/joining.md](../protocol-core/joining.md), "Delivery"), and sends it when an inviter sends a
+  Welcome: after the Commit's publish obligation succeeds ([../protocol-core/joining.md](../protocol-core/joining.md),
+  "Behavior"). The shared readiness rule in [Private sibling Add admission](#private-sibling-add-admission) holds
+  any new carrier, initial or repair, while it would come from an unclaimed leaf.
+- It MUST NOT deliver a Welcome that consumes a private KeyPackage through the transport binding's Welcome delivery.
+  Members of other accounts that the same Commit added get their Welcomes through the binding as usual.
+- Before creating a new sibling Welcome app event or handing it off for delivery as an MLS application message,
+  the sender establishes that the Add that produced the Welcome is on the selected branch of its state for the chat
+  the Welcome joins. It retains or can reconstruct the Welcome's association to that Add across restarts
+  ([../protocol-core/durability.md](../protocol-core/durability.md), "Recoverable protocol facts"). A founding Add
+  Commit cannot lose branch selection: the creator is the only member of its epoch-0 parent, so no other member can
+  make a competing Commit there ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md),
+  "Publish obligation"). Its sibling Welcomes need no originating-Commit selection check.
+- An Add that is merely deferred may be selected again, so its Welcome is held. A terminally ineligible Add ends that
+  Welcome's delivery obligation permanently; the sender keeps that condition across restarts. It also stops new
+  deliveries of the old Welcome when the chat is disbanded, its local copy is discarded, or recovery is
+  `Unrecoverable`. Temporarily unavailable or still-settling state, or an origin it cannot establish, holds new
+  delivery instead of treating absence of evidence as a terminal loss.
+- A sibling Welcome already handed off as an MLS application message follows the active transport binding's
+  publication rules, including its remaining attempts after restart. The origin check does not recall or cancel that
+  message. It can therefore arrive after its chat's Add has lost branch selection. A join that already consumed the
+  KeyPackage is not undone ("Receiving a sibling Welcome").
+
+### Resending a published sibling Welcome
+
+The original adder retains, or can reconstruct, the exact encoded sibling Welcome body, including its MLS Welcome,
+private KeyPackage reference and relay list, and its private KeyPackage expiry. It retains this repair obligation until
+that private KeyPackage expires, the target is gone for it, or the completion rule below ends repair of that Welcome. It SHOULD repair a lost delivery by sending that Welcome again under the
+following rules; this repair creates no new Add and consumes no new KeyPackage. The old-chat gap-filling setting governs
+starting new automatic Adds ([Filling a missing chat](#filling-a-missing-chat)); turning it off does not cancel a Welcome
+from an already admitted Add. Resending creates no new history offer or backfill obligation
+([account-sync.md](./account-sync.md#history-deliveries), "History deliveries").
+
+- When a carrier's publication is first accepted, the sender records that time by its own clock, and keeps the latest
+  such time for the Welcome across restarts. A carrier whose publication obligation ends with no accepted target records
+  nothing and leaves the Welcome where it was: an initial delivery still owed, or a repair still due. A Welcome with no
+  recorded time, such as one published before a client supported this section, is not repaired.
+- The Welcome is due again once the target's last activity ([Heartbeats](#heartbeats)) is at least 600 seconds after
+  that recorded time: the target was running ten minutes after the Welcome went out. Last activity counts only
+  heartbeats, which a device sends about once an hour, so a repair can come up to an hour after the target is back,
+  later by however far the target's clock runs behind the sender's. A target that never runs again is never sent the
+  Welcome again.
+- When it is due, the sender checks the selected chat tree. A matching target-device leaf whose MLS
+  `leaf_node_source` has advanced to `update` or `commit` is positive participation evidence and completes repair of that retained Welcome.
+  A matching tagged `key_package` leaf is inconclusive: the Add installed that leaf before the target could consume
+  the Welcome. Only a leaf attributed to this target by the current roster's tag keys counts. An unreadable or
+  still-settling selected tree holds repair. Historical tag keys reserved for gone-slot cleanup do not establish
+  current participation.
+- Every new delivery passes [Sending a sibling Welcome](#sending-a-sibling-welcome)'s origin and readiness checks and
+  remains within the retained private KeyPackage's lifetime. Existing gone-slot and local-removal exclusions still
+  apply; a target that is `leaving` or `moved`, whose current tag key is unavailable, or whose link this sender approved
+  is still pending cannot begin a new delivery. These checks do not depend on the target's old-chat gap-filling setting.
+  The sender MUST NOT create another carrier while any earlier carrier of this Welcome has an unresolved outcome or
+  outstanding publication targets from its snapshotted target list. Those targets may finish the identical
+  already-handed-off carrier under the active transport binding's publication rules even while new delivery is held
+  (on Nostr, [Publish targets and acknowledgements](../transports/nostr.md#publish-targets-and-acknowledgements)). A due
+  repair uses the same retained body in a fresh sibling Welcome carrier. Completing repair of this Welcome is not a
+  permanent assertion of membership or a new receipt; any future missing membership follows the existing Add policy.
+
+A new carrier MUST have a fresh app event identity. When that identity depends on its creation timestamp, a client
+whose wall clock cannot advance beyond the timestamps of its previously prepared carriers holds new preparation until
+it can, without inventing a future timestamp. An already
+reserved, unexposed carrier can be retried unchanged, and already-handed-off targets still settle independently.
+
+This repair is best effort. Last activity proves neither that the target read the Welcome nor that it was lost: a
+heartbeat that arrives late, a target whose clock runs ahead, or a target that joined but has not yet updated its leaf
+can make a Welcome due again. The target drops such a duplicate, because joining consumed the private KeyPackage it
+names ([Receiving a sibling Welcome](#receiving-a-sibling-welcome)). No receipt, challenge, freshness window,
+expired-KeyPackage removal/re-add, or duplicate-leaf cleanup is added by this flow.
+
+### Receiving a sibling Welcome
+
+A device reads a sibling Welcome only from the device group it trusts ([Trust](#trust)), and ignores the kind in any
+other group. It drops one unless:
+
+- its content decodes exactly as [Message](#message) gives it: `version` `1`, `2` or `3`, a `welcome` whose
+  `wire_format` is `mls_welcome`, and no bytes left over; for version 3, each `OptionalBytes32` `present` byte and `confirmed` is
+  `0` or `1`, `confirmed` is `0` beside an `invitation_generation`, and `inviter` is present or `confirmed` is `1`; whether an
+  `inviter` counts is decided only when the fields are used ([Receiving forwarded fields](#receiving-forwarded-fields));
+- `relays` holds one to 16 entries, none repeated after validation, each valid under the active binding's rules;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it, as that leaf was in the epoch the message was sent in, carries a device tag that reads as
+  `from`'s, as for a request or a hand-off ([Receiving](#receiving));
+- `key_package_ref` names a private KeyPackage this device issued and recorded as handed to `from`
+  ([Issuing](#issuing)), whose private key material it still keeps.
+
+A device that passes these checks joins through the receiving flow of
+[../protocol-core/joining.md](../protocol-core/joining.md), with the sibling Welcome as the delivery. The device
+group's authenticated sender, a device of this account, addresses it to this account (step 1), and `to` to this device
+within it. `key_package_ref` names the KeyPackage step 2 checks, and step 3 decodes the `welcome` field. A sibling
+Welcome dropped for its `to` or its `key_package_ref` consumes no KeyPackage. Joining consumes that KeyPackage: the
+issuer deletes its private key material and its record of the hand-off along with the other consumed KeyPackage state
+(steps 11 and 12).
+
+A device joins only from a sibling Welcome whose app payload was delivered to it
+([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"). Once joining has
+consumed the KeyPackage, the join stands: a branch selection that later withdraws that payload does not undo it, as a
+withdrawn update does not undo small state ([account-sync.md](account-sync.md), "Convergence and retained history").
+
+A KeyPackage handed over again at the cap ([Issuing](#issuing)) goes to the same sibling, so the record still names the
+slot that holds it.
+
+## Devices
+
+A device shows its user the account's devices from its device group's roster, for example on a Devices screen. It never
+shows them to anyone else ([Keeping it out of sight](#keeping-it-out-of-sight)).
+
+### Device settings
+
+Any device MAY change any device's three settings after linking, its own included
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State"). A change is one roster
+Commit made by the editing device, with the roster update inline. A client changing only some settings MUST preserve
+the others from the state it commits to, rather than restore values from an earlier view.
+
+- Turning "add to all my chats" on permits eligible Adds under
+  [Adding the new device to chats](#adding-the-new-device-to-chats) while that flow is still adding, and under
+  [Filling a missing chat](#filling-a-missing-chat), subject to each flow's conditions. Turning it off stops both flows
+  from beginning further automatic Add attempts and never removes the device from a joined chat or excludes a sibling
+  from a newly created chat ([Creating a chat](#creating-a-chat)). An Add already admitted for outbound processing may
+  complete under the ordinary group and publication rules, even while awaiting preparation, publication or settlement.
+  Turning the setting off does not cancel that Add or make it invalid. Its history is governed separately by
+  "bring chat history" below.
+- "Bring chat history" governs future sibling Adds and histories still owed, as
+  [account-sync.md](./account-sync.md) ("History deliveries") defines. Turning it on creates no new obligation for a
+  chat the device already joined and does not restore history forgotten while it was off.
+- "Keep while inactive" prevents removal for inactivity ([Inactive devices](#inactive-devices)). It does not prevent
+  the `inactive` mark, cancel a user-decided removal or the device's sign-out, or change its status.
+
+A settings edit and a rename use the same user-edit provenance and recovery below. Concurrent user edits of the same
+device follow branch selection as whole edits, even when they changed different settings; they are not merged by field.
+
+### Labels, clients and platforms
+
+A device entry's `label`, `client` and `platform`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State") are what a user reads to tell
+the devices apart.
+
+- Every device entry MUST be created with a `rename_id` of 16 bytes the creating device draws from a cryptographically
+  secure random source: the creating device's entry in the founding state, and the entry of every device added, by the
+  founding Add ("Creating the device group") or a later link ("Approving").
+  Only a user edit of the label or settings changes it afterwards. An id a device kept can show up in the roster
+  again only when a fork brings back an earlier state, which is what user-edit recovery below reads.
+- Any device MAY change any device entry's `label`, its own included. A user edit of a label or settings MUST be an
+  inline roster update in a Commit made by the editing device; it MUST NOT be a standalone proposal. The requirement
+  to use the editing device's own inline Commit is a sender rule; receivers do not reject a proposal or Commit solely
+  for violating it. The edit MUST write a fresh `rename_id` drawn the same way, one that clears `label` included. It
+  changes only the intended label or settings and this id. Every non-user update MUST preserve `label`, `settings` and
+  `rename_id`.
+- A device SHOULD keep its own entry's `client` and `platform` current. `client` is the client name it puts in its
+  KeyPackages' `client` tag ([../transports/nostr.md](../transports/nostr.md), "KeyPackage publication"); `platform`
+  is a short name for the platform it runs on, such as `iOS`. Either is empty when the device has none. It SHOULD
+  write them in the update that announces its next KeyPackage ([Slot announcements](#slot-announcements)) rather than
+  in an update of their own, so a changed value reaches the roster with that announcement. Publishing a KeyPackage its
+  entry already names makes no announcement. A user edit never carries them. A device does not write another device's
+  `client` or `platform`.
+- A device SHOULD build a roster update from the roster of the state it commits to, and SHOULD NOT send one while an
+  earlier Commit of its own in the device group is unresolved. An update sets whole entries, so one built from an
+  older roster puts back whatever changed in that entry since.
+
+A user edit can lose a fork ([../protocol-core/convergence.md](../protocol-core/convergence.md)) to a sibling's
+Commit. The entry's `rename_id` tells the editing device where its edit stands; values and Commits do not, since two
+edits can set the same values and a lost Commit can be sent again as a different Commit. From before sending its own
+Commit with the inline edit, the editing device retains or can reconstruct the label and three settings it intends,
+and these ids:
+
+- as written, the `rename_id` the edit writes, and each one it writes when it makes the edit again;
+- as replaced, the `rename_id` the entry held when the device built the edit. If it still keeps an earlier edit of
+  that device and the entry holds an id that earlier edit kept, as written or replaced, it also keeps as replaced
+  every id the earlier edit kept, both kinds. The new edit takes the earlier one's place.
+
+A label-only rename retained before settings edits were supported remains label-only: its recovery MUST NOT invent
+settings. A device keeps an edit until another user edit of that device stands or the device leaves the roster. It
+reads its standing only while its device group is `Stable`
+([../protocol-core/group-state.md](../protocol-core/group-state.md)) and no Commit of its own there is unresolved,
+from the entry's `rename_id` in canonical roster state, taking the first match:
+
+- One kept as written: the edit applied. Keep it recoverable if a later fork drops it.
+- One kept as replaced: the edit lost and no other user edit followed. Make it again with a fresh `rename_id`,
+  unless the roster already holds every value it intends. Preserve all unrelated entry fields from current state.
+- Any other: another user edit won and stands; drop the local edit.
+
+Before accepting a further edit of that device, a client first reads the earlier edit's standing under the settled
+conditions above. If the supplied values match this roster and cover every pending difference of a lost edit, it
+MUST cancel that lost edit before trying to make it again. Choosing the displayed label therefore cannot leave an
+opposite lost label to apply later, but it cannot discard a lost setting the user did not supply, or the converse.
+
+Otherwise the client MUST try the existing recovery first. A lost edit whose intended values already match the
+roster is settled for accepting later edits, although it can remain retained for recovery after a later fork. An
+applied retained edit is settled too and MUST NOT alone hold up another edit. If the earlier intention is still
+unresolved, including while a Commit that makes it again is unresolved, the client does not accept the later edit;
+the user can try again once it resolves.
+
+Only once the earlier intention is settled, dropped or cancelled does the client re-read the roster and resolve
+supplied values against it; omitted settings preserve these current values. A request that still matches that roster
+is a no-op and sends no new update. It keeps a retained applied edit recoverable. A successful no-op MUST NOT leave an
+opposite intention that can later change the saved values. A save that matched an earlier screen can require an update
+after recovery changed the roster.
+
+**Development transition.** Every client writing post-link settings in a device group MUST adopt the user-edit
+`rename_id` rule before using this feature. Clients based on the earlier draft, which required settings changes to
+preserve this id, must update first. The encoding is unchanged; retained label-only renames still recover only labels.
+
+A device MAY forget the oldest `rename_id`s kept for one device, but never its newest written id or the id held when
+it last built the edit or made it again: while the edit has not applied and no other user edit followed, the roster
+holds that one. A forgotten id reads as another edit's, so drop the local edit rather than overwrite one it cannot
+place. Show the user the label and settings held by the roster.
+
+### Heartbeats
+
+| Kind  | Message   | Sent by                   |
+| ----- | --------- | ------------------------- |
+| `457` | Heartbeat | every device in the group |
+
+A heartbeat is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+sent as an MLS application message in the device group. Its content is `{"v":1}`, written without whitespace, and its
+`created_at` is when it was sent. It says that the device that sent it is running.
+
+**Sending.** While it runs, a device sends a heartbeat in the device group it trusts ([Trust](#trust)) whenever it has
+sent none there or its last heartbeat there is at least one hour old, whether it has just started or has been running
+for a while. It keeps the time of its last heartbeat across restarts. A heartbeat that no relay accepted is not its last
+one, so the device sends again at its next chance. It sends one only while the roster lists it and its own leaf in the
+device group carries a device tag that reads as its slot ([Matching leaves to devices](#matching-leaves-to-devices)),
+since its siblings count no heartbeat from an untagged leaf. A heartbeat never asks for a push notification and never
+wakes a sibling.
+
+**Receiving.** A device reads heartbeats only in the device group it trusts, and ignores kind `457` in any other group.
+A heartbeat counts for a sibling only when the leaf that sent it, in the tree of the epoch the device holds when it
+reads it, carries a device tag that reads as that sibling's
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"): it opens under the
+roster's `leaf_tag_key`, names a slot that is a device in the roster, and verifies under that entry's
+`tag_signature_key`. A heartbeat from an earlier epoch, from an unclaimed leaf, or from a leaf whose tag names a
+`removed` slot counts for no device; that sibling's next heartbeat counts instead. A device that reads a sibling's
+heartbeats only after it has applied a later Commit, as when it catches up after an absence, therefore counts none of
+them, and can show that sibling as inactive until it sends again ([Inactive devices](#inactive-devices)). A receiver
+enforces no rate: every heartbeat that meets these rules counts.
+
+A receiver does not read a heartbeat's content, so that a later version can add to it without older devices dropping
+its heartbeats and judging its sender inactive.
+
+**Last activity.** A sibling's last activity is the latest, over the heartbeats that counted for it, of each
+heartbeat's `created_at` or the time the device read it, whichever is earlier, in seconds since the Unix epoch. A
+heartbeat only ever moves it later. A heartbeat never dates activity after the device read it, and one delivered late
+counts at its `created_at`, not when it arrived. Neither holds the sender's clock to the truth: a sender whose clock
+runs behind looks less recently active than it is, which errs toward showing it inactive, and a sender whose clock
+runs ahead, read late, can look active as late as the read, which errs toward hiding a sibling that stopped. A device
+keeps each sibling's last activity, and when it first found that sibling in its roster, across restarts, for that
+sibling's roster entry: its slot together with the entry's `linked_at`. A device MUST NOT carry either from one entry to
+another: once its roster lists the slot with a different `linked_at`, the device first finds that sibling then, even if
+it never held a roster without the slot. A device MAY forget both once its roster no longer lists the entry. A fork that
+brings back an entry the device saw removed brings back the same sibling, so if the device kept that entry's times,
+they still apply. Each device keeps its own; nothing about it is written to the roster.
+
+### Inactive devices
+
+A device treats a sibling as inactive once 30 days have passed, by its own clock, since the later of that sibling's last
+activity and when the device first found that sibling in its roster, or, while no heartbeat of the sibling has
+counted, since it first found it. A device that has just joined the device group, or a sibling that was just linked,
+therefore gets 30 days before it shows as inactive. A device never treats itself as inactive. A device SHOULD show its
+user which siblings are inactive.
+
+This judgment only decides what a device shows. A device that comes back after a long absence during which a Commit
+moved its device group on counts none of the heartbeats sent before that Commit ([Heartbeats](#heartbeats)), so it sees
+siblings as inactive until they send heartbeats it counts, and its view says little about who is still running. A
+device MUST NOT set a device entry's status to `inactive`
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)) from it; it uses the inactivity clock
+below.
+
+#### Marking and removing inactive devices
+
+A device is caught up with its device group when it has fetched and processed every event of the group its relays hold
+up to now, is missing no Commit, and can commit there. Events from before the last restart of its inactivity clocks
+(below) that it has given up fetching do not count, since none of them could move a clock. A device keeps an inactivity
+clock for each sibling, by its own clock, and counts time only while it is caught up: when more than 24 hours pass
+between two times it finds itself caught up, or its clock goes back, it restarts every sibling's inactivity clock at
+the second. Shorter gaps count as running time. When it gives up fetching events from after that restart, it restarts
+every sibling's inactivity clock at the second too.
+
+A sibling's inactivity clock also restarts when the device first finds the sibling's entry in its roster, when it
+counts a heartbeat that moves the sibling's last activity later ([Heartbeats](#heartbeats)), at the time it counts it
+rather than the heartbeat's own time, and when it sees the sibling's entry go from `inactive` to `active`. It never
+runs from earlier than the judgment above, so a device never marks a sibling it would not show as inactive.
+
+A device acts on these clocks only while it is caught up, and makes at most one of the Commits below at a time:
+
+- Once a sibling's inactivity clock reaches 30 days, the device commits the sibling's entry with status `inactive`
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), every other field unchanged. It
+  marks no entry that is `leaving` or `moved` or has no `tag_signature_key`, and no slot whose removal it decided.
+- A device that finds its own entry `inactive` sets it back to `active`, every other field unchanged, once it is caught
+  up and has sent a heartbeat no earlier than its inactivity clocks last restarted, so the heartbeat it sends as it
+  comes back counts.
+- Once a sibling's inactivity clock reaches 90 days, the device removes it with [the removal
+  Commit](#the-removal-commit), `rejected_at` the time it removes it, provided the roster still lists the sibling as
+  `inactive` with its "keep while inactive" setting off ([Device settings](#device-settings)). Unlike a user's removal,
+  it keeps no decision: it checks all of these conditions again before each attempt, and a removal that branch
+  selection drops is made again only if they still hold. A user's removal of the slot is unaffected and takes
+  precedence. Nobody deletes the removed device's slot ([The removed device's slot](#the-removed-devices-slot)).
+
+Siblings that mark or remove at the same time fork, and branch selection keeps one Commit. A device MAY make a mark or
+clearing that branch selection dropped again while the entry is still as it found it: that repeats a decision it made
+while caught up, and decides no removal. A mark that a later fork drops can restart that sibling's clock on the devices
+that saw it, delaying the next mark. A device that applies a mark
+and its clearing between two of its looks, and counts the cleared device's heartbeat only after the clearing, can mark
+it once more; that device then clears it again.
+
+A device catches up only as far back as its relays and its own recovery reach. A device that comes back after its device
+group took a Commit it can no longer fetch cannot catch up: it cannot see or clear its mark, and its siblings remove it
+at 90 days like one that never came back. Such a device SHOULD offer its user the [explicit local
+reset](#explicit-local-reset) and a fresh link. Once removed, its slot cannot link again until its `removed` record
+expires. A device whose other devices are each closed for more than 24 hours at a time never marks or removes any of
+them. Because a device removed for inactivity keeps its slot, inviters can still select a KeyPackage it published
+there until that KeyPackage's `Lifetime` ends ([../foundation/key-packages.md](../foundation/key-packages.md)); after
+90 days without running, the device has published none that is still valid unless it kept running without reaching
+its device group.
+
+## Security considerations
+
+- A sibling Welcome's `inviter` and `confirmed` are the sending device's assertion ([Receiving forwarded
+  fields](#receiving-forwarded-fields)). A stolen linked device can name any inviter on a chat it adds a sibling to,
+  and with a Welcome that omits an invitation generation show the chat confirmed there, unless the receiver's local
+  policy holds it pending; no invitation decision can later undo that confirmation.
+- Every device in the device group is the same account, and that account is the group's only admin, so any device can
+  add or remove another and edit any roster entry. A stolen linked device can do the same until it is removed.
+- Unlinking is the removed device's own work ([On the removed device](#on-the-removed-device)). It can still sign as the
+  account, with the account's signing key or a session with a remote signer, so its siblings cannot stop what it
+  publishes: they remove its leaves where they can, and the device that decided the removal deletes its slot. A removed
+  device that does not realize its removal when the removing Commit reaches it, for example because a local failure
+  interrupts that, keeps acting for the account until it next does.
+- The cleanup after a device the roster no longer lists reaches only the leaves a device can read: those tagged under a
+  key it still keeps from a roster state it applied (for 30 days, and perhaps only the four most recently listed for one
+  slot), or under the key a `removed` record carries ([Devices the roster no longer
+  lists](#devices-the-roster-no-longer-lists)). A gone device's leaf that no remaining device reads stays in its groups
+  and can still read them. Once a roster state the deciding device applied has held the lone `removed` record it made
+  after a failed link, it does not make that record again ([The removal Commit](#the-removal-commit)). A device that
+  never applied a state holding it, such as one on a branch that dropped it, does not learn the key from it, and once
+  the record is gone the slot reads as a sign-in again. Missing that key is the lesser failure: a record made again
+  whenever it is dropped could be made against every pass that drops old `removed` records.
+- Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
+  siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
+  outright.
+- A [move](#moving-between-device-groups) authenticates the destination by a new code-confirmed link, not by the old
+  roster. Old members keep whatever secrets and content they already hold; changing trust does not revoke those or
+  recall old traffic. A `moved` entry is a roster decision, not proof that another device completed a move: any linked
+  device can already edit the roster or remove that old leaf. It grants no destination authority.
+- [Explicit local reset](#explicit-local-reset) discards only this device's trust and local group continuity. It gives
+  no other device admission authority, erases no secrets held by peers, bypasses no removal, and proves no permanent
+  loss. A prior-linked-slot observation is display context, never authentication of a current publication.
+- The trust rule is what keeps someone holding the account's signing key from pulling a device into a device group they
+  control. They can read the group id in the existing device's Confirm, but cannot sign as the leaf it names. Requiring
+  `0x800e` is a marker for hiding the group, not evidence that the account's devices created it.
+- Between the existing device's Confirm and the new device's own, neither the group id nor the KeyPackage is reserved
+  yet. A Welcome in that window into a group that does not require `0x800e`, under that id or adding the KeyPackage,
+  joins as an ordinary group, and the link then fails because the id is taken or the KeyPackage used up. A Welcome into
+  a group that requires `0x800e` is still refused, since no link names it yet, and uses up neither. This is denial of
+  service only, like a forged Cancel ([device-pairing.md](./device-pairing.md), "Security considerations").
+- A device that trusts no device group cannot see one that another device of the account already has, such as one linked
+  from another sign-in. When it approves a link it founds a second device group. Moving one device does not merge those
+  groups ([Moving between device groups](#moving-between-device-groups)).
+- Holding the account's signing key never authenticates a device. A device enters the device group only under a link
+  whose code both users compared ([device-pairing.md](./device-pairing.md), "Threat model"); a KeyPackage published
+  under the account is not enough.
+- A new sign-in is only ever a question. Holding the account's signing key lets anyone publish into a new slot, but a
+  sign-in never links itself: only a link the user confirms adds a device.
+- A device that gains these rules while someone holding the account's signing key is already signed in finds that
+  sign-in on its first check, and asks about it as a device that was there before, not as a new sign-in. The user still
+  sees it listed.
+- Someone holding the account's signing key can publish into many new slots, and each is a sign-in to answer.
+- Only the account's devices, including removed ones, can read device tags. Other members of a group see opaque bytes
+  that differ in every KeyPackage. A tag's presence shows that the account has linked devices, which its KeyPackage
+  publications already show.
+- An announcement is evidence only among devices that trust the same device group. Someone holding the account's
+  signing key can publish into any slot, but cannot write the roster of a device group they are not in.
+- Private KeyPackages are why holding the account's signing key never lets someone join a chat as a sibling: a device
+  joins through one of its private KeyPackages only from a sibling Welcome sent inside its device group, by the tagged
+  sibling it handed that KeyPackage to. Someone holding only the account's signing key is in neither. A device that
+  creates a chat under this feature follows the same private-KeyPackage rule
+  ([Creating a chat](#creating-a-chat)), even while it has no device group; clients without this feature retain the
+  generic founding exemption in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)
+  ("Sender rules").
+- A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
+  another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
+- Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records
+  it. One device in the device group therefore cannot file its KeyPackages under a sibling's slot, or make a request
+  in a sibling's name that resets what was handed that sibling, without first rewriting that sibling's roster entry,
+  which the roster lets any device do ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "Security considerations"). Someone holding only the account's signing key has neither `leaf_tag_key` nor a tag
+  signature key. A removed device can tag only with its own old slot, which is no longer a roster device.
+- A rejection, like a KeyPackage a device finds in its own slot that it did not make, only warns the user; it does not
+  stop whoever holds the account's signing key ([Rejections](#rejections)). Clients say so, and do not present the
+  warning as protection.
+- Whoever holds the account's signing key can replace the KeyPackage in the slot of a device that is rarely opened.
+  Other accounts' inviters can add that KeyPackage until the device next runs, replaces it and warns its user, and the
+  leaves that joined with it stay in their groups. Only that device warns: its siblings do not act on a KeyPackage in
+  its slot.

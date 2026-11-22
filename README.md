@@ -27,6 +27,14 @@ transports MUST support redundant delivery so a group does not depend on one ser
 The protocol also tries to expose as little metadata as the design allows. Perfect metadata privacy is not possible in a
 decentralized messaging system, but Marmot SHOULD avoid new metadata leaks unless a feature cannot work without them.
 
+## Security model
+
+The [threat model and security considerations](./security-considerations.md) describe attacker capabilities, trust
+boundaries, assumptions and residual risks across the protocol. Its [detailed scenario catalogue](./security-considerations.md#detailed-scenario-catalogue)
+records individual attacks, mitigations, residual risks and evidence status for the current protocol, with
+[open review questions](./security-considerations.md#questions-for-maintainer-review) where the owning rules need clarification.
+The document summarizes the owning rules and is non-normative.
+
 ## Review Guidance
 
 When reviewing changes to the spec, focus on these questions:
@@ -43,13 +51,14 @@ The canonical directory tree and per-surface ownership rules live in [layout.md]
 where new protocol text belongs. The writing rules behind that split live in [principles.md](./principles.md). Use
 [mip-coverage.md](./mip-coverage.md) only as a historical map from the deprecated MIPs to this spec's surfaces, and
 [implementation-model.md](./implementation-model.md) for the non-normative mapping to this repository's code.
+[changes.md](./changes.md) lists the changes implementers need to know about, newest first.
 
 The surfaces, each with its own section README (human orientation) and `AGENTS.md` (agent operating rules):
 
 - [foundation/](./foundation/README.md) - stable Marmot invariants: identity, encodings, registries, errors.
 - [protocol-core/](./protocol-core/README.md) - required group flows and group-state transitions.
 - [app-components/](./app-components/README.md) - versioned MLS `app_data_dictionary` component bytes.
-- [transports/](./transports/README.md) - how Marmot bytes move over a network (Nostr, QUIC).
+- [transports/](./transports/README.md) - how Marmot bytes move over a network (Nostr).
 - [features/](./features/README.md) - optional or user-visible flows that span surfaces.
 
 Non-normative work in progress lives in [ideas/](./ideas/README.md): future protocol directions published for early
@@ -65,3 +74,8 @@ feedback. Nothing there is part of the protocol.
 - A feature SHOULD usually point to one app component or add one component version.
 - A feature SHOULD name every surface it changes.
 - App component docs own component bytes. Feature docs own user-visible flows and the surfaces those flows touch.
+
+## Documentation checks
+
+Run `python3 scripts/check_docs.py` to check local Markdown links and anchors without network access.
+The docs workflow also runs `python3 -m unittest discover -s scripts -p 'test_*.py'` to check the validator.

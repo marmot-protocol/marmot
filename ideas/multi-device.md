@@ -1,6 +1,7 @@
 # Multi-device
 
-Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. See [README.md](./README.md).
+Status: idea (non-normative). Nothing here is part of the Marmot protocol; parts that have moved into the spec link to
+it. See [README.md](./README.md).
 
 This idea covers using one Marmot account on several devices: signing in on a new device, linking it to the devices you
 already have, getting invites on every device, and managing or removing devices later. It describes the experience and
@@ -21,7 +22,7 @@ have, without a server that controls the device list.
   KeyPackage it put in its public slot, and hands them private single-use KeyPackages. Siblings add each other to chats
   with those, never with whatever relays show for the slot.
 - **A new sign-in is noticed, then approved.** When a new device publishes a KeyPackage under your key, your other
-  devices ask "Was this you?" You approve by checking that the same four words appear on both screens, and confirming
+  devices ask "Was this you?" You approve by checking that the same seven emoji appear on both screens, and confirming
   on each.
 - **Invites reach every device.** Inviters add all of your fresh devices, and your devices fill in any that were missed.
 - **Any of your devices can remove any other.** Removal takes the device out of your chats and the device group and
@@ -42,7 +43,8 @@ have, without a server that controls the device list.
 | Allocation | The private KeyPackages one device has handed to one particular sibling. |
 | Slot announcement | A roster update in which a device records which KeyPackage it put in its slot. |
 | Device group | The hidden MLS group containing only the account's linked devices. |
-| Roster | The device group's record of linked devices, their settings and current KeyPackages, and rejected sign-ins. It is group state, changed only by commits. |
+| Roster | The device group's record of linked devices (their settings, current KeyPackages, tag signature keys and history keys), rejected sign-ins, the key that seals device tags, and backup details. It is group state, changed only by commits. |
+| Device tag | A small sealed tag in each leaf a linked device creates, naming that device. Only the account's devices can read it, including a removed one. |
 | Sibling | Another device on the same account. |
 | Label | The name Alice gives a device when she links it, such as "Laptop". Kept only in the roster, never in KeyPackages or chats. |
 
@@ -56,9 +58,9 @@ have, without a server that controls the device list.
   siblings only add each other with private KeyPackages handed over inside the device group, someone with the nsec
   can't get into your existing chats by replacing a linked device's public KeyPackage.
 - **Detection is the mitigation.** A KeyPackage in a slot your devices don't know about produces a visible prompt once
-  they see it. Either you skipped linking, or someone else has your key and you now know. A KeyPackage in a known slot
-  that its device never announced produces a warning the same way. Detection is not guaranteed: a relay can hide a
-  KeyPackage from your devices while showing it to other people.
+  they see it. Either you skipped linking, or someone else has your key and you now know. A KeyPackage in a device's
+  own slot that the device didn't make produces a warning on that device. Detection is not guaranteed: a relay can hide
+  a KeyPackage from your devices while showing it to other people.
 - **A stolen linked device is inside the circle.** Any device can remove any other, and no device is primary. Someone
   holding Alice's unlocked, linked phone can read what that phone can read, and can remove her other devices before
   she removes it. App lock is what stands in the way. Nothing in this design lets one device overrule another.
@@ -80,19 +82,17 @@ yet.](multi-device/scene-1-first-device.svg)
 
 **What Alice sees:** nothing about devices. She signs in and uses Marmot.
 
-**Underneath:** the iPhone picks a random slot id and publishes its KeyPackage there. It republishes into that same slot
-after its KeyPackage is used for a Welcome, when something it advertises changes, and weekly while the app runs, so
-the slot's age shows the installation still exists. It also watches the account's other slots, so it
-notices when a new one appears, and its own slot. A KeyPackage in its own slot that it didn't publish means someone
-else is signing as Alice. With no siblings yet, that self-check is the only protection a single device has.
+**Underneath:** the iPhone publishes its KeyPackage into a slot of its own and keeps it fresh. How slots, refreshing,
+and the `client` tag work is spec text: [../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and
+publication slots") and [../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion").
 
-The KeyPackage event carries the standard Nostr `client` tag (for example `["client", "whitenoise"]`) and nothing else
-about the device: no model, platform, or label. The tag goes on KeyPackage events only, never on gift wraps or group
-messages.
+The iPhone also watches the account's other slots, so it notices when a new one appears, and its own slot. A
+KeyPackage in its own slot that it didn't publish means someone else is signing as Alice. With no siblings yet, that
+self-check is the only protection a single device has.
 
-Slots are not deterministic. Nothing ties a slot id to the hardware, the account key, or an earlier install. If Alice
-deletes the app and installs it again on the same iPhone, the new installation picks a new slot and has no link to the
-old one. To her other devices it is a new device, and the old slot is simply a device that stopped republishing.
+If Alice deletes the app and installs it again on the same iPhone, the new installation gets a new slot with no link
+to the old one. To her other devices it is a new device, and the old slot is simply a device that stopped
+republishing.
 
 **Decision:** the device group is created only when a second device is linked. With one device there is nothing to
 coordinate. It also keeps "two device groups for one account" rare (Scene 3).
@@ -100,7 +100,7 @@ coordinate. It also keeps "two device groups for one account" rare (Scene 3).
 ## Scene 2: Signing in on a new device
 
 ![The new laptop publishes its KeyPackage, sees another device whose KeyPackage was refreshed two hours ago, and asks
-whether Alice still has it. On Yes it sends a pairing request and waits; four words appear once the other device
+whether Alice still has it. On Yes it sends a pairing request and waits; seven emoji appear once the other device
 answers.](multi-device/scene-2-new-sign-in.svg)
 
 **What Alice sees:**
@@ -108,12 +108,12 @@ answers.](multi-device/scene-2-new-sign-in.svg)
 1. She signs in on her laptop with her nsec or a signer.
 2. The laptop says she's already signed in on another device (last seen 2 hours ago) and asks whether she still has it.
 3. **Yes:** the laptop asks her to open Marmot on a device she's already signed in on. When that device answers, both
-   screens show the same four words (Scene 4).
+   screens show the same seven emoji (Scene 4).
 4. **No, start fresh:** Scene 3.
 
 **Underneath:** the laptop publishes its KeyPackage right away. That is what lets the iPhone notice it. The laptop
 learns there is another device from the account's other fresh slots. On **Yes**, it also sends a pairing request that
-names its KeyPackage and starts the exchange that produces the four words.
+names its KeyPackage and starts the exchange that produces the seven emoji.
 
 **What "last seen" means here:** the only public sign of another device is when it last republished its KeyPackage.
 Group messages are signed with throwaway keys, so they can't be tied to Alice or to a device. "Last seen 2 hours ago"
@@ -123,18 +123,28 @@ the installation still exists, not that Alice is using it. Once a device is link
 its siblings better liveness (the "last active" on the Devices screen in Scene 7), but a new sign-in outside the device
 group only ever sees KeyPackage refreshes.
 
-**The code:** four words from a fixed 2,048-word list (about 44 bits). They come from a short exchange between the two
-devices, not from anything published:
+**The code:** seven emoji from Matrix's 64-symbol verification set, about 42 bits, for example 🐢 🍎 🚲 🌙 🔑 🎸 🐙.
+Pictures need no translation. A word list would not work across languages: a phone set to Spanish and a laptop set to
+English would show different words for the same code. Alice compares the pictures themselves. Each emoji also has a
+short label in the device's language, for screen readers, but labels differ between languages, so they aren't what she
+compares. For anyone who can't compare pictures, both devices switch to Matrix's decimal method instead: three numbers
+from 1000 to 9191, about 39 bits. It is a separate, shorter code taken from the same exchange, not the emoji written as
+numbers. The code comes from a short exchange between the two devices, not from anything published:
 
 1. The laptop's pairing request locks in a fresh one-time key without revealing it.
 2. The other device answers with its own fresh one-time key.
 3. The laptop reveals its key, and the other device checks it is the one the laptop locked in.
-4. Both devices turn the two keys into the same four words, mixed with the session, the account, the laptop's exact
-   KeyPackage, and the other device's identity.
+4. Both devices turn the two keys into the same seven emoji (or the same three numbers), mixed with the session, the
+   account, the laptop's exact KeyPackage, and the other device's identity.
 
 Each side commits to its key before it sees the other's, so nobody can steer the result, including someone sitting
-in the middle. This is the same idea as Matrix's emoji verification. We would reuse a reviewed design rather than
-invent one.
+in the middle. This is the same idea as Matrix's emoji verification. We reuse Matrix's display as it is: its emoji
+table, its translated labels for screen readers, and its decimal method. We don't adopt Matrix's protocol, and the
+exchange itself will be a reviewed design chosen with the spec rather than one we invent.
+
+**Why seven emoji is enough:** an attacker gets one guess per session, and a wrong guess shows up as a mismatch on
+screen. 42 bits makes that guess about a 1 in 4 trillion chance, and the decimal method's 39 bits about 1 in 550
+billion. Either is plenty for a check that can't be retried silently.
 
 **How the messages travel:** as gift wraps addressed to Alice's own account, because the laptop isn't in the device
 group yet. Anyone with her nsec can read them too. That is fine: the exchange assumes someone can read and replace
@@ -156,11 +166,18 @@ every message, and comparing the two screens is what catches it.
 approves on the iPad, group 1 absorbs the laptop and desktop and group 2 is deleted.](multi-device/scene-3-start-fresh.svg)
 
 **What Alice sees:** after choosing **No, start fresh**, the laptop works on its own. It is only in chats she is invited
-to from now on, and it says so: her old chats aren't available here, and people can re-invite her.
+to from now on, and it says so: her old chats aren't available here, and people can re-invite her. If she has a backup,
+she can also choose **Restore from backup** to bring back her old chats' content, read-only until she is added back
+([account-sync.md](./account-sync.md)). The first adopted
+[restore flow](../features/account-sync.md#restoring-history-from-backups) restores history only after the device
+actually joins a chat; before that, it keeps only availability metadata. The broader read-only-before-rejoin view
+above remains an idea.
 
-**Underneath:** the laptop has no device group. If one of her old devices is still alive, say an iPad in a drawer, it
-sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links it there, the laptop joins the old
-device group and is added to her old chats.
+**Underneath:** the laptop has no device group. Starting fresh answers **Not now** for the devices it found, never
+**This wasn't me**: they stay listed, nothing is rejected, and no warning appears. If one of her old devices is still
+alive, say an iPad in a drawer, it sees the laptop's slot as a new sign-in and prompts when it next runs. If Alice links
+it there, the laptop joins the old device group and is added to her old chats. If she thinks an old device is in
+someone else's hands, she answers **This wasn't me** for that one (Scene 8).
 
 Two device groups for one account only exist when both sides have linked more devices on their own, as in the figure.
 **When devices from two device groups are linked, the approving device's group absorbs the other one.** Alice's own
@@ -176,9 +193,12 @@ approval decides which group survives.
 3. **The laptop brings the desktop in.** It already holds the desktop's private KeyPackages from their old group, so it
    adds the desktop to the surviving group with one of them, in a commit that also writes the desktop's roster entry.
    The desktop's Welcome travels through the old group, which the desktop is still in. No public KeyPackage is used.
-4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot
-   rejected in either group stays rejected, and a device linked on one side but rejected on the other stays out, with
-   Alice told why.
+4. **The two rosters combine.** Each device keeps its own settings. Rejections from both sides are kept: a slot rejected
+   in either group stays rejected, and a device linked on one side but rejected on the other stays out, with Alice told
+   why. If both groups had backups turned on, the surviving group's backup settings and recovery words are used from
+   then on. The absorbed group's backups stay where they are, sealed to the absorbed group's words, and no device
+   deletes them, so Alice is told to keep those words too ([account-sync.md](./account-sync.md)). If the two groups
+   together would have more than 20 devices, Alice unchecks some before linking.
 5. **Chats catch up.** Gap filling runs in both directions, using allocations and respecting each device's settings.
 6. **The old group closes** once every device it brought along has joined the new one. It stays around for any that
    are offline until they come back.
@@ -192,7 +212,9 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 **Trade-offs:**
 
-- Starting fresh never recovers old chats by itself. That needs backups or disaster recovery, which is separate work.
+- Starting fresh never recovers old chats by itself. The broader idea can restore old content read-only before a
+  re-invite ([account-sync.md](./account-sync.md)); the adopted first restore flow imports history only into chats
+  the device has actually joined. Getting back into an old chat needs a fresh add from someone still there.
 - The merge touches every chat both groups' devices are in, so it can take a while to finish. Progress is shown the
   same way as a single link (Scene 5).
 - A ghost leaf from a lost device stays in old chats until it is removed by Alice's devices, by inactivity rules, or by
@@ -200,15 +222,16 @@ neither is offered Link until one is finished or cancelled, the same rule as two
 
 ## Scene 4: The existing device approves
 
-![Alice's iPhone shows a New sign-in prompt with the client name, the same four-word code as the laptop, a field
-to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same words and a
+![Alice's iPhone shows a New sign-in prompt with the client name, the same seven emoji as the laptop, a field
+to name the device, two toggles, and Link device, This wasn't me, and Not now. The laptop shows the same emoji and a
 They match button.](multi-device/scene-4-approve.svg)
 
 **What Alice sees:** her iPhone notifies her of a new sign-in: the client, when it appeared, and the code. That is all
-the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same four words
+the iPhone can know, because KeyPackages carry only a client tag. She checks that the laptop shows the same seven emoji
 and confirms on both devices: **They match** on the laptop, and one of these on the iPhone:
 
-- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default:
+- **Link device.** She names the device (the label, such as "Laptop") and sets two toggles, both on by default. An
+  account can have at most 20 linked devices; linking a 21st asks her to remove one first.
   - **Add to all my chats** covers the chats her devices are already in. Chats she joins after linking reach every
     device either way, because inviters add all of her fresh devices (Scene 6).
   - **Bring chat history** covers the history of those chats.
@@ -217,7 +240,7 @@ and confirms on both devices: **They match** on the laptop, and one of these on 
   device can share its model and platform privately in the device group once it is linked.
 - **This wasn't me:** Scene 8.
 - **Not now:** the sign-in stays listed under Unrecognized sign-ins on the Devices screen (Scene 7). Linking it later
-  starts a fresh exchange from either device, with new words. No code stays valid while a sign-in waits.
+  starts a fresh exchange from either device, with new emoji. No code stays valid while a sign-in waits.
 
 **Underneath:** the iPhone noticed a KeyPackage in a slot that isn't in its roster, and the laptop's pairing request
 naming it. Once Alice confirms on both screens, each device sends a short confirmation tied to the exchange:
@@ -236,8 +259,9 @@ the laptop into a device group they control. Without the laptop's own confirmati
 - a Welcome sent to the account for a KeyPackage no roster device announced. Every device can open gift wraps addressed
   to the account, so any of them can notice this.
 
-A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Someone else
-replaced it, so it goes straight to the warning in Scene 8.
+A KeyPackage in a linked device's slot that the device never announced is not a sign-in to approve. Only that device
+acts on it: if it didn't make the KeyPackage, it replaces it and shows the warning in Scene 8 (Scene 6, "Refreshing a
+slot").
 
 **Only checked evidence counts.** Before anything raises a prompt, a device validates what it saw under the existing
 KeyPackage and Nostr transport rules; this idea adds no checks of its own. A Welcome that names an unfamiliar KeyPackage
@@ -247,28 +271,33 @@ junk. The client tag is shown in the prompt, but it is self-reported, so a new o
 
 **Why the code can't be faked:**
 
-- **Nothing to search for ahead of time.** The words depend on a key the iPhone picks during the session.
+- **Nothing to search for ahead of time.** The emoji depend on a key the iPhone picks during the session.
 - **Sitting in the middle shows.** Someone who swaps in their own one-time keys has to lock them in before seeing the
-  real ones, so the two halves produce different words and the screens don't match.
-- **One guess per session.** Each session gives an attacker about a 1 in 17 trillion chance. Sessions expire 10 minutes
+  real ones, so the two halves produce different emoji and the screens don't match.
+- **One guess per session.** Each session gives an attacker about a 1 in 4 trillion chance with emoji, or 1 in 550
+  billion with the decimal numbers. Sessions expire 10 minutes
   after the other device answers, and the number of attempts is limited.
 - **Two requests at once.** If two pairing requests arrive together, Alice's devices treat that as an anomaly and don't
   offer Link for either.
 
 **Rules of thumb:**
 
+- **Linking checks capabilities, not just the code.** A device can be linked only if its KeyPackage supports everything
+  the device group requires; otherwise the prompt says the client can't be linked, and why, instead of offering Link.
+  Linking never loosens what Alice's chats require: **Add to all my chats** adds the laptop only to chats whose
+  requirements its KeyPackages meet. The Devices screen lists the chats it couldn't join and the feature each one
+  needs.
 - **Approval from any one device is enough.** Alice's other devices change their prompt to "Laptop was added by iPhone"
   rather than silently dropping it. A device linked later doesn't prompt about devices already in the roster.
 - **Every decision is a commit.** Linking, rejecting, changing a device's settings and removing a device each change the
   roster through a commit in the device group, so MLS puts them in one order that every device agrees on.
 - **Conflicting answers:** if the iPhone links the laptop while the iPad says "This wasn't me", both make commits from
-  the same starting point and Marmot's normal convergence rules pick one. If the link wins, the iPad's answer becomes
-  an ordinary removal of the laptop. If the rejection wins, the link never happened and the laptop is told. There are
-  no seniority rules.
+  the same starting point and Marmot's normal convergence rules pick one. If the rejection wins, the link never happened
+  and the laptop is told. There are no seniority rules.
 - **Latency:** a phone may only notice a new slot when the app is opened. The laptop's "open Marmot on a device you're
   already signed in on" instruction covers that without needing push.
 - **Careless approval:** if Alice taps Link without comparing, nothing catches it. The prompt makes the comparison the
-  main thing on screen, and the app never asks her to type the words or read them to anyone.
+  main thing on screen, and the app never asks her to type the emoji or read them to anyone.
 
 ## Scene 5: The new device joins Alice's chats
 
@@ -300,9 +329,9 @@ that toggle on.
    open it. The device group is just the envelope, and nothing about these joins appears on relays as a gift wrap.
 6. The laptop processes each Welcome and deletes that KeyPackage's private key straight away, as single-use
    KeyPackages require.
-7. Chats the approving device isn't in are covered by **gap filling**: a sibling that is in the chat adds the missing
-   device, using its own allocation of the laptop's private KeyPackages (Scene 6).
-8. History transfer runs afterwards and is a separate document (see Open questions). The history setting applies to
+7. Missing memberships follow [Filling a missing chat](../features/device-group.md#filling-a-missing-chat), including
+   in chats the approving device is in. That feature surface owns the eligibility and coordination rules.
+8. History transfer runs afterwards; [account-sync.md](./account-sync.md) covers it. The history setting applies to
    every sibling, so a sibling that fills a chat also sends that chat's history if the setting is on. History is
    encrypted for the laptop alone, even though it travels through the device group, because not every sibling is in
    every chat.
@@ -317,28 +346,41 @@ that toggle on.
   for it can no longer be opened. Keeping the key longer instead means one stolen key opens every one of those
   Welcomes.
 
+The first point is already spec text: in a chat that has turned on sibling adds, a device never adds a KeyPackage of its
+own account just because it is published under the account. See "Sender rules" in
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md).
+
 **Trade-offs:**
 
-- A device that isn't an admin adding a sibling is a new kind of commit. Every member of a chat has to understand it,
-  so a chat turns it on with a group app component that every member must support. Chats without it wait, and the UI
-  says why.
+- A device that isn't an admin adding a sibling is a new kind of commit. Every member of a chat has to understand it, so
+  a chat turns it on with an app component that every member must support
+  ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)). Chats without it wait, and the
+  UI says why.
 - Each device holds the private keys for KeyPackages it has handed out until they are used or replaced. This is a
   small amount of state, and it is the price of never sharing one key across Welcomes.
-- Two siblings can both try to fill the same gap. A short claim in the device group makes that rare. If both adds land
-  anyway, the extra leaf is removed. The 10-leaf limit is counted on each chat's actual membership after each commit,
-  never across competing branches added together.
+- The gap-fill claim and remaining duplicate-leaf limit are now in
+  [device-group.md](../features/device-group.md#filling-a-missing-chat). Automatic duplicate cleanup remains open.
 
 ## Scene 6: Everyday life with several devices
 
-![Bob's client sends one Welcome for each of Alice's fresh devices. Alice accepts on her iPhone, the decision is shared
-through the device group, and her laptop joins too. Bob sees Alice as one member with two
+![Bob's client admits Alice's devices. Alice accepts on her iPhone, and the matching admission's presentation decision
+is shared through the device group; accepting never joins another device. Bob sees one account with two
 devices.](multi-device/scene-6-invites.svg)
 
 **What Alice sees:**
 
-- **Invites arrive on every device.** She accepts on whichever device she's holding, and the others follow.
-- **Declining works the same way**, except every device leaves the chat. Each device already has a leaf in the chat
-  once its Welcome arrives, so a decline that only applied to one device would leave ghost members behind.
+- **Invites admitted together share the decision.** Accepting on one device resolves the matching admission on its
+  siblings, including automatic sibling Adds that inherit it. A higher version wins; at equal version decline wins.
+  A separate external admission or admission fork can prompt again, and older unidentified invites stay local-only
+  ([account sync](../features/account-sync.md#invitation-decisions)).
+- **Declining requests departure on matching devices.** Each follows its ordinary Leave rules; it does not instantly
+  remove every account leaf or affect unrelated invitation generations. A later accept cannot undo a requested Leave
+  or rejoin a device automatically.
+- **Leaving a chat leaves it on her devices.** Leaving on one device declines the invitation the chat came in by, so her
+  devices admitted with it leave too, and her devices that saw them leave don't add them back. A device that came in
+  through a separate invitation stays until she leaves there as well, and if it never saw them leave it may add one back
+  ([account sync](../features/account-sync.md#invitation-decisions)). If she is the chat's only admin, she makes someone
+  else an admin before she can leave.
 - **Chats she creates** include her other devices from the start.
 - **A device that was missed** is added quietly by gap filling, unless its settings say otherwise.
 
@@ -347,13 +389,13 @@ There is no "Alice added a device" notice.
 
 **Underneath:**
 
-- **Inviters add every valid, fresh, compatible KeyPackage for the account, up to a cap.** This is an ordinary admin
-  commit with several adds and needs no new authorization rule.
-  - **Valid** includes supporting what the chat requires, which keeps non-chat clients on the same account out of chat
-    groups.
-  - **Fresh** means republished recently, which keeps uninstalled or dead devices out of new chats.
-  - **Capped at 10 per account**, because a broken or malicious client can publish hundreds of KeyPackages under one
-    account. A chat also allows at most 10 leaves per account.
+- **Inviters add every fresh KeyPackage for the account, up to a limit per Commit.** This is an ordinary admin commit
+  with several adds and needs no new authorization rule. Which KeyPackages qualify, and the per-Commit limit, are spec
+  text in [../foundation/key-packages.md](../foundation/key-packages.md) ("Selection and lifecycle"). The cap on how
+  many leaves one account can hold in a chat is spec text in
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md).
+- **Only KeyPackages that fit the chat qualify.** A device whose client lacks a feature the chat requires isn't added.
+  Which features a group requires is the app's choice; Marmot has no notion of app types.
 - An inviter that still picks a single KeyPackage keeps working. Alice's other devices join through gap filling.
 - **Alice's own devices never use these public KeyPackages for each other.** Gap filling and chats Alice creates use
   private KeyPackages, with the Welcome sent through the device group:
@@ -362,19 +404,14 @@ There is no "Alice added a device" notice.
   - **When an allocation runs out, the sibling waits** until the device comes online and tops it up. It doesn't fall
     back to the public KeyPackage. A sibling that needs more than it holds, for example to fill 30 chats at once, asks
     for a burst the same way the approving device does at link time.
-- **Gap filling follows the roster.** Before adding a sibling to a chat, a device checks that sibling's settings. If
-  **Add to all my chats** is off, it leaves alone the chats Alice's devices were already in when that sibling was
-  linked. A device that was offline during the link reads the same settings when it comes back, so it doesn't undo
-  Alice's choice.
-- **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. A sibling that
-  sees a new KeyPackage in a known slot catches up on the device group before deciding. If the roster has it, it is a
-  quiet refresh. If not, someone else replaced it (Scene 8). The device itself also notices a KeyPackage it didn't
-  publish in its own slot, and republishes its own. Keeping this in the roster rather than in a message means a device
-  linked later can read every sibling's current KeyPackage straight away.
-- **Checking chats for unknown leaves.** Each device compares the account's leaves in every chat it is in with the
-  siblings' leaf map (see Under the hood). A leaf for Alice's account that no sibling claims is flagged and goes to the
-  warning in Scene 8. This catches a replaced KeyPackage that an outside inviter used, and extra leaves a stolen device
-  added before it was removed.
+- Gap filling's capability and setting rules are now in
+  [device-group.md](../features/device-group.md#filling-a-missing-chat). That initial flow also states the limit for
+  later missed invitations while **Add to all my chats** is off; it does not define a shared old/new-chat cutoff.
+- **Refreshing a slot.** A linked device records its new KeyPackage in the roster before publishing it. Keeping this in
+  the roster rather than in a message means a device linked later can read every sibling's current KeyPackage straight
+  away. Each device also checks its own slot. A KeyPackage there that it didn't make, which only someone holding the
+  nsec could have published, it replaces with its own, and it warns Alice on that device (Scene 8). Siblings don't act
+  on each other's slots.
 
 **Trade-offs:** device counts are visible to chat members and, roughly, to anyone reading relays. We accept that and
 show it plainly rather than hiding it behind a notice.
@@ -405,8 +442,12 @@ doesn't take the device out of chats it is already in. Removing the device, or l
    revocation: a relay that ignores it can keep serving the old KeyPackage until it expires, and the lost laptop still
    holds that KeyPackage's private key. If an inviter adds it from such a copy, Alice's devices are invited to the same
    chat, see a leaf for a removed device, and remove it.
-3. **The roster remembers the removed slot.** If that installation, still holding its old state, publishes into its
-   old slot again, Alice's devices show a stronger warning: "A device you removed is trying to come back."
+3. **The roster remembers the removed slot for 30 days.** If that installation, still holding its old state,
+   publishes into its old slot again in that time, Alice's devices show a stronger warning: "A device you removed is
+   trying to come back." Thirty days keeps the roster from holding every device Alice ever removed, but it is a
+   window, not a guarantee: a copy of the laptop's KeyPackage can stay valid for up to 84 days, and an inviter with no
+   fresh KeyPackage for Alice may still pick it. After 30 days the laptop looks like any new sign-in (Scene 4), and a
+   leaf it joins with is one no remaining device claims (point 4).
 4. **Siblings check for leftovers.** A stolen device could have added extra leaves before it was removed, so siblings
    check every chat they are in for account leaves that no remaining device claims, and remove them.
 5. **If the laptop used a signer,** the app tells Alice to revoke that device's session in the signer. Removal alone
@@ -414,8 +455,8 @@ doesn't take the device out of chats it is already in. Removing the device, or l
 6. The next time the removed laptop opens, it says it was removed and offers to sign in again.
 
 A limit on points 1 and 4: siblings can only clean up chats they are in. If the laptop was in a chat none of Alice's
-remaining devices is in, its leaf stays there until a chat admin removes it. The roster's leaf map still records that
-chat, so the Devices screen can list it and Alice can ask an admin there.
+remaining devices is in, its leaf stays there until a chat admin removes it. None of Alice's devices can see that chat,
+so the Devices screen cannot list it either.
 
 A limit on point 3: a reinstalled app creates a new slot, so it looks like any other new sign-in (Scene 4), not a
 returning device. That's fine, since it goes through normal approval. The stronger warning only catches the case where
@@ -433,73 +474,92 @@ grace period: if it shows up at any point before 90 days, the mark is cleared an
 was alive but cut off for that long can still be removed this way: this is a cleanup rule Alice agrees to, not a
 finding that the device was lost.
 
-**Signing out on this device** removes that device completely. In order:
-
-1. It records in the roster that it is leaving. This goes first so siblings stop adding it to chats.
-2. Its siblings remove it from every chat and from the device group, exactly as in a removal from another device.
-   The signing-out device doesn't have to wait for that to finish.
-3. It deletes the KeyPackage in its own slot, and only its own.
-4. It deletes all of its local data.
-
-Letting siblings do the removing means the departure still completes after the device has wiped itself.
+**Signing out on this device** removes that device completely. Its siblings take it out of the device group and of
+the chats where they can, it leaves the other chats itself, and it deletes its KeyPackage and all of its local data.
+Letting siblings do the removing means the departure still completes after the device has wiped itself. The rules are
+in [../features/device-group.md](../features/device-group.md#signing-out) ("Signing out").
 
 Signing out on the **last** device has no siblings to do this, so it leaves each chat itself, which needs another
-member of the chat to commit the departure. It publishes its departures, then wipes. Once an account's last leaf
-leaves a chat, the account is no longer in that chat. The warning says so: signing back in won't bring those chats
-back.
+member of the chat to commit the departure. It publishes its departures, then wipes. Its device group is left with no
+device running it, and the account's next link founds a new one. Once an account's last leaf leaves a chat, the account
+is no longer in that chat. The warning says so: signing back in won't bring those chats back.
 
 Locking the app with a PIN, face, or fingerprint is not signing out. It protects local access and changes nothing on
 the network.
 
 **Admin chats:** if Alice is a chat admin, every one of her devices is an admin there, because admin rights belong to
-the account. Today an admin can't leave a chat by itself, but signing out doesn't need it to: a sibling removes the
-departing device, and a sibling of an admin is an admin. So the self-leave rule doesn't have to relax. In chats with
-the readiness component, an admin removing another leaf of their own account counts as removing another member. The
-last device of an admin account still has to give up admin first, as today.
+the account. An admin can't leave a chat by itself. Where a sibling takes the departing device out, signing out
+doesn't need it to, so the admin self-leave rule stays as it is. Elsewhere, and always on the last device, leaving
+means giving up admin first, and a chat where Alice is the last admin can't be left: the device tells her which chats
+it couldn't leave. The rules are in
+[../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Removal by another device of the same
+account").
 
 ## Scene 8: "This wasn't me"
 
-![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in, keep it out of existing
-chats and history, and remove it from chats they share with it. The key holder can still be invited to new chats, send
-as Alice, remove her devices, and publish KeyPackages.](multi-device/scene-8-not-me.svg)
+![A full-screen warning tells Alice someone else has her key. Her devices reject the sign-in and keep it out of
+existing chats and history. The key holder can still be invited to new chats, send as Alice, remove her devices, and
+publish KeyPackages.](multi-device/scene-8-not-me.svg)
 
-**Two ways in:** Alice taps **This wasn't me** on a new sign-in, or her devices find a KeyPackage in a linked device's
-slot that the device never announced. The second needs no tap. A linked device always announces before it publishes,
-so there is no innocent explanation, and the warning appears on its own.
+**Two ways in:** Alice taps **This wasn't me** on a new sign-in, or one of her devices finds a KeyPackage in its own
+slot that it didn't make (Scene 6, "Refreshing a slot"). The second needs no tap, and the warning appears on that
+device only.
 
 **What Alice sees:** a full-screen warning that her account's signing access may be compromised: either her nsec, or a
 signer session. The figure shows the case where the nsec itself is stolen. The warning says plainly that for a stolen
 nsec, the only complete fix is moving to a new account, and for a signer, which session to revoke. It doesn't claim to
 know which one was taken.
 
-**What her devices do:** they mark the slot rejected so no device prompts about it again, never add it to existing chats
-or send it history, and remove its leaf from any chat they share with it. For a replaced KeyPackage in a linked
-device's slot, they reject that KeyPackage, not the slot, and the roster keeps pointing at the device's own. If
-other people's inviters have already added the replacement to a chat, Alice's devices see a leaf for her account that
-no sibling announced, and remove it.
+**What her devices do:** after This wasn't me, they mark the slot rejected so no device prompts about it again while the
+roster keeps that, and never add it to existing chats or send it history. A device that finds a KeyPackage it didn't
+make in its own slot records nothing in the roster: it replaces the KeyPackage with its own and warns on that device.
+Each device shows one warning for everything new, and Alice dismisses it on each device.
 
 **What they can't do:** stop the key holder. Someone with the nsec can be invited to new chats, send as Alice, remove her
-devices, and publish more KeyPackages. The warning must not promise more protection than that.
+devices, and publish more KeyPackages. Nothing takes them out of chats other people's inviters added them to. The
+warning must not promise more protection than that.
 
 ## Under the hood
 
 These pieces sit behind the scenes above. They are settled in direction; their exact encodings come with the spec.
 
-**The roster** is a group app component in the device group. It holds each device's slot, label, platform, link
-details, settings, status, current public KeyPackage and leaf map, plus the account's rejected slots and KeyPackages.
+**The roster** is a group app component in the device group. It holds each device's slot, label, platform, link details,
+settings, status, current public KeyPackage, tag signature key and history key, plus the account's rejected slots, the
+key that seals device tags, and its backup details: the backup writer and the recovery key's public half
+([account-sync.md](./account-sync.md)).
 Every member of the device group is the same account, and admin rights belong to the account, so any device can change
 the roster and no new permission rule is needed.
 
-**Device group messages** are app event kinds for things only needed in the moment: heartbeats, invite accept and
-decline, gap-fill claims, private KeyPackage requests and hand-offs, Welcomes for sibling adds, and anomaly alerts. The
-sender is already identified by its leaf in the device group, so messages need no device identifier tag. The rule for
-roster versus message: anything a device linked later needs to know goes in the roster.
+**Device group messages** are app event kinds for things only needed in the moment: heartbeats, gap-fill claims,
+private KeyPackage requests and hand-offs, and Welcomes for sibling adds. Invite decisions travel as small state
+([account-sync.md](./account-sync.md)), which has its own versions and recovery
+([../features/account-sync.md](../features/account-sync.md)). The sender is already identified by its leaf in the
+device group, so messages need no device identifier tag. The rule for roster versus message: anything a device linked
+later needs to know goes in the roster, except small state, which every device sends again from time to time.
 
-**Matching leaves to devices.** Gap filling, sibling removal and the unknown-leaf check need to know which of the
-account's leaves in a chat belongs to which sibling. Labels don't help, because they never appear in chats. Each device
-records in the roster which chats it has joined, identifying its leaf in each by the leaf's signature key rather than
-its position, because positions are reused after a removal. It updates the entry when it rotates that key. Other chat
-members see nothing new.
+**When a message is lost.** A device that is offline longer than the retention window can lose device-group messages
+for good ([../protocol-core/retained-history.md](../protocol-core/retained-history.md)). There are no receipts for
+this. Instead, every message that matters has a visible effect on the receiving side, and a sender that doesn't see
+that effect once the receiver is back online sends again:
+
+- **A Welcome for a sibling add.** A device that joins a chat updates its own leaf there soon after, as every new
+  member does. If no update from the laptop's leaf in Book club appears, the device that added it sends the Welcome
+  again. If that private KeyPackage has expired
+  meanwhile, it removes the unusable leaf and adds the laptop again with a fresh one.
+- **A private KeyPackage hand-off.** A sibling whose allocation is empty or close to expiry asks for more, as it already
+  does. That request is the repair.
+- **History** recovers the same way ([account-sync.md](./account-sync.md)). Small state does not: every device sends
+  everything it holds again from time to time ([../features/account-sync.md](../features/account-sync.md)).
+
+**Matching leaves to devices.** Gap filling and sibling removal need to know which of the account's leaves in a chat
+belongs to which sibling. Labels don't help, because they never appear in chats. Each device puts a device tag in every
+leaf it creates, including the leaf in each of its KeyPackages. The tag names the device's slot, is signed by that
+device's own key, and is sealed under a key that only the account's devices hold. A removed device keeps that key, so in
+a chat it is still in it can still tell which leaf is whose. A sibling opens the tags on the account's leaves in each
+chat it is in. Other chat members see bytes they cannot read, different in every KeyPackage. No roster commit records
+anything about the chats, so joining a chat, leaving one, or rotating a key there never commits to the device group;
+small-state messages do name chats ([../features/account-sync.md](../features/account-sync.md)). A leaf created before
+its device was linked has no tag; the device tags it with its next update in that chat.
 
 **Private KeyPackage upkeep.** Private KeyPackages expire like public ones. A device replaces a sibling's allocation
 when it is halfway to expiry, and expired private KeyPackages are simply discarded. A device coming back after a long
@@ -513,51 +573,56 @@ device treats a group as its device group only if it created it or joined it thr
 
 | Number | Value |
 | --- | --- |
-| Leaves per account in one chat | at most 10 |
-| KeyPackages an inviter adds per account | at most 10 |
-| Freshness window for inviters | 30 days |
-| KeyPackage lifetime | 30 days |
-| KeyPackage republish | after it is used, when what it advertises changes, and weekly while the app runs |
+| Linked devices per account | at most 20 |
 | Inactive device prompt | 30 days |
 | Inactive device removal | 90 days, unless kept; showing up any time before then cancels it |
 | Private KeyPackages each device keeps per sibling | about 10, topped up as they are used and replaced halfway to expiry |
 | Private KeyPackages at link time | one per chat the approving device is adding, requested through the device group |
-| Link code | 4 words from a 2,048-word list, new for every session |
+| Link code | 7 emoji from Matrix's 64-symbol verification set (about 42 bits); new for every session |
+| Link code, decimal alternative | Matrix's decimal method: 3 numbers from 1000 to 9191 (about 39 bits) |
 | Link session | expires 10 minutes after the existing device answers |
+
+KeyPackage lifetime, refresh, the inviter freshness window, and the inviter's limit of 20 KeyPackages per account in one
+Commit are now spec text in [../foundation/key-packages.md](../foundation/key-packages.md). The limit on leaves per
+account in one chat is spec text in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md).
 
 ## Open questions
 
-1. **History, state sync, and backups.** Needs its own idea document: chunked history transfer, small-state sync (read
-   markers, pins, notification state), and backups that are never encrypted to the nsec alone.
-2. **Disaster recovery.** Recovering when every device is lost is out of scope here, but we need a rough direction
-   early so that it doesn't force changes to this design later.
+Nothing in this walkthrough is open right now. History, small-state sync, backups and the direction for recovering
+when every device is lost are in [account-sync.md](./account-sync.md).
 
 **Left for later:** picking which old chats a device joins, one by one. Nothing here blocks it. A "keep this device off
 new chats" setting is not planned, because other people's inviters add every fresh device before Alice accepts, so a
 private setting couldn't stop it.
 
+## Further ideas
+
+Ideas set aside when the response to a stolen nsec was narrowed to the warning in Scene 8, such as siblings checking
+each other's slots, recording rejected KeyPackages in the roster, and removing the leaves that joined with them, are
+collected in [mdk#2794](https://github.com/marmot-protocol/mdk/issues/2794).
+
 ## Path into the spec
 
 Parts of this can become spec text before others are settled:
 
-1. **Several leaves per account.** Rules that are already valid today but need writing down: removing a person removes
-   all of their leaves, your own leaf being removed means this device was removed even when a sibling stays, each
-   installation uses exactly one random slot for its lifetime, KeyPackage events carry the standard `client` tag and
-   nothing more about the device, signing out deletes only your own slot, and inviters add up to 10 fresh KeyPackages
-   per account. None of this needs new commit types.
-2. **Same-account operations.** The chat readiness app component, sibling adds, sibling removal (including a device
-   signing out while a sibling remains), and the 10-leaf cap.
+1. **Several leaves per account.** Done. These rules are now in
+   [../foundation/identity.md](../foundation/identity.md) ("Devices"),
+   [../foundation/key-packages.md](../foundation/key-packages.md) ("Devices and publication slots", "Selection and
+   lifecycle"), [../transports/nostr.md](../transports/nostr.md) ("KeyPackage publication", "Slot deletion"), and
+   [../protocol-core/member-departure.md](../protocol-core/member-departure.md) ("Accounts with several devices").
+2. **Same-account operations.** Done. The app component a chat requires before devices can add and remove their own
+   account's leaves, sibling adds and removal, and the per-account leaf limit are in
+   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), with the join and departure
+   rules in [../protocol-core/joining.md](../protocol-core/joining.md) and
+   [../protocol-core/member-departure.md](../protocol-core/member-departure.md).
 3. **The device group.** The roster component, messages, linking, slot announcements, private KeyPackages and Welcome
-   delivery, gap filling, anomaly signals, and merging.
-4. **Account sync.** History, small-state sync, and backups.
+   delivery, gap filling, and merging.
+4. **Account sync.** History, small-state sync, and backups; see [account-sync.md](./account-sync.md).
 
 Details to pick while writing the spec, rather than product questions:
 
-- which reviewed short-code exchange to reuse, the exact pairing messages, how many attempts are allowed, and which
-  word list to use;
-- the chat readiness component's exact contents;
-- the roster and device group message encodings;
-- listing the `client` tag as allowed on KeyPackage events in the Nostr transport.
+- which reviewed short-code exchange to reuse, the exact pairing messages, and how many attempts are allowed;
+- the roster and device group message encodings.
 
 ## What this replaces
 

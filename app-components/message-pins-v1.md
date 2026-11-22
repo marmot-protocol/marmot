@@ -4,7 +4,7 @@ Status: draft. Proposed component for the optional [message-pinning feature](../
 
 ## Registry and locations
 
-- Component id: `0x800f` (proposed).
+- Component id: `0x8013` (proposed).
 - Name: `marmot.group.message-pins.v1`.
 - Location: GroupContext `app_data_dictionary` only.
 - Default requirement: absent; required whenever present.
@@ -46,7 +46,7 @@ only active admins to change it. Admin authority has the account-wide meaning de
 
 ## Negotiation and presence
 
-Whenever the entry is present, the resulting GroupContext MUST require `0x800f` in `app_components`, and every
+Whenever the entry is present, the resulting GroupContext MUST require `0x8013` in `app_components`, and every
 resulting nonblank member leaf MUST advertise support for it. Requiring the component without its entry is invalid.
 These invariants apply to every Commit, including membership and required-component changes that carry no pin update.
 
