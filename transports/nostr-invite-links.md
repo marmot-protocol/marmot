@@ -8,9 +8,9 @@ The associated state and record formats are owned by the
 
 ## Allocations
 
-- Kind `459`: request or withdrawal rumor inside a NIP-59 gift wrap.
-- Kind `460`: status rumor inside a NIP-59 gift wrap.
-- Kind `461`: private admin-control rumor inside recipient gift wraps, carried in an unsigned MLS app event of the
+- Kind `468`: request or withdrawal rumor inside a NIP-59 gift wrap.
+- Kind `469`: status rumor inside a NIP-59 gift wrap.
+- Kind `470`: private admin-control rumor inside recipient gift wraps, carried in an unsigned MLS app event of the
   same kind. The canonical records own the two distinct payload schemas.
 - Kind `30444`: signed parameterized-replaceable encrypted preview descriptor.
 
@@ -144,7 +144,7 @@ For a request, `publication` MUST be nonempty and carry the exact signed kind `3
 the canonical evidence encoding below. For withdrawal it MUST be empty. The evidence is outside device-signature
 bytes but authenticated by NIP-01 and bound to the signed offer's event id and KeyPackageRef; it cannot substitute
 a different offer. Historical evidence can validate ancestry, but never relax current-offer admission checks.
-The rumor is kind `459`, has no tags or `sig`, and content is padded base64 of NostrInviteRequestV1. Its pubkey and
+The rumor is kind `468`, has no tags or `sig`, and content is padded base64 of NostrInviteRequestV1. Its pubkey and
 the NIP-59 seal author equal the requester account. Gift wraps are addressed to the code's inbox public key.
 Requests are published to every usable code relay with independent endpoint outcomes. A first acknowledged NIP-01
 accept is delivery-to-relay evidence only. All initial fanout attempts remain required; failure is retryable.
@@ -165,7 +165,7 @@ offering that package. A package that cannot fit needs a conforming new offer or
 
 ## Status delivery
 
-A kind `460` rumor has no tags or `sig` and content is padded base64 of exactly InviteStatusV1. Its pubkey equals the
+A kind `469` rumor has no tags or `sig` and content is padded base64 of exactly InviteStatusV1. Its pubkey equals the
 admin-account seal author. The gift-wrap recipient is the requester account, never the link inbox.
 Use the requester's signed kind `10050` inbox list plus the validated offer's contextual hints under the existing
 Welcome binding. An absent, empty, or unavailable list is not permission to guess a default destination.
@@ -186,14 +186,14 @@ plaintext bindings and hash against the granted component entry before displayin
 For this binding, each `transport_envelope` is a NIP-59 gift-wrap event. Producers split using the canonical recipient
 and byte bounds; each logical record is retried independently. JSON is RFC 8785 canonical encoding of a complete NIP-59 gift-wrap event. The outer event has exactly its
 NIP-59 recipient `p` tag, naming `recipient_account`; validate the signature and each NIP-59 layer before using it.
-The decrypted kind `461` rumor has no tags or `sig`, and content is padded base64 of InviteAdminRecordV1.
+The decrypted kind `470` rumor has no tags or `sig`, and content is padded base64 of InviteAdminRecordV1.
 Its pubkey and seal author MUST equal the account of the enclosing MLS-authenticated app-event sender.
 The inner record's source epoch equals the enclosing MLS application's source epoch. A forwarded nested requester
 record retains its own consent signature and account binding; it is not reauthored by the admin.
 
 The enclosing app event follows the [canonical batch schema](../foundation/invite-link-records.md#admin-app-batches)
 and [adopted sender binding](../foundation/application-messages.md#receiver-authentication).
-Deliver it by normal MLS/Nostr group messaging, not as a standalone kind `461` relay event.
+Deliver it by normal MLS/Nostr group messaging, not as a standalone kind `470` relay event.
 A parser MUST select the record schema from the authenticated container, not the kind alone: a decrypted rumor
 contains an admin record, while the enclosing MLS app event contains a batch. Swapping those bodies is invalid.
 The [feature](../features/group-invite-links.md#processing-private-control-records) owns recipient and source/current

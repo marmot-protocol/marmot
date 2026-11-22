@@ -190,9 +190,9 @@ baseline Marmot. They claim draft values within this proposal; they are not upst
 | Namespace | Value | Meaning | Owner |
 | --- | --- | --- | --- |
 | Component | `0x8012` | `marmot.group.invite-links.v1`, GroupContext | [component](../app-components/group-invite-links-v1.md) |
-| Nostr kind | `459` | Request/withdrawal rumor | [Nostr extension](../transports/nostr-invite-links.md) |
-| Nostr kind | `460` | Status rumor | [Nostr extension](../transports/nostr-invite-links.md) |
-| Nostr kind | `461` | Private admin rumor and unsigned MLS batch event | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `468` | Request/withdrawal rumor | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `469` | Status rumor | [Nostr extension](../transports/nostr-invite-links.md) |
+| Nostr kind | `470` | Private admin rumor and unsigned MLS batch event | [Nostr extension](../transports/nostr-invite-links.md) |
 | Nostr kind | `30444` | Encrypted preview descriptor | [Nostr extension](../transports/nostr-invite-links.md) |
 | Bech32m HRP | `marmot` | Complete invitation code v1 | [Nostr extension](../transports/nostr-invite-links.md) |
 | SafeSignWithLabel operation | `request` under `0x8012` | Device request/refresh consent | [records](invite-link-records.md) |
