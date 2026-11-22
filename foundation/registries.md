@@ -131,6 +131,7 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `477`   | Post-link chat inventory            | Marmot app payload                  | [device-group.md](../features/device-group.md#post-link-chat-inventory-kind-477) |
+| `495`   | Group change request control v1     | Marmot app payload                  | [group-change-requests.md](../features/group-change-requests.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -142,6 +143,9 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `30443` | Marmot KeyPackage event             | Nostr KeyPackage publication        | [nostr.md](../transports/nostr.md)                      |
 
 Kind `4891` is allocated by Marmot for admin deletion inside MLS app payloads.
+
+Kind `495` identifies the draft optional group-change request, rejection, withdrawal, and applied-receipt actions.
+It is an inner app-event allocation only; it does not add a public Nostr transport event.
 
 Kind `1200` was the stream start of the retired agent text stream feature. Clients no longer send it and SHOULD NOT
 display one they receive ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). It remains

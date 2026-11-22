@@ -67,6 +67,7 @@ features/
   account-sync.md
   content-moderation.md
   device-group.md
+  group-change-requests.md
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
