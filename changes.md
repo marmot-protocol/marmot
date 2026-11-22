@@ -28,7 +28,7 @@ Changes [app-components/README.md](./app-components/README.md),
 [protocol-core/member-departure.md](./protocol-core/member-departure.md),
 [protocol-core/retained-history.md](./protocol-core/retained-history.md).
 
-Clients that implement the optional draft use component `0x8011` and kinds `462`–`466`. Apply prospective
+Clients that implement the optional draft use component `0x8011` and kinds `490`–`494`. Apply prospective
 retention and suppress only the request-bound history after the accepted Commit. Irreversible application
 cleanup waits for the rollback horizon.
 

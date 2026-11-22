@@ -54,10 +54,10 @@
     "receipt_id": "bccc0cc3c8f54344a837eeea1f368244b312b372acc23f02d9048e28f32c1663"
   },
   "signing_templates": {
-    "463": {
+    "491": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 463,
+      "kind": 491,
       "tags": [
         [
           "d",
@@ -86,10 +86,10 @@
       ],
       "content": ""
     },
-    "464": {
+    "492": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000000,
-      "kind": 464,
+      "kind": 492,
       "tags": [
         [
           "d",
@@ -114,10 +114,10 @@
       ],
       "content": "6ba80dfdd6bff92247dac6ca609fec820228ca3b469713bca48fff8970d03022"
     },
-    "465": {
+    "493": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 465,
+      "kind": 493,
       "tags": [
         [
           "d",
@@ -142,10 +142,10 @@
       ],
       "content": ""
     },
-    "466": {
+    "494": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 466,
+      "kind": 494,
       "tags": [
         [
           "d",
@@ -183,7 +183,7 @@
   "no_template": {
     "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
     "created_at": 1700000100,
-    "kind": 463,
+    "kind": 491,
     "tags": [
       [
         "d",

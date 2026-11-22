@@ -1,6 +1,6 @@
 # Spec validation reference tests
 
-Run `python3 -m unittest discover -s tests -v` from the repository root.
+Run `python3 -m unittest discover -s tests -p 'test_history_purge_*.py' -v` from the repository root.
 
 The history-purge model exercises admin-mediated opening, local admission/cooldown and closure obligations, the
 request-fixed purge boundary, the accepted Commit's rollback horizon,
@@ -17,10 +17,6 @@ synthetic encoding placeholders and are invalid authorization proofs. The encodi
 prefixes, request/open-state/finalization framing, maximum vector bounds, malformed framing, timestamp bounds,
 ordering, and unknown enums. They do not
 establish signature validity, curve-point validity, or complete protocol conformance.
-
-The layout regression rejects a feature listed under `ideas/` when its actual file is under `features/`.
-The validator's separate phrase checks provide structural documentation coverage only.
-Its boundary scan covers each entire changed normative file, including pre-existing wording.
 
 The encoding helper follows [Marmot's QUIC length profile](../foundation/canonical-encoding.md), including its eight-byte
 prefix, rather than substituting MLS's distinct variable-length encoding. Response and cancellation ids are derived

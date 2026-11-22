@@ -12,11 +12,11 @@ copies outside a conforming member's controlled stores.
 
 - Component id: `0x8011`
 - Name: `marmot.group.history-purge.v1`
-- Purge control app-event kind: `462`
-- Member decision proof kind: `463`
-- Request proof kind: `464`
-- Cancellation proof kind: `465`
-- Terminal proof kind: `466`
+- Purge control app-event kind: `490`
+- Member decision proof kind: `491`
+- Request proof kind: `492`
+- Cancellation proof kind: `493`
+- Terminal proof kind: `494`
 - Valid locations: a temporary GroupContext entry while one request is open, and one terminal `AppEphemeral` value in
   the Commit that removes that entry
 - Default requirement: optional
@@ -118,7 +118,7 @@ Nostr event:
 ```text
 pubkey     = lowercase-hex(proposer_proof.signer_pubkey)
 created_at = proposer_proof.created_at
-kind       = 464
+kind       = 492
 tags       = [
   ["d", "marmot-history-purge-request-v1"],
   ["component", "0x8011"],
@@ -129,7 +129,7 @@ tags       = [
 content    = lowercase-hex(SHA-256(encode(MarmotHistoryPurgeRequestCoreV1)))
 ```
 
-The proof signer MUST equal `proposer_pubkey` and be an active member in the bound parent. Kind `464` is a signing
+The proof signer MUST equal `proposer_pubkey` and be an active member in the bound parent. Kind `492` is a signing
 template and MUST NOT be published to relays.
 
 Any active member, including a non-admin, MAY create and send the request app event below. Any active member MAY relay a
@@ -180,12 +180,12 @@ on the selected canonical branch, the component entry is gone and no later Yes c
 terminal Commits remain ordinary candidate branches; canonical convergence chooses one transition, and off-branch
 proof delivery cannot mutate the selected state.
 
-A decision proof reconstructs the kind `463` event:
+A decision proof reconstructs the kind `491` event:
 
 ```text
 pubkey     = lowercase-hex(proof.signer_pubkey)
 created_at = proof.created_at
-kind       = 463
+kind       = 491
 tags       = [
   ["d", "marmot-history-purge-decision-v1"],
   ["component", "0x8011"],
@@ -215,7 +215,7 @@ response_id = SHA-256(
 
 ## Cancellation
 
-The proposer may cancel only while the request is open. The cancellation proof uses kind `465` with the exact tags
+The proposer may cancel only while the request is open. The cancellation proof uses kind `493` with the exact tags
 below and empty content:
 
 ```text
@@ -270,14 +270,14 @@ finalization_id = SHA-256(
 
 The authorization envelope is interpreted by terminal value:
 
-- `accepted`: kind `466`, signed by the active-admin committer, with a timestamp from `created_at` through `expires_at`,
+- `accepted`: kind `494`, signed by the active-admin committer, with a timestamp from `created_at` through `expires_at`,
   inclusive; the parent open state contains exactly one valid Yes for every `members` account;
-- `rejected`: the kind `463` No decision proof; its signer is an active cohort member, MUST equal the Commit sender, and
+- `rejected`: the kind `491` No decision proof; its signer is an active cohort member, MUST equal the Commit sender, and
   MUST NOT already occur in the parent open state's `yes_decisions`;
-- `cancelled`: the kind `465` cancellation proof; its signer is the proposer and MUST equal the Commit sender;
-- `expired`: kind `466`, signed by any active cohort-member committer, with timestamp `t >= expires_at`, or with
+- `cancelled`: the kind `493` cancellation proof; its signer is the proposer and MUST equal the Commit sender;
+- `expired`: kind `494`, signed by any active cohort-member committer, with timestamp `t >= expires_at`, or with
   `t < created_at` and `created_at - t > 300`; it closes an elapsed or unusably future-dated response window;
-- `superseded`: kind `466`, signed by the committer of the canonical membership, identity, capability, admin-policy, or
+- `superseded`: kind `494`, signed by the committer of the canonical membership, identity, capability, admin-policy, or
   retention change that invalidates a request binding; the signer MUST equal the terminal Commit sender.
 
 Supersession requires an actual change to a bound value: the cohort/account-identity bindings, capability digest,
@@ -285,7 +285,7 @@ prior retention value or admin policy from the bound source state. A no-op repla
 not invalidate the request and cannot authorize `superseded`. The client retains the bound values needed to validate
 this comparison while the request remains replayable.
 
-For kind `466`, the local signing event has exact tags:
+For kind `494`, the local signing event has exact tags:
 
 ```text
 [
@@ -298,12 +298,12 @@ For kind `466`, the local signing event has exact tags:
 ]
 ```
 
-Its content is lowercase hex of `SHA-256(encode(MarmotHistoryPurgeFinalizationCoreV1))`. For kind `466`, `terminal` is
+Its content is lowercase hex of `SHA-256(encode(MarmotHistoryPurgeFinalizationCoreV1))`. For kind `494`, `terminal` is
 exactly `accepted`, `expired`, or `superseded`, corresponding to terminal values 1, 4, and 5. Rejected and cancelled
-finalizations use kinds `463` and `465`, respectively; they do not use kind `466`. Kind `466` is local-only and MUST
+finalizations use kinds `491` and `493`, respectively; they do not use kind `494`. Kind `494` is local-only and MUST
 NOT be relayed.
 
-In every proof template (kinds `463`, `464`, `465`, and `466`), `group_id` and `parent_epoch` are from the request core.
+In every proof template (kinds `491`, `492`, `493`, and `494`), `group_id` and `parent_epoch` are from the request core.
 In particular, `parent_epoch_decimal` is the request's parent epoch, never the parent of a later decision or terminal
 Commit. All proof kinds bind the same immutable request identity.
 
@@ -331,7 +331,7 @@ canonical branch wins; later replayed finalizations are inert because no matchin
 
 ## Request, cancellation, and receipt app events
 
-All control messages are MLS-protected Marmot app payloads of kind `462`; they are not relay-level Nostr events.
+All control messages are MLS-protected Marmot app payloads of kind `490`; they are not relay-level Nostr events.
 
 A request event has exact tags:
 

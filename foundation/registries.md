@@ -132,11 +132,11 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `477`   | Post-link chat inventory            | Marmot app payload                  | [device-group.md](../features/device-group.md#post-link-chat-inventory-kind-477) |
-| `462`   | History-purge control event         | Marmot app payload                  | [history-purge-v1.md](../app-components/history-purge-v1.md) |
-| `463`   | History-purge member decision       | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
-| `464`   | History-purge request proof         | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
-| `465`   | History-purge cancellation proof    | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
-| `466`   | History-purge terminal proof        | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `490`   | History-purge control event         | Marmot app payload                  | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `491`   | History-purge member decision       | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `492`   | History-purge request proof         | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `493`   | History-purge cancellation proof    | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `494`   | History-purge terminal proof        | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
