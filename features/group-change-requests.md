@@ -171,9 +171,10 @@ For retained requests, supported clients MUST derive the same status from the sa
 4. Otherwise Pending; an unresolved receipt is separately indicated and never interpreted as Applied.
 
 Local Stale, Already a member, Unable to check eligibility, and Waiting for an admin explain why an otherwise Pending
-request is not currently actionable. They do not synthesize decisions. A rejected or withdrawn request MUST NOT be
-offered for approval. Before staging a Commit, the admin rechecks the request status, current authority, requester
-membership, expected values, and invitation eligibility. Admins may act independently outside a request.
+request is not currently actionable. They do not synthesize decisions. Only a Pending request can be offered for approval. Before staging a Commit, the admin MUST confirm that the request
+is still Pending and actionable, then recheck current authority, requester membership, expected values, and invitation
+eligibility. If a setting later returns to its original value, a retained Applied request remains closed while its
+matching Commit is selected. Admins may act independently outside a request.
 
 Simultaneous admin actions follow existing convergence. Neither receipt timestamps nor first arrival choose group
 state. An in-flight authorized Commit can race rejection or withdrawal; a verified Applied result wins over either,
