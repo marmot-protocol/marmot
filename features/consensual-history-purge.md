@@ -90,8 +90,8 @@ The target is application plaintext whose MLS source epoch precedes the request'
 component owner. Acceptance does not expand that range. Messages written during voting retain their original retention
 semantics; the requested prospective policy starts at acceptance. This replaces the tracker proposal's acceptance-relative
 range so delayed or backdated acceptance cannot authorize deleting later messages. The target excludes
-MLS Commits and proposals, retained recovery anchors, candidate state, pending publication obligations, required audit
-or security material, and content already governed by an independent delete action. This one-shot flow does not change
+MLS Commits and proposals, retained recovery anchors, candidate state, pending publication obligations, and required audit
+or security material. A separate delete action leaves the purge boundary unchanged. This one-shot flow does not change
 the prospective retention invariant for ordinary timer changes.
 
 ## Crash-safe application and late arrivals

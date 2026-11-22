@@ -270,7 +270,7 @@ disposition.
 
 A SelfRemove-only Commit is invalid if:
 
-- it references no SelfRemove proposal or includes a proposal of another type;
+- it references no SelfRemove proposal or carries any proposal outside the [allowed batch](#selfremove-commits);
 - any referenced proposal does not target its authenticated sender;
 - any referenced proposal sender is an active admin in the proposal's authenticated source-epoch state;
 - the committer leaf is the sender and target of any referenced SelfRemove proposal; another current leaf with the same

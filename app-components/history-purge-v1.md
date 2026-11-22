@@ -132,8 +132,8 @@ content    = lowercase-hex(SHA-256(encode(MarmotHistoryPurgeRequestCoreV1)))
 The proof signer MUST equal `proposer_pubkey` and be an active member in the bound parent. Kind `492` is a signing
 template and MUST NOT be published to relays.
 
-Any active member, including a non-admin, MAY create and send the request app event below. Any active member MAY relay a
-request app event, but only active admins may propose and commit the opening `AppDataUpdate`. The proposer proof
+Any active member, including a non-admin, MAY create and send the request app event below. Only active admins may
+propose and commit the opening `AppDataUpdate`. The proposer proof
 authenticates request creation; the opening proposal sender and Commit sender must each satisfy active-admin authority
 under the normal source-epoch and candidate-parent rules. Opening carries an empty decision list and exactly the paired
 component/requirement addition. This admin-mediated opening replaces unrestricted member opening; it preserves any-member
@@ -168,8 +168,8 @@ struct {
 The GroupContext component data is exactly one encoded `MarmotHistoryPurgeOpenStateV1`. `yes_decisions` contains at
 most one record per account, sorted by `proof.signer_pubkey`, and every record MUST have decision `1`. A state update is
 a full replacement. From an existing state it may add exactly one previously absent Yes record and may change no other
-byte. The proposal sender MUST equal that record's signer, and both sender and committer MUST be active members in the
-bound cohort. A member's own Yes is the only decision that may remain in open state.
+byte. It MUST be the only proposal in its Commit and MUST be inline. The authenticated committer MUST be an active
+cohort member and the signer of the added record. By-reference and standalone Yes updates are invalid.
 
 A conforming client MUST offer and sign a decision only after the bound request has opened canonically. A decision
 update requires that exact request in the candidate parent; an uncommitted request event cannot collect canonical votes.
@@ -444,8 +444,8 @@ prospective retention begin there, but the purge boundary does not move. Message
 `purge_before_epoch` through `activation_epoch - 1` keep their original retention semantics. This V1 choice replaces an
 acceptance-relative history range, which would let delayed or backdated acceptance expand the consented target. It
 excludes MLS Commits and proposals, retained recovery anchors, candidate state, pending publication obligations,
-audit/security material required for protocol correctness, and messages already governed by another independent delete
-action.
+and audit/security material required for protocol correctness. An independent delete does not change the purge range.
+The purge suppresses all target plaintext even if a separate delete is pending or later stops applying.
 
 A client MUST durably install one reversible suppression boundary before exposing the accepted effect. Target payloads,
 including late or replayed arrivals, are suppressed before timeline, search, notification, export, reply-preview, TTS,

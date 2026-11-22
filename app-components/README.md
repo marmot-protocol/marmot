@@ -181,9 +181,10 @@ After activation, a member whose KeyPackage does not advertise the id cannot be 
 SHOULD tell an inviter when an invitee's KeyPackages are refused for this reason, so the invitee can update.
 
 A component that supports activation in an existing group MUST say so in its own document and define the initial state
-its activation Commit installs. A component whose required status changes how clients validate or select group state
-MUST forbid removing it, and MUST say which state's GroupContext decides its effect, so that branches that diverged
-across the activating Commit are resolved the same way by every client. [group-lifecycle-v1.md](./group-lifecycle-v1.md)
+its activation Commit installs. A component that changes the group’s baseline authorization or convergence rules MUST
+forbid removing it and MUST identify the GroupContext that decides its effect. A feature-scoped component may instead
+require its id only while its state is present. Its owning document MUST define which candidate-parent state activates
+its rules and the exact atomic transition that removes both its state and the requirement. [group-lifecycle-v1.md](./group-lifecycle-v1.md)
 and [account-devices-v1.md](./account-devices-v1.md) follow this process.
 
 ## Common Rules

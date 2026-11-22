@@ -143,7 +143,8 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
     partially cleaned, and effect-observed boundaries, verifying one suppression boundary, completion of remaining
     eligible cleanup after restart, and one effective output per stable effect identity;
 14. late or replayed pre-boundary app payloads after activation, verifying suppression before delivery while retained
-    anchors, candidate state, pending publication, and other protocol recovery material remain available; and
+    anchors, candidate state, pending publication, and other protocol recovery material remain available. Verify the
+    same suppression when a separate delete is pending, fails, or ceases to apply; and
 15. duplicate, forged, wrong-finalization, applied, failed, and missing receipts. The suite MUST verify one receipt per
     account, no applied receipt with unknown controlled-store completeness or unavailable account-wide coordination,
     arrival-order-independent handling of conflicting account outcomes, no applied receipt before durable local cleanup,
