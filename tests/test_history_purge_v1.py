@@ -62,6 +62,15 @@ class PurgeSafetyTest(unittest.TestCase):
         self.assertTrue(state.finalize("rejected", "bob", 130, 13, Purge.proposals("rejected")))
         self.assertFalse(state.vote("bob", 140))
 
+    def test_retained_yes_proofs_can_be_batched_by_another_member(self):
+        state = Purge(10, frozenset({"alice", "bob", "carol"}), frozenset({"alice"}), "bob")
+        self.assertTrue(state.open("alice"))
+        self.assertTrue(state.vote("alice", 110))
+        self.assertFalse(state.submit_votes("alice", [("bob", 111), ("carol", 201)]))
+        self.assertEqual(state.yes, {"alice"})
+        self.assertTrue(state.submit_votes("alice", [("bob", 111), ("carol", 112)]))
+        self.assertTrue(state.finalize("accepted", "alice", 130, 13, Purge.proposals("accepted")))
+
     def test_every_terminal_actor_and_exact_proposal_set(self):
         cases = [
             ("accepted", "alice", 130, None),

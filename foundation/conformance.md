@@ -94,7 +94,8 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
    wrong opening parent and unsupported leaves. The suite MUST
    accept only the exact paired `0x8011` required-component-list addition and reject any unrelated required-component or
    GroupContext mutation by that actor;
-2. a supported fixed member snapshot in which every account adds one canonical Yes and the active-admin terminal Commit
+2. a supported fixed member snapshot in which each account contributes one canonical Yes, including two votes recovered
+   from losing candidates and batched without those signers online, and the active-admin terminal Commit
    atomically applies the requested retention value, removes the temporary state, and installs one reversible
    request-bound plaintext suppression boundary. The range ends exclusively at the opening epoch, never at the later
    activation epoch, and voting-era messages retain their original retention semantics;

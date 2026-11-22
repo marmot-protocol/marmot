@@ -24,12 +24,12 @@ component's local admission, cooldown and recovery-priority checks. This replace
 preserving non-admin request creation. Acceptance and the retention update remain admin-only.
 
 Opening consumes the exact bound parent. An intervening Commit can invalidate an unopened request, so the client must
-reconstruct and re-sign it for the new parent instead of silently rebinding it. Each canonical Yes advances one state
-update, so collecting the full cohort's decisions requires sequential Commits. A member that has not signed Yes can
+reconstruct and re-sign it for the new parent instead of silently rebinding it. A Yes update can include several independently signed decisions. Another member can carry valid votes from a losing
+candidate onto the selected branch while the same request remains open. A member that has not signed Yes can
 immediately commit No to close voting and allow a peer's recovery; a member that already signed Yes cannot switch to No.
 
 The wire ceilings permit 1024 accounts, but a maximum open-state value is 140794 bytes before MLS framing, encryption
-and transport encoding. Full replacement for each Yes gives quadratic aggregate traffic. The Nostr binding has no
+and transport encoding. A full replacement per vote gives quadratic traffic in the worst case. Batching available votes reduces that cost. The Nostr binding has no
 universal event-size cap; relay/client resource limits can still make this unavailable. A client MUST disable request
 opening when its known end-to-end transport budget cannot carry the complete eventual state, and MUST never silently
 drop cohort accounts to fit a budget. These ceilings are not a promise of practical support for a 1024-account group.
@@ -56,7 +56,7 @@ The request UI MUST show:
 Yes and No are explicit accessible actions. Dismissal, Back, process death, silence, and timeout are not decisions and
 never imply consent. No control is preselected, and V1 carries no custom prompt text.
 
-A member's Yes becomes canonical through the component's one-record state update. A No is submitted as the rejected
+A Yes becomes canonical only through a selected state update. A No is submitted as the rejected
 terminal Commit rather than as an advisory event. The selected No transition removes the open component, so later Yes
 material cannot replace it. A conforming signer durably refuses to sign two decisions for one request. Competing
 same-parent terminal Commits are resolved only by canonical convergence; relay arrival order and locally observed proof

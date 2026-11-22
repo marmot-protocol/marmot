@@ -51,11 +51,18 @@ class Purge:
         return True
 
     def vote(self, actor, timestamp, request_id="request"):
+        return self.submit_votes(actor, [(actor, timestamp)], request_id)
+
+    def submit_votes(self, committer, proofs, request_id="request"):
+        # Proof signatures and the inline proposal shape are verified inputs.
         if (not self.opened or self.terminal is not None or request_id != self.request_id
-                or actor not in self.members or actor in self.yes
-                or not self.created_at <= timestamp <= self.expires_at):
+                or committer not in self.members or not proofs):
             return False
-        self.yes.add(actor)
+        signers = {signer for signer, _ in proofs}
+        if (len(signers) != len(proofs) or signers & self.yes or not signers <= self.members
+                or any(not self.created_at <= timestamp <= self.expires_at for _, timestamp in proofs)):
+            return False
+        self.yes.update(signers)
         return True
 
     @staticmethod

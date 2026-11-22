@@ -167,9 +167,11 @@ struct {
 
 The GroupContext component data is exactly one encoded `MarmotHistoryPurgeOpenStateV1`. `yes_decisions` contains at
 most one record per account, sorted by `proof.signer_pubkey`, and every record MUST have decision `1`. A state update is
-a full replacement. From an existing state it may add exactly one previously absent Yes record and may change no other
-byte. It MUST be the only proposal in its Commit and MUST be inline. The authenticated committer MUST be an active
-cohort member and the signer of the added record. By-reference and standalone Yes updates are invalid.
+a full replacement. It MUST preserve every existing record and add one or more previously absent Yes records.
+It MUST be the only proposal in its Commit and MUST be inline. The authenticated committer MUST be an active cohort
+member. Validate each new record's proof against the same request and its own signer. A member MAY include proofs
+recovered from authenticated losing candidates for that request, without asking those signers to vote again.
+Observing a proof alone does not change canonical state. By-reference and standalone Yes updates are invalid.
 
 A conforming client MUST offer and sign a decision only after the bound request has opened canonically. A decision
 update requires that exact request in the candidate parent; an uncommitted request event cannot collect canonical votes.
@@ -419,7 +421,9 @@ group-wide rule. These are producer obligations, not canonical time validation.
 Recovery still requires a capable surviving member and eventual delivery and convergence. All-offline groups,
 unavailable signers, malicious admins and adversarial scheduling have no guaranteed liveness. Once closure is selected,
 external join or recovery must construct fresh Commit bytes against that closed parent; invalid old bytes do not become
-valid retroactively.
+valid retroactively. If the recovering member has lost its usable state and no other capable member can commit, the
+deadline alone leaves external resync blocked. Before adoption, resolve this restriction for profiles that support external
+resync or explicitly exclude them from this feature.
 
 ## Application and completion projections
 
