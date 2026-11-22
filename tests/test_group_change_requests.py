@@ -64,7 +64,7 @@ def content_shape(raw):
             # Mathematical key validity is the foundation identity check.
         else:
             require(set(data) == {"expected", "value"})
-            require(data["value"] is not None)
+            require(data["value"] is not None and data["value"] != data["expected"])
             if operation in {"set_name", "set_description"}:
                 limit = 256 if operation == "set_name" else 4096
                 text(data["value"], limit)
@@ -232,6 +232,20 @@ class Fixtures(unittest.TestCase):
         for bad in ("", "AA", "AB==", "AA==\n", "_A=="):
             with self.assertRaises(ValueError):
                 content_shape(canonical(request("set_avatar_url", {"expected": None, "value": bad})))
+
+    def test_equal_setting_values_have_no_request_effect(self):
+        with self.assertRaises(ValueError):
+            content_shape(canonical(request("set_name", {"expected": "club", "value": "club"})))
+
+    def test_maximum_url_avatar_preserves_opaque_hints(self):
+        url = b"https://example.org/".ljust(2048, b"a")
+        hint = bytes(range(256))
+        fields = (url, hint, bytes(reversed(hint)))
+        encoded = b"".join((0x4000 | len(x)).to_bytes(2, "big") + x for x in fields)
+        self.assertEqual(len(encoded), 2566)
+        req = request("set_avatar_url", {"expected": None, "value": base64.b64encode(encoded).decode("ascii")})
+        decoded = content_shape(canonical(req))
+        self.assertEqual(base64.b64decode(decoded["data"]["value"]), encoded)
 
     def test_same_second_intents_and_retries(self):
         first = canonical(request())

@@ -91,7 +91,8 @@ request and withdraws the old one when possible.
 | `set_blossom_image` | `expected`, `value` | Encoded complete component state; [Blossom image](../app-components/group-blossom-image-v1.md). |
 
 For settings, `expected` may instead be JSON `null`, meaning the owning component is absent. It is distinct from a
-present empty string, explicit zero timer, or encoded empty image state. `value` MUST NOT be null. Decimal strings
+present empty string, explicit zero timer, or encoded empty image state. `value` MUST NOT be null or equal `expected`.
+An already-satisfied setting has no request or receipt effect. Decimal strings
 are `"0"` or start with `1..9` followed by decimal digits; leading zeros, signs, whitespace, and numeric JSON values
 are invalid. Zero disables disappearing messages through a present retention component.
 
