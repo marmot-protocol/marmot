@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-22: Member group-change request draft
+
+Pull request: [marmot#432](https://github.com/marmot-protocol/marmot/pull/432).
+Changes [features/group-change-requests.md](./features/group-change-requests.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[foundation/registries.md](./foundation/registries.md),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md).
+
+Clients that implement the optional draft use inner kind `467` for requests, rejections, withdrawals, and
+applied receipts. Existing admin authorization still governs group changes. Display a change as applied only
+after matching its receipt to an accepted Commit.
+
 ## 2026-11-21: Agent text streams over QUIC are retired
 
 Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
