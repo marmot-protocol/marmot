@@ -21,6 +21,7 @@ foundation/
   README.md
   identity.md
   authorization-proofs.md
+  invite-link-records.md  (proposed)
   account-identity-proof-v1.md
   key-packages.md
   canonical-encoding.md
@@ -56,17 +57,20 @@ app-components/
   group-lifecycle-v1.md
   account-devices-v1.md
   device-roster-v1.md
+  group-invite-links-v1.md  (proposed, 0x8012)
   account-identity-proof-v2.md
   device-tag-v1.md
 transports/
   README.md
   nostr.md
+  nostr-invite-links.md  (proposed)
   quic.md
 features/
   README.md
   account-sync.md
   content-moderation.md
   device-group.md
+  group-invite-links.md  (proposed)
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
@@ -77,6 +81,7 @@ ideas/
   account-sync.md
   agents-in-chats.md
   multi-device.md
+  group-invite-links.md
 implementation-model.md
 ```
 

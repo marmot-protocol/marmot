@@ -13,6 +13,21 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-22: Private group invite-link draft
+
+Pull request: [marmot#429](https://github.com/marmot-protocol/marmot/pull/429).
+Changes [app-components/group-invite-links-v1.md](./app-components/group-invite-links-v1.md),
+[features/group-invite-links.md](./features/group-invite-links.md),
+[foundation/application-messages.md](./foundation/application-messages.md),
+[foundation/invite-link-records.md](./foundation/invite-link-records.md),
+[foundation/registries.md](./foundation/registries.md),
+[transports/nostr-invite-links.md](./transports/nostr-invite-links.md),
+[transports/nostr.md](./transports/nostr.md).
+
+Clients that implement the optional draft use component `0x8012`, kinds `496`–`498`, and preview descriptor
+kind `30444`. Authenticate the preview and the joining device’s consent before processing an invite-link
+Welcome. Regular invitations keep their existing flow.
+
 ## 2026-11-21: Agent text streams over QUIC are retired
 
 Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).

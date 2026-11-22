@@ -25,6 +25,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
 - [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
   account's existing devices.
+- [group-invite-links.md](./group-invite-links.md) - proposed private invite links, device consent, admin decisions,
+  expiry and recovery; not adopted.
 
 ## Relationship to app components
 
