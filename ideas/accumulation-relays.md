@@ -3,31 +3,31 @@
 Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. See [README.md](./README.md).
 
 An accumulation relay is a specially configured Nostr relay that collects a broad feed of encrypted Marmot events and
-buffers them for authorized clients. A user chooses a trusted shared relay or self-hosts one. When this mode is enabled,
-the client uses that relay as its only Nostr relay connection and queries its current and retained group routing tags.
-This departs from Marmot's [redundant-delivery invariant](../principles.md#write-the-stable-marmot-invariants-once)
-at the client. Group routing still names redundant upstream targets, and the relay fans out to every permitted target,
-but the selected relay can cut this client off from all of them. Adoption requires an explicit protocol-level decision
-on whether this opt-in exception is acceptable.
+buffers them for authorized clients. A user can authorize one or more trusted accumulation relays, including
+self-hosted ones. The client can use multiple authorized relays in parallel while keeping direct upstream connections off.
 
-The goal is to reduce the exposure of individual group subscriptions to untrusted upstream relay operators, while
-reducing mobile connection overhead and duplicate downloads. The additional collection bandwidth and storage move to
-the accumulation relay. These benefits need measurement and depend on which sources the relay can collect.
+Independently operated accumulation relays with overlapping coverage provide alternate paths if one fails. Relays
+with disjoint coverage can extend reach, but each unique source still has a single path. Group routing and upstream
+fanout stay intact. A single usable accumulation path remains a client-side exception to Marmot's
+[redundant-delivery invariant](../principles.md#write-the-stable-marmot-invariants-once), which needs an explicit
+protocol-level decision before adoption.
+
+The goal is to reduce exposure of individual group subscriptions upstream. The mode may also reduce mobile connection
+overhead compared with connecting to every upstream, depending on how many accumulators the client uses. Parallel
+subscriptions can increase duplicate downloads. The accumulators bear the collection bandwidth and storage costs.
 
 ## User flow
 
-1. The user enters the accumulation relay URL and authorizes this device through private pairing or an invitation.
-   Entering a URL alone does not grant access to a private relay.
-2. The client checks the relay's capabilities, source coverage, retained history and collection status after
-   authorization. An ordinary relay with authentication alone is insufficient.
-3. The client submits normal Nostr group queries for every current and prior `h` address needed by its retained
-   history. It receives the matching events and verifies them using the existing Nostr and MLS rules.
-4. Inbox, discovery and publication traffic also pass through this connection. The accumulation relay contacts the
-   appropriate upstream destinations; the client does not open additional Nostr relay connections for those operations.
-5. Missing coverage, catch-up and outages remain visible. Returning to direct connections requires an explicit user
-   choice because that can reveal subscriptions. The user can revoke a device or disconnect the accumulation relay.
+1. The user adds relay URLs and authorizes the device separately at each relay through private pairing or an invitation.
+2. The client checks each relay's capabilities, source coverage, retained history and collection status.
+3. The client queries authorized relays for the current and prior `h` addresses it needs. It validates events under
+   the existing Nostr and MLS rules and processes duplicate deliveries through the existing deduplication rules.
+4. Inbox, discovery and publication go through authorized accumulation relays that support the requested operation.
+   Another authorized relay can take over when it covers the needed targets.
+5. The client shows missing coverage and loss of redundancy. The user can disconnect or revoke access per relay.
+   Direct upstream connections require an explicit user choice because they can reveal subscriptions.
 
-Media downloads and connections to an external signer are separate from the one Nostr relay connection described here.
+Media downloads and connections to an external signer are separate from accumulation relay connections.
 
 ## Collection and history
 
@@ -50,7 +50,9 @@ groups, extending their retention on demand, or requesting individual groups ups
 behavior. A broad buffer can include new or rotated addresses without learning their encrypted routing changes, but
 only where its sources, collection interval and retention window cover the events.
 
-The client compares reported coverage with the routing sources and history it needs. A source missing from the
+The client compares each relay's reported coverage with the routing sources and history it needs. Reports can describe
+complementary coverage, but an unavailable relay leaves a gap wherever no remaining relay covers the needed source
+and time range. A source missing from the
 collector is a coverage gap, not an empty conversation. Adding an upstream means collecting its broad feed; it is not
 a request to follow only the requesting user's groups. Coverage for source changes discovered during catch-up is an
 open recovery question. The collector has no MLS secrets with which to discover those changes itself.
@@ -82,13 +84,13 @@ forwarded inbox filters or signed account metadata.
 
 ## Forwarding and publication
 
-The one-connection mode needs a negotiated relay extension for upstream targets, request correlation and delivery
+This mode needs a negotiated relay extension for upstream targets, request correlation and delivery
 results. Ordinary Nostr message queries remain useful for buffered group events, but ordinary queries and event
 publication do not name the upstream destinations of a proxy operation. Enrollment and these extension messages are
 not defined by this idea.
 
-The client's accumulation relay URL is local configuration. It does not replace the group's signed routing state or
-publish a new account relay list merely to enable this mode. Inbox and discovery proxying follows the existing target
+The client's accumulation relay URLs are local configuration. Enabling this mode leaves the group's signed routing
+state and account relay lists intact. Inbox and discovery proxying follows the existing target
 rules in the [Nostr transport](../transports/nostr.md), subject to supported authentication and source access.
 
 For publication, the client retains the original signed event and its applicable upstream target set. The proposed
@@ -99,7 +101,9 @@ existing publish lifecycle; outstanding fanout remains outstanding as described 
 The intended relay continues accepted forwarding work while the phone is offline. The client retains enough information
 to recover the job and target results after reconnecting. Relay restart, uncertain acknowledgements, exhausted capacity,
 job retention and relay replacement need explicit recovery semantics before adoption. Retrying an uncertain publication
-uses the retained signed event rather than generating another event. Transport delivery reports do not choose group state.
+uses the retained signed event, including when another authorized relay takes over. The client tracks confirmations
+by upstream target across relays. Duplicate reports for the same target do not count as additional upstream
+acceptances. Outstanding targets remain owed. Transport delivery reports do not choose group state.
 
 Forwarding is limited to authorized, bounded upstream operations.
 
@@ -116,9 +120,11 @@ Forwarding is limited to authorized, bounded upstream operations.
   this proposal's guarantee; padding, mixing and Tor integration need separate work.
 - **Message security:** clients retain Nostr signature and MLS validation. The relay cannot substitute its reports for
   that validation, but it can withhold or delay events. It does not receive MLS secrets.
-- **Availability:** upstream publication and group delivery retain their existing redundant targets. The selected
-  accumulation relay adds a local dependency: that client's connection can fail even while the group continues elsewhere.
-  Switching relays requires authorization, coverage checks and publication recovery; direct fallback is a user choice.
+- **Availability:** overlapping coverage through independently operated relays can keep a client connected during an
+  outage. Common infrastructure or shared upstream outages can still affect multiple paths. The client reports the
+  resulting loss of coverage or redundancy without silently switching to direct connections.
+- **Parallel exposure:** each queried operator can see the queries it handles. Operators may correlate shared group
+  tags, client network metadata or timing even when each relay sees a different authentication key.
 
 ## Integration and path into the specification
 
@@ -126,16 +132,14 @@ This is an optional client transport mode, not new MLS group state. No component
 assigned here. Existing groups and clients using direct relays remain interoperable.
 
 Once settled, exact enrollment, capability, proxy, coverage and delivery-report behavior belongs in the Nostr transport
-specification. A feature document can describe the user flow and reference those rules. Neither the private relay URL
-nor its authentication credentials belongs in the group's app components.
+specification. A feature document can describe the user flow and reference those rules. Relay URLs
+and authentication credentials stay in local configuration.
 
 ## Open questions and validation
 
 Before turning this into an interoperable profile, settle:
 
-- Whether an opt-in single relay path is an acceptable exception to redundant delivery at the client, and what recovery
-  clients would need on relay failure.
-
+- Whether an opt-in single relay path is an acceptable exception to redundant delivery at the client.
 - The versioned enrollment, capability and forwarding exchange, including authorization scopes, replay protection,
   credential replacement, error results and recovery after an interrupted change.
 - How source coverage, rotation catch-up and declared history are represented without claiming completeness, including
@@ -145,8 +149,9 @@ Before turning this into an interoperable profile, settle:
   replacement, preserving existing publication obligations.
 - Safe destination policy and budgets for hostile input, large groups, many clients and broad feed flooding.
 - Measured collection costs, mobile bandwidth and battery use, catch-up latency and the consequences of shared versus
-  single-user deployment. One connection alone is not a bandwidth or battery benchmark.
+  single-user deployment. Compare single and parallel paths under overlapping and complementary coverage.
 
 Interop validation can cover unknown-key rejection, account isolation, authentication replay and wrong-relay attempts,
 credential revocation, history gaps and offline rotation, original-event publication and target fanout, crash recovery,
-destination and resource limits, and absence of unintended direct Nostr connections while the mode is enabled.
+destination and resource limits. Also test loss of one parallel path with overlapping or disjoint coverage, duplicate
+event and target-report handling, and failover without unintended direct Nostr connections.
