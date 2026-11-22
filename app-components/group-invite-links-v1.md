@@ -4,7 +4,7 @@ Status: proposed; not adopted. The allocations below are draft allocations for r
 
 ## Registry and presence
 
-- Component id: `0x800e`.
+- Component id: `0x8012`.
 - Name: `marmot.group.invite-links.v1`.
 - Location: GroupContext `app_data_dictionary` only.
 - Optional feature; not required by baseline Marmot.

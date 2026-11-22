@@ -85,6 +85,10 @@ Persistent Marmot group state uses GroupContext components. Per-member applicati
 proof about a leaf normally uses a LeafNode component. A component document MUST state every valid location and define
 the bytes and validation rules for each location.
 
+A component MAY have no valid location. It then carries no data: it exists only as an id in `app_components` support
+and required lists, and its document defines what requiring it changes and how an unexpected entry under its id is
+handled. [account-devices-v1.md](./account-devices-v1.md) is such a component.
+
 Location also determines how the bytes change:
 
 - GroupContext component entries change through `AppDataUpdate`.
@@ -121,6 +125,66 @@ New groups also require `marmot.group.lifecycle.v1` (`0x800c`) with `active`
 state. Existing groups that predate that component remain valid without it and
 use the explicit enablement flow in
 [group-lifecycle-v1.md](./group-lifecycle-v1.md).
+
+## Enabling a Component in an Existing Group
+
+A group that predates a component can start requiring it once every member supports it. Members learn about support from
+authenticated group state, so the process has three steps: members advertise support, the group becomes eligible, and
+one Commit activates the component.
+
+### Advertising support
+
+A client advertises the component ids it supports in its KeyPackages
+([../foundation/key-packages.md](../foundation/key-packages.md), "Capability advertising") and in its own leaf in each
+group. A LeafNode's `app_components` support list changes only when the member creates a replacement LeafNode, through
+an Update proposal or the UpdatePath of its own Commit.
+
+When a client creates a replacement LeafNode for its own leaf, it SHOULD advertise every component id it currently
+supports. The replacement MUST still advertise every component id the group requires.
+
+A client MUST NOT advertise a component id it does not support. A client that drops support for a component id stops
+advertising it in new KeyPackages, and SHOULD stop advertising it in its next replacement LeafNode in each group that
+does not require it. A client MUST NOT drop support for a component id that a group it belongs to requires: it keeps
+supporting that component while it remains a member, or leaves the group first
+([../protocol-core/member-departure.md](../protocol-core/member-departure.md)). There is no way for a member to
+withdraw support for a required component and stay in the group.
+
+A client whose own leaf in a group advertises fewer component ids than it supports SHOULD replace that leaf, for example
+with a self-update Commit. It SHOULD first wait for a delay chosen uniformly at random from a window that starts when
+the client notices the stale leaf, so that installing a new release does not make every member of a group commit at
+once. The window's length is implementation-defined and SHOULD be at least several hours. When the delay ends, the
+client replaces the leaf only if it still advertises fewer component ids than the client supports. Any replacement
+LeafNode the client created for that group in the meantime, for example in an UpdatePath, already makes the delayed
+replacement unnecessary. The delayed replacement is an ordinary Commit and follows the normal publication rules.
+
+### Eligibility
+
+A group is eligible to require a component when every leaf in the current canonical state advertises that component id.
+Eligibility is read from authenticated leaves, so every member computes the same answer.
+
+### Activation
+
+An activation Commit adds the component's initial GroupContext state, if the component has any, and adds its id to the
+required `app_components` list in the same Commit. It is valid only when every leaf in the resulting state advertises
+the id. Its authorization is the component's commit authorization: an active admin unless the component document says
+otherwise.
+
+Activation is an explicit decision by an authorized member. A client MUST NOT activate a component unless its user, or
+the component's own document, asks it to. Before committing, the client checks again that the component is not already
+required and that every leaf still advertises it, so it does not repeat an activation another admin already committed.
+If the activation Commit loses branch selection ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or
+those checks fail when a queued activation is regenerated after convergence settles
+([../protocol-core/group-state.md](../protocol-core/group-state.md), "Local actions during convergence"), the client
+does not commit it on its own. It activates only if its user asks again.
+
+After activation, a member whose KeyPackage does not advertise the id cannot be added ("Negotiation" above). A client
+SHOULD tell an inviter when an invitee's KeyPackages are refused for this reason, so the invitee can update.
+
+A component that supports activation in an existing group MUST say so in its own document and define the initial state
+its activation Commit installs. A component whose required status changes how clients validate or select group state
+MUST forbid removing it, and MUST say which state's GroupContext decides its effect, so that branches that diverged
+across the activating Commit are resolved the same way by every client. [group-lifecycle-v1.md](./group-lifecycle-v1.md)
+and [account-devices-v1.md](./account-devices-v1.md) follow this process.
 
 ## Common Rules
 
@@ -170,14 +234,16 @@ operation for a given component id, whether that operation adds, updates, or rem
 operation for the same component id makes the Commit invalid.
 
 The update rule returns new state bytes or rejects the Commit. A component's update rule decides how update bytes relate
-to prior state. In v1 every GroupContext component document defines its update payload as a full replacement state. The
+to prior state. In v1 every GroupContext component document defines its update payload as a full replacement state,
+except [device-roster-v1.md](./device-roster-v1.md), whose update is a diff. The
 client validates the operation's proposal sender, committer, component-local encoding, value rules, and removal policy.
 Any invalid operation makes the whole Commit invalid. Resulting-epoch and cross-component invariants are then checked
-against the complete final state. Partial field updates and last-wins processing are not defined (see "Common Rules"
-above).
+against the complete final state. Last-wins processing is not defined, and partial field updates are not defined
+outside a diff-style update rule (see "Common Rules" above).
 
-A future component MAY define a diff-style update rule, but it MUST say so explicitly in its own document; no v1
-component does.
+A component MAY define a diff-style update rule, but it MUST say so explicitly in its own document, define how the
+update applies to the candidate parent's state, and make the result independent of the order of its operations.
+[device-roster-v1.md](./device-roster-v1.md) is the only component that does.
 
 Update rules MUST be deterministic. They MUST NOT read local wall-clock time, transport state, random numbers, local UI
 state, or local storage order.
@@ -254,9 +320,25 @@ The currently adopted persistent GroupContext components are:
 - [marmot.group.encrypted-media.v2](./group-encrypted-media-v2.md)
 - [marmot.group.lifecycle.v1](./group-lifecycle-v1.md)
 
-The following persistent GroupContext component is experimental and is not required for baseline Marmot conformance:
+The following adopted component carries no data. A group lists it among its required components to let members add and
+remove leaves of their own account:
 
-- [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md)
+- [marmot.group.account-devices.v1](./account-devices-v1.md)
+
+The following persistent GroupContext component is retired. New groups do not include it, but many existing groups
+require it, so clients keep supporting it as its Retirement section says:
+
+- [marmot.group.agent-text-stream.quic.v1](./agent-text-stream-quic-v1.md#retirement)
+
+The following persistent GroupContext component is a draft. A group that requires it is an account's device group
+([../features/device-group.md](../features/device-group.md)):
+
+- [marmot.account.device-roster.v1](./device-roster-v1.md)
+
+The following LeafNode component is a draft. An account's linked devices carry it in their leaves so that they can tell
+which of the account's leaves belongs to which device:
+
+- [marmot.member.device-tag.v1](./device-tag-v1.md)
 
 The frozen [marmot.group.encrypted-media.v1](./group-encrypted-media-v1.md) component remains documented for legacy
 bytes but is not part of the current profile.
@@ -266,7 +348,7 @@ Every Marmot leaf uses the adopted
 
 The proposed optional GroupContext component is:
 
-- [marmot.group.invite-links.v1](./group-invite-links-v1.md) (`0x800e`) - immutable invite generations and policy;
+- [marmot.group.invite-links.v1](./group-invite-links-v1.md) (`0x8012`) - immutable invite generations and policy;
   not adopted or required for baseline conformance.
 
 ## Resolved Direction
@@ -279,10 +361,14 @@ The proposed optional GroupContext component is:
 - `marmot.group.blossom.image.v1` is Blossom-specific. Other image-reference models SHOULD use separate components.
 - `marmot.transport.nostr.routing.v1` is required for Nostr-routed Marmot groups.
 - Nostr relays in `marmot.transport.nostr.routing.v1` are canonical signed group state, not local hints.
-- Experimental application profiles MAY require `marmot.group.agent-text-stream.quic.v1` for agent-stream-ready
-  groups. Its `receive` role is final-message fallback compatibility, not a requirement to implement the raw QUIC
-  live-preview data plane.
+- `marmot.group.agent-text-stream.quic.v1` is retired. New groups MUST NOT include it. Clients keep supporting it,
+  and its `receive` role, for existing groups that require it; that support needs no QUIC code.
 - AppDataUpdate proposals MAY be inline or standalone. Inline is the default path when the committer is authorized;
   standalone MLS proposals are not the default non-admin request path for admin-gated component changes.
 - `marmot.group.encrypted-media.v2` owns the current group media policy. Individual media attachments remain message
   metadata and are described in [encrypted-media.md](../features/encrypted-media.md).
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.

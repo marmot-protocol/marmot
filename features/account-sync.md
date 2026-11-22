@@ -1,0 +1,1176 @@
+# Account sync
+
+Status: draft.
+
+An account's devices keep some state the same everywhere: which messages the user has read, and per-chat settings such
+as pins, mutes and archived chats. The account's devices exchange it inside their device group
+([device-group.md](./device-group.md)), so it never reaches a chat, a relay or another account.
+
+The non-normative direction is described in [../ideas/account-sync.md](../ideas/account-sync.md). This document covers
+small state and history: the history keys that chat history is sealed to, history bundles, and the history deliveries
+that carry them from the device that adds a sibling to a chat; and backups: the recovery key they are sealed to, and
+how the account's backup writer writes them, history-only restore for chats the restoring device currently belongs to,
+and invitation decisions scoped to one admission generation. Restoring archived small state and broader disaster
+recovery are not specified yet.
+
+## Surfaces
+
+- Feature: [device-group.md](./device-group.md), which defines the device group, when a device trusts one, and its
+  roster.
+- App component: [../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), whose device entries
+  carry each device's history key ([History keys](#history-keys)) and whose account entry carries the account's
+  recovery key and backup writer ([The account's recovery key](#the-accounts-recovery-key)).
+- Marmot app events: kind `475` (small-state update), kind `476` (broadcast request) and kind `473` (history delivery),
+  sent only in a device group ([Messages](#messages), [History deliveries](#history-deliveries)). Their kinds are
+  registered in [../foundation/registries.md](../foundation/registries.md).
+- Transport: [../transports/nostr.md](../transports/nostr.md) ("Backup pointer"), which carries the account's backup
+  pointer ([Backup pointer](#backup-pointer)).
+- Protocol core: [../protocol-core/convergence.md](../protocol-core/convergence.md) and
+  [../protocol-core/retained-history.md](../protocol-core/retained-history.md), which decide when a device-group message
+  is delivered, withdrawn or lost.
+
+## Small state
+
+Small state is per-chat state that follows the user from device to device. Each device keeps its own copy, applies it to
+its own chats, and tells its siblings when the user changes it. Read, pin, mute and archive state never changes group
+state. An invitation decline requests ordinary local Leave in [Member departure](../protocol-core/member-departure.md),
+and a user leaving a chat records a decline ([Invitation decisions](#invitation-decisions), "Leaving"); an acceptance
+never joins a group.
+The state update itself is sent only inside the device group, not in the chat it describes.
+
+Drafts are not small state: a draft belongs to the device it was typed on.
+
+### Items
+
+Small state is a set of items. An ordinary item is named by the chat and the item's name; an `invite` item is also
+named by its [invitation generation](#invitation-decisions). The chat is
+the group's MLS group id ([../protocol-core/group-setup.md](../protocol-core/group-setup.md)), never a transport
+routing id. Small state covers only chats whose MLS group id is one to 256 bytes long, so that every item fits in one
+update; a device holds, sends and merges no item for another chat.
+
+| Item      | What it holds                                   | Which value wins                   |
+| --------- | ----------------------------------------------- | ---------------------------------- |
+| `read`    | the furthest message the user has read          | the furthest position              |
+| `pin`     | whether the chat is pinned                      | the highest version, then the tie-break |
+| `mute`    | whether the chat's notifications are muted, and until when | the highest version, then the tie-break |
+| `archive` | whether the chat is archived                    | the highest version, then the tie-break |
+| `invite`  | accept or decline for one invitation generation | the highest version, then decline |
+
+**Read positions.** A read position names one message of the chat: a Marmot app event
+([../foundation/application-messages.md](../foundation/application-messages.md)) delivered in the chat, or imported from
+a sibling's history ([History bundles](#history-bundles)) with the epoch its bundle gives it, other than an edit (kind
+`1009`), whose epoch and `created_at` are each at most 9007199254740991. A read position carries no version
+or change id. Positions are in chat order, which compares, in this order:
+
+1. the MLS epoch the message was sent in;
+2. its `created_at`;
+3. its `id`, as 32 bytes.
+
+Every device of the account sees the same values for the same message, so every device puts positions in the same
+order.
+
+The position a device takes from its own state names the furthest message, of those a position may name, that its user
+has read on that device, or none when there is no such message. Which messages count as read is the client's own, as it
+is without small state: a client that shows rows no position names, such as an edit, a synthesized group system row or a
+message not delivered yet, judges from its own transcript which messages its user has read. Only the device whose user
+read takes a position from that reading, and it merges that position as it would a received one. From there a position
+is an item like any other, sent in updates, broadcasts and resends by every device that holds it, and every device
+merges positions by the rules here, so two clients need not judge the same reading alike.
+
+A receiver cannot tell what a position names before it holds that message, so it takes any position whose encoding is
+valid, whatever the message turns out to be, and never reconsiders it. A read position only moves forward: a device
+takes a received position when it holds none for that chat, or when the received one is further than the one it holds. A
+device marks as read every message of the chat, delivered or imported, at or before the position it holds, including
+ones that reach it later; the position changes nothing else, so a message that never counts as unread, such as an edit, stays that way
+after it. A device may hold a position before it holds the message the position names.
+
+**Versioned items.** `pin`, `mute` and `archive` each carry a version and a change id:
+
+- When the user changes a versioned item on a device, the device gives the change a version one higher than the highest
+  version it holds for that item, from any device, and a fresh change id: 16 bytes from a cryptographically secure
+  random source. A device that holds no value for the item counts its highest version as 0, so its first change has
+  version 1.
+- Of two values for the same item, the one with the higher version wins. At an equal version, the one with the lower
+  change id, compared as bytes, wins. At an equal version and change id, the one whose `value` is lower, compared as the
+  bytes of its encoding ([Messages](#messages)), wins; only a device that breaks these rules sends two values that way.
+- A value that loses is discarded. A device applies the winning value to its own state of the chat.
+
+Every device picks the same winner from the same values, whatever order they arrive in and however often, and neither
+the sender nor any clock decides it. A setting turned back off, such as a chat unpinned, is a value like any other and
+keeps its version.
+
+A version is at most 9007199254740991. A device that holds an item at that version cannot give a change a higher one,
+so its user cannot change that item: the device puts the held value back. Values at that version still compare by
+change id and value like any others, so every device keeps picking the same winner. Each change adds one to a version,
+so no device that follows these rules comes near that number ([Security considerations](#security-considerations)).
+
+How a device orders its pinned chats is its own: a chat that becomes pinned through small state goes where the device
+puts newly pinned chats.
+
+A mute value of `true` mutes the chat until it is unmuted; a time mutes it until then. Each device judges by its own
+clock whether a time has passed. A time that has passed means the chat is not muted on that device, and no update is
+needed when it passes.
+
+### Starting
+
+A device starts taking part in small state the first time it both trusts a device group
+([device-group.md](./device-group.md), "Trust") and supports this document: when it first trusts one, or, for a device
+that already trusts one, when it gains support. It holds no item yet for settings it already has. When it starts, it
+gives each versioned setting that differs from the default (not pinned, not muted, not archived) a value at version `1`
+with a fresh change id, and takes its current read position for each chat it has read. It then broadcasts and sends a
+broadcast request ([Broadcasts](#broadcasts)), so its siblings learn what it holds and it learns what they hold. Where
+two devices start with different settings for one chat, the rules above pick the same winner on both.
+
+When a [move between device groups](./device-group.md#moving-between-device-groups) becomes made, the device keeps
+its existing items and versions, including all retained invitation-generation winners. It broadcasts them and sends a
+broadcast request in the destination. A late old-group send completion does not satisfy this destination broadcast.
+This is not another first start and does not reset versions.
+
+A device keeps the items it holds for a chat it is not in, so a chat it joins later starts with the account's state.
+
+### Invitation decisions
+
+An invitation decision is keyed by the chat's raw MLS group id **and an invitation generation**, not by the group id
+alone. One generation covers the account's devices admitted by the same authenticated external or founding Add result
+and the siblings automatically added from that admission under the inheritance below. A separate external Add,
+separate Add batch, or different admission fork is a different generation even if the same account already has other
+leaves in the chat. A decision does not claim that every leaf of the account across those generations has left.
+
+**Native identity.** Let `A` be this account's valid raw 32-byte x-only secp256k1 public key
+([../foundation/identity.md](../foundation/identity.md)), not its hexadecimal text, slot or leaf signature key. Let `C`
+be the exact canonical RFC 9420 TLS serialization of the successfully validated post-admission GroupContext, in MLS
+field order, including version, ciphersuite, raw MLS group id, epoch, tree hash, confirmed transcript hash and extensions.
+The generation is the 32-byte SHA-256 digest of this concatenation:
+
+```text
+ASCII("marmot.invitation-generation.v1") || 0x00 || A[32] || uint64_be(byte_length(C)) || C
+```
+
+The ASCII label has no trailing NUL other than the explicit separator shown. The length is an unsigned 64-bit
+network-order byte count. A client MUST capture the original successfully validated context, before later group state
+can replace it, and persist its association with the installed local copy in the successful admission. It MUST NOT
+write an identity on a rejected join or invent one when serialization or length conversion fails. Different Welcome
+batches for the same Add result have the same context and account input, irrespective of recipients, wrappers,
+KeyPackages or GroupInfo outer signatures. No secret exporter is used.
+
+**Derivation test vector.** This minimal canonical TLS GroupContext tests the hash construction only; it is not a
+complete Marmot admission and grants no membership. Hexadecimal strings denote raw bytes, not text. `C` has length 97
+(`uint64_be` length `0000000000000061`); the ASCII domain label has 31 bytes before its separator.
+
+```text
+A = 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+C = 0001000111000102030405060708090a0b0c0d0e0f10000000000000000720111111111111111111111111111111111111111111111111111111111111111120222222222222222222222222222222222222222222222222222222222222222200
+SHA-256 = 6d0ba86f166ff1fc424217574e7a62dbcf9c6d16a54efd61936dbc05a1f8fec2
+```
+
+For a locally founded group, use the successfully confirmed post-founding context: epoch 1 after a founding Add, or
+epoch 0 for solo creation ([../protocol-core/joining.md](../protocol-core/joining.md), "Behavior"). Its creator records
+one implicit accepted value at version 1 only if it holds no decision for that generation, then retains and broadcasts
+it under the ordinary decision rules below. A held value is never replaced by that implicit acceptance; replay or
+restart neither creates a new user action nor increments its version. No public founding Commit carrier is required
+for the identity.
+
+**Inherited identity.** An automatic same-account sibling Add carries its sender's stored original generation in the
+version-2 or version-3 sibling Welcome ([device-group.md](./device-group.md#message)). It MUST NOT derive a replacement from the
+later sibling Add's context. The authenticated device-group sender asserts that inheritance for the exact Welcome and
+KeyPackageRef; this is a trusted sibling's assertion, not independent proof of the earlier external admission. The
+receiver records the installed association only with successful native admission. If it retains the Welcome while an
+active local copy prevents installation, it retains the asserted generation with those same Welcome bytes under
+[Receiving a sibling Welcome](./device-group.md#receiving-a-sibling-welcome). Retaining it is not installing it, and
+never authorizes active-copy replacement; [Welcome receiving](../protocol-core/joining.md#receiving-flow) keeps its
+explicit discard/rejoin boundary. A replay of the identical retained Welcome keeps the same generation.
+
+Existing unidentified local copies and version-1 sibling admissions remain local-only. A client MUST NOT seed them from
+its current epoch, time, route, account presence or a decision carrying only the same chat id. For an unidentified copy,
+a sibling Add can forward whether the sender's copy is confirmed, beside any inviter, in a version-3 sibling Welcome;
+the new copy is shown as [Receiving forwarded fields](./device-group.md#receiving-forwarded-fields) says, and stays
+local-only. A device whose copy is confirmed and has an original generation but holds no decision for it, for example
+one accepted while it trusted no device group, applies the founder rule above to that generation before it adds a
+sibling to that chat: one implicit accepted value at version 1 only if it holds no decision, never replacing a held
+value and never repeated on restart, retained and owed its ordinary broadcast before the Add. A chat whose raw MLS group
+id is outside the one-to-256-byte bound of an invite item records no value; its sibling's copy, which carries the
+generation and so no forwarded confirmation, stays a pending invitation there. This feature requires updated
+experimental senders and receivers before use; it adds no capability negotiation and makes no mixed-version
+compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
+
+**Values.** A decision has a version from 1 through 9007199254740991 and value `accept` or `decline`. A local user
+change takes one more than the highest held version for this exact generation. A device that holds no value for that
+generation uses 0 as its highest held version.
+At the maximum it keeps the held value and sends no new user change; it does not reuse that version to change value.
+Ordinary rebroadcast of the held value remains permitted. Higher version wins; at equal version decline wins over
+accept. Equal version and value are identical state.
+There is no change id, sender tie-break or clock. Receiving or rebroadcasting a value is not a new local user action.
+
+**Leaving.** When its user leaves a chat, a device takes the account out, not only itself. It leaves by SelfRemove under
+[Member departure](../protocol-core/member-departure.md#behavior), first taking the account off the admin list if the
+account is an active admin; a user leaving a chat is never carried out as a Remove committed by a sibling, which stays
+for other departures such as signing out
+([Member departure](../protocol-core/member-departure.md#removal-by-another-device-of-the-same-account)). When it
+requests that departure, it records a decline, as a local user change, for the generation associated with its local
+copy, before it publishes anything for that departure. The decline stands even if the departure is not yet committed;
+the departure stays owed under its ordinary rules. Its siblings admitted by that generation then leave as well
+(Applying, below), and the decline holds automatic sibling Adds from that admission. The decline also stands if the
+departure becomes blocked and its user cancels it
+([Member departure](../protocol-core/member-departure.md#behavior)). That Cancel is a local action on that device: it
+is not replicated and does not clear a sibling's departure. While its account is the chat's last active admin, its user
+cannot start leaving the chat on any of its devices: the device records no decline and requests no departure, and the
+user first makes another member an admin ([Member departure](../protocol-core/member-departure.md#behavior)). A
+departure requested earlier that later becomes blocked stays owed under those rules until it unblocks or that device's
+user cancels it. A device that cannot request its departure for
+another reason records no decline either. If the generation's held value is already at the maximum version, the device
+leaves without a new decline (Values, above). A copy with no identified generation, or a device that trusts no device
+group, takes out only its own leaf. A sibling admitted by a separate generation stays in the chat until its user leaves
+there too, without admin if the account gave it up to leave. Siblings that applied the leaving device's SelfRemove don't
+add it back automatically ([Private sibling Add admission](./device-group.md#private-sibling-add-admission)). A device
+that leaves because a decline reached it records nothing new. Departures made while signing out or removing a device
+([Signing out](./device-group.md#signing-out), [Removing a device](./device-group.md#removing-a-device)) are not a user
+leaving a chat and record no decline. Archiving, deleting a local copy, removal by another member and disappearance are
+not declines either.
+
+A client retains each known generation's winning value for ordinary full broadcasts and resends, even if it does not
+hold a matching chat. It creates no join, Add, KeyPackage allocation or restore from a received decision. There is no
+generation expiry that permits an old matching admission to escape a retained decision.
+
+**Applying.** Apply a decision only to a local copy associated with that exact generation. A value received before its
+Welcome is retained without joining; once the matching native admission installs, apply it as below. A value
+for another generation remains held, without resolving the current invitation. A later independent reinvite can
+therefore prompt again.
+
+The replicated value is always merged, independently of local presentation policy. Here a pending invitation means a
+client-local request for confirmation of an already natively joined copy, not an MLS membership state. Acceptance
+resolves only that pending presentation on an active matching local copy. Local policy, including blocking the inviter
+or retaining an explicit archive choice, still governs that presentation; it does not filter replication. Acceptance
+never installs a Welcome, restores membership, or grants the explicit discard/rejoin consent required by
+[Welcome receiving](../protocol-core/joining.md#receiving-flow).
+
+Decline is not filtered by those acceptance-only presentation checks or by whether the local copy was previously
+accepted. Each local copy associated with the matching generation records work to request ordinary Leave for its own
+leaf under [Member departure](../protocol-core/member-departure.md), not to directly remove leaves of other generations.
+Existing settled-state, admin, removal and disband rules still apply. A client MUST durably record the
+winning decision, its owed broadcast and necessary decline work before external side effects; a received winner is
+merged durably before applying it. Existing Leave work remains retryable under its ordinary owner. A copy owes decline
+work once for each winning value: merging the same value again, rebroadcasting it, restarting or replaying the same
+native admission owes no new work. So after its user cancels a blocked departure
+([Member departure](../protocol-core/member-departure.md#behavior)), the decline that stands owes no new Leave for that
+copy; only a new winning value or a new native admission can owe new decline work. A higher-version accept can replace
+the replicated value but MUST NOT cancel an already requested Leave or resurrect membership. This feature promises
+neither synchronous departure nor departure by unrelated generations.
+
+**Automatic sibling Adds.** A client that knows a winning decline for its current authenticated admission generation
+MUST NOT start a new automatic sibling Add from that admission. The hold neither forbids nor requires a private
+KeyPackage request; requests follow the ordinary stock rules ([device-group.md](./device-group.md#private-keypackages)).
+This sender rule applies even while ordinary Leave cannot yet be requested. Keep existing advisory claims and their
+original expiry independent of that hold. A winning-value change MUST cause the affected chat's existing automatic Add
+eligibility to be reconsidered even when no MLS epoch changes. A higher accept before Leave is requested can therefore
+resume an already permitted opt-in flow; it creates no new Add or join obligation. A decline for another generation, an
+unidentified legacy admission, or a separate new founding admission does not impose this hold. Already admitted or
+signed Add and Welcome traffic follows its ordinary settlement and validation rules; this rule neither recalls it nor
+adds a receiver-side rejection rule. Already requested Leave remains independent as above.
+
+### Messages
+
+| Kind  | Message           | Sent by                                                     |
+| ----- | ----------------- | ----------------------------------------------------------- |
+| `475` | Update            | a device whose user changed small state, or that broadcasts |
+| `476` | Broadcast request | a device that starts, or may have missed updates            |
+
+Both are Marmot app events ([../foundation/application-messages.md](../foundation/application-messages.md)) sent as MLS
+application messages in the device group. Each one's content is one UTF-8 JSON object, written without whitespace, with
+its members in the order shown, and at most 32,768 bytes long. No object in it repeats a member name.
+
+An update's content is `{"v":1,"items":[...]}`: `v` is `1`, and `items` holds one or more items. An item is one JSON
+object:
+
+| Member    | Value |
+| --------- | ----- |
+| `chat`    | the chat's MLS group id: its raw bytes, every one, as lowercase hexadecimal with no prefix, so 2 to 512 characters |
+| `item`    | the item's name: `read`, `pin`, `mute`, `archive` or `invite` |
+| `generation` | for `invite` only: its 32-byte generation as exactly 64 lowercase hexadecimal characters |
+| `value`   | the item's value, below |
+| `version` | for `pin`, `mute`, `archive` and `invite`: the version |
+| `change`  | for `pin`, `mute` and `archive` only: the change id, 32 lowercase hexadecimal characters |
+
+| Item      | `value` |
+| --------- | ------- |
+| `read`    | `{"epoch":e,"at":t,"id":"<id>"}`: the epoch the message was sent in, its `created_at` and its `id` (64 lowercase hexadecimal characters) |
+| `pin`     | `true` or `false` |
+| `mute`    | `false`, `true`, or a time in seconds since the Unix epoch |
+| `archive` | `true` or `false` |
+| `invite` | `"accept"` or `"decline"` |
+
+An item has exactly the members above for its name, and a `read` value exactly its three. Every number in these
+messages is a decimal integer from 0 to 9007199254740991, without leading zeros, and a version is at least 1. One
+message holds at most one item for each chat and item name, including when two invite items have different generations.
+An invite object has exactly `chat,item,generation,value,version`, in that order, and no `change` member. `chat` has
+1..256 raw bytes (2..512 hexadecimal characters). For example:
+
+```json
+{"v":1,"items":[{"chat":"0102","item":"invite","generation":"0000000000000000000000000000000000000000000000000000000000000000","value":"accept","version":1}]}
+```
+
+A sender with multiple retained generations for one chat MUST flush the current update before appending the next
+invite for that chat, then continue in a new update. It enumerates every retained generation; it MUST NOT replace,
+discard or repeatedly select only the first generation. A successful page clears only the exact values it carried;
+failed publication leaves that page and later values owed for the existing retry/broadcast flow. This adds no snapshot
+completion receipt, per-sibling state or new scheduler. With finite held state and successful page publication the
+pass drains all pages; continuous changes or failed publication retain the existing best-effort delivery limits.
+
+A broadcast request's content is `{"v":1}`. It names no device and no item: it asks every sibling to broadcast.
+
+### Sending
+
+- A device sends an update when its user changes small state on it. It MAY combine several items in one update, and MAY
+  wait a few seconds to combine read positions that move quickly, since only the furthest one matters.
+- An update whose content would be longer than 32,768 bytes is split into several updates. The limit is on the
+  content's UTF-8 bytes alone, not the app event or MLS message around it.
+- When branch selection withdraws an update that a device sent or merged
+  ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Applying the selected branch"), the device sends
+  each item that update carried again, in updates, unless it now holds a value for that item that beats it. Resending
+  keeps the item's version and, for pin, mute and archive, its change id. Every device that merged the update does this, not only its sender, which may
+  no longer be in the device group. A device that does not keep which items an update carried MAY instead send every
+  item it holds again.
+- When branch selection withdraws a broadcast request, every device that sent or read it sends a new broadcast request,
+  so a device whose request no sibling read still gets their broadcasts.
+- A device that cannot tell whether a withdrawn device-group message was an update or a broadcast request MAY treat it
+  as both.
+
+### Broadcasts
+
+A device can miss small state. It cannot read device-group messages sent before it joined the device group. It loses a
+device-group message for good when the device group's canonical tip moves more than `app_payload_past_epoch_limit`
+epochs past the message's epoch before the device reads it, even if relays still hold the message
+([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "App-payload retention"), and a relay
+may drop a message sooner. No one sibling is sure to hold every value either, since it may have missed some too. So
+every device sends everything it holds again from time to time, and its siblings merge whatever they missed. No device
+asks a particular sibling, waits for an answer, or keeps track of what its siblings hold.
+
+A device broadcasts by sending every item it holds, in updates. Updates sent in a broadcast are like any other. A
+device broadcasts:
+
+- when it starts ([Starting](#starting));
+- once 24 hours have passed since its last broadcast, by its own clock, or as soon as it runs again after that;
+- whenever the device group's canonical tip is more than `app_payload_past_epoch_limit` epochs past the tip at which
+  its last broadcast began. Every update of a broadcast goes out in that epoch or a later one, even when commits land
+  while it is being sent, and a message is lost to the app-payload window only as the tip moves, so this keeps every
+  update of a running device's latest broadcast within reach of a sibling that lost earlier messages;
+- in answer to a broadcast request, below.
+
+A device sends a broadcast request when it starts. It MAY send one at other times, such as when it comes back after a
+long time away or finds that a device-group message expired before it read it. A device that reads a broadcast request
+broadcasts once in answer, at most once an hour: when it reads one less than an hour after its last broadcast, it
+waits until that hour has passed. One broadcast answers every request it read before sending it.
+
+### Receiving
+
+A device reads updates and broadcast requests only in the device group it trusts ([device-group.md](./device-group.md),
+"Trust"), and ignores kinds `475` and `476` in any other group. Every member of that group is one of the account's
+devices, so any member's message counts; a device does not need to tell which sibling sent it.
+
+- It drops a message whose content is not one JSON object with exactly the members above for its kind, whose `v` is
+  not `1`, whose content is longer than 32,768 bytes, in which an object repeats a member name, or that holds two
+  items with the same `chat` and `item`.
+- In an update it keeps, it checks each item on its own. It skips an item whose `item` it does not know, so a later
+  version can add items without older devices dropping the update, and it skips an item that breaks the rules above.
+  It judges a read position by its encoding alone ([Items](#items)). It merges every other item, whether the update
+  was sent for a change or in a broadcast.
+- It answers a broadcast request as [Broadcasts](#broadcasts) says.
+
+A device reads small state from its device group whether or not it is in the chat an item names.
+
+## History
+
+A device that joins a chat cannot read the chat's earlier messages: they were encrypted for epochs it was never part
+of. The sibling whose Commit adds it to the chat sends them to it ([History deliveries](#history-deliveries)), sealed so
+that only that device can read them, even though they travel through the device group that every sibling reads.
+
+### History keys
+
+Each device has one history key: an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under the KEM of
+the device group's ciphersuite. It generates the key pair from a cryptographically secure random source, keeps the
+private half on the device, and never sends it anywhere. The public half goes in its own entry in the device group's
+roster ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as that entry's
+`history_key`.
+
+A device writes its history key in a roster update it already makes, so the key costs no commit of its own:
+
+- the device that creates the device group puts it in its own entry in the founding roster;
+- a device that joins the device group puts it in the update that first sets its own `tag_signature_key`
+  ([device-group.md](./device-group.md));
+- a device whose entry has no history key, or another one, writes its own in an update of its own entry, which MAY
+  carry other changes to that entry, such as its next KeyPackage announcement.
+
+A device MUST NOT change the `history_key` of another device's entry; an update that replaces another device's entry
+for another reason, such as a rename, carries that entry's `history_key` as it was. This binds senders only: a roster
+update that changes another device's `history_key` is still valid ([Security considerations](#security-considerations)).
+A device does not rotate its key in this version; it replaces it only when it loses the private half, by generating a
+new key pair and writing the new public half the same way.
+
+To seal a value to a device, a sibling uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+section 5.1.3) with that device's history key as the public key, the label `"Marmot History"`, and the context the
+message carrying the value defines, under the HPKE of the device group's ciphersuite. The sealed value is the
+`HPKECiphertext` that `EncryptWithLabel` returns, encoded as in RFC 9420. The context binds a sealed value to its
+purpose, so a value sealed for one purpose never opens for another. The device opens it with `DecryptWithLabel`, the
+same label and context, and the private half of its history key. A sealed value that has bytes after its
+`HPKECiphertext`, or that does not open, is dropped.
+
+A sibling sends history only to a device whose roster entry has a history key it can seal to. A `history_key` that is
+not a public key of the KEM is not an error ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md));
+that device gets no history.
+
+### History bundles
+
+A device sends history as bundles. A bundle holds one stretch of one chat's history, as the sending device holds it,
+for one receiving device.
+
+**Stretches.** Chat order puts every app event of the chat in the order read positions use ([Items](#items)): the epoch
+it was sent in, then its `created_at`, then its `id`. A position names one event by those three values, encoded as a
+read position's value: `{"epoch":e,"at":t,"id":"<id>"}`. Unlike a read position, it may name any event, an edit
+included. A stretch is every event from one position to another in chat order, both included. A position may name an
+event the receiver does not hold, or one the bundle leaves out.
+
+**What a bundle carries.** Every Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+of the chat that the sender holds in the stretch, as the inner event it received, sent or imported from a sibling's
+history or a backup, except:
+
+- an event whose retention ([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) has
+  expired; a retention of `0`, disappearing messages off, never expires;
+- an event whose epoch, `created_at` or retention is larger than 9007199254740991, which no bundle number can hold;
+- an event that branch selection withdrew ([../protocol-core/convergence.md](../protocol-core/convergence.md)), or that
+  the sender sent and no relay accepted;
+- a message removed by an admin (kind `4891`) with the authority the sender holds for it, or deleted in any other way
+  the sender's client applies, and every event that names such a message in its `e` tag to change or answer for it,
+  such as a reaction (kind `7`), an edit (kind `1009`) or a report (kind `1984`). A chat message that replies to it is
+  not one of these. The removal itself is carried, so a later bundle from a sibling that missed it does not bring the
+  message back once the receiver holds the removal's authority.
+
+A bundle never carries MLS state, an epoch secret, or an epoch's media exporter secret.
+
+**Encoding.** A bundle is one UTF-8 JSON object, and no object in it repeats a member name. Every number in it is a
+decimal integer from 0 to 9007199254740991, without leading zeros. Its encoding is at most 8,388,608 bytes long. The
+sender writes it without whitespace, with its members in the order shown.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `chat`   | the chat's MLS group id: its raw bytes, one to 256 of them, every one, as lowercase hexadecimal with no prefix, so 2 to 512 characters |
+| `from`   | the position the stretch starts at |
+| `to`     | the position the stretch ends at, at or after `from` |
+| `events` | the events, each one object below, in chat order |
+
+| Member      | Value |
+| ----------- | ----- |
+| `event`     | the inner event, as a JSON object with exactly the members [../foundation/application-messages.md](../foundation/application-messages.md) gives it |
+| `epoch`     | the MLS epoch the event was sent in |
+| `retention` | the event's retention in seconds, from the retention decision the sender holds for it, with `0` for disappearing messages off as in [../app-components/message-retention-v1.md](../app-components/message-retention-v1.md); absent when the sender holds none |
+| `grant`     | for a review label (kind `1985`) or an admin removal (kind `4891`) only: `true` when the sender holds that the event's author had the authority the kind needs at the event's epoch, `false` when it holds they did not, whether it found that itself or imported it with the event; absent when the sender has not decided |
+| `keys`      | for an event with encrypted-media attachments only: one or more attachment keys, below; absent when the sender can give none |
+
+An attachment key is `{"ciphertext_sha256":"<hash>","key":"<key>"}`: the `ciphertext_sha256` of one of the event's
+media references ([encrypted-media.md](./encrypted-media.md)) and that file's `file_key`, each as 64 lowercase
+hexadecimal characters.
+
+**Splitting.** A history longer than one bundle allows is split into bundles over consecutive stretches: each bundle's
+`from` is the previous bundle's `to`, and an event at that shared position travels in either bundle.
+
+**Encryption.** The sender encrypts each bundle with ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439))
+under a fresh 32-byte key from a cryptographically secure random source, a nonce of 12 zero bytes, and the 24 ASCII
+bytes of `marmot history bundle v1` as associated data. It uses each key for one bundle only, so the fixed nonce never
+repeats under a key. The key and the SHA-256 of the ciphertext reach the receiving device sealed to its history key
+([History keys](#history-keys)) in the message that carries the bundle. No compression is applied.
+
+**Importing.** A device that receives a bundle:
+
+- drops the whole bundle if it does not decrypt, has a `v` other than `1`, names a chat other than the one its carrying
+  message names, has a `from` after its `to`, or breaks the encoding above other than in layout: it is longer than
+  8,388,608 bytes, an object in it lacks a member it must have, has one not shown or repeats one, a member holds the
+  wrong kind of value (`null` included), a number is out of range or not written as a decimal integer without leading
+  zeros (such as `9.0` or `9e0`), hexadecimal is not lowercase or not the length shown,
+  or `keys` is empty. It does not check whitespace or member order, which only the sender's rule fixes;
+- checks each event on its own, and drops one whose `id` does not match its content
+  ([../foundation/application-messages.md](../foundation/application-messages.md)), whose position is outside the
+  bundle's stretch, that has `grant` on another kind, or whose retention has expired;
+- adds every other event it does not already hold, and leaves every event it holds as it is, so an import never undoes a
+  newer update. An edit, reaction or deletion that arrived before its target takes effect once the target arrives;
+- takes `grant` as the event's authority and keeps it, and gives an event without one no authority until a copy of the
+  event reaches it live, when it judges that copy's authority as for any live event;
+- drops each attachment key whose `ciphertext_sha256` names none of the event's media references, and imports the event
+  without it;
+- keeps every other attachment key, and opens the file it names with it, as that file's `file_key`, when it does not
+  hold the media exporter secret of the event's epoch ([encrypted-media.md](./encrypted-media.md));
+- has each event whose `retention` is more than `0` expire at its `created_at` plus its `retention`, as message retention
+  does for live messages. An event whose `retention` is `0`, or that has none, does not expire this way.
+
+An imported event did not reach the receiver as an MLS message in the chat. Where a rule checks the account of an
+event's MLS sender, such as an edit's authorship ([../foundation/application-messages.md](../foundation/application-messages.md)),
+the receiver checks the account the event's `pubkey` names. Where a rule checks that sender's authority at the event's
+epoch, such as an admin's ([content-moderation.md](./content-moderation.md)), the event's `grant` is that authority's
+recorded verdict. An imported event is no payload of a branch the receiver holds, so a later branch selection in the
+chat never withdraws it there.
+
+The receiver cannot check that an event's author was a member of the chat at its epoch, or held any authority there.
+Imported history is as trustworthy as the sibling that sent it ([Security considerations](#security-considerations)).
+A client MAY show which device a message was imported from.
+
+Importing history is not reading it. It never moves the device's read position, so the device never sends a read
+position for a message only because it was imported. A client SHOULD NOT count imported messages as unread.
+
+### History deliveries
+
+History comes from the device that adds a sibling to a chat, and from no other. When a device's own Commit adds a
+sibling's leaf to a chat, the device sends that sibling the chat's history as history deliveries, one bundle each,
+through the device group.
+
+**Message.** A history delivery is a Marmot app event ([../foundation/application-messages.md](../foundation/application-messages.md))
+of kind `473`, sent as an MLS application message in the device group and nowhere else. Its content is one UTF-8 JSON
+object with exactly these members, each once, written in this order without whitespace, at most 32,768 bytes long:
+`v`, `from`, `to`, `chat`, `sealed`, then exactly one of `bundle` and `blossom`. `v` is a JSON number, written `1`;
+`blossom` is a JSON array of strings; the other members are JSON strings. Every character in a string is written as
+itself, never as a JSON escape (`\/` included). Unlike a bundle's layout, this one binds receivers too.
+
+| Member   | Value |
+| -------- | ----- |
+| `v`      | `1` |
+| `from`   | the sending device's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
+| `to`     | the receiving device's slot, the same way |
+| `chat`   | the chat's MLS group id, as in a bundle: its raw bytes, one to 256 of them, as lowercase hexadecimal with no prefix |
+| `sealed` | the sealed bundle key and hash, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
+| `bundle`  | the bundle's ciphertext ([History bundles](#history-bundles)), non-empty, in standard base64 with padding |
+| `blossom` | one to four Blossom servers that hold the bundle's ciphertext as one blob, each as its base URL, valid as an encrypted-media endpoint's base URL is ([../app-components/group-encrypted-media-v2.md](../app-components/group-encrypted-media-v2.md)): a normalized `http` or `https` URL of 1 to 2,048 bytes with a host and no userinfo, query, or fragment; no URL appears twice |
+
+`sealed` is the bundle's 32-byte key followed by the 32-byte SHA-256 of its ciphertext, 64 bytes in all, sealed to the
+history key of `to`'s roster entry ([History keys](#history-keys)) with the context
+
+```text
+struct {
+  opaque purpose<V>;
+  opaque from<V>;
+  opaque to<V>;
+  opaque chat<V>;
+} HistoryDeliveryContextV1;
+```
+
+in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
+the 26 ASCII bytes of `marmot history delivery v1`, `from` and `to` are the two slots' 32 bytes, and `chat` is the chat's
+MLS group id. The context binds a sealed value to its sender, receiver and chat, so it never opens for another. Under
+ciphersuite `0x0001`, `sealed` is 115 bytes: the 32-byte KEM output with a one-byte length, then the 80-byte ciphertext
+with a two-byte length, as RFC 9420's variable-length vectors encode them. A bundle whose plaintext is at most 23,552
+bytes always fits a delivery inline. A delivery that names Blossom servers carries no bundle, so its bundle may be as
+long as [History bundles](#history-bundles) allows.
+
+**Blossom.** A bundle's blob is its ciphertext, at the address its SHA-256 gives it, which `sealed` already carries. For
+each server, let `server_root` be its base URL with all trailing `/` bytes removed and `hash_hex` the 64-character
+lowercase hexadecimal encoding of that SHA-256. The sender uploads the ciphertext to `server_root || "/upload"` with the
+[Blossom BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation; the receiver fetches
+`server_root || "/" || hash_hex` with the [Blossom BUD-01](https://github.com/hzrd149/blossom/blob/master/buds/01.md)
+`GET` operation and adds no extension, query, or fragment, as [encrypted-media.md](./encrypted-media.md) ("Locator
+Kinds") does for its fallback fetch URLs. Whether a device contacts a server is its own policy; non-normative guidance
+is in [../implementation-model.md](../implementation-model.md) ("Network destination safety").
+
+**Sending.**
+
+- After the publish obligation of a device's own Commit succeeds
+  ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), the device owes the chat's history to
+  each sibling whose leaf that Commit adds: a leaf of its own account whose device tag, read against its trusted roster,
+  names a device in that roster ([device-group.md](./device-group.md), "Matching leaves to devices"). It records that it
+  owes the history before it sends any of it. A Commit that adds a sibling to the device group itself owes nothing.
+- Changing "bring chat history" after linking creates no new history obligation for an already joined chat and
+  does not recreate an obligation forgotten while the setting was off. It governs later sibling Adds and history
+  still owed when it would be sent ([device-group.md](./device-group.md), "Device settings").
+- It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
+  on and a history key it can seal to, and only while the device still holds the chat. It checks these when it would
+  send, and forgets the history as soon as one fails; it does not wait for a history key to appear. A sibling it can
+  add carries a tag, and a device writes its history key in the same update that sets its `tag_signature_key`
+  ([History keys](#history-keys)), so a sibling whose client supports history has one by then.
+- It sends only while its own leaf in the device group carries a device tag that reads as its slot, as for heartbeats
+  ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
+- It sends everything it holds of the chat, as [History bundles](#history-bundles) gives it, each bundle in one
+  delivery: inline, split so that each bundle fits a delivery, or through Blossom. It uploads a bundle it sends through
+  Blossom to servers of its own choosing, such as the chat's `blossom-v1` encrypted-media endpoints
+  ([encrypted-media.md](./encrypted-media.md), "Locator Kinds"), and sends the delivery only once the upload to each
+  server it names has succeeded. It does not delete a blob it uploaded: the receiver may fetch it until it drops the
+  delivery, and nothing tells the sender when that is. An event too large to fit any bundle it can send is left out; the
+  rest of the history is sent.
+- A device MAY bound how many deliveries one history takes. When a history needs more, the device either sends the
+  deliveries of its newest bundles, as many as the bound allows, and leaves the older history out, or forgets the
+  history, sending none of it.
+- A bundle whose upload fails, or a delivery whose publication fails without reaching any relay, leaves the history
+  owed, to be sent again. When branch selection withdraws a delivery the device sent
+  ([../protocol-core/convergence.md](../protocol-core/convergence.md)), the history is owed again. A device forgets a
+  history 7 days after the Commit that made it owed, sent or not.
+- A device sends no other history. There are no receipts and no requests for history.
+
+**Receiving.** A device reads a history delivery only from the device group it trusts ([device-group.md](./device-group.md),
+"Trust"), and ignores kind `473` in any other group. It drops one unless:
+
+- its content is exactly the encoding above, byte for byte, each member holding a value the table allows: another member
+  order, whitespace, an escaped character, a repeated, missing or extra member, or a value the table does not allow,
+  such as an empty `blossom`, a fifth server, a URL named twice or one that is not normalized, drops it;
+- `to` is its own slot;
+- `from` is another device in its current roster;
+- the leaf that sent it, as that leaf was in the epoch the delivery was sent in, carries a device tag that reads as
+  `from`'s against its current roster ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md),
+  "Reading tags"). The device reads that leaf from the member state it retains for that epoch
+  ([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "Retained cryptographic material"); a
+  delivery from an epoch whose member state it no longer retains has no readable sender and is dropped, as is one whose
+  sender's `tag_signature_key` in the current roster no longer verifies the tag;
+- `sealed` opens with its history key and the context above to exactly 64 bytes.
+
+It then takes the bundle's ciphertext: it base64-decodes `bundle`, or fetches the blob from one of the `blossom`
+servers, reading no more than 8,388,624 bytes, the longest bundle's 8,388,608 bytes and its 16-byte tag. It checks
+that the SHA-256 of the ciphertext is the hash it opened, decrypts it with the key it opened, and imports the bundle as
+[History bundles](#history-bundles) gives it. A delivery the device cannot import yet is kept: one for a chat it does
+not hold yet, such as one read before the chat's Welcome, until it joins that chat, and one whose blob it has not
+fetched, until a fetch succeeds. A fetch that fails, or that returns other bytes, is tried again, from any of the
+servers. A kept delivery is imported once it can be if `from` is still a device in the roster then. Every kept delivery,
+whether it waits for its chat or its blob, is dropped 7 days after the device read it, and with it any fetch still to
+try. A device MAY bound how many deliveries it keeps this way, and it MAY fetch a kept delivery's blob before or after
+it joins. A branch selection in the device group that later withdraws a delivery neither undoes its import nor drops it
+while it is kept, as it does not undo small state a device merged ([Convergence and retained
+history](#convergence-and-retained-history)); only the sender owes the history again.
+
+**Limits of this version.** History deliveries cover the normal path, the adder sending to the device it adds, and no
+more:
+
+- Only the adder sends. A sibling that holds more of the chat, such as one with older messages, sends nothing.
+- There are no receipts. A delivery accepted by a relay but never read, or read only once the device no longer retains
+  the member state of the epoch it was sent in or once the sender's `tag_signature_key` in the current roster no longer
+  verifies its tag, is lost, and so is that history. A sender owes a withdrawn delivery's history again only when it
+  learns of the withdrawal, so one whose record of the delivery is already gone, or that stops before it acts on the
+  withdrawal, loses that history too.
+- A device that a device of another account adds to a chat, or whose entry has no history key or has "bring chat history"
+  off when the history is sent, gets no history. Neither does a chat whose MLS group id is empty or longer than 256 bytes,
+  which no bundle or delivery can name; small state likewise covers only one to 256-byte MLS group ids.
+- A history needs as many deliveries as it has bundles, and the sender may bound them, so a long history can arrive
+  without its oldest messages, or not at all. A sender with no Blossom server to upload to sends no more of a history
+  than fits the inline deliveries it will send. An event too large for any bundle is left out, as is one whose epoch,
+  `created_at` or retention is larger than a bundle number can hold.
+- Blobs are not deleted. A Blossom server keeps each blob it holds, with its size and when it was uploaded and fetched,
+  until the server expires it ([Security considerations](#security-considerations)). A receiver that fetches a blob
+  after its server expired it gets no history from that delivery.
+- An imported attachment key is used only when the device does not hold the media exporter secret of the event's epoch.
+  A device that holds a secret for that epoch from another branch of the chat than the event's opens the file with that
+  secret, not the imported key, and the file does not open.
+- History is owed once the adding Commit's publication succeeds. When branch selection in the chat later withdraws that
+  Commit, the history is still sent; the sibling imports it only if it joins the chat, and drops it 7 days after
+  reading it otherwise.
+
+## Backups
+
+A backup keeps an account's history for when every device that holds it is gone. Backups are sealed to the account's
+recovery key, which is separate from the account's signing key: holding the signing key, or being a linked device, does
+not open a backup. This version specifies the recovery key, how the account's devices keep it, how the account's
+backup writer writes backups and lists them in the account's backup pointer, and on-demand history restore for chats
+the restoring device currently belongs to.
+
+### Recovery key
+
+The recovery key is 12 words from the English word list of
+[BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki): 128 bits of entropy and their 4-bit checksum,
+encoded as BIP-39 encodes them. A device generates the entropy from a cryptographically secure random source. The user
+never chooses it: a password the user chose would be too weak to protect a backup that anyone can download and attack
+offline.
+
+The words derive an HPKE key pair ([RFC 9180](https://www.rfc-editor.org/rfc/rfc9180)) under DHKEM(X25519,
+HKDF-SHA256), the KEM of ciphersuite `0x0001`, whatever ciphersuite the device group uses, because a device looking
+for backups may hold no group:
+
+```text
+prk      = HKDF-Extract(salt = "marmot recovery key v1", IKM = entropy)
+ikm      = HKDF-Expand(prk, info = "marmot recovery key pair", L = 32)
+(sk, pk) = DeriveKeyPair(ikm)
+```
+
+HKDF is HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)), and the salt and info are their ASCII bytes.
+`entropy` is the 16 bytes the words encode, not BIP-39's seed, and there is no passphrase. `DeriveKeyPair` is that
+KEM's (RFC 9180, section 7.1.3). Test vectors:
+
+```text
+words:   abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+entropy: 00000000000000000000000000000000
+ikm:     f2b851179e27ff0fa2a197b538c8e525aac11fcf3d8570bc8afb3e5dd48aea28
+sk:      f99da3bd75751479570bd7d7a807bebb49c8da68aed12e813862cccdff5a577d
+pk:      aed5608fc1960f7992decafb36786d19508dce48e02288785cf24e557d58a368
+
+words:   legal winner thank year wave sausage worth useful legal winner thank yellow
+entropy: 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+ikm:     20d2dc269edddf61ef7859324c9459eb96ae0d34ffbace54b404d63862bba855
+sk:      8570ead0cc10c1ae63c6357959fdb15996475dabe3b781c4ebecdacb2015ef83
+pk:      9076c238afd9311184e7dda595f7d42f5c73b48bff561e88482c4435d5cb5f10
+```
+
+To seal a value to the recovery key, a device uses `EncryptWithLabel` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+section 5.1.3) with the recovery key's public half as the public key, the label `"Marmot Backup"`, and the context the
+format carrying the value defines, under the HPKE of ciphersuite `0x0001`. The sealed value is the `HPKECiphertext`
+that `EncryptWithLabel` returns, encoded as in RFC 9420. It opens with `DecryptWithLabel`, the same label and context,
+and the private half the words derive. A sealed value that has bytes after its `HPKECiphertext`, or that does not open,
+is dropped. The label keeps a value sealed for a backup from opening as history ([History keys](#history-keys)), and
+the other way round.
+
+Devices keep only the public half. A device derives the private half only while the user's words are in hand, to open
+a backup. It MUST NOT write the words, the entropy or the private half to persistent storage of any kind, and MUST NOT
+send them anywhere.
+
+### The account's recovery key
+
+The account's recovery key is the `recovery_public_key` of the account entry in its device group's roster
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), and `backup_writer` names, by slot,
+the one device that writes the account's backups. While the account entry has no `recovery_public_key`, backups are
+off.
+
+A device turns backups on, or replaces the words, in four steps:
+
+1. It generates new words and shows them to the user once.
+2. The user types back at least two of them, at positions the device picks, to show they were written down. The device
+   goes on only if they match.
+3. It derives the public half and writes it as the account entry's `recovery_public_key`, in a roster update whose
+   only operation sets the account entry. When the entry has no `recovery_public_key`, the update also names this
+   device as `backup_writer`; otherwise it keeps the `backup_writer` the entry names, or names this device if it names
+   none. A device that trusts no device group keeps the public half instead, in place of any it kept (below).
+4. Once the update is committed, or the public half kept, it forgets the words, the entropy and the private half.
+
+A device that trusts no device group ([device-group.md](./device-group.md), "Trust") keeps the public half itself,
+across restarts, as the account's recovery key; new words replace it, and none of the rules below for roster updates
+apply until the device trusts a device group. When it creates a device group, the founding roster's account entry holds
+that key and names this device as `backup_writer`. When it joins one instead, the roster's account entry stands,
+whatever it holds, since a roster with no key may be one whose backups the user turned off. Either way, once the device
+trusts the device group it forgets the key it kept, and the roster's account entry is the account's recovery key from
+then on.
+
+An update that sets the account entry replaces it whole, so the account entry changes only by compare-and-set: the
+update is computed from the entry as the device read it, and a device MUST NOT commit it on a roster whose account
+entry, at the tip of the selected branch ([../protocol-core/convergence.md](../protocol-core/convergence.md)), is not
+the one it read. Otherwise an update from a stale read would undo newer words another device wrote.
+
+A device turns backups off with an update that sets the account entry to hold neither `recovery_public_key` nor
+`backup_writer`, under the same rule. No device writes backups while they are off, and turning them on again takes new
+words, in the four steps above. Backups already written stay until they are deleted. A device that trusts no device
+group turns backups off by forgetting the key it keeps.
+
+A device commits an update that sets the account entry again only when branch selection drops the Commit that carried
+it, and only under the same compare-and-set; never because the roster does not hold what the user chose: a roster with
+no key looks the same before backups were turned on and after they were turned off again, so committing a change again
+on what the roster holds could undo another device's turn-off. A device shows backups as the account entry of the
+selected roster holds them now. How a device holds the words while it cannot commit their update, retries, and holds
+back its other changes to the account entry while one of its updates is unsettled is local to it.
+
+Two limitations are known. An update that branch selection drops and the compare-and-set then refuses, or whose
+publication fails ([../protocol-core/publish-lifecycle.md](../protocol-core/publish-lifecycle.md)), is lost, and the
+user makes the change again: after a fork the rule above may commit an earlier change again and refuse a later one,
+and a device shows the account entry of the branch selected now, even while branch selection could still pick
+another. And the compare-and-set compares values: when branch selection drops an update turning
+backups on, and the winning branch turns backups on with other words and off again before the device reads it, the
+entry holds no key, as it did when the device read it, and the update is committed again.
+
+### Backup archives
+
+A backup is a set of blobs on [Blossom](https://github.com/hzrd149/blossom) servers, each at the SHA-256 of its bytes:
+
+- one bundle blob for each history bundle ([History bundles](#history-bundles)) of each chat the backup holds;
+- at most one small-state blob, holding only `read`, `pin`, `mute` and `archive` items ([Items](#items));
+- one head, holding the backup's id, its archive key sealed to the recovery key, and its encrypted index, which lists
+  every other blob.
+
+**Keys.** The writer generates a fresh 16-byte backup id and a fresh 32-byte archive key for each backup, from a
+cryptographically secure random source. The blob keys derive from the archive key, and the index key from the
+recovery key's public half `pk` and the backup id, with HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)),
+quoted salts and infos as their ASCII bytes, the backup id and `nonce` as their raw bytes, and `uint32(n)` as four
+big-endian bytes:
+
+```text
+archive prk     = HKDF-Extract(salt = "marmot backup v1", IKM = archive key)
+blob key n      = HKDF-Expand(archive prk, info = "marmot backup blob" || uint32(n), L = 32)
+small-state key = HKDF-Expand(archive prk, info = "marmot backup small state", L = 32)
+index prk       = HKDF-Extract(salt = "marmot backup index v1", IKM = pk)
+index key       = HKDF-Expand(index prk, info = backup id, L = 32)
+```
+
+`pk` is the 32-byte public half the words derive ([Recovery key](#recovery-key)). The archive key and the id are fresh
+for each backup, so each key encrypts one value only, and every encryption below other than the archive key's seal
+uses ChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)) with a nonce of 12 zero bytes. Test
+vectors, for an archive key of `0x01` repeated 32 times, the public half of the first recovery-key vector, and a
+backup id of `0x02` repeated 16 times:
+
+```text
+blob key 0:      b3491be68bcd1393f68892cf51e46650f231cd91bf118e0a62a7cfa974e51a73
+blob key 1:      7ffee8e8a3c2e1546c3a652dc8244be7410707500f706d808461372c2e51f0f7
+small-state key: 3f775330af21efc398c027d0fbc8775c6a0d521293c1be67bd73e1febb9dfc54
+index key:       18da5e74bcd81f43d7e6639dfcc464515f380d6ce016496e07597f2a78ff6ffa
+```
+
+**Bundle blobs.** Bundle blob `n` is one history bundle, encoded and encrypted as [History bundles](#history-bundles)
+gives it, but under blob key `n` in place of a fresh key. Bundle blobs are numbered from `0` in the order the index
+lists them. A chat's bundles cover consecutive stretches, as splitting gives them.
+
+**Small-state blob.** This blob contains only the writer's `read`, `pin`, `mute` and `archive` items. Invitation
+decisions are excluded and remain retained/rebroadcast by the kind-475 rules. It encrypts `{"v":1,"items":[...]}`, as an
+update's content is written
+([Messages](#messages)) but without its 32,768-byte limit, under the small-state key with the 28 ASCII bytes of
+`marmot backup small state v1` as associated data. That plaintext is at most 8,388,608 bytes long; a writer whose
+small-state blob plaintext would be longer writes no backup. A backup whose writer holds no `read`, `pin`, `mute`
+or `archive` item has no small-state blob, even if it holds invitation decisions.
+
+**Index.** The index is one UTF-8 JSON object, encoded with the rules of a bundle's encoding: no object repeats a member
+name, every number is a decimal integer from 0 to 9007199254740991 without leading zeros, and the writer writes it
+without whitespace, with its members in the order shown.
+
+| Member        | Value |
+| ------------- | ----- |
+| `v`           | `1` |
+| `written_at`  | when the writer started the backup, in seconds since the Unix epoch |
+| `writer`      | the writer's slot ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), as 64 lowercase hexadecimal characters |
+| `small_state` | the small-state blob's locator, below; absent when the backup has none |
+| `chats`       | one object below for each chat the backup holds, each chat once, in any order |
+
+| Member  | Value |
+| ------- | ----- |
+| `chat`  | the chat's MLS group id, as in a bundle |
+| `blobs` | one or more bundle blobs, each one object below, in chat order |
+
+| Member    | Value |
+| --------- | ----- |
+| `from`    | the bundle's `from` |
+| `to`      | the bundle's `to` |
+| `expires` | when every event in the bundle has expired: the greatest `created_at` plus `retention` over its events, capped at 9007199254740991, and `0` when it has no events; absent when an event's `retention` is `0` or it has none, so the blob never expires |
+| `sha256`  | the SHA-256 of the blob, as 64 lowercase hexadecimal characters |
+| `size`    | the blob's length in bytes, from 1 to 8,388,624 |
+| `server`  | the Blossom server that holds the blob, as its base URL, valid as a history delivery's `blossom` server is ([History deliveries](#history-deliveries)) |
+
+The small-state blob's locator is an object with the same `sha256`, `size` and `server`. The index is encrypted under
+the index key with the 22 ASCII bytes of `marmot backup index v1` as associated data. It has no length bound of its
+own: the head that carries it does.
+
+**Head.** The head is one UTF-8 JSON object with exactly these members, in this order, without whitespace, at most
+8,388,608 bytes long:
+
+| Member  | Value |
+| ------- | ----- |
+| `v`     | `1` |
+| `id`    | the backup id, as 32 lowercase hexadecimal characters |
+| `key`   | the archive key sealed to the recovery key, below, in standard base64 with padding ([RFC 4648, section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4)) |
+| `index` | the encrypted index, in standard base64 with padding |
+
+A writer whose head would be longer writes no backup.
+
+`key` is the archive key sealed to the recovery key ([Recovery key](#recovery-key)) with the context
+
+```text
+struct {
+  opaque purpose<V>;
+  opaque id<V>;
+  opaque index_hash<V>;
+} BackupKeyContextV1;
+```
+
+in the Marmot binary profile ([../foundation/canonical-encoding.md](../foundation/canonical-encoding.md)): `purpose` is
+the 16 ASCII bytes of `marmot backup v1`, `id` is the backup id's 16 bytes, and `index_hash` is the 32-byte SHA-256 of
+the encrypted index. The context binds the archive key to its head and its index, so an index that is altered or taken
+from another backup leaves the archive key sealed. Blob keys are derived per backup and per number, so a blob taken
+from another backup, or from another place in this one, does not decrypt.
+
+**Reading.** Anyone holding the public half derives the index key and reads the index: which chats a backup holds,
+their stretches, and where every blob is. Only the words open the archive key, and with it any blob. A device
+fetches a head or a blob from its locator's server, reading no more than the locator's `size`, and drops it unless its
+SHA-256 and length match its locator, as a history delivery's receiver fetches and checks a blob
+([History deliveries](#history-deliveries), "Blossom"). It drops a head that breaks the encoding above other than in
+layout, whose `id` is not the id its pointer entry names, or whose index does not decrypt or breaks the encoding above
+other than in layout, as a bundle's receiver does ([History bundles](#history-bundles)). The head itself is not
+encrypted: its `key` is sealed and its `index` encrypted.
+
+### Backup pointer
+
+The account's backup pointer under a recovery key lists the backups the account keeps under that key, so a device that
+holds the key's public half finds them. Each recovery key has its own pointer: new words start a new one, and the old
+pointer and its backups stay where they are.
+
+The pointer is one UTF-8 JSON object, `{"v":1,"backups":[...]}`, encoded with the index's rules. `backups` holds at
+most 16 entries, newest first by `written_at`, each id once:
+
+| Member       | Value |
+| ------------ | ----- |
+| `id`         | the backup id, as 32 lowercase hexadecimal characters |
+| `written_at` | the index's `written_at` |
+| `head`       | the head's locator, as the small-state blob's is in the index, with a `size` of at most 8,388,608 |
+
+A pointer's address and the key its content is encrypted under derive from the public half, an exception to the rule
+that delivery addresses are not derived from keys ([../foundation/identity.md](../foundation/identity.md), "Delivery
+addressing is separate"):
+
+```text
+pointer prk = HKDF-Extract(salt = "marmot backup pointer v1", IKM = pk)
+address     = HKDF-Expand(pointer prk, info = "marmot backup address", L = 32)
+pointer key = HKDF-Expand(pointer prk, info = "marmot backup pointer key" || nonce, L = 32)
+content     = base64(nonce || ChaCha20-Poly1305(pointer key, nonce = 12 zero bytes, pointer))
+```
+
+`nonce` is 32 fresh bytes from a cryptographically secure random source for each pointer the writer encrypts, so each
+pointer key is used once. The associated data is the 24 ASCII bytes of `marmot backup pointer v1`, and `base64` is
+standard base64 with padding. The content is at most 57,344 bytes long, which 16 entries always fit, and well under what
+a relay with default limits takes. Test vectors, for the public half of the first recovery-key vector and a `nonce` of
+`0x03` repeated 32 times:
+
+```text
+address:     ca91082df78442521072c16b0ac389d309233ec3aaca978e900e0077f06c7c58
+pointer key: 6ff7b6daf27f4a3077211f77a649015e7b970dd3a181880df03248fffbb2829b
+```
+
+A device drops a pointer whose content is longer than 57,344 bytes, does not decrypt, or breaks the encoding above other
+than in layout, as the index's reader does: among others, a `v` other than `1`, more than 16 entries, an id listed
+twice, an entry listed before a newer one, or a head locator that breaks the rules above for it. The Nostr transport
+carries the pointer ([../transports/nostr.md](../transports/nostr.md), "Backup pointer").
+
+### Writing backups
+
+**The writer.** The device the account entry names as `backup_writer` writes the account's backups under its
+`recovery_public_key` ([The account's recovery key](#the-accounts-recovery-key)). A device that trusts no device group
+writes them under the key it keeps. No other device writes backups, and none does while backups are off. Under a key
+nothing can be sealed to ([Recovery key](#recovery-key)), the writer writes no backup.
+
+**When.** A backup is due once the newest backup the pointer lists is at least 24 hours old by its `written_at`, or the
+pointer lists none. The writer writes a due backup when it finds it convenient, such as on Wi-Fi and charging for a
+phone. A writer that cannot write, for example with no Blossom server to upload to, writes nothing.
+
+**A backup's content.** A backup holds every chat the writer holds other than its device group, each with the bundles
+[History bundles](#history-bundles) gives for it, and every `read`, `pin`, `mute` and `archive` item the writer holds.
+Invitation decisions are excluded ([Backup archives](#backup-archives), "Small-state blob"). The writer MAY bound how
+many bundles one chat takes; it then keeps the newest bundles and leaves the older history out. A chat whose MLS group
+id no bundle can name, or for which History bundles gives no bundle, is left out.
+
+**Steps.** A device writes a backup in this order:
+
+1. It fetches the pointer under the key. It stops when no relay answered the fetch in full
+   ([../transports/nostr.md](../transports/nostr.md), "Backup pointer"), since a pointer built without a full answer
+   would drop every backup listed in one it did not see, and when it drops the newest pointer it fetched
+   ([Backup pointer](#backup-pointer)).
+2. It uploads each bundle blob, then the small-state blob if any, then the head, each to a Blossom server of its choosing
+   with the [BUD-02](https://github.com/hzrd149/blossom/blob/master/buds/02.md) upload operation, as for a history
+   delivery ([History deliveries](#history-deliveries), "Blossom"). It authorizes each upload, as each delete below,
+   with a [BUD-11](https://github.com/hzrd149/blossom/blob/master/buds/11.md) token signed by the account identity, so
+   a later writer can delete what an earlier one uploaded. Before it uploads a blob, it records the blob and the server,
+   so a backup that never counts has its blobs deleted (below).
+3. It builds the new pointer: the new backup and the other backups the fetched pointer lists, kept by retention
+   (below).
+4. Before it publishes, it condemns the blobs of each listed backup the new pointer drops (below).
+5. It checks that it is still the writer under the same key. If not, it abandons the backup and publishes nothing.
+6. It publishes the pointer. The backup counts only once a relay accepts it. Until one does, nothing is dropped, and
+   the device publishes the same backup again in a later pass, building the pointer again from a new fetch, without
+   uploading it again. A backup the fetched pointer already lists counts, since a relay accepted it though its
+   acknowledgement was lost, and the pass publishes nothing for it. A backup no relay accepted within 24 hours of its
+   `written_at` is abandoned.
+
+While the writer holds a backup that no relay has accepted and it has not abandoned, it publishes that backup again in
+place of writing a new one. A device does not keep the archive key: when a backup is cut short before its head is
+uploaded, by a restart or otherwise, it is abandoned, and the next one starts again.
+
+**Retention.** Of the new backup and the backups the fetched pointer lists, ordered newest first by `written_at` and,
+of two written at the same time, the one with the greater id first, the new pointer keeps:
+
+- the newest two;
+- each older one whose head the device cannot fetch or read;
+- each older one that holds, for some chat, a stretch not yet expired that starts earlier in chat order than every
+  stretch not yet expired that the newer backups it keeps hold for that chat; when they hold none, any stretch of that
+  chat not yet expired counts.
+
+A stretch has expired once the current time is past its `expires`. A newer backup whose head the device cannot read
+counts as holding no stretch, so it never lets an older one be dropped. The pointer keeps at most 16 and drops the
+rest, oldest first. Retention compares indexes only, never what the blobs hold.
+
+**Deleting.** A device deletes only blobs it condemned:
+
+- the blobs of a backup a pointer it builds drops: its head and, when it read the backup's index, every blob the index
+  names;
+- the blobs it recorded for a backup it abandons.
+
+It deletes a condemned blob with the BUD-02 delete operation, no sooner than an hour after condemning it, and only in a
+pass that fetched the pointer in full, as in step 1, when that pointer lists no backup the blob belongs to. A blob of a
+backup the fetched pointer lists, such as one another writer kept, is no longer condemned. A delete that fails is tried
+again, waiting longer each time, and given up 7 days after the blob was condemned. A device that stopped writing still
+deletes what it condemned, under the same rule. It forgets, without deleting, every blob it condemned under a key that
+is no longer the account's recovery key: backups under replaced words, or written before backups were turned off, stay
+until their servers expire them.
+
+**Takeover.** While backups are on, a device of the device group that is not the writer:
+
+- takes over at once when `backup_writer` names no slot, a slot no device in the roster's `devices` holds, or one whose
+  status is `leaving`;
+- fetches the pointer at most daily and, after a fetch that a relay answered in full, takes over when 7 days have passed
+  since the time this device first saw the account entry name this writer for this key and, when the pointer lists any
+  backup, since the newest `written_at` it lists. The first time keeps a device from taking over before a new writer's
+  first backup. A device keeps that time across restarts, and starts it again whenever the entry names another writer or
+  key.
+
+It takes over with a roster update that sets the account entry to the key it read with itself as `backup_writer`,
+under the compare-and-set rule of [The account's recovery key](#the-accounts-recovery-key), so of two devices that take
+over at once, one stands. A device that trusts no device group never takes over.
+
+**Limits of this version.**
+
+- Every backup holds everything again, up to the writer's bound per chat, uploaded in full each day.
+- Each blob is on one server. A server that loses a blob loses that stretch in that backup, though an older backup
+  kept for it may still hold it.
+- A backup cut short starts again from the beginning, so a device that never stays up long enough never finishes one.
+- While a takeover settles, the old writer may still write a backup. Of two writers' pointers, the relays keep the
+  later one, and the other writer's backup is not listed; its blobs stay until their server expires them.
+- A relay that holds a newer pointer but does not answer the fetch can let a device delete blobs that pointer lists.
+  The hour between condemning and deleting narrows that window; it does not close it.
+- Replacing every write relay with relays that never received the pointer reads as no pointer: the next pointer lists
+  only the new backup, and the older backups, though not deleted, are no longer listed.
+- Deletes are best effort: a server that refuses one keeps the blob until it expires it.
+- New words, turning backups off, or a device that kept a key joining another device's group leave the old pointer and
+  its backups where they are. No device deletes them.
+- A pointer this version cannot open stops writing under that key until the words are replaced.
+- A dropped backup whose index the device cannot read has only its head condemned; its other blobs stay until their
+  server expires them.
+- `written_at` is the writer's clock, and a takeover is judged by the deciding device's clock.
+- Attachment files are not backed up, only their keys, so old media depends on its servers keeping the files.
+- Retention compares stretches, not messages: a message deleted since an older backup was written does not keep that
+  backup.
+- Retention keeps at most 16 backups. Past that, the oldest is dropped even when it is the last to hold some stretch.
+
+### Restoring history from backups
+
+A user can ask a device to restore history with recovery words at any time, including while other devices are online.
+The device derives the recovery key as in [Recovery key](#recovery-key), reads the account's pointer under that key
+([Backup pointer](#backup-pointer)), and opens listed archives under [Backup archives](#backup-archives). It considers
+all listed backups: an older backup may hold history the newest one does not. It processes them in the exact order
+the pointer lists them, newest first by `written_at`, preserving their listed order when timestamps are equal. Within
+each backup it processes selected history blobs in their original global index order. Existing insert-only and
+first-imported-authority rules still apply; a subsequently processed backup never replaces a held event or its kept
+`grant`. The transport's completed discovery rules still apply ([../transports/nostr.md](../transports/nostr.md),
+"Backup pointer"); an incomplete discovery is not an empty pointer.
+
+Restore imports history only for a chat the restoring device currently belongs to through its own MLS leaf. Another
+device of the same account being a member is not enough. The device checks this for the chat named by the blob's
+index entry before fetching the blob and again as part of applying it. No membership change for that chat is processed
+between the second check and the import, so leaving or removal during a fetch prevents the import. An unknown,
+unjoined, removed, disbanded or unreadable chat takes no restored history. The device group takes none. A backup never
+grants membership, creates an MLS group, joins a chat, re-adds a device or authorizes any of those actions.
+
+A reader retains the global blob number `n` assigned by [Backup archives](#backup-archives) before filtering chats.
+It applies that section's "Reading" size and SHA-256 checks, then opens each selected history blob under blob key `n`
+as "Bundle blobs" specifies. The index entry's `chat` is the carrying chat for the importing rules in
+[History bundles](#history-bundles): the reader drops the whole blob if its decrypted bundle names another chat. The
+membership checks and import apply to that same index-entry chat, not a different chat named by the decrypted data.
+It applies the existing content validation, retention, attachment-key, authority-verdict and insert-only rules there.
+Held events remain as they are; restoring history does not mark it read, move the read position or create unread
+counts. Restored events count as held history for later history bundles, including sibling deliveries and backups,
+subject to the existing export exclusions and backup size limits. It records the source as a backup, not as a verified sending device. The archive authenticates its bytes under the key, not its
+claimed writer, historical authors or their membership and authority; see [Security considerations](#security-considerations).
+Restored content does not become a live device-group event or an MLS membership instruction.
+
+This version restores history only. It does not apply the archive's small-state snapshot: read positions, pins,
+mutes, archive choices and invitation decisions remain unchanged. A reader may skip that optional blob without
+changing any history blob's global number. Restoring with older words leaves the account's current recovery key and
+writer unchanged and never enables backups. Each older key's pointer remains independent, as in
+[Backup pointer](#backup-pointer).
+
+A device may keep private index metadata for a chat it cannot restore yet. That metadata is availability information,
+not a transcript, membership or a transport route. Group ids learned this way remain private group security state:
+the rule against publishing them in [Security considerations](#security-considerations) still applies, even though
+the recovery key's public half opens the index. If the device later actually joins such a chat, it tells the user
+that a backup may hold history and that the user can supply the corresponding words again. It does not join or
+request a re-add because an index names the chat, and it does not need proof that other devices lack its history.
+
+Words, their entropy, the private recovery key, the plaintext archive key and any keys derived from that archive key
+are held in memory only for the restore operation. A device MUST NOT write their plaintext values to persistent
+storage, logs, debug output or diagnostics, or send those plaintext values off the device. This does not prohibit the
+sealed, encrypted archive key in a head or the encrypted blobs specified in [Backup archives](#backup-archives).
+Cancellation or closing the device ends the operation and releases its retained secret material; no secret-backed
+cursor or secret is persisted for automatic resumption, and another attempt asks for the words again. A failed blob
+or cancellation does not undo valid history already imported. The device reports an incomplete or partial restore rather than claiming no backup or complete recovery. This flow does not restore a
+whole account from nothing or expose transcripts of chats the restoring device has not joined.
+
+## Convergence and retained history
+
+Small state is not group state. A branch selection that withdraws a device-group message's payload does not undo what
+the message set on a device that already merged it. Every device converges on the same values once it holds every
+value: the merge rules pick the same winner everywhere, whatever order values arrive in and however often. Every device
+that merged a withdrawn update sends its items again, and every running device broadcasts what it holds at least every
+24 hours and whenever the tip moves past the app-payload window. So a value that a running device holds reaches every
+sibling that keeps reading the device group, however many messages that sibling lost. A value held only by a device
+that never comes back is lost with it.
+
+A read position taken on a branch that branch selection later withdraws stays where it is: the selected branch's
+messages at or before it in chat order count as read, including ones the user never saw. Positions only move forward,
+so no device moves it back; a later position moves it again once that one is further in chat order.
+
+## Security considerations
+
+- Small state names the account's chats by their MLS group id, which is private group security state. It travels only
+  inside the device group. Every device in the device group learns the group id and small state of every chat any
+  sibling syncs, including a chat it is not in, such as an older chat it was not added to when it was linked. It also
+  learns the group id of every chat any sibling sends history for, from that delivery's `chat`. A device MUST NOT publish
+  a group id it learned either way through a transport envelope, and an item or a delivery is not evidence that the
+  device is, or may become, a member of that chat.
+- Any device of the account can set any item, including a stolen linked device until it is removed. A device that sends
+  an item at the largest version, 9007199254740991, takes that item out of its user's hands on every device for good: no
+  change a user makes can beat it, and removing the device does not undo it. Only another value at that version that
+  wins that item's tie-break can replace it; an equal-version invitation acceptance cannot replace a decline. A read
+  position that names a message no device holds can mark a whole chat as read, and one at the largest epoch and `created_at` marks every later message read as well: positions never move back,
+  so removing the device does not clear it. A broadcast request makes every sibling broadcast, at most once an hour
+  each. A linked device can already read and send in the account's chats; these let it also fix or change their
+  settings.
+- Any current device-group member can originate or rebroadcast a decline for any generation it knows, including one
+  learned from full broadcasts without being in that chat. Every matching local copy then records ordinary Leave work,
+  even if it previously accepted, and holds new automatic sibling Adds for that admission. Native membership, admin,
+  settled-state and explicit rejoin rules still apply. A decline at version 9007199254740991 beats equal-version
+  acceptance and no later legal version can supersede it; removing its sender does not undo the retained value.
+  This consequence is permanent for that generation, not an account-wide removal across other generations. A higher
+  acceptance before Leave is requested can supersede other declines, but cannot cancel an existing Leave request.
+  Retained generations have no expiry or count limit, and different generations of one chat require separate updates.
+  A malicious linked device can fabricate arbitrarily many generations to enlarge retained state and rebroadcast work,
+  requiring at least one update per generation of the same chat. Removing that sender does not clear those values.
+- Nothing in small state is shown to other members of a chat, and no other account can read or write it.
+- Any device of the account can rewrite another device's `history_key`, including a stolen linked device until it is
+  removed. Siblings then seal history meant for that device to a key the stolen device chose, until that device writes
+  its own key back. That history can include chats the stolen device is not in, such as a chat the user kept off a
+  device linked with "add to all my chats" off.
+- A history key is long-lived and never rotates in this version. A device that leaks the private half exposes every
+  value sealed to it, past and future, until it writes a new key.
+- Every sibling reads every history delivery: it sees that the sender sent the receiver history and which chat it was
+  for, but cannot open it. It sees how large an inline bundle is. Of a delivery that names Blossom servers it sees the
+  servers but not the blob's hash, which is sealed with its key; a server that lists the blobs an uploader stored can
+  still show it the blob and its size. The rule above against publishing a group id learned this way applies.
+- A Blossom server that holds a history blob learns what the upload's authorization says of the uploader, the blob's
+  size, when it was uploaded and fetched, and where each request came from, and keeps the blob until it expires it. The
+  receiver fetches from servers the sender chose, which may be a chat's encrypted-media endpoints that another account's
+  admins set. Only the receiver's history key opens the blob's key.
+- Any device of the account can replace the recovery key and name itself as `backup_writer`, including a stolen linked
+  device until it is removed. Backups written after that are sealed to words its holder chose, until a device of the
+  user replaces the words again. Backups already written stay sealed to the words they were sealed to.
+- Any device of the account can turn backups off, including a stolen linked device until it is removed. No backups are
+  written until a device of the user turns them on again.
+- The recovery key's public half is in the roster, so every device ever in the device group, a removed one included,
+  can seal a value to it. Only the words open one.
+- The words are the one secret that opens backups. Anyone who sees them can open every backup sealed to them, so a
+  device shows them only while the user writes them down, and never stores them. 128 bits of entropy put an offline
+  search out of reach.
+- Anyone who holds the recovery key's public half finds the account's backup pointer and reads it and every backup's
+  index: which chats the account's backups hold, by MLS group id, which stretches of each, when each backup was
+  written, by which device, how large each blob is and where it is. That is every device ever in the device group,
+  a removed one included. Only the words open a bundle, the small state or the archive key. A device MUST NOT publish
+  a group id it learned from an index, as for small state.
+- Only the account signs a pointer, but any device of the account can, a stolen or former one included while it holds
+  the account's signing key. It can publish a pointer that drops backups, so later writers stop listing them. It can
+  also list a backup it wrote, whose history a restore would import as it imports a sibling's. Because the pointer's
+  address is public, the signing key alone also lets its holder publish a newer pointer there that no device can open:
+  devices drop it, and no backup is written under that key until the words are replaced ("Limits of this version" under
+  [Writing backups](#writing-backups)). It still cannot read an index or a backup. Indexes and heads are not
+  authenticated to their writer: one that also holds the public half can list a backup whose index claims the stretches
+  real backups hold, so a writer's retention drops those and deletes their blobs. The account's signing key alone
+  already lets its holder delete the account's blobs from the servers.
+- Any device of the account can make itself the backup writer by taking over, including a stolen linked device until
+  it is removed; it then decides what backups hold. A takeover needs no proof that the writer is gone: a device that
+  claims the writer is quiet decides that itself.
+- A Blossom server that holds a backup's blobs learns what the upload's and the delete's authorization say of the
+  account, each blob's size, and when it was uploaded, fetched and deleted. It reads a head's backup id, which is
+  random. A backup is written about once a day, so a
+  server sees a daily burst of uploads from the account, about as large as its history. It cannot open a blob, and it
+  cannot read an index without the public half.
+- Imported history is as trustworthy as the sibling that sent it. A stolen linked device can send invented events
+  alongside real ones, with any author, time, retention or `grant`, and leave real ones out; the receiver cannot tell
+  them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
+  receiving device, and on each device that device later sends that history to. An attachment key opens only the one
+  file it names, never the rest of that epoch's media.
+- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in a
+  roster entry that any device can rewrite. A stolen linked device can make its deliveries read as another sibling's,
+  so which device a message was imported from, as a client may show it, is only as trustworthy as the roster.

@@ -32,7 +32,7 @@ def vector(b):
     return qlen(len(b)) + b
 
 
-def sign_content(operation, content, component_id=0x800e):
+def sign_content(operation, content, component_id=0x8012):
     operation_label = vector(b'MLS Component') + component_id.to_bytes(2, 'big') + vector(operation)
     return vector(b'MLS 1.0 ' + operation_label) + vector(content)
 
@@ -757,7 +757,7 @@ class InviteFixtures(unittest.TestCase):
         # Source-checked literal for draft-10 sections 4.1/4.3 and RFC SignContent;
         # not another generator call, nor an independently produced MLS vector.
         tbs = bytes.fromhex(V['request_hex'])[:-64]
-        label = b'\x0dMLS Component\x80\x0e\x07request'
+        label = b'\x0dMLS Component\x80\x12\x07request'
         expected = b'\x20MLS 1.0 ' + label + qlen(len(tbs)) + tbs
         self.assertEqual(expected.hex(), V['request_sign_content_hex'])
 
@@ -814,7 +814,7 @@ class InviteFixtures(unittest.TestCase):
                 transition(p, p, actor, {'alice'}, admins, disband=True)
 
     def test_registry_and_surface_sync(self):
-        expected = {'0x800e': 'app-components/group-invite-links-v1.md',
+        expected = {'0x8012': 'app-components/group-invite-links-v1.md',
                     '459': 'transports/nostr-invite-links.md', '460': 'transports/nostr-invite-links.md',
                     '461': 'transports/nostr-invite-links.md', '30444': 'transports/nostr-invite-links.md'}
         registry = (ROOT/'foundation/registries.md').read_text()

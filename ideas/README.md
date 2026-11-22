@@ -17,6 +17,8 @@ Implementations MUST NOT treat an idea document as an interop surface.
 ## Current ideas
 
 - [multi-device.md](./multi-device.md) - one account on several devices: linking, invites, device management, removal.
+- [account-sync.md](./account-sync.md) - history for a newly linked device, small-state sync, backups, and recovering when every device is lost.
+- [agents-in-chats.md](./agents-in-chats.md) - working with an AI agent through a chat: what it sends, how it is approved and steered, and what other clients show.
 - [group-invite-links.md](./group-invite-links.md) - illustrated walkthrough of the proposed private invite-link spec,
   including its privacy trade-offs and remaining deployment questions.
 

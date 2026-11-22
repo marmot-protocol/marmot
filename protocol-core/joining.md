@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#t3-invitation-abuse-stale-packages-and-first-contact-group-substitution).
+
 This document describes the member join flow built around MLS Welcomes.
 
 ## Surfaces
@@ -32,9 +34,23 @@ not carry the ratchet tree.
 
 ## Delivery
 
-The active transport binding owns the Welcome delivery envelope, recipient addressing, and transport-specific metadata.
-Protocol core requires that the receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and
-can identify which local KeyPackage was consumed.
+The active transport binding owns the Welcome delivery envelope, recipient addressing, and transport-specific metadata
+for a Welcome that consumes a published KeyPackage. A KeyPackage that was never published has no publication for a
+binding to name, so the feature that hands it over owns its delivery: the device group's sibling Welcome
+([../features/device-group.md](../features/device-group.md), "Sibling Welcomes"). Protocol core requires that the
+receiver can recover the serialized MLSMessage whose wire format is `mls_welcome` and can identify which local
+KeyPackage was consumed.
+
+Each delivery names exactly one consumed KeyPackage: a binding's delivery by the binding's reference to the
+KeyPackage's publication, a sibling Welcome by the KeyPackage's `KeyPackageRef`. An inviter whose Commit added several
+KeyPackages, including several of one account's
+([../foundation/key-packages.md](../foundation/key-packages.md), "Selection and lifecycle"), MUST make one delivery for
+each of them, so that every added device receives a delivery naming its own KeyPackage.
+
+An account's devices can share delivery addressing, so a device can receive a delivery that names another device's
+KeyPackage. That delivery fails step 2 of the receiving flow below for this device, but it is not a failed join: the
+device leaves its own KeyPackage state unchanged and does not report a failed invite. It MUST NOT let such a delivery
+prevent processing of a delivery that names its own KeyPackage.
 
 The Welcome delivery envelope MUST NOT by itself choose group state. It supplies bytes and delivery evidence. MLS and
 Marmot validation decide whether the receiver joins.
@@ -50,9 +66,11 @@ After unwrapping a Welcome, the receiver:
 5. validates every resulting member identity and account identity proof;
 6. identifies the Welcome author from the MLS GroupInfo signer leaf and validates that author's Marmot account identity;
 7. validates the resulting Marmot group state and required components;
-8. rejects the Welcome unless the author is an active admin in the resulting group state, per the admin-policy component
-   ([../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md)), which is the sole membership-add
-   authority for v1 groups;
+8. rejects the Welcome unless the author is authorized to add in the resulting group state: either the author is an
+   active admin there, per the admin-policy component
+   ([../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md)), or the author's account identity
+   equals the receiver's own account identity and the resulting state requires `marmot.group.account-devices.v1`
+   ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md));
 9. checks whether the client already retains the resulting MLS group id; outside a separately verified repair or rejoin
    path, it rejects a match without modifying the existing state or the referenced KeyPackage material;
 10. stores the group state and routing information;
@@ -61,11 +79,14 @@ After unwrapping a Welcome, the receiver:
 13. catches up on outstanding Commits as best it can;
 14. performs a self-update as soon as practical.
 
-Steps 4 through 9 are one tentative validation operation. They MUST NOT durably create or replace group state, consume
-or rotate the referenced KeyPackage, or delete its `init_key` material unless every check through step 9 succeeds. If
-the MLS Welcome-processing operation consumes KeyPackage material before exposing the resulting group id and state,
-the receiver MUST stage that mutation or provide equivalent rollback so rejection restores the exact pre-processing
-KeyPackage state. Durable group storage and KeyPackage rotation begin only at steps 10 through 12.
+Steps 4 through 9 are one tentative validation operation, which also runs any check a feature requires before a
+Welcome is joined, such as a new device's check of the Welcome's group and sender under a confirmed device link
+([../features/device-pairing.md](../features/device-pairing.md), "New device", step 5). The operation MUST NOT durably
+create or replace group state, consume or rotate the referenced KeyPackage, or delete its `init_key` material unless
+every one of its checks succeeds. If the MLS Welcome-processing operation consumes KeyPackage material before exposing
+the resulting group id and state, the receiver MUST stage that mutation or provide equivalent rollback so rejection
+restores the exact pre-processing KeyPackage state. Durable group storage and KeyPackage rotation begin only at steps 10
+through 12.
 
 A new member SHOULD perform the post-join self-update before sending application payloads when feasible, and SHOULD do
 so promptly after joining. This carries forward the MIP-02 post-join rotation guidance; this spec keeps it as a
@@ -82,11 +103,13 @@ preserve local history and a removal tombstone outside the replaced active state
 
 ## Welcome-bootstrap trust
 
-The join-time authorization check (step 8 of the receiving flow) validates the Welcome author against the admin set of
-the joined group state itself. In a forked group that admin set is author-controlled: an existing non-admin member can
-fork with a single commit that both adds the joiner and rewrites the admin policy to list itself, and the check passes
-against the fork's own admin set. The check therefore guarantees that the Welcome author is an admin of the group state
-the joiner received — it does not prove that this group is the one the joiner intended to join.
+The join-time authorization check (step 8 of the receiving flow) validates the Welcome author against the joined group
+state itself: its admin set, or, when the author is the joiner's own account, its required-component list. In a forked
+group both are author-controlled: an existing non-admin member can fork with a single commit that both adds the joiner
+and rewrites the admin policy to list itself, and the check passes against the fork's own admin set. The check
+therefore guarantees that the Welcome author is an admin of the group state the joiner received, or the joiner's own
+account in a state that requires `marmot.group.account-devices.v1` — it does not prove that this group is the one the
+joiner intended to join.
 
 This version deliberately defines no in-band cryptographic anchor for first-contact group authenticity: every value a
 first-time joiner can check arrives in the Welcome, and a forger authors all of it.
@@ -94,6 +117,13 @@ first-time joiner can check arrives in the Welcome, and a forger authors all of 
 The first-contact trust root is therefore the Welcome author. A joiner MUST authenticate the Welcome author's account
 identity — this is step 6 of the receiving flow — and a client SHOULD present that identity to the joining user
 before or at join, so accepting an invite is an explicit decision about who the inviter is.
+
+A Welcome whose author is the joiner's own account, accepted under
+[../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), adds no new forger. Whoever authors
+it holds a leaf of the joiner's account or the account's signing key, and the signing key alone is already enough to
+create a group in which the account is an admin and to add the joiner under the admin path. Presenting the author of
+such a Welcome tells the user only that one of the account's own devices, or someone holding the account's key, decided
+the join.
 
 A client MAY treat a newly joined group as unverified until an MLS application message from an account other than the
 Welcome author authenticates on the group's branch. That message proves only that the other account participated on
@@ -118,7 +148,8 @@ A receiver rejects the Welcome if:
 - the Welcome author cannot be identified as a member leaf in the resulting group;
 - the resulting group state lacks required Marmot state;
 - the resulting MLS group id matches retained active cryptographic state;
-- the Welcome author's MLS-authenticated account identity is not an active admin in the resulting group state (the
-  sole membership-add authority for v1 groups; see
-  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md));
+- the Welcome author's MLS-authenticated account identity is not an active admin in the resulting group state (see
+  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md)), and it is not the receiver's own
+  account identity in a resulting state that requires `marmot.group.account-devices.v1` (see
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md));
 - the group requires a capability this client does not support.

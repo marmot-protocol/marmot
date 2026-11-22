@@ -14,7 +14,9 @@ the frozen MIP repository is not maintained as part of this specification.
 README.md
 layout.md
 principles.md
+security-considerations.md
 mip-coverage.md
+changes.md
 foundation/
   README.md
   identity.md
@@ -53,8 +55,11 @@ app-components/
   group-encrypted-media-v1.md
   group-encrypted-media-v2.md
   group-lifecycle-v1.md
-  group-invite-links-v1.md  (proposed, 0x800e)
+  account-devices-v1.md
+  device-roster-v1.md
+  group-invite-links-v1.md  (proposed, 0x8012)
   account-identity-proof-v2.md
+  device-tag-v1.md
 transports/
   README.md
   nostr.md
@@ -62,14 +67,19 @@ transports/
   quic.md
 features/
   README.md
+  account-sync.md
   content-moderation.md
+  device-group.md
   group-invite-links.md  (proposed)
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
   push-notifications.md
+  device-pairing.md
 ideas/
   README.md
+  account-sync.md
+  agents-in-chats.md
   multi-device.md
   group-invite-links.md
 implementation-model.md
@@ -79,6 +89,11 @@ This tree is the canonical list of spec documents and per-surface `README.md` in
 as `AGENTS.md`, and compatibility symlinks, are not entries in the normative spec tree. When you add, rename, or remove
 a spec document, update this tree in the same change, and update the matching index in the surface's `README.md` (and
 `foundation/registries.md` when an id changes). The subdir `AGENTS.md` files carry this as a verification step.
+
+## Security model
+
+[`security-considerations.md`](./security-considerations.md) is the non-normative, cross-surface threat model. It maps
+assets, attackers, assumptions, guarantees and residual risks to normative owners; it does not add protocol rules.
 
 ## Foundation
 

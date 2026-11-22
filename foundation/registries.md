@@ -21,8 +21,23 @@ Marmot app components use MLS private-use component ids.
 | `0x8007`     | `marmot.group.avatar-url.v1`                    | [doc](../app-components/group-avatar-url-v1.md)                     |
 | `0x8008`     | `marmot.group.encrypted-media.v1`               | [doc](../app-components/group-encrypted-media-v1.md)                |
 | `0x8009`     | `marmot.member.account-identity-proof.v2`       | [doc](../app-components/account-identity-proof-v2.md)               |
+| `0x800a`     | withdrawn                                       | —                                                                   |
 | `0x800b`     | `marmot.group.encrypted-media.v2`               | [doc](../app-components/group-encrypted-media-v2.md)                |
 | `0x800c`     | `marmot.group.lifecycle.v1`                     | [doc](../app-components/group-lifecycle-v1.md)                      |
+| `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
+| `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
+| `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
+
+`0x8006` is retired, still supported for existing groups. Clients no longer add it to new groups, but many existing
+groups require it, so clients keep supporting it as its
+[Retirement](../app-components/agent-text-stream-quic-v1.md#retirement) section says. It remains registered so the value
+is never reassigned.
+
+`0x800a` was `marmot.authorization.multi-device-join.v1`, the join authorization of an earlier multi-device draft that
+[#427](https://github.com/marmot-protocol/marmot/pull/427) withdrew. It has no meaning, and data under it is
+[unknown data](../app-components/README.md#unknown-data). Some deployed clients still reject GroupContext data under
+`0x800a`, as the draft required, so reusing the id would break groups with members on those clients. It remains
+registered so the value is never reassigned.
 
 ## Upstream MLS extension draft ids
 
@@ -60,12 +75,14 @@ carriers and MUST NOT be treated as interchangeable merely because both use a `C
 `0xf2d3` is intentionally unassigned and has no reserved meaning. A future use MUST claim it in this registry before
 emitting it.
 
-`0xf2d1`, `0xf2d2`, and `0xf2d4` are the agent-text-stream-QUIC member role capabilities. A member advertises a role by
-listing the matching extension type in its LeafNode capabilities; the `required_member_roles` mask in
-`marmot.group.agent-text-stream.quic.v1` is enforced against these ids at invite and join. The `receive` role
-(`0xf2d1`) means the member understands the component and can fall back to the durable final message; it does not require
-opening a live-preview transport. The `send` and `fanout` roles are live-preview data-plane roles. The bit values
-(`0x01`, `0x02`, `0x04`) are role-mask bits inside the component payload, distinct from these extension type ids.
+`0xf2d1`, `0xf2d2`, and `0xf2d4` are the member role capabilities of the retired component
+`marmot.group.agent-text-stream.quic.v1`. A member advertises a role by listing the matching extension type in its
+LeafNode capabilities; the component's `required_member_roles` mask is enforced against these ids at invite and join.
+The `receive` role (`0xf2d1`) is retired but still supported for existing groups: the known groups that require the
+component require it, and it needs no QUIC code. Admission checks use the group's `required_member_roles` mask. The `send` (`0xf2d2`) and `fanout` (`0xf2d4`) roles are retired, and clients
+stop advertising them ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). All three remain
+registered so the values are never reassigned. The bit values (`0x01`, `0x02`, `0x04`) are role-mask bits inside the
+component payload, distinct from these extension type ids.
 
 These three extension types are capability markers only: v1 defines no extension data for them. They appear solely in
 `LeafNode.capabilities.extensions` to advertise role support and are never emitted as LeafNode or GroupContext
@@ -85,8 +102,9 @@ this table only names the value and points at the owner.
 
 The table includes Marmot-allocated kinds and standard app-event kinds to which Marmot assigns an inner payload meaning.
 Standard transport kinds that the Nostr binding reuses unchanged — kind `1059` (NIP-59 gift wrap), kind `13` (NIP-59
-seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay list) — remain defined in
-[../transports/nostr.md](../transports/nostr.md).
+seal), kind `5` (NIP-09 deletion request, for KeyPackage slot deletion), kind `10002` (NIP-65 relay list), kind
+`10050` (NIP-17 DM inbox relay list), and kind `30078` (NIP-78 application data, for the backup pointer) — remain
+defined in [../transports/nostr.md](../transports/nostr.md).
 
 | Kind    | Name                                | Layer                               | Document                                                |
 | ------- | ----------------------------------- | ----------------------------------- | ------------------------------------------------------- |
@@ -99,10 +117,24 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 | `449`   | Push token removal                  | Marmot app payload                  | [push-notifications.md](../features/push-notifications.md) |
 | `450`   | Account identity proof v2 event     | Local signing template, not relayed | [account-identity-proof-v2.md](../app-components/account-identity-proof-v2.md) |
 | `451`   | Push owner proof event              | Local signing template, not relayed | [push-notifications.md](../features/push-notifications.md) |
+| `452`   | Device pairing request              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `453`   | Device pairing answer               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `454`   | Device pairing reveal               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `455`   | Device pairing confirm              | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `456`   | Device pairing cancel               | Rumor gift-wrapped to own account   | [device-pairing.md](../features/device-pairing.md)      |
+| `457`   | Device heartbeat                    | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `458`   | Sibling chat gap-fill claim         | Marmot app payload                  | [device-group.md](../features/device-group.md#gap-fill-claims-kind-458) |
+| `459`   | Private KeyPackage request          | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `460`   | Private KeyPackage hand-off         | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `461`   | Sibling Welcome                     | Marmot app payload                  | [device-group.md](../features/device-group.md)          |
+| `473`   | History delivery                    | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
+| `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
+| `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
+| `477`   | Post-link chat inventory            | Marmot app payload                  | [device-group.md](../features/device-group.md#post-link-chat-inventory-kind-477) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
-| `1200`  | Agent text stream start             | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
+| `1200`  | Agent text stream start (retired)   | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1984`  | Content report (NIP-56)             | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#reports-kind-1984) |
 | `1985`  | Report dismissal labels (NIP-32)    | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#dismissal-labels-kind-1985) |
@@ -111,8 +143,9 @@ seal), kind `10002` (NIP-65 relay list), and kind `10050` (NIP-17 DM inbox relay
 
 Kind `4891` is allocated by Marmot for admin deletion inside MLS app payloads.
 
-The experimental agent text stream QUIC feature claims kind `1200` for durable stream start app events. Live stream
-chunks are transient QUIC records.
+Kind `1200` was the stream start of the retired agent text stream feature. Clients no longer send it and SHOULD NOT
+display one they receive ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). It remains
+registered so the value is never reassigned.
 
 Kinds `1201` and `1202` are reserved for possible experimental agent activity and operation events. Marmot currently
 defines no payload schema or conformance behavior for them; application experiments use them under the ordinary
@@ -135,6 +168,13 @@ clients MUST NOT produce a new push owner proof with kind `450`.
 The `d` tag strings in these local signing events are fixed proof-domain labels, not component names. Implementations
 MUST use the exact `d` value in each owning proof document and MUST NOT derive it from the component name.
 
+Kinds `452` to `456` are device pairing messages. They are never MLS application payloads: each travels only as a
+rumor gift-wrapped from an account to itself ([../transports/nostr.md](../transports/nostr.md), "Pairing delivery").
+
+Kinds `457` to `489` are reserved for multi-device accounts: `457` to `462` for device-group messages, `463` to `469`
+spare, `470` to `472` for history transfer messages not specified yet, and `474` and `478` to `489` for later
+multi-device work. Any new use claims its kind in this table first.
+
 Kind `1210` is reserved for durable group system rows, such as membership, name, avatar, or other group-lifecycle
 notices that clients render separately from human chat.
 
@@ -149,14 +189,14 @@ baseline Marmot. They claim draft values within this proposal; they are not upst
 
 | Namespace | Value | Meaning | Owner |
 | --- | --- | --- | --- |
-| Component | `0x800e` | `marmot.group.invite-links.v1`, GroupContext | [component](../app-components/group-invite-links-v1.md) |
+| Component | `0x8012` | `marmot.group.invite-links.v1`, GroupContext | [component](../app-components/group-invite-links-v1.md) |
 | Nostr kind | `459` | Request/withdrawal rumor | [Nostr extension](../transports/nostr-invite-links.md) |
 | Nostr kind | `460` | Status rumor | [Nostr extension](../transports/nostr-invite-links.md) |
 | Nostr kind | `461` | Private admin rumor and unsigned MLS batch event | [Nostr extension](../transports/nostr-invite-links.md) |
 | Nostr kind | `30444` | Encrypted preview descriptor | [Nostr extension](../transports/nostr-invite-links.md) |
 | Bech32m HRP | `marmot` | Complete invitation code v1 | [Nostr extension](../transports/nostr-invite-links.md) |
-| SafeSignWithLabel operation | `request` under `0x800e` | Device request/refresh consent | [records](invite-link-records.md) |
-| SafeSignWithLabel operation | `withdrawal` under `0x800e` | Device withdrawal consent | [records](invite-link-records.md) |
+| SafeSignWithLabel operation | `request` under `0x8012` | Device request/refresh consent | [records](invite-link-records.md) |
+| SafeSignWithLabel operation | `withdrawal` under `0x8012` | Device withdrawal consent | [records](invite-link-records.md) |
 
 SafeSignWithLabel uses draft-10's ComponentOperationLabel and RFC 9420's `MLS 1.0 ` prefix. The operations above
 are component-scoped domain separators, not independent MLS signature-label registrations or exporters.
@@ -166,8 +206,11 @@ The code and request context carry format version one; the component id is its s
 
 | Identifier                    | Use                                      | Document                         |
 | ----------------------------- | ---------------------------------------- | -------------------------------- |
-| `marmot.quic_stream.v1`       | direct-path QUIC ALPN                    | [quic.md](../transports/quic.md) |
-| `marmot.quic_broker.v1`       | broker QUIC ALPN and control identifier  | [quic.md](../transports/quic.md) |
+| `marmot.quic_stream.v1`       | direct-path QUIC ALPN (retired)                   | [quic.md](../transports/quic.md) |
+| `marmot.quic_broker.v1`       | broker QUIC ALPN and control identifier (retired) | [quic.md](../transports/quic.md) |
+
+Both identifiers belong to the retired QUIC binding for agent text previews. They remain registered so they are never
+reassigned.
 
 An incompatible transport or control protocol registers a new identifier rather than reinterpreting one of these
 strings.
@@ -186,7 +229,7 @@ used below the exporter output.
 | ---------- | ------------------------------ | -------- | -------------------------------------- |
 | `"marmot"` | `"group-event"`                | `32`     | kind `445` outer encryption key        |
 | `"marmot"` | `"encrypted-media"`            | `32`     | encrypted-media per-file key schedule  |
-| `"marmot"` | `"agent-text-stream-quic"`     | `32`     | agent text stream QUIC record crypto   |
+| `"marmot"` | `"agent-text-stream-quic"`     | `32`     | retired agent text stream QUIC record crypto; never reassigned |
 | `"marmot"` | `"convergence-conformance-v1"` | `32`     | synthetic conformance state commitment |
 
 Fixed `32`-byte outputs are used where the owning document feeds a 32-byte AEAD key or feature key schedule.

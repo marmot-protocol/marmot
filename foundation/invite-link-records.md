@@ -49,7 +49,7 @@ delivery coordinates into the request, without making those coordinates identity
 Admission and tombstone retention use it as defined by the feature; it is separate from link and package expiry.
 
 The signature uses the pinned [MLS extensions draft-10 SafeSignWithLabel](https://datatracker.ietf.org/doc/html/draft-ietf-mls-extensions-10#section-4.3)
-with the Ed25519 private key corresponding to `consent_key`, component id `0x800e`, operation label `request`, and
+with the Ed25519 private key corresponding to `consent_key`, component id `0x8012`, operation label `request`, and
 content equal to the exact encoded `InviteRequestTBSV1`. Verification uses SafeVerifyWithLabel with the same inputs.
 The draft's encoded ComponentOperationLabel contains base label `MLS Component`, that uint16 component id and the
 operation label. RFC 9420 SignWithLabel then prefixes those encoded label bytes with `MLS 1.0 ` inside SignContent.
@@ -92,7 +92,7 @@ struct {
 } InviteWithdrawalV1;
 ```
 
-SafeSignWithLabel uses component id `0x800e`, operation label `withdrawal`, and the encoded TBS, with the same
+SafeSignWithLabel uses component id `0x8012`, operation label `withdrawal`, and the encoded TBS, with the same
 ComponentOperationLabel and SignContent framing as requests. The signer is the original consent key
 from a validated revision-zero request. Withdrawal closes that context across all revisions and never removes a
 member. It may arrive before the original request; processing waits for the original binding. If the consent key
