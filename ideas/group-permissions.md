@@ -99,7 +99,7 @@ or change group state. This proposal does not alter either pending pull request.
 
 Current [admin-policy-v1.md](../app-components/admin-policy-v1.md) and the affected component documents require admins
 for these actions. [group-messaging.md](../protocol-core/group-messaging.md) also restricts non-admin commits, and
-[joining.md](../protocol-core/joining.md) requires a Welcome's GroupInfo signer to be an admin. A local setting cannot
+[joining.md](../protocol-core/joining.md) requires an admin GroupInfo signer for a Welcome that adds another account. A local setting cannot
 safely loosen those rules while claiming current-profile compatibility.
 
 The proposed policy would live in authenticated GroupContext component state. Because authorization is changing, its
