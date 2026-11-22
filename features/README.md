@@ -25,6 +25,8 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
 - [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
   account's existing devices.
+- [consensual-history-purge.md](./consensual-history-purge.md) - draft unanimous one-shot deletion of pre-opening
+  application plaintext alongside a prospective retention change.
 
 ## Relationship to app components
 

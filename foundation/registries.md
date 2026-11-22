@@ -27,6 +27,7 @@ Marmot app components use MLS private-use component ids.
 | `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
 | `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
 | `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
+| `0x8011`     | `marmot.group.history-purge.v1`                 | [doc](../app-components/history-purge-v1.md)                        |
 
 `0x8006` is retired, still supported for existing groups. Clients no longer add it to new groups, but many existing
 groups require it, so clients keep supporting it as its
@@ -131,6 +132,11 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `475`   | Small-state update                  | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `476`   | Small-state broadcast request       | Marmot app payload                  | [account-sync.md](../features/account-sync.md)          |
 | `477`   | Post-link chat inventory            | Marmot app payload                  | [device-group.md](../features/device-group.md#post-link-chat-inventory-kind-477) |
+| `490`   | History-purge control event         | Marmot app payload                  | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `491`   | History-purge member decision       | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `492`   | History-purge request proof         | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `493`   | History-purge cancellation proof    | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
+| `494`   | History-purge terminal proof        | Local signing template, not relayed | [history-purge-v1.md](../app-components/history-purge-v1.md) |
 | `1009`  | Message edit                        | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
@@ -161,7 +167,7 @@ Kind `451` is the local signing event for current push token-record and removal 
 distinct `d` tags and are defined by [push-notifications.md](../features/push-notifications.md). Its signature-only
 carrier is feature-specific and does not use `MarmotAuthorizationProof`.
 
-Kinds `450` and `451` are local signing templates, not transport objects. Clients MUST NOT publish them to
+Kinds `450`, `451`, `454`, `455`, `456`, and `457` are local signing templates, not transport objects. Clients MUST NOT publish them to
 relays. Legacy-group verification of push signatures created with kind `450` does not change the current allocation:
 clients MUST NOT produce a new push owner proof with kind `450`.
 

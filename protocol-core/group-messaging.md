@@ -50,7 +50,13 @@ Non-admin members MUST NOT commit anything except the narrow flows the spec expl
   of that account, carried by value, as
   [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) defines.
 
-These non-admin commit shapes MUST NOT be combined with each other or with other proposal types.
+- an exact Yes update or a rejected, cancelled, or expired terminal Commit under the draft
+  [history-purge component](../app-components/history-purge-v1.md), only for the actor and proposal set it authorizes.
+
+These non-admin commit shapes MUST NOT be combined. A Commit that changes a binding of an open history-purge
+request MUST include that component’s exact atomic supersession operations, including when a valid
+[SelfRemove batch](./member-departure.md#selfremove-commits) or same-account Commit causes the change. Those
+operations add no authority to the underlying Commit; all its other proposals must satisfy the original shape.
 
 All other Commits from non-admins are invalid.
 

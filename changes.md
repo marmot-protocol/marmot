@@ -13,6 +13,26 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-22: Consensual history purge draft
+
+Pull request: [marmot#419](https://github.com/marmot-protocol/marmot/pull/419).
+Changes [app-components/README.md](./app-components/README.md),
+[app-components/group-lifecycle-v1.md](./app-components/group-lifecycle-v1.md),
+[app-components/history-purge-v1.md](./app-components/history-purge-v1.md),
+[app-components/message-retention-v1.md](./app-components/message-retention-v1.md),
+[features/consensual-history-purge.md](./features/consensual-history-purge.md),
+[foundation/conformance.md](./foundation/conformance.md),
+[foundation/registries.md](./foundation/registries.md),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md),
+[protocol-core/inbound-processing.md](./protocol-core/inbound-processing.md),
+[protocol-core/joining.md](./protocol-core/joining.md),
+[protocol-core/member-departure.md](./protocol-core/member-departure.md),
+[protocol-core/retained-history.md](./protocol-core/retained-history.md).
+
+Clients that implement the optional draft use component `0x8011` and kinds `490`–`494`. Apply prospective
+retention and suppress only the request-bound history after the accepted Commit. Irreversible application
+cleanup waits for the rollback horizon.
+
 ## 2026-11-21: Agent text streams over QUIC are retired
 
 Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
