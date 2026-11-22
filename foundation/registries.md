@@ -27,6 +27,9 @@ Marmot app components use MLS private-use component ids.
 | `0x800d`     | `marmot.group.account-devices.v1`               | [doc](../app-components/account-devices-v1.md)                      |
 | `0x800e`     | `marmot.account.device-roster.v1`               | [doc](../app-components/device-roster-v1.md)                        |
 | `0x800f`     | `marmot.member.device-tag.v1`                   | [doc](../app-components/device-tag-v1.md)                           |
+| `0x8013`     | `marmot.group.message-pins.v1` (draft)          | [doc](../app-components/message-pins-v1.md)                         |
+
+`0x8013` is a draft allocation for optional shared message pinning. The owning document remains a proposal until adopted.
 
 `0x8006` is retired, still supported for existing groups. Clients no longer add it to new groups, but many existing
 groups require it, so clients keep supporting it as its

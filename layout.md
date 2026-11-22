@@ -56,6 +56,7 @@ app-components/
   group-lifecycle-v1.md
   account-devices-v1.md
   device-roster-v1.md
+  message-pins-v1.md
   account-identity-proof-v2.md
   device-tag-v1.md
 transports/
@@ -67,6 +68,7 @@ features/
   account-sync.md
   content-moderation.md
   device-group.md
+  message-pinning.md
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md

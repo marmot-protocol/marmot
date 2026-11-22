@@ -1,0 +1,16 @@
+name: Message pinning fixtures
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Run bounded reference fixtures
+        run: python3 -B -m unittest discover -s tests -p 'test_message_pins.py' -v
