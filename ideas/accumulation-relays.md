@@ -43,7 +43,9 @@ reports the resulting gap and keeps interest-dependent collection off. A client 
 declared collection mode shows degraded or unavailable coverage and does not silently fall back. Any separate
 interest-dependent mode would reveal group interests upstream and would require explicit user opt-in.
 
-The relay keeps a declared rolling history window applied independently of personal queries. Retaining only a user's
+The relay keeps a declared rolling history window applied independently of personal queries. It honors the existing
+[Nostr event-expiration policy](../transports/nostr.md#message-expiration) when retaining and serving buffered
+events. The rolling window limits how long it can keep events that remain eligible to serve. Retaining only a user's
 groups, extending their retention on demand, or requesting individual groups upstream would introduce interest-dependent
 behavior. A broad buffer can include new or rotated addresses without learning their encrypted routing changes, but
 only where its sources, collection interval and retention window cover the events.
