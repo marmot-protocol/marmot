@@ -13,6 +13,18 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-22: Shared message pinning draft
+
+Pull request: [marmot#434](https://github.com/marmot-protocol/marmot/pull/434).
+Changes [app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
+[app-components/message-pins-v1.md](./app-components/message-pins-v1.md),
+[features/message-pinning.md](./features/message-pinning.md),
+[foundation/registries.md](./foundation/registries.md).
+
+Clients that implement the optional draft negotiate component `0x8013` before writing shared pins. Use the
+authenticated parent policy to authorize pin changes and keep message expiry and deletion independent of pin
+state.
+
 ## 2026-11-21: Agent text streams over QUIC are retired
 
 Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
