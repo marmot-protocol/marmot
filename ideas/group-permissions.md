@@ -17,6 +17,8 @@ The versioning and join-authentication questions below need to be settled before
 | Disappearing messages | Set, change, or disable the timer for new messages | Admins only / All members |
 | Group metadata | Change the name, description, or image | Admins only / All members |
 
+Sibling-device additions keep the authorization rules in [account-devices-v1.md](../app-components/account-devices-v1.md).
+
 The proposed initial value for each setting is **Admins only**, preserving existing authorization unless the creating
 admin explicitly chooses otherwise. An admin could change each setting independently later. For example, a group could
 allow everyone to change the timer and metadata while keeping invitations admin-only.
@@ -127,9 +129,6 @@ one unambiguous active authority model, including when legacy and successor comp
 - How does a joiner recognize an authorized non-admin Welcome signer under the new model? The current
   [Welcome-bootstrap trust limits](../protocol-core/joining.md#welcome-bootstrap-trust) still apply: state in a Welcome
   does not independently prove that the joiner received the intended group's branch.
-The Add selector covers invitations to other accounts. Sibling-device additions keep the authorization rules in
-[account-devices-v1.md](../app-components/account-devices-v1.md).
-
 ## Review scenarios for the eventual specification
 
 Useful acceptance cases include an ordinary member changing each category independently when enabled; an admin changing
