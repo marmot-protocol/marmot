@@ -1,0 +1,358 @@
+# Account sync
+
+Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. See [README.md](./README.md).
+
+This idea covers what follows Alice from device to device: the history of her chats when she links a new device, small
+state such as read positions and mutes, and backups for when every device is gone. It builds on
+[multi-device.md](./multi-device.md), which covers linking, the device group, and the roster.
+
+## At a glance
+
+- **History comes from a sibling.** Old messages on relays are encrypted for epochs a new device was never part of, so
+  it can't read them. Only a device that was there can hand over what it saw.
+- **History is content, never membership.** It carries messages, reactions, and attachment keys. It never carries MLS
+  state, so it can't let a device act as a member of the past.
+- **It is meant for one device.** Each history bundle is sealed to the receiving device, even though it travels
+  through the device group.
+- **Small state follows Alice.** Read positions, pins, mutes, and archived chats match across her devices.
+- **Backups cover what siblings can't.** Most of the time her other devices already have her history. A backup covers
+  losing every device, or losing the only device in some chat. It is protected by a recovery key, not her nsec, and
+  restores content, not chat membership.
+
+## Words used here
+
+| Term | Meaning |
+| --- | --- |
+| History | The events one device has for one chat, as it received or sent them: messages, reactions, edits and deletions, plus attachment keys. |
+| History bundle | One stretch of one chat's history, packed and encrypted for a single receiving device. |
+| History key | A public key a device puts in its roster entry so siblings can seal history to it. |
+| Manifest | The small list that describes bundles too large to send inline: where each is stored and its hash. |
+| Small state | Per-chat settings and positions that follow Alice: read position, pins, mutes, archived chats. |
+| Backup | An encrypted archive of history and small state, written by one of Alice's devices. |
+| Backup writer | The one device the roster names to write backups. |
+| Recovery key | 12 words that derive the key pair backups are sealed to. Devices keep only its public half. Separate from the nsec. |
+| Archive key | A fresh random key for one backup, sealed to the recovery key's public half. |
+| Backup pointer | A small record her account publishes, encrypted under a key the recovery key's public half derives, listing the backups kept under that key and where each one's head is. |
+
+Device, sibling, device group, and roster mean what they mean in [multi-device.md](./multi-device.md#words-used-here).
+
+## What this does and does not protect
+
+- **No MLS state ever moves.** History, small state, and backups never include leaf keys, epoch secrets, or anything
+  else that would let a device rejoin or read a chat through old state.
+- **Imported history is as trustworthy as the device that sent it.** Marmot messages are authenticated by MLS when they
+  are delivered; there is no signature a receiving device could re-check later. A stolen linked device could invent
+  history. That falls under the stolen-linked-device limit in multi-device.
+- **History already sent can't be recalled.** Removing a device later doesn't take back what it received.
+- **Disappearing messages stay advisory.** Expired messages are never sent, and the rest keep their original expiry.
+  As with retention today, this relies on Alice's own devices behaving, not on any enforcement. A backup kept only
+  because it is the last one holding some chat (Scene 7) can hold messages past their expiry until it is replaced.
+- **A stolen nsec can replace the backup pointer, but can't open a backup.** The pointer is signed by the account and
+  encrypted under a key the recovery key's public half derives, so the nsec can list the account's app-data events and
+  publish a new pointer, but not read one. The public half reads it, and shows where the backups are and which chats and
+  stretches each holds, but not their content. Only the 12 words open a backup. A replaced pointer could steer a restore
+  to a fake backup that opens normally, but only if its maker also has the recovery key's public half: a current or
+  former linked device, the same circle as a stolen device. A pointer published with the nsec alone opens on no device,
+  so it stops backups under those words until Alice replaces them.
+- **Linked devices can write backups but not read them.** They hold only the public half of the recovery key. A sibling
+  can't open the writer's backup to read chats it was never sent, and a removed device can't open backups written
+  after it left. Until the words change, it can still read their indexes: which chats and stretches they hold.
+- **Replacing the words doesn't take back old copies.** Someone who already has an old backup and the old words can
+  still read that old backup. New backups are sealed to the new words only.
+- **Lose the recovery key and every device, and the backup is gone.** Nobody can read it, Alice included.
+- **A backup never restores membership.** Getting back into a chat needs a fresh add from someone still in it, so a
+  stolen backup is never a way in.
+- **Attachments depend on their storage.** History carries the keys to attachments, not the files. If a Blossom server
+  has dropped a file, it is gone on the new device too.
+
+## Scene 1: What history is
+
+When the laptop joins Book club, the iPhone sends it the events it holds for that chat, as it received or sent them:
+messages, reactions, edits and deletions. The laptop applies them the way it applies live events, so it ends up showing
+what the iPhone shows. A message that was deleted, or removed by an admin, doesn't travel, and neither does an edit,
+reaction or report that names it, such as an edit carrying its new text; a reply to it still does. The deletion itself does travel, so a later transfer from a
+sibling that missed it can't bring the message back.
+
+**Attachments travel as keys, not files.** In Marmot, an attachment's key comes from the MLS epoch its message was sent
+in ([../features/encrypted-media.md](../features/encrypted-media.md)). The laptop can't derive keys for epochs before
+it joined, so next to each message, which already names the file's locator and hashes, the iPhone sends that one
+file's key, never the epoch's secret. The laptop fetches the encrypted file from the Blossom server when Alice opens
+it, the same way it fetches any new attachment.
+
+**Disappearing messages:** expired messages are never sent. The rest arrive with their original expiry
+([../app-components/message-retention-v1.md](../app-components/message-retention-v1.md)) and vanish on the laptop at
+the same moment as everywhere else.
+
+**Never included:** MLS state, epoch secrets, pending operations, or anything that would let the laptop act as a member
+of the past. History is read-only content.
+
+## Scene 2: Who sends it
+
+**The device that adds the laptop to a chat also sends that chat's history.** At link time that is the approving
+iPhone. Later it is whichever sibling fills a gap. There is exactly one adder per chat, so nothing needs coordinating.
+
+The spec covers only this rule so far ([../features/account-sync.md](../features/account-sync.md), "History
+deliveries"). The offers below, filling in after a known loss, and confirmations are set aside; MDK tracks them in
+[mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799).
+
+**Filling in what's missing.** Say Alice got her iPhone last month, but her iPad has two years of Book club. The
+iPhone can only give a month, so the laptop shows "History from March". A device's history can also have holes in the
+middle: a device that was offline too long can miss messages for good
+([../protocol-core/retained-history.md](../protocol-core/retained-history.md)), while a sibling has them. So:
+
+1. The laptop records in the device group which stretches of Book club it has, marked by the messages at each end in
+   chat order, not by calendar dates. "History from March" is only what Alice sees.
+2. Any sibling with messages outside those stretches, earlier ones or ones in a gap, replies with a short offer naming
+   the stretch it can fill.
+3. For each missing stretch, the laptop accepts the offer that covers the most of it. Only that sibling sends, and
+   only the part still missing.
+4. The laptop updates its stretches. Any offer that still covers something missing can be accepted the same way,
+   though one round is usually enough.
+
+Offers are tiny, and only accepted ones move data, so two siblings never send the same messages. Nothing waits on the
+device with the most history, so a sleeping iPad never blocks the link. If no device has a missing stretch, the laptop
+marks it as a gap in the chat rather than claiming the history is complete.
+
+**Keeping history whole later.** The same offers run whenever any device knows it has lost messages in a chat it is
+already in, for example after being offline longer than the retention window allows. It records its stretches for
+that chat, and siblings offer what it is missing. This is triggered by a known loss, not by continuous comparison, so
+it costs nothing while devices are keeping up. **Bring chat history** doesn't block it: that setting is about history
+from before a device was linked, and these are messages from while it was a member.
+
+## Scene 3: How much
+
+**Everything the sending device has.** Text is small, and attachments travel as keys, so even years of history is a
+modest transfer. The cost that remains is the laptop fetching attachment files later, one at a time, as Alice scrolls.
+
+"Bring chat history" stays a single on/off setting per device, as in multi-device.
+
+## Scene 4: How it moves
+
+History is meant for the laptop alone. Other siblings may not be in that chat, and the setting may be off for some of
+them.
+
+1. When it is linked, the laptop puts a **history key** in its roster entry.
+2. The iPhone packs Book club's history into a bundle and encrypts it with a fresh random key.
+3. **A small bundle goes straight through the device group**, if it fits in one message of about 32 KiB once sealed.
+   That stays well under the event sizes relays commonly accept.
+4. **A long history is split into bundles of at most 8 MiB**, each covering the next stretch of the chat in chat
+   order, and each encrypted with its own key. A bundle too large for one message is uploaded to a Blossom server as
+   one opaque encrypted blob. A small **manifest** listing each blob, where it is, and its hash goes through the device
+   group instead.
+5. The bundle's key, and the manifest if there is one, go through the device group **sealed to the laptop's history
+   key**. Other siblings can see that a transfer happened, but can't read it.
+6. The laptop fetches, checks each blob against the manifest, imports, and confirms bundle by bundle. The iPhone
+   deletes each Blossom blob once it is confirmed.
+
+**Interruptions:** the laptop resumes by fetching only the bundles it hasn't confirmed. If the iPhone is the one
+interrupted, it re-uploads only the missing blobs, or builds fresh bundles if its copy is gone.
+
+**If the sealed key or manifest is lost** on the way, the laptop's recorded stretches for that chat don't change, so
+the iPhone's offer is still open and it sends again. This is the same "no visible effect, send again" rule multi-device
+uses for lost device-group messages, so no receipts are needed.
+
+**Where history stops and live chat starts.** A bundle covers everything up to the point the laptop joined. Anything
+after that reaches the laptop live, as a member. An edit, reaction, or deletion can arrive live before the history it
+refers to has finished importing. The laptop keeps such updates until that chat's import is done and then applies them,
+rather than dropping them as it would an update for a message that never arrives. Importing never overwrites a newer
+live update.
+
+**What Alice sees:** progress per chat on the laptop, such as "Book club: history imported", next to the joining
+progress from multi-device Scene 5.
+
+## Scene 5: Trusting imported history
+
+The laptop marks imported messages internally. The UI shows a subtle divider, such as "Imported from iPhone", where its
+own live history begins.
+
+Review labels and admin removals need the author to have been an admin at the time. The laptop holds nothing from those
+epochs to check that, so the iPhone sends its own verdict with each one and the laptop takes it.
+
+Within Alice's own devices, the trust is the point: she linked the sending device herself. The limit is the one
+multi-device already states. A stolen linked device is inside the circle, and it could send invented history along
+with real history.
+
+## Scene 6: Small state that follows Alice
+
+What matches across her devices:
+
+- **Read position per chat.** Read it on her phone, and the laptop doesn't show it as unread. Importing history is not
+  reading it: imported messages never show as unread on the laptop, and an import never moves a read position, so it
+  never marks anything read on her other devices.
+- **Pins.**
+- **Mute and notification settings per chat.**
+- **Archived or hidden chats.**
+- **Invite decisions.** Accept/Decline follows the shared admission generation and explicitly inherited sibling Adds
+  described in [the account-sync feature](../features/account-sync.md#invitation-decisions). Higher version wins;
+  at equal version decline wins. A decision never joins a device or undoes an already requested Leave. Independent
+  later external admissions or different admission forks can prompt again; unidentified older invites stay local-only.
+
+**Not drafts.** A draft belongs to the device it was typed on.
+
+These change often, so they travel as **device-group messages, not roster commits**. Read positions, pins, mutes and
+archive are specified in [../features/account-sync.md](../features/account-sync.md): the furthest read position wins,
+the highest version wins for the others, and every device breaks a tie the same way, whatever order changes arrive in.
+Every device sends everything it holds at least once a day, and a newly linked device asks its other devices to do so
+at once. This works whether or not history is on for that device.
+
+## Scene 7: Backups
+
+With two or more devices, Alice rarely needs a backup for most chats: losing one leaves the others with everything.
+Backups matter when she loses all of them, and for any chat only one device was in. That can happen, since a device
+linked with **Add to all my chats** off isn't in her older chats.
+
+**Turning backups on:**
+
+1. The app generates a **recovery key**: 12 words from the BIP-39 English word list, about 128 bits. Alice never picks
+   it. A chosen password would be too weak to protect a file anyone can download and attack offline.
+2. The app says plainly that if she loses these words and every device, nobody can open the backup. She confirms she
+   has saved them by typing two of them back.
+3. The words derive a key pair. The device keeps only its **public half**, then forgets the words and the private
+   half. No device can open a backup; only the words can. The public half lives in the roster. With only one device
+   there is no device group yet, so that device keeps it locally and the roster it founds carries it. If it joins
+   another device's group instead, that group's backup settings stand and it forgets the key it kept.
+
+**Writing a backup:**
+
+- **One named writer.** The roster names a backup writer: by default the device where Alice turned backups on. She can
+  change it on the Devices screen.
+- **Takeover.** If the writer's latest backup is more than 7 days old, any other device takes over with one roster
+  commit, and at once if the writer is leaving or gone. Convergence settles it if two try at once. A device counts the
+  week from when it first saw that writer named too, so a writer just named gets a week to write its first backup.
+- **Daily**, when the device finds it convenient, for example on Wi-Fi and charging for a phone.
+- **A fresh key each time.** Each backup is encrypted with a new random **archive key**, sealed to the recovery key's
+  public half. No archive key outlives its backup, so there is nothing to rotate when a device is removed.
+- **Two generations.** A new backup is uploaded alongside the existing one. Once a relay accepts the pointer that lists
+  it, the older of the two previous backups leaves the pointer, and a later pass deletes its blobs as far as the server
+  allows. So the latest two are always kept, plus any kept so no history is lost (below). Backups go to a Blossom
+  server, and never contain MLS state or attachment files.
+- **Expired messages are left out.** A backup drops disappearing messages that have expired by the time it is written,
+  and a restore drops any that have expired since.
+- **Never quietly losing history.** Backups are compared by the stretches of each chat they hold (Scene 2), not just by
+  which chats they include. No device can open an old backup to see what is in it, so each backup carries an index of
+  its stretches that the recovery key's public half opens, and later writers compare against that. If a new backup lacks
+  messages an older one has, the last backup holding them is kept and the pointer keeps listing it, up to 16 backups.
+  That covers a whole missing chat, after a takeover by a device that isn't in Book club, and older messages in a chat,
+  after a takeover by a device that joined Book club with history off. The Devices screen says "Older Book club messages
+  are only in a backup from June 3." It is deleted once newer backups hold those messages again, or once they expire.
+  Expired messages don't count.
+- **The backup pointer.** After each backup, the writer updates a small record that Alice's account publishes, listing
+  every backup still kept under her current words and where each one's head is. It is an addressable event signed by
+  her account, not a gift wrap: each new pointer replaces the last, and a device finds it with one query to her
+  relays.
+  - **Its address and its key come from the recovery key's public half**, so a restoring device that has the words
+    finds it with one query and reads it, and it never collides with another app's data. This is a deliberate exception
+    to KeyPackage slots, whose address is random: the pointer has to be found again from the words. Every device Alice
+    ever linked holds the public half, so each reads the pointer without asking her signer to decrypt anything. Someone
+    with only the nsec can list her app-data events but not read this one.
+  - **It is ordinary private app data.** It uses NIP-78's general app-data event, and what the record is, a Marmot
+    backup pointer, is stated only inside the encryption. NIP-78 describes that kind as one app's own storage and
+    points shared formats to dedicated kinds. We use it anyway, as cover: a dedicated kind would tell every relay that
+    this account has Marmot backups. Any Marmot client that holds the recovery key's public half can read it, because
+    the Nostr transport spec defines how the address is derived and what the encrypted content looks like. The nsec
+    alone can list the account's app-data events, but not read this one.
+  - **What a relay still sees:** the author, the kind, when it was updated, and an address that looks random. That is
+    the same as any app saving its settings, so it says nothing about Marmot or backups. A relay that follows NIP-78's
+    advice to serve these events only to their author adds to that; a restoring device can authenticate as Alice,
+    because it has her nsec or signer.
+- **Coverage.** A backup holds what the writer has. If the writer isn't in some chat, or lacks some of its history,
+  the Devices screen says so, for example "Backup covers 14 of 15 chats."
+- **When two device groups merge** (multi-device Scene 3), the surviving group's backup settings and recovery words
+  are used for new backups. The absorbed group's backups stay sealed to that group's words, listed in that group's
+  pointer: no device can re-seal them. So Alice is told to keep those words until the surviving group's backups hold
+  the same messages, and a restore asks for whichever words each pointer needs.
+
+**Replacing the recovery key:** from any linked device, Alice gets new words. The roster's public half changes and the
+next backup is sealed to the new words, under a new pointer. Older backups stay sealed to the old words, and no device
+can re-seal them. No device deletes them either: they stay listed under the old pointer until their servers expire
+them, so if she still has her old words, she can still restore them. If she has lost her words but still has a device,
+replacing them is all she needs to do. Anyone who already copied an old backup and also has the old words can still
+read that old copy; nothing can take it back.
+
+The first adopted [restore flow](../features/account-sync.md#restoring-history-from-backups) restores history only
+for chats the device currently belongs to. Before a real join, an index supplies availability metadata, not a
+transcript or membership. That flow leaves the current recovery key and archived preferences unchanged. The pre-join
+read-only transcript described next, the broader disaster recovery, and "Keeping the same words" behavior below remain
+ideas.
+
+**Restoring:** on a new device, she signs in with her nsec and chooses **No, start fresh** (multi-device Scene 3), then
+**Restore from backup**, and enters her 12 words. The app works out the pointer's address from them, finds the pointer,
+and imports **every backup it lists**, not only the latest, so an older backup kept for its history is used too. If she
+also has older words, the app finds their pointer the same way and imports those backups as well. If the pointer is
+missing, she can point the app at where her backups are. Her
+old chats appear **read-only**, each with "Ask someone in this chat to add you back."
+
+A restore is a copy of what her kept backups held. Messages sent after the latest one are only recoverable from a
+device that has them.
+
+**Keeping the same words:** the restoring device keeps the recovery key's public half before it forgets the words.
+When it later links another device and a device group starts, it puts that public half in the roster, so the next
+backup is sealed to the same words.
+
+**When she is added back:** whoever adds her, the restored transcript and the new membership become the same chat. The
+restored messages stay and the chat becomes writable.
+
+**If one of her devices is still alive after all:** Scene 3 of multi-device has two endings, and this is the other one.
+A surviving iPad links the restored phone and adds it to the old chats. On top of the above, the iPad sends only the
+stretches the backup doesn't have, including everything after the last backup.
+
+**Why read-only:** a backup can't put her back into chats. Membership needs a fresh add from someone still in each
+chat. That boundary is what keeps a stolen backup from becoming a way in.
+
+**What the lost devices leave behind:** their old leaves stay in those chats as ghosts until a chat admin removes them,
+the same as any lost device in multi-device.
+
+## Scene 8: When every device is lost
+
+**Disaster recovery is backups plus re-invites.** Her kept backups restore a copy of what she had when they were
+written. Other people add her back to the chats she wants to rejoin. Their add starts her membership at that moment:
+messages between the latest backup and the add stay missing, because history only comes from her own devices.
+
+**Planned later: asking to be added back.** A restored device sends a gift-wrapped "please add me back" to the admins of
+each chat in its backup. It names the chat and points to Alice's current KeyPackages. The admins see an ordinary
+"Alice asks to be added back" prompt and use the normal add flow.
+
+- **What it reveals:** only that Alice lost her devices and is back, and only to people already in the chat with her.
+- **Forged requests:** someone with her nsec could send them too. That is no new exposure, since they could already be
+  invited, and admins decide either way.
+- **No spam:** one request per chat per restore, with no automatic retries.
+
+It needs nothing beyond gift wraps and the existing add, so it can come after the rest without changing it.
+
+## Numbers
+
+| Number | Value |
+| --- | --- |
+| Backup frequency | daily |
+| Backup writer takeover | when the latest backup is more than 7 days old, or at once when the writer is leaving or gone |
+| Backups kept | the latest 2, plus any that are the last to hold some messages, at most 16; backups under replaced words are never deleted by a device |
+| Recovery key | 12 words from the BIP-39 English word list, about 128 bits |
+
+## Left for later
+
+- **Asking to be added back** (Scene 8), as a planned feature.
+- **Incremental backups**, as an optimization over daily full backups.
+- **Backups that cover every device's chats**, by combining contributions from several devices instead of only the
+  writer's.
+- **A "recent only" history option**, if transfer size turns out to matter.
+- **Attachment files in backups**, as separate work. Backups carry attachment keys only, so old media depends on its
+  Blossom servers keeping the files.
+- **Account-wide settings that aren't per chat**, such as who may invite her. Most account data, such as contacts and
+  mute lists, is already Nostr events that sync through relays.
+
+## Path into the spec
+
+1. **Roster additions.** Each device's history key, the backup writer, and the recovery key's public half join the
+   roster component defined with the multi-device device group.
+2. **History transfer.** History keys, the bundle format and history deliveries from the adder, inline or through
+   Blossom, are specified in [../features/account-sync.md](../features/account-sync.md). Still to come there: transfer
+   offers, older-history offers, manifests and confirmations, whose kinds
+   [../foundation/registries.md](../foundation/registries.md) holds for them (see
+   [mdk#2799](https://github.com/marmot-protocol/mdk/issues/2799)).
+3. **Small-state sync.** Specified in [../features/account-sync.md](../features/account-sync.md).
+4. **Backups.** The recovery key (how the 12 words derive its key pair, sealing to it, and the account entry that
+   holds it) and writing backups (the archive format, the backup pointer, retention, deletion and takeover) are
+   specified in [../features/account-sync.md](../features/account-sync.md), and the pointer's Nostr event in
+   [../transports/nostr.md](../transports/nostr.md). History-only restore for chats the device currently belongs to is
+   specified there too; restoring small state and broader disaster recovery remain to come.
+5. **Re-add requests**, when they are picked up.

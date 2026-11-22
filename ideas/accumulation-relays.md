@@ -5,6 +5,10 @@ Status: idea (non-normative). Nothing here is part of the Marmot protocol yet. S
 An accumulation relay is a specially configured Nostr relay that collects a broad feed of encrypted Marmot events and
 buffers them for authorized clients. A user chooses a trusted shared relay or self-hosts one. When this mode is enabled,
 the client uses that relay as its only Nostr relay connection and queries its current and retained group routing tags.
+This departs from Marmot's [redundant-delivery invariant](../principles.md#write-the-stable-marmot-invariants-once)
+at the client. Group routing still names redundant upstream targets, and the relay fans out to every permitted target,
+but the selected relay can cut this client off from all of them. Adoption requires an explicit protocol-level decision
+on whether this opt-in exception is acceptable.
 
 The goal is to reduce the exposure of individual group subscriptions to untrusted upstream relay operators, while
 reducing mobile connection overhead and duplicate downloads. The additional collection bandwidth and storage move to
@@ -28,12 +32,16 @@ Media downloads and connections to an external signer are separate from the one 
 ## Collection and history
 
 The accumulation relay collects a broad group-event feed from its configured upstream sources continuously, including
-while clients are offline. It does not forward clients' exact group filters upstream or fetch only the individual
-event bodies selected by those filters. Group tags received from a client select its response from the local buffer.
+while clients are offline. Here, broad means collecting the group-event kind across its configured sources without
+upstream filters or event-body fetches selected by clients’ group tags, including aggregate tags from multiple clients.
+Client group tags select responses from the local buffer only.
 
 Collection can use ordinary Nostr subscriptions and [NIP-77](https://github.com/nostr-protocol/nips/blob/master/77.md)
 reconciliation where available. Reconciliation exposes its filter and identifies missing events; it does not transfer
-their bodies or prove that an upstream supplied everything. Some upstreams may reject or limit broad collection.
+their bodies or prove that an upstream supplied everything. If an upstream rejects or limits the broad feed, the relay
+reports the resulting gap and keeps interest-dependent collection off. A client unable to establish the relay’s
+declared collection mode shows degraded or unavailable coverage and does not silently fall back. Any separate
+interest-dependent mode would reveal group interests upstream and would require explicit user opt-in.
 
 The relay keeps a declared rolling history window applied independently of personal queries. Retaining only a user's
 groups, extending their retention on demand, or requesting individual groups upstream would introduce interest-dependent
@@ -91,9 +99,7 @@ to recover the job and target results after reconnecting. Relay restart, uncerta
 job retention and relay replacement need explicit recovery semantics before adoption. Retrying an uncertain publication
 uses the retained signed event rather than generating another event. Transport delivery reports do not choose group state.
 
-Forwarding is restricted to authorized, bounded upstream operations. It is not an open proxy: destination policy,
-address validation across DNS resolution and redirects, credential isolation and per-client resource limits protect
-against access to internal networks and abuse. Collection limits and refusals remain visible as availability limits.
+Forwarding is limited to authorized, bounded upstream operations.
 
 ## Privacy and availability limits
 
@@ -121,18 +127,18 @@ Once settled, exact enrollment, capability, proxy, coverage and delivery-report 
 specification. A feature document can describe the user flow and reference those rules. Neither the private relay URL
 nor its authentication credentials belongs in the group's app components.
 
-In White Noise, shared client routing, authentication and recovery belong in MDK; Android presents configuration,
-pairing and status. A separate optimized relay implementation can combine collection, buffering and authorized
-forwarding. Its internal storage and scheduling choices stay outside normative protocol text.
-
 ## Open questions and validation
 
 Before turning this into an interoperable profile, settle:
 
+- Whether an opt-in single relay path is an acceptable exception to redundant delivery at the client, and what recovery
+  clients would need on relay failure.
+
 - The versioned enrollment, capability and forwarding exchange, including authorization scopes, replay protection,
   credential replacement, error results and recovery after an interrupted change.
 - How source coverage, rotation catch-up and declared history are represented without claiming completeness, including
-  sources discovered after an offline interval and upstreams that reject broad collection.
+  sources discovered after an offline interval and upstreams that reject broad collection. Define the broad filters and
+  how clients can distinguish a declared operating mode from verified collection behavior.
 - Durable forwarding ownership, target results, job expiry and recovery after ambiguous acknowledgements, restart or
   replacement, preserving existing publication obligations.
 - Safe destination policy and budgets for hostile input, large groups, many clients and broad feed flooding.

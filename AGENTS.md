@@ -18,15 +18,17 @@ top-level file stays cross-surface only.
 
 | Surface / doc | Start here |
 | --- | --- |
+| Overall threat model and security assumptions | `security-considerations.md` and `principles.md` (Security-model maintenance) |
 | Stable invariants: identity, encodings, registries, errors | `foundation/AGENTS.md` |
 | Required group flows and group-state transitions | `protocol-core/AGENTS.md` |
 | Versioned MLS `app_data_dictionary` component bytes | `app-components/AGENTS.md` |
-| How Marmot bytes move over a network (Nostr, QUIC) | `transports/AGENTS.md` |
+| How Marmot bytes move over a network (Nostr) | `transports/AGENTS.md` |
 | Optional or user-visible flows that span surfaces | `features/AGENTS.md` |
 | Non-normative future directions for early feedback | `ideas/AGENTS.md` |
 | Where new text belongs (canonical tree + ownership) | `layout.md` |
 | How to write the spec (placement + detail rules) | `principles.md` |
 | Map from deprecated MIPs to this spec's surfaces | `mip-coverage.md` |
+| Implementer-facing change log | `changes.md` |
 | Non-normative mapping to this repo's code | `implementation-model.md` |
 
 ## Read Order
@@ -52,8 +54,17 @@ top-level file stays cross-surface only.
 - Feature docs own optional or user-visible flows and cross-reference the surfaces that implement them.
 - AppDataUpdate proposal forms and their default request path are defined in
   [`app-components/README.md`](app-components/README.md) ("GroupContext Update Processing").
+- When a change alters what an implementation must, should, or may do, add an entry at the top of
+  [`changes.md`](changes.md) in the same pull request: the date, what changed, every document whose rules it
+  changed (index-only `README.md` and `layout.md` edits excepted), what implementers have to do differently, and the
+  pull request. Idea documents, editorial fixes, and repository
+  housekeeping need no entry.
 
 ## Verification
+
+After editing documentation, run `python3 scripts/check_docs.py` and
+`python3 -m unittest discover -s scripts -p 'test_*.py'`. The checker validates local Markdown links and anchors,
+including the non-normative model; it does not certify the security claims.
 
 After editing spec text, review matches from these commands from the repository root:
 
