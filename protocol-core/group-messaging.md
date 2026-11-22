@@ -48,7 +48,9 @@ Non-admin members MUST NOT commit anything except the narrow flows the spec expl
 - in a group whose candidate parent state requires `marmot.group.account-devices.v1`, a same-account Commit: one whose
   proposals are only Add proposals for KeyPackages of the committer's own account and Remove proposals for other leaves
   of that account, carried by value, as
-  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) defines.
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) defines;
+- an inline replacement of the pin list as authorized by the draft
+  [message-pins component](../app-components/message-pins-v1.md), with no other proposal.
 
 These non-admin commit shapes MUST NOT be combined with each other or with other proposal types.
 

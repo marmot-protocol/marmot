@@ -19,7 +19,8 @@ Pull request: [marmot#434](https://github.com/marmot-protocol/marmot/pull/434).
 Changes [app-components/admin-policy-v1.md](./app-components/admin-policy-v1.md),
 [app-components/message-pins-v1.md](./app-components/message-pins-v1.md),
 [features/message-pinning.md](./features/message-pinning.md),
-[foundation/registries.md](./foundation/registries.md).
+[foundation/registries.md](./foundation/registries.md),
+[protocol-core/group-messaging.md](./protocol-core/group-messaging.md).
 
 Clients that implement the optional draft negotiate component `0x8013` before writing shared pins. Use the
 authenticated parent policy to authorize pin changes and keep message expiry and deletion independent of pin

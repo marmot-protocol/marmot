@@ -78,7 +78,7 @@ component bytes. Partial updates and implicit list merges are not defined. An un
 no-op, subject to the same authorization checks, and produces no pin-change activity. A producer SHOULD avoid a Commit
 for an already satisfied pin or unpin action.
 
-Every operation in the Commit retains its own authorization. The member exception for this component grants no right
+A non-admin pin-list replacement is the only proposal in its Commit. Every operation in an admin Commit retains its own authorization. The member exception for this component grants no right
 to change required components, invite or remove members, change admin policy, or mutate another admin-gated component.
 Normal MLS validation, lifecycle gates, and [convergence](../protocol-core/convergence.md) remain in force.
 
