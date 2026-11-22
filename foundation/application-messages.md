@@ -88,7 +88,7 @@ or decline to render unsupported application semantics after delivering the acce
 The optional [group content moderation](../features/content-moderation.md) feature defines reports (kind `1984`),
 admin dismissal labels (kind `1985`), and admin deletion (kind `4891`).
 
-The optional draft [group change requests](../features/group-change-requests.md) feature defines kind `467` requests
+The optional draft [group change requests](../features/group-change-requests.md) feature defines kind `495` requests
 and authenticated decisions. Its requests are not MLS proposals and do not confer group-state authority.
 
 Polls use the standard [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) app-event shapes: kind `1068`

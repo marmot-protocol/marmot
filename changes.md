@@ -21,7 +21,7 @@ Changes [features/group-change-requests.md](./features/group-change-requests.md)
 [foundation/registries.md](./foundation/registries.md),
 [protocol-core/group-messaging.md](./protocol-core/group-messaging.md).
 
-Clients that implement the optional draft use inner kind `467` for requests, rejections, withdrawals, and
+Clients that implement the optional draft use inner kind `495` for requests, rejections, withdrawals, and
 applied receipts. Existing admin authorization still governs group changes. Display a change as applied only
 after matching its receipt to an accepted Commit.
 

@@ -8,7 +8,7 @@ group state by itself. Requests and decisions are visible to group members, not 
 
 ## Surfaces and terminology
 
-This feature owns kind `467` inner app events and their request/decision semantics. It uses the existing
+This feature owns kind `495` inner app events and their request/decision semantics. It uses the existing
 [application payload contract](../foundation/application-messages.md), [admin policy](../app-components/admin-policy-v1.md),
 [component updates](../app-components/README.md#groupcontext-update-processing), [KeyPackages](../foundation/key-packages.md),
 [Welcome flow](../protocol-core/joining.md), [convergence](../protocol-core/convergence.md),
@@ -58,7 +58,7 @@ unchanged; no new Joined receipt or first-contact authenticity guarantee is defi
 
 ## Message format
 
-All actions use kind `467`, the ordinary six-field unsigned app-event envelope, and `tags: []`. `content` is UTF-8 JSON
+All actions use kind `495`, the ordinary six-field unsigned app-event envelope, and `tags: []`. `content` is UTF-8 JSON
 with the exact members below; unknown members, duplicate keys, unsupported actions/operations/versions, wrong types,
 noncanonical encodings, and content longer than 65,536 UTF-8 bytes have no request/decision effect. This does not reject
 otherwise-valid MLS processing or create a group-state authorization check.
@@ -76,8 +76,10 @@ The complete app-event id is calculated by the existing foundation rule over the
 
 Exact members: `v` (integer `1`), `action` (`"request"`), `nonce`, `operation`, and `data`.
 `nonce` is 32 cryptographically random bytes represented by 64 lowercase hex characters. A fresh intent gets a fresh
-nonce, including an otherwise-identical submission in the same second. Retrying republishes the same complete app
-event; editing a request creates a new request and withdraws the old one when possible.
+nonce, including an otherwise-identical submission in the same second. A transport retry republishes the original signed transport event carrying the same MLS message. A producer MUST NOT
+re-encrypt a request into another MLS message, even if the inner app-event bytes would be identical. If the original
+publication can no longer be retried, a new submission uses a fresh nonce. Editing a request also creates a new
+request and withdraws the old one when possible.
 
 | Operation | Exact `data` members | Values and existing owner |
 | --- | --- | --- |
@@ -137,7 +139,8 @@ success. Commit validity MUST NOT depend on possession of a request or receipt.
 
 A matching Commit MUST have been authorized under existing rules and have the requester as a current member in its
 candidate parent. That parent MUST be the request's authenticated source-epoch state or a descendant on the selected
-branch, not an older epoch or unrelated branch. The receipt's authenticated source epoch MUST be the matching
+branch. If the same request ID has authenticated copies at several selected-branch epochs, use the earliest such
+state supported by retained evidence. A later copy cannot invalidate a receipt matched against an earlier copy. The receipt's authenticated source epoch MUST be the matching
 Commit's resulting state or a descendant on that branch. For `invite_account`, the requested account is absent in that parent and exactly one added leaf
 belongs to it; no other leaves are added or removed. For settings, the parent satisfies `expected`, the resulting
 requested value equals `value`, and any unaffected field in the owning component is preserved as specified above.
@@ -195,7 +198,7 @@ not rejection. A request is not an invitation or consent from the requested acco
 
 ## Examples
 
-These are canonical `content` strings inside kind `467` events; the ordinary envelope still applies.
+These are canonical `content` strings inside kind `495` events; the ordinary envelope still applies.
 
 ```json
 {"action":"request","data":{"pubkey":"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"},"nonce":"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f","operation":"invite_account","v":1}
@@ -204,8 +207,8 @@ These are canonical `content` strings inside kind `467` events; the ordinary env
 The nonce above is a fixture only; real clients generate it randomly.
 
 With envelope author `79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798`, `created_at: 1700000000`,
-kind `467`, empty tags, and the exact invitation content above, the canonical NIP-01 app-event id is
-`025a91f407e94a7a59c330431dfa7b0c533c6a81cdb75bc8da1446cfc6434daa`.
+kind `495`, empty tags, and the exact invitation content above, the canonical NIP-01 app-event id is
+`38dee6bea73bed7388eadf009027a4b299d383fcc4ab9ffa951d6186849f6699`.
 This example author/subject equality demonstrates encoding only; an already-member subject fails invitation preflight.
 
 A proposed timer change:

@@ -109,7 +109,7 @@ def request(operation="invite_account", data=None, nonce=NONCE):
 
 def event_id(content, created_at=1700000000):
     # NIP-01 fixture with no unsupported numeric or string values.
-    preimage = json.dumps([0, PUBKEY, created_at, 467, [], content],
+    preimage = json.dumps([0, PUBKEY, created_at, 495, [], content],
                           ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(preimage.encode("utf-8")).hexdigest()
 
@@ -241,7 +241,7 @@ class Fixtures(unittest.TestCase):
 
     def test_fixed_app_event_id(self):
         self.assertEqual(event_id(canonical(request())),
-                         "025a91f407e94a7a59c330431dfa7b0c533c6a81cdb75bc8da1446cfc6434daa")
+                         "38dee6bea73bed7388eadf009027a4b299d383fcc4ab9ffa951d6186849f6699")
 
     def test_delivery_order_does_not_select_status(self):
         effects = [evidence("applied"), evidence("rejected"),
