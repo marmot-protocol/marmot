@@ -52,7 +52,12 @@ The descriptor/code inbox is not authority to erase or decide another request.
 Two devices of the same account use distinct contexts and offered leaves. Deduplication is by complete context and
 revision, not by account alone. The same account may have multiple leaves under adopted Marmot identity rules.
 The receiver MUST NOT make a second Add for an already realized context, including after removing and later re-adding
-that account through an unrelated operation. A new intended join uses fresh consent and a new context.
+that account through an unrelated operation. Before preparing either a manual or an automatic Add, check the selected
+membership history for every authenticated offer in the revision chain. The check starts at the invitation generation's
+activation and includes prior Adds even if their leaves are now absent. An Add of any exact offered KeyPackage makes
+the context ineligible for another Add. If the required history is incomplete or a previous publication remains
+uncertain, show the request as unresolved and recover the evidence before starting another Add. Missing invited
+records or an absent leaf do not establish that a context is unused. A new intended join uses fresh consent and a new context.
 
 ## Admin review and realization
 
@@ -126,7 +131,9 @@ effect. Invalid bytes map to the adopted rejection vocabulary; missing evidence 
 
 A stale, expired, unavailable or consumed offered package produces a recoverable offer problem. The requester may
 send a chained refresh signed by the original consent key. The new package's account proof and publication are checked
-anew. Relays may deliver refreshes out of order; missing ancestry waits for recovery rather than becoming a rejection.
+anew. Relays may deliver refreshes out of order. Validate each ancestor with its own signed package-publication evidence, which
+the requester or a current admin can resend as a separate record after relay replacement. Missing ancestry or evidence
+leaves the refresh unresolved.
 The fresh leaf key may change without changing the originating consent key. If that consent key is lost, create a
 new request with explicit consent. Same-account package discovery does not authorize an admin to substitute a device.
 
