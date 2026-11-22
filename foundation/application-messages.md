@@ -129,7 +129,8 @@ the target message's age; chat-list presentation remains application policy.
 Authorship is enforced by Marmot account identity: an edit is honored only when the account identity authenticated by
 its MLS sender leaf equals the original message's authenticated account author. Another valid leaf for the same account
 therefore may edit that account's message. A client receiving a kind `1009` from a different account MUST ignore the
-edit. A client MAY retain accepted edit events for history while rendering only the selected overlay.
+edit. An event imported from a sibling's history ([../features/account-sync.md](../features/account-sync.md), "History
+bundles") has no MLS sender in the chat; its account is the one its `pubkey` names. A client MAY retain accepted edit events for history while rendering only the selected overlay.
 
 Multiple edits to the same target are ordered by their inner event's `created_at`. The most recent edit wins as the
 overlaid body. A history surface MAY list each version with its timestamp.

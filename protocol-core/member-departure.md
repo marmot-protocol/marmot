@@ -2,11 +2,13 @@
 
 Status: adopted.
 
-Member departure covers two paths: a member leaving on its own through SelfRemove, and an admin removing another
-member. This document specifies the SelfRemove path in full. Ordinary admin-initiated removal is an admin-gated
+Member departure covers three paths: a member leaving on its own through SelfRemove, an admin removing another
+member, and, in a group that requires `marmot.group.account-devices.v1`, another device of the same account removing a
+device's leaf. This document specifies the SelfRemove path in full. Ordinary admin-initiated removal is an admin-gated
 group-state change whose authorization is owned by
 [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("remove another member"); it otherwise
-follows the normal commit, publish-lifecycle, and convergence rules. Both paths end with the removed member realizing
+follows the normal commit, publish-lifecycle, and convergence rules. Removal by another device of the same account is
+described in "Removal by another device of the same account" below. Every path ends with the removed member realizing
 its own removal; that flow is "Realizing removal" below.
 
 SelfRemove lets a current member leave a group without asking an admin to remove them. It uses the MLS SelfRemove
@@ -16,8 +18,32 @@ proposal from the MLS extensions work and does not define a Marmot custom propos
 
 - MLS proposal: SelfRemove.
 - Protocol core: proposal ingest, opportunistic SelfRemove commits, convergence, retained history.
-- App component: `marmot.group.admin-policy.v1` for admin leave constraints.
+- App components: `marmot.group.admin-policy.v1` for admin leave constraints, and `marmot.group.account-devices.v1`
+  for removal by another device of the same account.
 - Transport: whichever transport carries the proposal and commit.
+
+## Accounts with several devices
+
+An account can have several leaves in one group, one for each of its devices
+([../foundation/identity.md](../foundation/identity.md), "Devices"). Departure is leaf-scoped, and removing an account
+means removing all of its leaves:
+
+- A client that removes an account from a group MUST include a Remove for every current leaf with that account identity
+  in one Commit, so the account is never left partly removed. If the account is an admin, the same Commit removes it
+  from the admin list under the coupling rule in
+  [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins"). This rule binds the
+  committer. A Remove does not say whether the committer meant to remove an account or one device, so a receiver cannot
+  check it and MUST NOT reject a Commit for removing only some of an account's leaves; such a Commit is a device
+  removal under the next point.
+- A Remove that targets one leaf removes only that device. The account stays a member while it has another current
+  leaf.
+- A SelfRemove removes only its sender's leaf. Other devices of the same account stay members.
+- Admin status belongs to the account. A device whose account is an active admin cannot use SelfRemove, even when
+  another device of that account stays in the group. In a group that requires `marmot.group.account-devices.v1`, such a
+  device can leave through a Remove committed by another device of its account ("Removal by another device of the same
+  account" below).
+- A device whose own leaf is removed realizes its removal even when another device of the same account stays in the
+  group ("Realizing removal" below).
 
 ## Behavior
 
@@ -27,9 +53,14 @@ A non-admin member MAY self-remove if the MLS proposal is valid. A SelfRemove pr
 in its authenticated source-epoch state is invalid (see
 [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) for the definition of an active admin).
 
-A departing admin MUST first complete an accepted admin-policy update that removes its account from the admin list
-before creating a SelfRemove proposal. The admin-policy update is an admin-gated group-state change and is valid only
-if at least one other active admin remains, so the last active admin MUST designate another admin before leaving.
+A departing admin's account MUST be off the admin list in canonical state before the client creates a SelfRemove
+proposal. An admin-policy update that removes the account takes it off, normally the client's own step-down; an update
+another admin committed counts the same while canonical state contains it. The admin-policy update is an admin-gated
+group-state change and is valid only if at least one other active admin remains, so the last active admin MUST designate
+another admin before leaving. That check applies when a leave starts, which is when the client accepts the request to
+leave: a client MUST NOT accept a leave for an account that canonical state makes the last active admin. Once a leave
+has started, the client designates no other admin for it and follows the `Leaving` rules below, and if canonical state
+later makes the account the last active admin, the leave is blocked.
 
 This two-step flow applies to voluntary departure through SelfRemove only. An admin removed by another admin does not
 use it: the removing commit drops the account's last leaf and its `admins` key together, under the coupling rule in
@@ -37,22 +68,70 @@ use it: the removing commit drops the account's last leaf and its `admins` key t
 
 The leaving member MUST NOT commit its own SelfRemove proposal. A remaining authorized member commits it.
 
-After handing the SelfRemove proposal to the active transport, the leaving member enters a local `Leaving` state for
-that group. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits, or non-SelfRemove
-MLS proposals in that group; it MAY publish a fresh SelfRemove proposal for a newer source epoch when the prior
-SelfRemove becomes stale. Transport-level retries of the same serialized SelfRemove proposal MAY continue, but the
-client MUST NOT generate fresh SelfRemove proposal bytes for the same source epoch. The `Leaving` state is backed by a
-durable leave request. While canonical state contains the local leaf, it ends only if the member repairs or rejoins
-through a future specified recovery flow, a future explicit cancel flow clears the request, or the client discards the
-local group copy. An accepted removing Commit moves the copy to the removed condition described below.
+A departing admin enters a local `Leaving` state for that group as soon as it durably records a leave it accepted,
+before it sends any admin-policy update. Any other leaving member enters `Leaving` after handing its SelfRemove proposal
+to the active transport. From then on the rules below apply to whatever canonical state makes the account: while it is
+an active admin and another active admin remains, the client sends the step-down; while it is the last active admin, the
+leave is blocked; while it is not an active admin, whether its own step-down or another admin's update took it off the
+list, the client sends no admin-policy update and publishes its SelfRemove: it retries one it already generated for the
+current source epoch, and otherwise SHOULD publish a fresh SelfRemove proposal for that source epoch once local
+group-state commits are allowed. While `Leaving`, the member MUST NOT send MLS application messages, group-state commits
+other than the step-down below, or non-SelfRemove MLS proposals in that group; it MAY publish a fresh SelfRemove
+proposal for a source epoch it has generated none for, while canonical state does not make its account an active admin.
+Transport-level retries of the same serialized SelfRemove proposal MAY continue, but the client MUST NOT generate fresh
+SelfRemove proposal bytes for the same source epoch. Group states on different branches that share an epoch number are
+different source epochs for this rule. The `Leaving` state is backed by a durable leave request. While canonical state
+contains the local leaf, it ends only if the member repairs or rejoins through a future specified recovery flow, its
+user cancels a blocked leave (below), or the client discards the local group copy. An accepted removing Commit moves the
+copy to the removed condition described below.
 
 Applying an accepted removing Commit ends `Leaving` and puts the local copy in the terminal removed condition below.
 The client MAY release the durable leave request after it durably records that condition.
 
-If an accepted commit advances the group to a later epoch without removing the leaving member, the prior SelfRemove is
-stale because MLS proposals are epoch-bound. The client remains in `Leaving`, MUST NOT reuse the old SelfRemove
-proposal bytes, and SHOULD publish a fresh SelfRemove proposal for the new source epoch once local group-state commits
-are allowed.
+If canonical state reaches a source epoch where the prior SelfRemove is not valid, because an accepted commit advanced
+the group to a later epoch without removing the leaving member or because convergence selected another branch, that
+SelfRemove is stale there: MLS proposals are bound to their source epoch. The client remains in `Leaving` and MUST NOT
+count a SelfRemove generated for another source epoch as one for the current source epoch. If it already generated a
+SelfRemove for the current source epoch, it retries those bytes and generates none; otherwise it SHOULD publish a fresh
+SelfRemove proposal for that source epoch once local group-state commits are allowed. That applies only while canonical
+state does not make its account an active admin; otherwise the client follows the next two paragraphs and publishes no
+SelfRemove.
+
+Canonical state can make a `Leaving` member's account an active admin: before its first step-down, after a step-down
+that was refused or never published, or again when convergence selects a branch that does not hold its accepted
+admin-policy update. While another active admin remains in that state, the client SHOULD send the step-down: an
+admin-policy update that removes its account from that state's admin list, leaving every other entry as that state has
+it. That Commit carries only the admin-policy update and is the one group-state Commit a `Leaving` member may send.
+While the state that accepted update produces is canonical, the account is not an active admin there, and the client
+follows the SelfRemove rules above: it retries a SelfRemove it already generated for that source epoch, and otherwise
+SHOULD publish a fresh one once local group-state commits are allowed. If canonical state moves on, the client follows
+these rules for the new state.
+
+If canonical state instead makes the account the last active admin, the leave is blocked: no admin-policy update can
+remove the account, and its SelfRemove would be invalid. The client keeps the durable leave request and stays in
+`Leaving`. It MUST NOT present the group as joined again on its own and MUST NOT reverse an invitation decision on its
+own ([../features/account-sync.md](../features/account-sync.md#invitation-decisions)). While canonical state makes
+the account the last active admin, the leave stays blocked and the client MUST NOT generate any new message in that
+group: no SelfRemove, admin-policy update, other proposal, Commit or application message. Transport-level retries of a
+SelfRemove it already generated for another source epoch MAY continue. The leave unblocks in only two ways. If
+canonical state makes the account an active admin while another active admin remains, the client sends the step-down
+as above. If canonical state does not make the account an active admin, the client publishes no admin-policy update and
+follows the SelfRemove rules above: when it already generated a SelfRemove for this source epoch, it retries those
+bytes and generates none; otherwise it SHOULD publish a fresh SelfRemove proposal for this source epoch once local
+group-state commits are allowed.
+
+While the leave is blocked, its user MAY cancel it. Before cancelling, the client MUST check that the group lifecycle
+is `Stable`, that its convergence status is `Settled`, and that this settled canonical state still makes the account
+the last active admin; otherwise it MUST refuse, and the leave continues. Cancel clears the durable leave request on
+that client only and ends `Leaving`. The account is still the group's last active admin, and the client sends under the
+ordinary rules for an admin. Cancel is limited to a blocked leave because only there can nothing the client sends
+finish the leave: no admin-policy update can remove the account, and its SelfRemove is invalid. Being an active admin
+is not enough: while another active admin remains, the client sends the step-down instead. Where the account is not
+an active admin, the leave can still finish through its SelfRemove, so clearing the request would not stop the
+departure. Cancel clears only the client's own leave intent. It does not withdraw SelfRemove proposals or Commits
+already published on other branches: if convergence later selects a branch whose accepted Commit removes the account,
+the client applies that removing Commit as any other. Cancel does not change an invitation decision. To leave
+afterwards, the user designates another admin and leaves again.
 
 ## SelfRemove commits
 
@@ -96,17 +175,40 @@ the source epoch is outside the rollback horizon and no staged or retained Commi
 another ordinary MLS proposal-release rule applies. Local arrival order MUST NOT choose the proposal used for local
 Commit preparation.
 
+## Removal by another device of the same account
+
+In a group whose candidate parent state requires `marmot.group.account-devices.v1`, any current leaf MAY commit a
+Remove of another current leaf of its own account, whether or not the account is an active admin. That component owns
+the authorization, the allowed Commit shape, and the sender rules
+([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md)). Such a Remove is how a device
+leaves a group while another device of its account stays, for example when it signs out:
+
+- The departing device does not commit its own removal. Another device of the same account commits an ordinary Remove
+  of the departing leaf. How the departing device asks for this is outside this document; receivers see only the
+  Remove.
+- The departing device MAY instead use SelfRemove where the rules above allow it. Both paths end in the same removed
+  condition.
+- The Remove counts as removing another member, not as a self-leave, because the committer is a different leaf. The
+  restriction on SelfRemove by an active admin therefore does not apply to it and does not relax.
+- The account stays a member through its remaining leaves, including the committer's, so the Remove never triggers the
+  admin coupling rule in [../app-components/admin-policy-v1.md](../app-components/admin-policy-v1.md) ("Active admins").
+  An admin account keeps its `admins` entry.
+- The removed device realizes its removal as described in "Realizing removal" below.
+
+A device whose account has no other leaf in the group cannot be removed this way. It leaves through SelfRemove, after
+first leaving the admin list if its account is an active admin ("Behavior" above).
+
 ## Realizing removal
 
-Both departure paths end the same way for the removed member: its client realizes that its membership ended, tells the
-application, and stops treating the group as active.
+Every departure path ends the same way for the removed member: its client realizes that its membership ended, tells
+the application, and stops treating the group as active.
 
 The authenticated evidence of removal is always the same bytes: an accepted commit on the selected canonical branch
-that removes this local client's own MLS leaf — an admin-initiated Remove or a committed SelfRemove — recorded in
-retained canonical state. This evidence is leaf-scoped: other current leaves with the same Marmot account identity do
-not prevent this local leaf from realizing its removal. When the client applies such a commit, it MUST emit a
-self-removed state notification (see [inbound-processing.md](./inbound-processing.md), "Application-visible output")
-and mark the local group copy removed.
+that removes this local client's own MLS leaf — a Remove committed by an admin or by another device of the same
+account, or a committed SelfRemove — recorded in retained canonical state. This evidence is leaf-scoped: other current
+leaves with the same Marmot account identity do not prevent this local leaf from realizing its removal. When the client
+applies such a commit, it MUST emit a self-removed state notification (see
+[inbound-processing.md](./inbound-processing.md), "Application-visible output") and mark the local group copy removed.
 
 `SelfEvicted` names this state-derived realization, not an input disposition. Whenever retained canonical group state
 records the local member's removal and the local group copy is not yet marked removed, the client MUST perform the
@@ -139,6 +241,14 @@ so that notification MUST NOT synthesize a separate member-removal row. The
 single `group_disbanded` row is the only presentation row for the Commit.
 Suppressing the duplicate row MUST NOT discard the local membership outcome or
 its evidence.
+
+When the removing Commit does not disband the group and the state that results from it still holds a leaf with the
+local member's account identity, the account is still a member ("Accounts with several devices" above). The client
+still completes the leaf-scoped realization above, but MUST NOT present the group to its user as one the account was
+removed from: it presents the group as no longer active on this device, with no member-removal row for the local
+member. It does not say whose that remaining leaf is: it may be another device of the account, or a leaf no device of
+the account claims. Other members the same Commit removed are presented as usual. A disband keeps the rule above, even
+when the leaf it keeps has the local member's account identity: its `group_disbanded` row is the only presentation row.
 
 The removed condition is terminal for that local leaf. The client does not retain old epoch secrets or run convergence
 in order to resurrect it if continuing members later select another branch. Rejoining requires explicitly discarding

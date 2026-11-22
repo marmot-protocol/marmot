@@ -14,12 +14,17 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 
 ## Current feature docs
 
+- [account-sync.md](./account-sync.md) - draft small state (read positions, pins, mutes, archived chats) shared
+  across one account's devices.
 - [content-moderation.md](./content-moderation.md) - draft group reports, admin dismissal labels, and admin deletion.
+- [device-group.md](./device-group.md) - draft hidden group of one account's devices that carries its device roster.
 - [encrypted-media.md](./encrypted-media.md) - current v2 message-attached encrypted blobs.
 - [encrypted-media-v1.md](./encrypted-media-v1.md) - frozen legacy encrypted-media v1 wire behavior.
-- [agent-text-streams-quic.md](./agent-text-streams-quic.md) - experimental QUIC-backed live previews for agent text
-  streams, anchored by normal durable final messages.
+- [agent-text-streams-quic.md](./agent-text-streams-quic.md) - retired QUIC-backed live previews for agent text. Its
+  component stays supported for existing groups.
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
+- [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
+  account's existing devices.
 
 ## Relationship to app components
 
@@ -56,3 +61,8 @@ or payload versions for app messages. Use a new feature document name when the h
 readers need both versions side by side.
 
 Compatible clarifications can update an existing feature doc in place.
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.

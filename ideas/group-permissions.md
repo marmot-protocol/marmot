@@ -120,15 +120,6 @@ Existing groups would retain their existing authorization until an authorized, c
 Removing policy state would not be a way to turn restricted permissions into all-members access. The migration needs
 one unambiguous active authority model, including when legacy and successor components are encountered together.
 
-## MDK and client responsibilities
-
-Clients would expose the three settings, present the current permissions, and choose explicit initial settings when
-creating a group. Shared protocol handling, storage, authorization, and validation would belong in MDK so that a hidden
-UI control cannot be bypassed by another client. This PR proposes behavior; it adds no MDK or client implementation.
-
-How a client chooses its founding admin accounts is a separate product decision. This proposal defines no special
-admin defaults for DMs and no rule that converts a DM into a separate group when someone is added.
-
 ## Questions before normative adoption
 
 - Which new component versions carry the permissions and each affected authorization surface, and how does an existing
@@ -136,8 +127,8 @@ admin defaults for DMs and no rule that converts a DM into a separate group when
 - How does a joiner recognize an authorized non-admin Welcome signer under the new model? The current
   [Welcome-bootstrap trust limits](../protocol-core/joining.md#welcome-bootstrap-trust) still apply: state in a Welcome
   does not independently prove that the joiner received the intended group's branch.
-- Does adding another device to an existing account use the same Add selector, or stay with a separately negotiated
-  multi-device authorization flow? The selector's initial scope here is inviting another account.
+The Add selector covers invitations to other accounts. Sibling-device additions keep the authorization rules in
+[account-devices-v1.md](../app-components/account-devices-v1.md).
 
 ## Review scenarios for the eventual specification
 

@@ -44,9 +44,13 @@ An active admin MAY commit a group-state change when its owning rule authorizes 
 Non-admin members MUST NOT commit anything except the narrow flows the spec explicitly allows:
 
 - a self-update Commit that updates only the sender's own LeafNode;
-- a dedicated SelfRemove-only Commit that processes valid pending SelfRemove proposals by reference.
+- a dedicated SelfRemove-only Commit that processes valid pending SelfRemove proposals by reference;
+- in a group whose candidate parent state requires `marmot.group.account-devices.v1`, a same-account Commit: one whose
+  proposals are only Add proposals for KeyPackages of the committer's own account and Remove proposals for other leaves
+  of that account, carried by value, as
+  [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) defines.
 
-Those two non-admin commit shapes MUST NOT be combined with each other or with other proposal types.
+These non-admin commit shapes MUST NOT be combined with each other or with other proposal types.
 
 All other Commits from non-admins are invalid.
 
