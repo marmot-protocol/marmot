@@ -214,7 +214,7 @@ def check_history_purge_v1_structure() -> None:
         "one valid Yes for every `members` account",
         "`parent_epoch_decimal` is the request's parent epoch, never the parent of a later decision or terminal Commit",
         "Any active cohort member can canonically close the request as `expired`, without an online admin",
-        "Every terminal Commit removes the GroupContext `0x800d` entry",
+        "Every terminal Commit removes the GroupContext `0x8011` entry",
         "Any missing, duplicate, or\nextra proposal makes the terminal transition invalid.",
         "Expiry is never consent.",
         "A client MUST durably install one reversible suppression boundary",
@@ -241,12 +241,12 @@ def check_history_purge_v1_structure() -> None:
         require(conformance, fragment, conformance_name)
 
     registry_fragments = [
-        "| `0x800d`     | `marmot.group.history-purge.v1`",
-        "| `453`   | History-purge control event",
-        "| `454`   | History-purge member decision",
-        "| `455`   | History-purge request proof",
-        "| `456`   | History-purge cancellation proof",
-        "| `457`   | History-purge terminal proof",
+        "| `0x8011`     | `marmot.group.history-purge.v1`",
+        "| `462`   | History-purge control event",
+        "| `463`   | History-purge member decision",
+        "| `464`   | History-purge request proof",
+        "| `465`   | History-purge cancellation proof",
+        "| `466`   | History-purge terminal proof",
     ]
     for fragment in registry_fragments:
         require(registry, fragment, registry_name)

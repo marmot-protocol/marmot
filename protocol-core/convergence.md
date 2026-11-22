@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#intended-properties-and-limits).
+
 Convergence chooses one canonical branch from unordered group input.
 
 Commits are the consensus log. MLS application messages can witness that members used a branch, but they do not create
@@ -137,12 +139,14 @@ passes MUST NOT change the eventual canonical result. Input excluded by one cuto
 until the protocol assigns it a terminal disposition. Implementations MUST NOT use timer tuning or pass partitioning to
 resolve a difference that the deterministic selection rules leave open.
 
-After a bounded pass settles in `Stable`, the client MUST give one already-queued, admin-authorized local group-state
-intent one preparation attempt against the selected canonical state before it begins another convergence pass solely
-because more inbound input is queued. Inbound input remains durably retained during that attempt. If the attempt cannot
-proceed with currently available authorization, prerequisites, or signing capability, the scheduler proceeds rather
-than waiting indefinitely. A prepared Commit then follows the normal publication and convergence rules; this scheduling
-guarantee does not make it valid, accepted, or canonical.
+After a bounded pass settles in `Stable`, the client MUST give one already-queued local group-state intent one
+preparation attempt against the selected canonical state before it begins another convergence pass solely because more
+inbound input is queued. The intent is either admin-authorized or a same-account Commit that the same-account authority
+in [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md) permits in that state. A
+self-update or a Leave does not receive this attempt, although any member may commit one. Inbound input remains durably
+retained during that attempt. If the attempt cannot proceed with currently available authorization, prerequisites, or
+signing capability, the scheduler proceeds rather than waiting indefinitely. A prepared Commit then follows the normal
+publication and convergence rules; this scheduling guarantee does not make it valid, accepted, or canonical.
 
 The preparation opportunity is bounded anti-starvation behavior, not an unconditional administrative-progress
 guarantee. Marmot does not guarantee that a privileged transition becomes canonical while valid selection-relevant
@@ -227,11 +231,14 @@ Each candidate branch has:
 
 - `fork_epoch`: the epoch where the branch diverged from retained canonical state;
 - `tip_epoch`: the epoch reached after replaying the branch's valid commits;
-- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `privileged` exactly when
-  its applicable Marmot authorization rule requires its committer to be an active admin in the candidate parent state.
-  A Commit is `ordinary` when its authorization rule permits the authenticated committer without admin authority. A
-  component change whose owning document explicitly permits a non-admin committer is therefore `ordinary`, not
-  `privileged`; the operation's category does not override its actual authorization rule.
+- `tip_priority`: the authenticated ordering class of the branch's tip Commit. A Commit is `ordinary` when one Marmot
+  authorization rule that permits a committer without admin authority covers the whole Commit in its candidate parent
+  state, and `privileged` otherwise. The ordinary cases are a self-update Commit, a SelfRemove-only Commit, a
+  same-account Commit under [../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), and a
+  component change whose owning document explicitly permits a non-admin committer. The class depends only on the Commit
+  and its candidate parent state: a Commit that one such rule covers is `ordinary` even when its committer is also an
+  active admin, and a Commit that combines shapes no single such rule covers is `privileged`. The operation's category
+  does not override its actual authorization rule.
 - `tip_committer`: the authenticated Marmot account identity of the branch's tip commit sender, derived from the MLS
   credential/leaf that authenticated the commit, not from transport metadata.
 - `tip_digest`: `SHA-256` of the serialized MLS message bytes of the branch's tip commit (the same Commit

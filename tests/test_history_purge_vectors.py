@@ -89,10 +89,10 @@ class EncodingTest(unittest.TestCase):
 
     def test_signing_templates_bind_request_parent_for_every_proof_kind(self):
         for kind, event in FIXTURE["signing_templates"].items():
-            proof = FIXTURE["proof"] if kind != "455" else {**FIXTURE["proof"], "created_at": FIXTURE["request"]["created_at"]}
+            proof = FIXTURE["proof"] if kind != "464" else {**FIXTURE["proof"], "created_at": FIXTURE["request"]["created_at"]}
             self.assertEqual(wire.proof_event(FIXTURE["request"], proof, int(kind)), event)
             self.assertIn(["parent_epoch", "7"], event["tags"])
-        self.assertEqual(wire.proof_event(FIXTURE["request"], FIXTURE["proof"], 454, decision="no"),
+        self.assertEqual(wire.proof_event(FIXTURE["request"], FIXTURE["proof"], 463, decision="no"),
                          FIXTURE["no_template"])
 
     def test_full_structures_fixed_bytes_and_decode(self):

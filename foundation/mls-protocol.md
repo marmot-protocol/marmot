@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#assumptions).
+
 Marmot currently uses MLS as its continuous group key agreement (CGKA) protocol.
 
 Implementations MAY use any MLS library if they produce and validate the same protocol bytes.

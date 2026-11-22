@@ -15,11 +15,11 @@ rollback horizon remain owned by [convergence](../protocol-core/convergence.md) 
 ## Eligibility and capability gate
 
 The rich action is available only when every nonblank active leaf advertises the required MLS proposal support,
-`AppEphemeral`, and component `0x800d`. A client MUST NOT emit a request when any active leaf is unsupported or when a
+`AppEphemeral`, and component `0x8011`. A client MUST NOT emit a request when any active leaf is unsupported or when a
 request is already open. An old or unsupported client is never counted as consenting.
 
 Any active member may create a request, including a non-admin. The member signs the versioned request proof and sends
-the feature-owned kind `453` app event. Only an active admin may propose and commit canonical opening, after the
+the feature-owned kind `462` app event. Only an active admin may propose and commit canonical opening, after the
 component's local admission, cooldown and recovery-priority checks. This replaces unrestricted member opening while
 preserving non-admin request creation. Acceptance and the retention update remain admin-only.
 

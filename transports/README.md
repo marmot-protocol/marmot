@@ -11,10 +11,13 @@ publish and fetch rules, and transport-specific validation.
 ## Current transports
 
 - [nostr.md](./nostr.md) - the primary binding: MLS group messages, welcomes, and KeyPackages over Nostr relays.
-- [quic.md](./quic.md) - experimental raw QUIC binding for transient agent text stream previews (companion to
+- [quic.md](./quic.md) - retired raw QUIC binding for agent text stream previews (companion to the retired
   [../features/agent-text-streams-quic.md](../features/agent-text-streams-quic.md)).
 
 ## Transport document checklist
+
+A retired binding, such as [quic.md](./quic.md), is kept as a stub: its name, what clients must not do, the identifiers
+it reserves and a link to its last full version. The checklist below applies to current bindings.
 
 Each transport document MUST define:
 
@@ -50,3 +53,8 @@ Use the narrowest hook that fits the change:
 - a new Nostr kind, route, topic, or frame type for an incompatible transport envelope;
 - a new app component id when signed transport state changes incompatibly;
 - a new required capability when clients MUST negotiate support before using the change.
+
+## Security context
+
+See the [protocol threat model](../security-considerations.md#surface-coverage) for this surface's trust boundaries,
+assumptions and residual risks. The linked owning documents remain the source of protocol requirements.

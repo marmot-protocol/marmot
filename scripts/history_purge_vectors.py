@@ -189,20 +189,20 @@ def digest(domain, *parts):
 def proof_event(request, proof, kind, decision="yes", terminal="accepted"):
     """Unsigned signing-template fixture; all parent bindings use request core."""
     request_id = digest("marmot-history-purge-request-v1", encode_request_core(request)).hex()
-    domains = {454: "decision", 455: "request", 456: "cancellation", 457: "terminal"}
+    domains = {463: "decision", 464: "request", 465: "cancellation", 466: "terminal"}
     if kind not in domains:
         raise ValueError("unknown proof kind")
-    tags = [["d", f"marmot-history-purge-{domains[kind]}-v1"], ["component", "0x800d"],
+    tags = [["d", f"marmot-history-purge-{domains[kind]}-v1"], ["component", "0x8011"],
             ["group_id", request["group_id"]], ["parent_epoch", str(request["parent_epoch"])],
             ["request", request_id]]
     content = ""
-    if kind == 455:
+    if kind == 464:
         content = hashlib.sha256(encode_request_core(request)).hexdigest()
-    elif kind == 454:
+    elif kind == 463:
         if decision not in ("yes", "no"):
             raise ValueError("unknown decision")
         tags.append(["decision", decision])
-    elif kind == 457:
+    elif kind == 466:
         values = {"accepted": 1, "expired": 4, "superseded": 5}
         if terminal not in values:
             raise ValueError("unknown signing terminal")

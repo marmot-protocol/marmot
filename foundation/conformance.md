@@ -2,6 +2,8 @@
 
 Status: adopted.
 
+Security context: [protocol threat model](../security-considerations.md#formalization-and-review-boundary).
+
 This document defines the protocol-state projection used to compare Marmot clients in deterministic conformance tests.
 It defines equality over protocol meaning, not equality over implementation storage.
 
@@ -90,7 +92,7 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
 1. an active non-admin creates the feature-owned request; only an active admin proposes and commits opening with an
    empty decision list, and no actor thereby gains retention-update or finalization authority. Cover pre-opening votes,
    wrong opening parent and unsupported leaves. The suite MUST
-   accept only the exact paired `0x800d` required-component-list addition and reject any unrelated required-component or
+   accept only the exact paired `0x8011` required-component-list addition and reject any unrelated required-component or
    GroupContext mutation by that actor;
 2. a supported fixed member snapshot in which every account adds one canonical Yes and the active-admin terminal Commit
    atomically applies the requested retention value, removes the temporary state, and installs one reversible
@@ -124,7 +126,7 @@ Conformance suites for [`marmot.group.history-purge.v1`](../app-components/histo
    after the deadline and recovery proceeds against the closed parent without any purge effect. Disband is rejected
    while open and becomes eligible only after a prior canonical closure;
    cover a SelfRemove batch's scoped atomic supersession without granting the leaving leaf self-commit authority;
-8. a leaf without `app_ephemeral`, `app_data_update`, or component `0x800d` support, verifying that request creation and
+8. a leaf without `app_ephemeral`, `app_data_update`, or component `0x8011` support, verifying that request creation and
    finalization are blocked rather than treating the leaf as consenting;
 9. every terminal proposal set with each required proposal missing or duplicated and with one unrelated proposal added,
    including an unrelated required-component-list mutation by a non-admin No signer or proposer, verifying rejection

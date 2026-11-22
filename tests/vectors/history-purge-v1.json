@@ -54,10 +54,10 @@
     "receipt_id": "bccc0cc3c8f54344a837eeea1f368244b312b372acc23f02d9048e28f32c1663"
   },
   "signing_templates": {
-    "454": {
+    "463": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 454,
+      "kind": 463,
       "tags": [
         [
           "d",
@@ -65,7 +65,7 @@
         ],
         [
           "component",
-          "0x800d"
+          "0x8011"
         ],
         [
           "group_id",
@@ -86,10 +86,10 @@
       ],
       "content": ""
     },
-    "455": {
+    "464": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000000,
-      "kind": 455,
+      "kind": 464,
       "tags": [
         [
           "d",
@@ -97,7 +97,7 @@
         ],
         [
           "component",
-          "0x800d"
+          "0x8011"
         ],
         [
           "group_id",
@@ -114,10 +114,10 @@
       ],
       "content": "6ba80dfdd6bff92247dac6ca609fec820228ca3b469713bca48fff8970d03022"
     },
-    "456": {
+    "465": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 456,
+      "kind": 465,
       "tags": [
         [
           "d",
@@ -125,7 +125,7 @@
         ],
         [
           "component",
-          "0x800d"
+          "0x8011"
         ],
         [
           "group_id",
@@ -142,10 +142,10 @@
       ],
       "content": ""
     },
-    "457": {
+    "466": {
       "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
       "created_at": 1700000100,
-      "kind": 457,
+      "kind": 466,
       "tags": [
         [
           "d",
@@ -153,7 +153,7 @@
         ],
         [
           "component",
-          "0x800d"
+          "0x8011"
         ],
         [
           "group_id",
@@ -183,7 +183,7 @@
   "no_template": {
     "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
     "created_at": 1700000100,
-    "kind": 454,
+    "kind": 463,
     "tags": [
       [
         "d",
@@ -191,7 +191,7 @@
       ],
       [
         "component",
-        "0x800d"
+        "0x8011"
       ],
       [
         "group_id",
