@@ -157,7 +157,7 @@ Unknown actions fail closed for this version; they do not create decisions or ch
 
 ## Admin app batches
 
-The proposed kind `470` unsigned Marmot app event has empty tags and padded-base64 content of exactly this batch:
+The proposed kind `498` unsigned Marmot app event has empty tags and padded-base64 content of exactly this batch:
 
 ```text
 struct {

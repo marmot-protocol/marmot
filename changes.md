@@ -24,7 +24,7 @@ Changes [app-components/group-invite-links-v1.md](./app-components/group-invite-
 [transports/nostr-invite-links.md](./transports/nostr-invite-links.md),
 [transports/nostr.md](./transports/nostr.md).
 
-Clients that implement the optional draft use component `0x8012`, kinds `468`–`470`, and preview descriptor
+Clients that implement the optional draft use component `0x8012`, kinds `496`–`498`, and preview descriptor
 kind `30444`. Authenticate the preview and the joining device’s consent before processing an invite-link
 Welcome. Regular invitations keep their existing flow.
 

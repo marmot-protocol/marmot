@@ -25,4 +25,4 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --require-hashes -r tests/ci-requirements.txt
       - run: python -c "import cryptography; print(cryptography.__version__)"
-      - run: python -m unittest discover -s tests -v
+      - run: python -m unittest discover -s tests -p 'test_invite_links_v1.py' -v

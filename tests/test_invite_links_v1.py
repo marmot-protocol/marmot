@@ -682,7 +682,7 @@ class InviteFixtures(unittest.TestCase):
         envelope = b'{}'
         rows = [key+vector(envelope) for key in recipients]
         self.assertEqual(recipients[:16], admin_batch(vector(b''.join(rows[:16]))))
-        # Kind 470 has different schemas selected by its authenticated container.
+        # Kind 498 has different schemas selected by its authenticated container.
         # These examples must not be accepted by the opposite structural decoder.
         with self.assertRaises(ValueError):
             admin_batch(bytes.fromhex(V['grant_record_hex']))
@@ -815,8 +815,8 @@ class InviteFixtures(unittest.TestCase):
 
     def test_registry_and_surface_sync(self):
         expected = {'0x8012': 'app-components/group-invite-links-v1.md',
-                    '468': 'transports/nostr-invite-links.md', '469': 'transports/nostr-invite-links.md',
-                    '470': 'transports/nostr-invite-links.md', '30444': 'transports/nostr-invite-links.md'}
+                    '496': 'transports/nostr-invite-links.md', '497': 'transports/nostr-invite-links.md',
+                    '498': 'transports/nostr-invite-links.md', '30444': 'transports/nostr-invite-links.md'}
         registry = (ROOT/'foundation/registries.md').read_text()
         layout = (ROOT/'layout.md').read_text()
         for value, path in expected.items():
