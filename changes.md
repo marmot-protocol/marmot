@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-24: A newly linked device gets small state before its chats
 
-Pull request: [marmot#517](https://github.com/marmot-protocol/marmot/pull/517).
+Pull request: [marmot#518](https://github.com/marmot-protocol/marmot/pull/518).
 Changes [features/account-sync.md](./features/account-sync.md#broadcasts) and
 [features/device-group.md](./features/device-group.md#sending-forwarded-fields).
 
