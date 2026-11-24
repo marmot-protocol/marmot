@@ -187,8 +187,16 @@ the new copy is shown as [Receiving forwarded fields](./device-group.md#receivin
 local-only. A device whose copy is confirmed and has an original generation but holds no decision for it, for example
 one accepted while it trusted no device group, applies the founder rule above to that generation before it adds a
 sibling to that chat: one implicit accepted value at version 1 only if it holds no decision, never replacing a held
-value and never repeated on restart, retained and owed its ordinary broadcast before the Add. A chat whose raw MLS group
-id is outside the one-to-256-byte bound of an invite item records no value; its sibling's copy, which carries the
+value and never repeated on restart, retained and owed its ordinary broadcast before the Add. Before any automatic
+same-account sibling Add of a chat whose copy holds a decision for its original generation, the sender waits until
+its last broadcast was made for that sibling ([Broadcasts](#broadcasts)) and it has sent an update carrying that
+decision since. A decision it learned from an update sent in an epoch before the one at which its last broadcast began
+has not gone out to a device that joined since, so it owes that decision again. The sibling Welcome then normally
+reaches the new copy after the decision, so the copy installs settled. Sending orders only publication: while the
+update waits on an unreachable relay, or relays deliver out of order, the Welcome can still arrive first. A copy
+installed first shows an accepted chat as an invitation until the update arrives, and a decline the user makes there
+takes the first version, which at equal version wins over the account's acceptance on every device. A chat whose raw
+MLS group id is outside the one-to-256-byte bound of an invite item records no value; its sibling's copy, which carries the
 generation and so no forwarded confirmation, stays a pending invitation there. This feature requires updated
 experimental senders and receivers before use; it adds no capability negotiation and makes no mixed-version
 compatibility guarantee. Existing read/pin/mute/archive updates remain governed by their own rules.
@@ -342,7 +350,8 @@ epochs past the message's epoch before the device reads it, even if relays still
 ([../protocol-core/retained-history.md](../protocol-core/retained-history.md), "App-payload retention"), and a relay
 may drop a message sooner. No one sibling is sure to hold every value either, since it may have missed some too. So
 every device sends everything it holds again from time to time, and its siblings merge whatever they missed. No device
-asks a particular sibling, waits for an answer, or keeps track of what its siblings hold.
+asks a particular sibling, waits for an answer, or keeps track of what its siblings hold. It keeps only which devices
+its last broadcast was made for: the slot and `linked_at` of each device the trusted roster listed when it began.
 
 A device broadcasts by sending every item it holds, in updates. Updates sent in a broadcast are like any other. A
 device broadcasts:
@@ -353,6 +362,10 @@ device broadcasts:
   its last broadcast began. Every update of a broadcast goes out in that epoch or a later one, even when commits land
   while it is being sent, and a message is lost to the app-payload window only as the tip moves, so this keeps every
   update of a running device's latest broadcast within reach of a sibling that lost earlier messages;
+- as soon as the trusted roster lists a device its last broadcast was not made for: a slot it did not list then, or
+  one it listed with another `linked_at`, as when a removed slot is linked again. A newly linked device holds no small
+  state until a sibling broadcasts, and the hour below would otherwise hold back the answer to its broadcast request
+  whenever its siblings broadcast recently, for example for a device linked just before it;
 - in answer to a broadcast request, below.
 
 A device sends a broadcast request when it starts. It MAY send one at other times, such as when it comes back after a

@@ -13,6 +13,28 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-24: A newly linked device gets small state before its chats
+
+Pull request: [marmot#517](https://github.com/marmot-protocol/marmot/pull/517).
+Changes [features/account-sync.md](./features/account-sync.md#broadcasts) and
+[features/device-group.md](./features/device-group.md#sending-forwarded-fields).
+
+A device linked within an hour of its siblings' last broadcasts got no small state until that hour passed, so it showed
+chats its account had accepted as invitations, and a decline there won over the acceptance on every device (mdk#3556).
+
+Do:
+
+- Keep, with each broadcast, the slot and `linked_at` of each device the trusted roster listed when it began.
+- Broadcast as soon as the roster lists a device the last broadcast was not made for.
+- Before an automatic same-account sibling Add of a chat whose copy holds an invitation decision for its original
+  generation, wait until the last broadcast was made for that sibling and an update carrying the decision has been sent
+  since. This orders publication only: while that update waits on an unreachable relay, the Welcome can still arrive
+  first.
+- Send a winning decision again when it was learned from an update sent before the epoch at which the last broadcast
+  began.
+
+No message format changes.
+
 ## 2026-11-21: Agent text streams over QUIC are retired
 
 Pull request: [marmot#513](https://github.com/marmot-protocol/marmot/pull/513).
