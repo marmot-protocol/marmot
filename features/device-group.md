@@ -1475,6 +1475,11 @@ pending invitation stays one the receiver's user can answer, and a stale `confir
 
 Before it prepares an Add of a chat whose copy is confirmed and has an original generation but holds no invitation
 decision for it, the sender does what [account sync](./account-sync.md#invitation-decisions) requires for that case.
+Before it prepares an Add of a chat whose copy holds a decision for its original generation, it waits until its last
+broadcast was made for that sibling and it has sent an update carrying the decision since, as the same
+section requires, whether the Add
+is the approving device's ([Adding the new device to chats](#adding-the-new-device-to-chats)) or a gap fill
+([Filling a missing chat](#filling-a-missing-chat)).
 
 #### Receiving forwarded fields
 
