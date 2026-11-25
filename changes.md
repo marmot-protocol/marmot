@@ -29,12 +29,14 @@ Do:
 - Refuse a roster update that sets slot S's `tag_signature_key` unless it is inline and the committer's resulting leaf
   signs with that key and carries a tag that reads as S; when S already had a key, the committer's leaf must also have
   read as S before the Commit.
-- Refuse a `set_device` that drops a key the entry had, a `remove_device` of a keyed entry whose leaf stays, a
-  `removed` record whose key is not the one S's entry or record had before it, and, in a device group, any UpdatePath
-  or Update proposal that changes a leaf's signature key.
-- Send a lone `removed` record, and a `removed` record carried into another device group, without a key.
-- Remove a device's leaf by the signature key its entry has, whatever its tag says, and in chat cleanup treat a leaf
-  that signs with the key of a `removed` record, and no listed device has, as that slot's, tagged or not.
+- Refuse a `set_device` that drops a key the entry had, a `remove_device` of a keyed entry that is standalone or whose
+  leaf stays, a `removed` record whose key is not the one S's entry or record had before it, and, in a device group, any
+  UpdatePath or Update proposal that changes a leaf's signature key.
+- Send a lone `removed` record, and a `removed` record carried into another device group, without a key. A failed
+  link's undo also removes any leaf that signs with the entry's key.
+- Remove every leaf that signs with the key a device's entry has, whatever its tag says, and in chat cleanup treat a
+  leaf that signs with a key kept from that slot's `removed` record, and no listed device has, as that slot's, tagged or
+  not.
 
 The rules are added under the draft id `0x800e`. Update every device in a device group before any enforces them.
 No message format changes.

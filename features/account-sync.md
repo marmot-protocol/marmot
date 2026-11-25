@@ -1187,4 +1187,5 @@ so no device moves it back; a later position moves it again once that one is fur
 - A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in
   the sender's roster entry. Only that device sets that key
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so a stolen linked
-  device cannot make its deliveries read as another sibling's.
+  device cannot make its deliveries read as those of a sibling that has set its key. A device that has not set its own
+  key yet can still set it in another slot that has none, and its deliveries then read as that slot's.

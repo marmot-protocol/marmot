@@ -254,8 +254,8 @@ Each is decided from the Commit and its candidate parent state alone, and every 
 - **A present key is not cleared.** A `set_device` for S that carries no `tag_signature_key` is invalid when S's entry
   in the candidate parent's roster has one.
 - **A keyed entry goes with its leaf.** A `remove_device` for S whose entry in the candidate parent's roster has a key K
-  is valid only when no leaf in the resulting state has K as its signature key. The Commit that removes the entry
-  removes that leaf too, unless it is already gone.
+  is valid only inline, in a Commit whose resulting state has no leaf with K as its signature key. The Commit that
+  removes the entry removes that leaf too, unless it is already gone.
 - **A `removed` record keeps only its slot's key.** A `set_rejected_slot` with reason `removed` for slot S that carries
   a `tag_signature_key` K is valid only when S's entry or `removed` record in the candidate parent's roster has K.
 - **A leaf keeps its signature key.** No Commit's UpdatePath and no Update proposal changes the signature key of the
@@ -317,8 +317,8 @@ invalid ([README.md](./README.md), "GroupContext Removal").
   clear another device's key, drop another device's entry while its leaf stays, or make a `removed` record keep a key
   its slot's entry did not have. A device whose entry has
   no key yet is not bound to a leaf until it sets one, so another device that has not set its own key either could set
-  its key in that slot first; the slot's own device then cannot set its key, and its link fails and is undone
-  ([../features/device-group.md](../features/device-group.md), "A link that is not taken up").
+  its key in that slot first; the slot's own device then cannot set its key, and its link fails. Its undo removes
+  both leaves ([../features/device-group.md](../features/device-group.md), "A link that is not taken up").
 - The founding state's keys are taken as the creating device wrote them. "Key binding" protects every key from the
   devices that come after; it does not protect against a creating device that was already compromised when it made the
   group, which also chose `leaf_tag_key` and holds the account's keys.

@@ -253,24 +253,24 @@ If the link is not made by then, the approving device first processes the input 
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
 acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
 restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
-lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
-and, with `remove_device`, that entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-"Update"): the first time, and again whenever such a Commit failed or branch selection dropped it. Rewriting the entry's
-other fields does not change that. The failure stands even when the new device's first Commit later reaches the selected
-branch, since the new device may already have realized the removal and discarded its copy, as the next paragraph says. A
-slot the roster records as `removed` holds no device entry
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
-user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
-removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again; a later link
-of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, the
-deciding device records the slot as `removed` while the decision is less than 30 days old and it keeps a key for the
-slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot is not a sign-in again, and a
-removed device comes back only as a new slot, as the decision already kept it from being linked again. The new device is
-not told; a pairing request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the
-slot, every device that applied the new device's first Commit cleans up after it as after a removed device, once its
-state for the device group is settled and its roster lists no device in the slot: the slot is then gone for it ([Devices
-the roster no longer lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked
-carry no tag and stay.
+lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf,
+any other leaf whose signature key is the entry's `tag_signature_key`, and, with `remove_device`, that entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"): the first time, and again
+whenever such a Commit failed or branch selection dropped it. Rewriting the entry's other fields does not change that.
+The failure stands even when the new device's first Commit later reaches the selected branch, since the new device may
+already have realized the removal and discarded its copy, as the next paragraph says. A slot the roster records as
+`removed` holds no device entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Validation"), so it needs no undo: a user's removal has taken the device out, and the approving device makes no
+`remove_device` for it. Once the undo has removed the entry, the slot is a sign-in again ("Any one device's answer"),
+and the user can link it again; a later link of the slot adds an entry of its own, which this does not undo. If the user
+had decided to remove that device, the deciding device records the slot as `removed` while the decision is less than 30
+days old and it keeps a key for the slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot
+is not a sign-in again, and a removed device comes back only as a new slot, as the decision already kept it from being
+linked again. The new device is not told; a pairing request from that slot is refused as a rejected slot ("Before
+answering"). Until a later link of the slot, every device that applied the new device's first Commit cleans up after it
+as after a removed device, once its state for the device group is settled and its roster lists no device in the slot:
+the slot is then gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new
+device's leaves from before it was linked carry no tag and stay.
 
 For a [move](#moving-between-device-groups), distinguish a failed destination admission from removal of the preserved
 old copy as that section specifies. Neither is permission to apply the account sign-out effects of an ordinary removal.
@@ -892,9 +892,9 @@ the same Commit.
 
 ### The removal Commit
 
-A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaf, the one
-whose signature key is the `tag_signature_key` the sibling's entry has, whatever its device tag says: only the sibling
-set that key, and no Commit in the device group changes a leaf's signature key
+A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaves: every
+leaf whose signature key is the `tag_signature_key` the sibling's entry has, whatever its device tag says. Only the
+sibling set that key, and no Commit in the device group changes a leaf's signature key
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). It carries a roster
 update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two operations
 for that slot, in this order:
@@ -962,12 +962,13 @@ still be used until its `Lifetime` ends.
 ### Devices the roster no longer lists
 
 A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
-a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
-listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
-time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
-catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
-states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
-unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
+a `removed` record, and whether a `removed` record listed it, across restarts, for 30 days by its own clock from the
+last time it applied a roster state that listed them. It keeps those of every roster state it applies, including one
+that a later Commit it applies at the same time replaces and one on a branch that branch selection later drops. A device
+that was away applies each state when it catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but
+no fewer than the four that the roster states it applied listed most recently for the slot; a leaf tagged under a key a
+device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it validates, applies or
+selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
 because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
@@ -987,14 +988,14 @@ it. A device cleans up after every slot that is gone for it ([Removing it from c
 private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
 [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
 signature verifies under a key the slot is read by
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). For a slot its trusted
-roster records as `removed`, a leaf also belongs to that slot, tagged or not, when its own signature key is the key that
-record keeps and no device in that roster has that key: only the slot's device set that key
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so only it signs with
-it. This holds only for a user's removal. A failed link or a dropped branch removes no leaf for its key alone, so a
-device's untagged leaves from before its link stay ([Matching leaves to devices](#matching-leaves-to-devices)). A device
-that never applied a roster listing a key cannot recognize the leaves tagged under it, which then read as unclaimed for
-it.
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A leaf also belongs to a
+gone slot, tagged or not, when its own signature key is a key the device keeps from a `removed` record for that slot, in
+its trusted roster or in a roster state it applied, and no device in its trusted roster has that key: only the slot's
+device set that key ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so
+only it signs with it. This holds only for a user's removal. A failed link or a dropped branch removes no leaf for its
+key alone, so a device's untagged leaves from before its link stay ([Matching leaves to
+devices](#matching-leaves-to-devices)). A device that never applied a roster listing a key cannot recognize the leaves
+tagged under it, which then read as unclaimed for it.
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
@@ -1014,8 +1015,9 @@ Every device that trusts the device group does this, whichever device decided th
   one; branch selection keeps one, and the other then finds nothing left to remove.
 - In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
   in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
-- A leaf with no tag reads as unclaimed and is left alone, unless it signs with the key of the slot's `removed`
-  record. A leaf in a group none of the remaining devices is in stays there: no device of the account can see it.
+- A leaf that does not belong to the slot ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists))
+  is left alone. A leaf in a group none of the remaining devices is in stays there: no device of the account can see
+  it.
 
 The removed device realizes each such removal in that group. The account stays a member there through the device that
 committed it, so the removed device does not tell its user the account was removed from the group
