@@ -317,9 +317,10 @@ these requirements decide whether the device can carry out that Add.
   creating a chat may proceed without siblings. Possessing a sibling's private KeyPackages alone is not readiness.
 - The current trusted roster lists the target device, its leaf in the device group carries a device tag that reads as
   its slot, and it is neither `leaving` nor `moved`. The sender has not decided to remove it with that removal still
-  pending. Nor has a roster state it applied held the slot as `removed` in the last 30 days ([Devices the roster no
-  longer lists](#devices-the-roster-no-longer-lists)): dropping that record on another branch does not end this
-  exclusion, even after a later link of the same slot.
+  pending. Nor has it, in the last 30 days by its own clock, applied a roster state that listed the slot as
+  `removed`, whether or not that record kept a key, counted from the last such state it applied, as for key retention
+  ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)): dropping that record on another branch
+  does not end this exclusion, even after a later link of the same slot.
 - If the current entry names the sender in `linked_by`, the sender waits until the link it approved is made and never
   adds it while that link's failure stands ([A link that is not taken up](#a-link-that-is-not-taken-up)). A local
   pending or failed outcome is not a verdict on an entry whose `linked_by` names another device: that device's later
@@ -451,8 +452,8 @@ group, after a relevant roster eligibility change, when a sibling hands it priva
 a claim that held back its attempt expires, and when a winning invitation decision changes the affected chat's automatic
 Add eligibility ([Invitation decisions](./account-sync.md#invitation-decisions)), even without an MLS epoch change. That
 recheck resumes only existing opt-in work, never creates a new Add obligation. It considers a sibling only while the
-selected trusted roster lists it as `active` or `inactive`, with "add to all my chats" on and a leaf in the device group
-whose tag reads as it, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive
+selected trusted roster lists it as `active` or `inactive`, with "add to all my chats" on, and it applies [Private
+sibling Add admission](#private-sibling-add-admission), which decides whether its leaf is ready. An inactive
 sibling remains linked. The shared admission contract governs sender readiness, the current approver's local outcome,
 and removal exclusions. Other siblings rely on the selected trusted roster and the new device's tagged leaf, which its
 first Commit makes ([Approving](#approving)); they do not know the approver's local outcome. If that approver later
@@ -874,7 +875,8 @@ cover what this discloses.
   link has already failed, and removes it if it has not made it in time ("A link that is not taken up"). That Commit
   replaces its leaf in the device group with one tagged under that key
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
-  there carries no tag. A group where it made its post-join self-update before then gets a tagged leaf later.
+  there carries no tag, and it tags no leaf in another group or KeyPackage until that Commit is on its selected
+  branch. A group where it made its post-join self-update before then gets a tagged leaf later.
 
 A leaf that no device claims is not evidence of anything by itself. A device's leaves from before it was linked stay
 unclaimed until it replaces them ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing

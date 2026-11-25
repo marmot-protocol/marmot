@@ -27,7 +27,8 @@ own key escaped removal, and no key the roster named showed which leaf was whose
 Do:
 
 - When adding a device to the device group, set its entry's `tag_signature_key` to the signature key of the
-  KeyPackage the Commit adds. The new device's first Commit tags its leaf and no longer sets its key.
+  KeyPackage the Commit adds. The new device's first Commit tags its leaf and no longer sets its key. The new device
+  tags no chat leaf or KeyPackage until that Commit is on its selected branch.
 - Refuse a device-group Commit that adds a leaf without a new entry carrying that leaf's signature key, and a new entry
   made any other way; a `set_device` that changes or drops an entry's key; a keyed `remove_device` that is standalone or
   leaves a leaf with that key; a `removed` record whose key is not the one its slot's entry or record had before; and,

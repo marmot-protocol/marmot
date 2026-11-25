@@ -72,7 +72,13 @@ prefix and 114 sealed bytes.
 
 A device can tag once it holds its device group's `leaf_tag_key` and its own roster entry carries its
 `tag_signature_key`, the signature key of its leaf there
-([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From then on:
+([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). A device that joins the
+device group has both from its Welcome, but tags first in the UpdatePath of its own first Commit there. It tags no other
+LeafNode, in a KeyPackage or in another group, until a Commit of its own in the device group is on its selected branch
+of that group: if its link then fails, the devices that applied its Add clean up after its slot, and a chat leaf it had
+tagged would be removed with it ([../features/device-group.md](../features/device-group.md), "A link that is not taken
+up"). A device moving to another device group keeps tagging under its original group until the move is made, as below.
+From then on:
 
 - it MUST put a tag in the LeafNode of every KeyPackage it creates, whether it publishes the KeyPackage or hands it to a
   sibling, except one it creates to confirm a link, which carries none
