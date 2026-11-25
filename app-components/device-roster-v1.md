@@ -409,7 +409,9 @@ document.
 "Key binding" was added under this draft id, and a device group made under an earlier revision does not work with it: a
 member replaying that group's earlier Commits would refuse them, since an earlier revision added a device with no key,
 let it set its own, and kept a key in a lone or carried `removed` record. Such a device group is re-formed rather than
-carried over: its devices sign out of it and are linked again into a new one.
+carried over: each of its devices discards its copy with an explicit local reset, which leaves its chats and account
+data in place, and the devices are linked again into a new device group
+([../features/device-group.md](../features/device-group.md#explicit-local-reset)).
 
 The experimental move transition adds `moved(3)` under this draft id. Every participant in a device group using moves
 must update to understand it first. Older draft decoders reject the value, and the component id does not distinguish

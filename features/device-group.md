@@ -256,23 +256,22 @@ device's first Commit is still not on the selected branch after that, the link h
 acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
 restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
 lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
-and, with `remove_device`, that entry
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"): the first time, and again
-whenever such a Commit failed or branch selection dropped it. Rewriting the entry's other fields does not change that.
-The failure stands even when the new device's first Commit later reaches the selected branch, since the new device may
-already have realized the removal and discarded its copy, as the next paragraph says. A slot the roster records as
-`removed` holds no device entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-"Validation"), so it needs no undo: a user's removal has taken the device out, and the approving device makes no
-`remove_device` for it. Once the undo has removed the entry, the slot is a sign-in again ("Any one device's answer"),
-and the user can link it again; a later link of the slot adds an entry of its own, which this does not undo. If the user
-had decided to remove that device, the deciding device records the slot as `removed` while the decision is less than 30
-days old and it keeps a key for the slot ([The removal Commit](#the-removal-commit)). While that record lasts, the slot
-is not a sign-in again, and a removed device comes back only as a new slot, as the decision already kept it from being
-linked again. The new device is not told; a pairing request from that slot is refused as a rejected slot ("Before
-answering"). Until a later link of the slot, every device that applied the new device's first Commit cleans up after it
-as after a removed device, once its state for the device group is settled and its roster lists no device in the slot:
-the slot is then gone for it ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)). The new
-device's leaves from before it was linked carry no tag and stay.
+and, with `remove_device`, that entry ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"Update"): the first time, and again whenever such a Commit failed or branch selection dropped it. Rewriting the entry's
+other fields does not change that. The failure stands even when the new device's first Commit later reaches the selected
+branch, since the new device may already have realized the removal and discarded its copy, as the next paragraph says. A
+slot the roster records as `removed` holds no device entry
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Validation"), so it needs no undo: a
+user's removal has taken the device out, and the approving device makes no `remove_device` for it. Once the undo has
+removed the entry, the slot is a sign-in again ("Any one device's answer"), and the user can link it again; a later link
+of the slot adds an entry of its own, which this does not undo. If the user had decided to remove that device, the
+deciding device records the slot as `removed` while the decision is less than 30 days old ([The removal
+Commit](#the-removal-commit)). While that record lasts, the slot is not a sign-in again, and a removed device comes back
+only as a new slot, as the decision already kept it from being linked again. The new device is not told; a pairing
+request from that slot is refused as a rejected slot ("Before answering"). Until a later link of the slot, every device
+that applied the new device's first Commit cleans up after it as after a removed device, once its state for the device
+group is settled and its roster lists no device in the slot: the slot is then gone for it ([Devices the roster no longer
+lists](#devices-the-roster-no-longer-lists)). The new device's leaves from before it was linked carry no tag and stay.
 
 For a [move](#moving-between-device-groups), distinguish a failed destination admission from removal of the preserved
 old copy as that section specifies. Neither is permission to apply the account sign-out effects of an ordinary removal.
@@ -653,15 +652,15 @@ switch does not recall it or promise immediate quiet. Ordinary destination tag, 
 still apply, with no timeout bypass. Destination KeyPackage publication does not additionally wait for old cleanup;
 an offline or changing old group can delay cleanup indefinitely.
 
-An old sibling that sees `moved` removes that device's old leaf and roster entry together in one Commit, using the old
-entry's key to identify the leaf as in [Matching leaves to devices](#matching-leaves-to-devices). It retries if branch
-selection drops that cleanup. It records no rejection, removes no chat leaves, deletes no publication slot and does
-not sign the moved device out. The moved device does not interpret removal from the old group as removal from its
-current group or account. Several old siblings may attempt this cleanup at once, costing extra Commits and
-convergence passes; normal branch selection applies. The moved device retains or can reconstruct why the selected
-branch removed that incarnation's entry,
-so restart does not reinterpret moved cleanup as ordinary removal. Seeing `moved` on a discarded branch is not a
-permanent exemption. A separate explicit removal keeps its ordinary effect.
+An old sibling that sees `moved` removes that device's old leaf and roster entry together in one Commit, removing every
+leaf whose signature key is the old entry's key, whatever its tag says, as in [The removal Commit](#the-removal-commit).
+It retries if branch selection drops that cleanup. It records no rejection, removes no chat leaves, deletes no
+publication slot and does not sign the moved device out. The moved device does not interpret removal from the old group
+as removal from its current group or account. Several old siblings may attempt this cleanup at once, costing extra
+Commits and convergence passes; normal branch selection applies. The moved device retains or can reconstruct why the
+selected branch removed that incarnation's entry, so restart does not reinterpret moved cleanup as ordinary removal.
+Seeing `moved` on a discarded branch is not a permanent exemption. A separate explicit removal keeps its ordinary
+effect.
 
 Old-sibling slots and display labels support private guidance on moving each sibling separately. On the moving
 device they suppress proactive Link/This wasn't me questions until the destination first lists that sibling as a
@@ -918,22 +917,21 @@ flight or settling only delays the removal. The decision is for the slot: if the
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
 alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and no
 `tag_signature_key`, since the roster has no entry whose key it could keep
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). If it keeps no key for
-the slot ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)), it makes no record. It does so
-once its state for the device group is settled and lists the slot neither as a device nor as a rejected slot, only while
-it can commit there, and only while the decision is less than 30 days old, since a record older than that is dropped at
-the next pass that drops old `removed` records. Once a roster state it applied has held the record, it SHOULD NOT make
-that lone record again, whether another device dropped the record or branch selection did. A removal Commit it makes
-again because the roster lists the slot again carries the record as before. Until then, a record whose Commit failed or
-went nowhere is made again. Once the record is gone, the slot reads as a sign-in again, as after any `removed` record
-goes; if the user links it again, the deciding device removes it again, since its decision stands. A lone record lasts
-only until 30 days after the decision, like any `removed` record. Devices that never applied a roster listing the
-device's key do not learn it from that record, so they do not recognize the device's leaves. When a removal Commit that
-took the device's entry fails, or branch selection drops it, even after its `removed` record has been dropped, the
-roster lists the slot again and the device commits the removal again. A removed device comes back only as a new slot. A
-removal committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the
-next pass that drops old `removed` records
-([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "State").
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). It does so once its
+state for the device group is settled and lists the slot neither as a device nor as a rejected slot, only while it can
+commit there, and only while the decision is less than 30 days old, since a record older than that is dropped at the
+next pass that drops old `removed` records. Once a roster state it applied has held the record, it SHOULD NOT make that
+lone record again, whether another device dropped the record or branch selection did. A removal Commit it makes again
+because the roster lists the slot again carries the record as before. Until then, a record whose Commit failed or went
+nowhere is made again. Once the record is gone, the slot reads as a sign-in again, as after any `removed` record goes;
+if the user links it again, the deciding device removes it again, since its decision stands. A lone record lasts only
+until 30 days after the decision, like any `removed` record. Devices that never applied a roster listing the device's
+key do not learn it from that record, so they do not recognize the device's leaves. When a removal Commit that took the
+device's entry fails, or branch selection drops it, even after its `removed` record has been dropped, the roster lists
+the slot again and the device commits the removal again. A removed device comes back only as a new slot. A removal
+committed again keeps the decision's time as `rejected_at`, so once that is 30 days past, the record goes at the next
+pass that drops old `removed` records ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+"State").
 
 ### The removed device's slot
 
