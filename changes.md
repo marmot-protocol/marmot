@@ -36,6 +36,8 @@ Do:
 - Send a lone `removed` record, and a `removed` record carried into another device group, without a key. Make the lone
   record whether or not the device keeps a key for the slot.
 - Remove every leaf that signs with the key a device's entry has, whatever its tag says.
+- Keep a slot that moved cleanup removed out of chat cleanup when a later link of it into the same device group
+  fails before it is made.
 
 The rules are added under the draft id `0x800e`. This revision does not carry over a device group made under an earlier
 revision. No message format changes.

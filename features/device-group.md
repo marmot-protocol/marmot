@@ -973,7 +973,12 @@ states it applied listed most recently for the slot; a leaf tagged under a key a
 unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
-because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
+because that old roster entry is missing, nor because a later link of the slot into this device group then fails
+before it is made ([A link that is not taken up](#a-link-that-is-not-taken-up)). The device distinguishes these
+selected causes from ordinary removal. A device moving back keeps tagging under the group it is moving from until its
+move is made ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), so a failed
+return tags none of its leaves for the new entry outside the device group, and the leaves that read as its slot are
+the ones moved cleanup kept.
 
 A slot other than the device's own is gone for it:
 
