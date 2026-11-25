@@ -119,8 +119,7 @@ Each device the account has linked has one `DeviceEntryV1`:
   announcements".
 - `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
   group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)): the signature key of its leaf in the device group. The
-  Commit that adds the device sets it, and it never changes ("Key binding"). An entry an earlier revision of this draft
-  created can lack it.
+  Commit that adds the device sets it, and it never changes ("Key binding").
 - `history_key` is the device's history key: the public key its siblings seal chat history to
   ([../features/account-sync.md](../features/account-sync.md), "History keys"). It is a public key of the HPKE KEM of
   the device group's ciphersuite, as that KEM serializes it: 32 bytes for X25519 under ciphersuite `0x0001`. It is
@@ -246,11 +245,12 @@ adds a device to the device group binds the key to the leaf it adds, and no late
 decided from the Commit and its candidate parent state alone, so every member reaches the same answer. A Commit, or a
 standalone proposal, that breaks one is invalid.
 
-- **A new entry names its leaf's key.** A `set_device` for a slot S that the candidate parent's roster does not list as
-  a device is valid only inline, in a Commit that adds a leaf, when it carries a `tag_signature_key` that is that added
-  leaf's signature key.
+- **Every added leaf has a new entry with its key.** A Commit that adds leaves to the device group carries, inline, one
+  `set_device` per added leaf, each for a slot the candidate parent's roster does not list as a device and carrying
+  that leaf's signature key as its `tag_signature_key`. A `set_device` for a slot the candidate parent's roster does not
+  list as a device is valid only as one of these.
 - **A key never changes.** A `set_device` for a slot S that the candidate parent's roster lists as a device carries the
-  `tag_signature_key` S's entry has there, or none when that entry has none.
+  `tag_signature_key` S's entry has there.
 - **A keyed entry goes with its leaf.** A `remove_device` for S whose entry in the candidate parent's roster has a key K
   is valid only inline, in a Commit whose resulting state has no leaf with K as its signature key. The Commit that
   removes the entry removes that leaf too, unless it is already gone.
@@ -406,11 +406,10 @@ This is the first version. While this component is a draft, its encoding can cha
 promise that two revisions of the draft work together. Once it is adopted, a breaking change gets a new component id and
 document.
 
-"Key binding" was added under this draft id. A device that follows the earlier revision adds a device with no key and
-lets it set its own, and keeps a key in a lone or carried `removed` record; these rules refuse all three. Every device
-in a device group updates before any enforces them. An entry an earlier revision created without a key cannot get one
-afterwards, so a link still waiting for its first Commit then fails and is undone
-([../features/device-group.md](../features/device-group.md), "A link that is not taken up").
+"Key binding" was added under this draft id, and a device group made under an earlier revision does not work with it: a
+member replaying that group's earlier Commits would refuse them, since an earlier revision added a device with no key,
+let it set its own, and kept a key in a lone or carried `removed` record. Such a device group is re-formed rather than
+carried over: its devices sign out of it and are linked again into a new one.
 
 The experimental move transition adds `moved(3)` under this draft id. Every participant in a device group using moves
 must update to understand it first. Older draft decoders reject the value, and the component id does not distinguish

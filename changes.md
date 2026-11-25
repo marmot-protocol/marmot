@@ -28,15 +28,15 @@ Do:
 
 - When adding a device to the device group, set its entry's `tag_signature_key` to the signature key of the
   KeyPackage the Commit adds. The new device's first Commit tags its leaf and no longer sets its key.
-- Refuse a new entry whose key is not the signature key of a leaf the same Commit adds; a `set_device` that changes or
-  drops an entry's key; a keyed `remove_device` that is standalone or leaves a leaf with that key; a `removed` record
-  whose key is not the one its slot's entry or record had before; and, in a device group, any UpdatePath or Update
-  proposal that changes a leaf's signature key.
+- Refuse a device-group Commit that adds a leaf without a new entry carrying that leaf's signature key, and a new entry
+  made any other way; a `set_device` that changes or drops an entry's key; a keyed `remove_device` that is standalone or
+  leaves a leaf with that key; a `removed` record whose key is not the one its slot's entry or record had before; and,
+  in a device group, any UpdatePath or Update proposal that changes a leaf's signature key.
 - Send a lone `removed` record, and a `removed` record carried into another device group, without a key.
 - Remove every leaf that signs with the key a device's entry has, whatever its tag says.
 
-The rules are added under the draft id `0x800e`. Update every device in a device group before any enforces them; a
-link whose entry an earlier revision created without a key then fails and is undone. No message format changes.
+The rules are added under the draft id `0x800e`. A device group made under an earlier revision is re-formed, not
+carried over. No message format changes.
 
 ## 2026-11-24: A newly linked device gets small state before its chats
 

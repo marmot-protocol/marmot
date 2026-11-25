@@ -82,7 +82,8 @@ it is `privileged` in branch selection ([../protocol-core/convergence.md](../pro
 branches").
 
 These are sender rules. A receiver cannot tell where a KeyPackage came from, so it does not reject a Commit or a
-Welcome for breaking them.
+Welcome for breaking them. That every added leaf gets an entry with its key is also a receiver rule
+([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding").
 
 ## Trust
 
@@ -295,12 +296,10 @@ Keeping a failed link failed leaves one case open ([#482](https://github.com/mar
 approving device keeps one failure record per slot, and approving a later link of the slot ends it. If that later link
 is made and branch selection then drops it, together with the undo, and brings back the failed link's entry, the device
 no longer undoes that entry: the later link stays made, so the device records no new failure. That takes a branch that
-forks before the undo, the later link's Add and its new device's first Commit. If that branch does not also bring back
-the failed link's first Commit, the entry has no `tag_signature_key`, so no device may remove it ([The removal
-Commit](#the-removal-commit)), and while the roster lists it, no device answers a pairing request from its slot ("Before
-answering"). Nothing in this specification frees that slot then: removal for inactivity ([Inactive
-devices](#inactive-devices)) uses the same removal Commit, so it does not either. If it does, the entry has its
-`tag_signature_key`, and the user can remove that device like any other.
+forks before the undo, the later link's Add and its new device's first Commit. The entry has the `tag_signature_key` its
+Add set, so the user can remove that device like any other ([The removal Commit](#the-removal-commit)), but nothing
+undoes it on its own, and while the roster lists it, no device answers a pairing request from its slot ("Before
+answering").
 
 ### Private sibling Add admission
 
@@ -316,8 +315,9 @@ these requirements decide whether the device can carry out that Add.
 - The sender trusts the device group ([Trust](#trust)), and its own leaf there carries a device tag that reads as its
   own slot ([Matching leaves to devices](#matching-leaves-to-devices)). Until that leaf is ready, it adds no sibling;
   creating a chat may proceed without siblings. Possessing a sibling's private KeyPackages alone is not readiness.
-- The current trusted roster lists the target device with a `tag_signature_key`, and it is neither `leaving` nor
-  `moved`. The sender has not decided to remove it with that removal still pending. Nor has a roster state it applied held the slot as
+- The current trusted roster lists the target device, its leaf in the device group carries a device tag that reads as
+  its slot, and it is neither `leaving` nor `moved`. The sender has not decided to remove it with that removal still
+  pending. Nor has a roster state it applied held the slot as
   `removed` while it keeps that record's key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)):
   dropping that record on another branch does not end this exclusion, even after a later link of the same slot.
 - If the current entry names the sender in `linked_by`, the sender waits until the link it approved is made and never
@@ -384,7 +384,7 @@ can take the Add. Any eligible holder can also cover a missing membership throug
 [Filling a missing chat](#filling-a-missing-chat), whether or not the approving device is in that chat or still adding.
 
 The signature-key check finds a leaf the new device made before the link, which carries no tag, only when that leaf's
-signature key is the one the device later set as its `tag_signature_key`. A device whose earlier leaves have other
+signature key is the `tag_signature_key` its Add in the device group wrote. A device whose earlier leaves have other
 signature keys can be added to a chat it is already in. It does not join from that sibling Welcome, as it already keeps
 the group ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 9). Once it tags its own
 leaf there ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), the chat holds
@@ -446,19 +446,19 @@ are separate from successful completion. Inventory messages are advisory and gra
 
 ### Filling a missing chat
 
-A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its
-device group, after a relevant roster eligibility change, when a sibling hands it private KeyPackages it was waiting
-for, when a claim that held back its attempt expires, and when a winning invitation decision changes the affected
-chat's automatic Add eligibility ([Invitation decisions](./account-sync.md#invitation-decisions)), even without an MLS
-epoch change. That recheck resumes only existing opt-in work, never creates a new Add obligation. It considers a sibling
-only while the selected trusted
-roster lists it as `active` or `inactive`, with a `tag_signature_key` and "add to all my chats"
-on, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive sibling remains
-linked. The shared admission contract governs sender readiness, the current approver's local outcome, and removal
-exclusions. Other siblings rely on the selected trusted roster and the new device's tag key, written by its first
-Commit ([Approving](#approving)); they do not know the approver's local outcome. If that approver later undoes the
-link, the ordinary [removal cleanup](#devices-the-roster-no-longer-lists) applies. No shared "link made" record is added.
-A device whose own roster entry is `leaving` or `moved` neither claims nor makes Adds through this flow.
+A device SHOULD check its chats for a missing linked sibling at open, after a membership change in a chat or its device
+group, after a relevant roster eligibility change, when a sibling hands it private KeyPackages it was waiting for, when
+a claim that held back its attempt expires, and when a winning invitation decision changes the affected chat's automatic
+Add eligibility ([Invitation decisions](./account-sync.md#invitation-decisions)), even without an MLS epoch change. That
+recheck resumes only existing opt-in work, never creates a new Add obligation. It considers a sibling only while the
+selected trusted roster lists it as `active` or `inactive`, with "add to all my chats" on and a leaf in the device group
+whose tag reads as it, and it applies [Private sibling Add admission](#private-sibling-add-admission). An inactive
+sibling remains linked. The shared admission contract governs sender readiness, the current approver's local outcome,
+and removal exclusions. Other siblings rely on the selected trusted roster and the new device's tagged leaf, which its
+first Commit makes ([Approving](#approving)); they do not know the approver's local outcome. If that approver later
+undoes the link, the ordinary [removal cleanup](#devices-the-roster-no-longer-lists) applies. No shared "link made"
+record is added. A device whose own roster entry is `leaving` or `moved` neither claims nor makes Adds through this
+flow.
 
 For each eligible sibling and chat:
 
@@ -906,16 +906,15 @@ for that slot, in this order:
 2. `set_rejected_slot` with reason `removed`, `rejected_at` the time the user decided, and the `tag_signature_key` the
    entry had.
 
-If no leaf has that signature key, the Commit carries the same roster update and removes no leaf. A client MUST NOT
-remove a device whose entry has no `tag_signature_key` yet: its link may still fail, and the approving device undoes a
-failed link with `remove_device` alone ("A link that is not taken up").
+If no leaf has that signature key, the Commit carries the same roster update and removes no leaf. A device whose link
+is not made yet can be removed too: the removal and the approving device's undo ("A link that is not taken up") each
+remove its leaf, and branch selection keeps one.
 
 A device keeps each removal it decided, across restarts, until it discards its copy of the device group ([A link that is
 not taken up](#a-link-that-is-not-taken-up)), and removes the device again whenever the roster lists its slot. It
 records the decision before it commits. While its copy of the group is terminal or cannot be read, and it has not
 discarded it, the removal waits. It commits only while it can commit in the device group, so a Commit there still in
-flight or settling only delays the removal. It also waits while the entry has no `tag_signature_key`, which branch
-selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
+flight or settling only delays the removal. The decision is for the slot: if the approving device then removes the entry
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
 alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and no
 `tag_signature_key`, since the roster has no entry whose key it could keep
@@ -1082,8 +1081,6 @@ A device signs out through its siblings only when all of these hold, and otherwi
 own](#on-its-own)):
 
 - it trusts a device group ([Trust](#trust));
-- its own entry in that group's roster has its `tag_signature_key`, since no device may remove an entry that has none
-  ([The removal Commit](#the-removal-commit));
 - the roster lists another device whose status is `active` or `inactive`.
 
 It then:
@@ -1814,7 +1811,7 @@ A device acts on these clocks only while it is caught up, and makes at most one 
 
 - Once a sibling's inactivity clock reaches 30 days, the device commits the sibling's entry with status `inactive`
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)), every other field unchanged. It
-  marks no entry that is `leaving` or `moved` or has no `tag_signature_key`, and no slot whose removal it decided.
+  marks no entry that is `leaving` or `moved`, and no slot whose removal it decided.
 - A device that finds its own entry `inactive` sets it back to `active`, every other field unchanged, once it is caught
   up and has sent a heartbeat no earlier than its inactivity clocks last restarted, so the heartbeat it sends as it
   comes back counts.
