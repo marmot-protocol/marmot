@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-25: A device's tag signature key is bound when it is added
 
-Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM).
+Pull request: [marmot#521](https://github.com/marmot-protocol/marmot/pull/521).
 Changes [app-components/device-roster-v1.md](./app-components/device-roster-v1.md#key-binding),
 [app-components/device-tag-v1.md](./app-components/device-tag-v1.md#producing-tags),
 [features/device-group.md](./features/device-group.md#the-removal-commit) and
