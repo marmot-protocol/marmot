@@ -149,13 +149,13 @@ Once the link is confirmed, the device adds the new device:
 - with no device group, by creating it under the group id its Confirm named ("Creating the device group").
 
 The new device's entry carries the label and settings the user chose, status `active`, `linked_at`, `linked_by` set to
-the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. It carries no
-`tag_signature_key`: the new device sets that itself ("Matching leaves to devices"). Like every new entry, it carries a
-fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is
-the approval. Its Welcome is sent as for any other Add.
+the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. Its `tag_signature_key`
+is the signature key of the confirmed KeyPackage's LeafNode ("Matching leaves to devices"). Like every new entry, it
+carries a fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the
+founding Add, is the approval. Its Welcome is sent as for any other Add.
 
-The approving device treats the link as made once the new device's first Commit in the device group, which sets the
-`tag_signature_key` in its roster entry ("Matching leaves to devices"), is on the selected branch of its state for the
+The approving device treats the link as made once the new device's first Commit in the device group, which tags its
+leaf there ("Matching leaves to devices"), is on the selected branch of its state for the
 group, and it holds no unprocessed input for the group, unless the link has already failed. Neither the approving
 Commit's publication nor its Welcome's delivery shows that the new device joined; only a Commit from the new device's
 own leaf does. Once made, a link stays made, and once failed, it stays failed. Until then, anything that acts on the new
@@ -163,7 +163,8 @@ device as a member of the account waits, and the link can still fail ("A link th
 
 A device adds a device to its device group only under a confirmed link. A Commit it makes in the device group that adds
 a member, the founding Add included, MUST add exactly one, by value, and MUST set that device's roster entry in the
-same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage. That
+same Commit, for a slot the roster does not list yet, with `announced_key_package` naming the added KeyPackage and
+`tag_signature_key` set to its LeafNode's signature key. That
 Commit is a same-account Add with the roster update, which the account commits as the group's only admin
 ([../app-components/account-devices-v1.md](../app-components/account-devices-v1.md), "Authorization"); it is never a
 same-account Commit, whose shape cannot carry the roster update. A device never adds a KeyPackage there that no
@@ -253,8 +254,8 @@ If the link is not made by then, the approving device first processes the input 
 device's first Commit is still not on the selected branch after that, the link has failed. Only the approving device
 acts on that. It stops delivering the link's Welcome and records the failure for the slot, which it keeps across
 restarts until it approves a later link of that slot. While it keeps it, whenever the roster on its selected branch
-lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf,
-any other leaf whose signature key is the entry's `tag_signature_key`, and, with `remove_device`, that entry
+lists the slot as a device with `linked_by` set to its own slot, it makes one Commit that removes the new device's leaf
+and, with `remove_device`, that entry
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update"): the first time, and again
 whenever such a Commit failed or branch selection dropped it. Rewriting the entry's other fields does not change that.
 The failure stands even when the new device's first Commit later reaches the selected branch, since the new device may
@@ -576,8 +577,8 @@ wait, or a refused Welcome, leaves original trust unchanged. After joining, a la
 admission ([Joining](#joining)). While acting as the new device or waiting for that Welcome, the moving device does
 not answer pairing Requests ([Before answering](#before-answering)).
 
-The moving device makes its first own Commit in the destination, setting its tag signature key in its own roster
-entry and tagging that Commit's UpdatePath from the destination roster
+The moving device makes its first own Commit in the destination, tagging that Commit's UpdatePath from the destination
+roster, whose entry for it the destination's Add set
 ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md#producing-tags)). This targets the confirmed
 destination only; it does not authorize other work there as a trusted group. Ordinary work continues to use the
 original trusted group until Made.
@@ -861,17 +862,19 @@ one, or replacing a leaf there never commits to the device group. Small-state me
 ([account-sync.md](./account-sync.md)) do name other groups, by MLS group id; that document's security considerations
 cover what this discloses.
 
-- Each device makes its own tag signature key pair and keeps the private key to itself.
+- A device's tag signature key is the signature key of its leaf in the device group, and it keeps the private key to
+  itself.
 - The device that creates the device group chooses the roster's `leaf_tag_key`, and its founding entry carries its
   `tag_signature_key` ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md)).
-- A device that joins the device group sets the `tag_signature_key` in its own roster entry with its first Commit there,
-  its post-join self-update ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which
-  it makes as soon as it can once it has joined. The device that approved its link takes that Commit as the sign that it
-  joined, unless the link has already failed, and removes it if it has not made it in time ("A link that is not taken
-  up"). That Commit also replaces its leaf in the device group with one tagged under that key
+- The Commit that adds a device to the device group sets the `tag_signature_key` in its entry to the signature key of
+  the KeyPackage it adds ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key
+  binding"). The new device's first Commit there is its post-join self-update
+  ([../protocol-core/joining.md](../protocol-core/joining.md), receiving flow, step 14), which it makes as soon as it
+  can once it has joined. The device that approved its link takes that Commit as the sign that it joined, unless the
+  link has already failed, and removes it if it has not made it in time ("A link that is not taken up"). That Commit
+  replaces its leaf in the device group with one tagged under that key
   ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"). Until then its leaf
-  there is unclaimed, like any untagged leaf. A group where it made its post-join self-update before then gets a tagged
-  leaf later.
+  there carries no tag. A group where it made its post-join self-update before then gets a tagged leaf later.
 
 A leaf that no device claims is not evidence of anything by itself. A device's leaves from before it was linked stay
 unclaimed until it replaces them ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing
@@ -893,8 +896,8 @@ the same Commit.
 ### The removal Commit
 
 A device removes a sibling with one Commit in its trusted device group. The Commit removes the sibling's leaves: every
-leaf whose signature key is the `tag_signature_key` the sibling's entry has, whatever its device tag says. Only the
-sibling set that key, and no Commit in the device group changes a leaf's signature key
+leaf whose signature key is the `tag_signature_key` the sibling's entry has, whatever its device tag says. That key was
+bound to the sibling's leaf when it was added, and no Commit in the device group changes a leaf's signature key
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). It carries a roster
 update ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Update") with two operations
 for that slot, in this order:
@@ -962,13 +965,12 @@ still be used until its `Lifetime` ends.
 ### Devices the roster no longer lists
 
 A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
-a `removed` record, and whether a `removed` record listed it, across restarts, for 30 days by its own clock from the
-last time it applied a roster state that listed them. It keeps those of every roster state it applies, including one
-that a later Commit it applies at the same time replaces and one on a branch that branch selection later drops. A device
-that was away applies each state when it catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but
-no fewer than the four that the roster states it applied listed most recently for the slot; a leaf tagged under a key a
-device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it validates, applies or
-selects roster states.
+a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
+listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
+time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
+catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
+states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
+unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
 because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
@@ -982,20 +984,14 @@ A slot other than the device's own is gone for it:
 A slot both cover is read by every key either names.
 
 The second covers a `removed` record dropped before the device acted on it, including while the device was away, a link
-that failed after the new device set its key ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made
-link that a later branch dropped. In each the slot's device is not linked: no device lists it, and no removal can reach
-it. A device cleans up after every slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its
-private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
+that failed ([A link that is not taken up](#a-link-that-is-not-taken-up)), and a made link that a later branch dropped.
+In each the slot's device is not linked: no device lists it, and no removal can reach it. A device cleans up after every
+slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its private
+KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
 [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
 signature verifies under a key the slot is read by
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A leaf also belongs to a
-gone slot, tagged or not, when its own signature key is a key the device keeps from a `removed` record for that slot, in
-its trusted roster or in a roster state it applied, and no device in its trusted roster has that key: only the slot's
-device set that key ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so
-only it signs with it. This holds only for a user's removal. A failed link or a dropped branch removes no leaf for its
-key alone, so a device's untagged leaves from before its link stay ([Matching leaves to
-devices](#matching-leaves-to-devices)). A device that never applied a roster listing a key cannot recognize the leaves
-tagged under it, which then read as unclaimed for it.
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device that never applied
+a roster listing a key cannot read the leaves tagged under it, which then read as unclaimed for it.
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
@@ -1015,9 +1011,8 @@ Every device that trusts the device group does this, whichever device decided th
   one; branch selection keeps one, and the other then finds nothing left to remove.
 - In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
   in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
-- A leaf that does not belong to the slot ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists))
-  is left alone. A leaf in a group none of the remaining devices is in stays there: no device of the account can see
-  it.
+- A leaf with no tag reads as unclaimed and is left alone. A leaf in a group none of the remaining devices is in stays
+  there: no device of the account can see it.
 
 The removed device realizes each such removal in that group. The account stays a member there through the device that
 committed it, so the removed device does not tell its user the account was removed from the group
@@ -1854,7 +1849,7 @@ its device group.
   and with a Welcome that omits an invitation generation show the chat confirmed there, unless the receiver's local
   policy holds it pending; no invitation decision can later undo that confirmation.
 - Every device in the device group is the same account, and that account is the group's only admin, so any device can
-  add or remove another and edit any roster entry other than another device's `tag_signature_key`
+  add or remove another and edit any roster entry other than its `tag_signature_key`
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). A stolen linked
   device can do the same until it is removed. It cannot keep its own leaf from the removal Commit, which finds that
   leaf by the signature key its entry has.

@@ -71,7 +71,7 @@ prefix and 114 sealed bytes.
 ## Producing tags
 
 A device can tag once it holds its device group's `leaf_tag_key` and its own roster entry carries its
-`tag_signature_key`, or the Commit it is creating sets that key
+`tag_signature_key`, the signature key of its leaf there
 ([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From then on:
 
 - it MUST put a tag in the LeafNode of every KeyPackage it creates, whether it publishes the KeyPackage or hands it to a
@@ -83,13 +83,13 @@ A device can tag once it holds its device group's `leaf_tag_key` and its own ros
   then attributed by its tag alone;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
-A device sets the `tag_signature_key` in its own roster entry only in a Commit whose UpdatePath also replaces its own
-leaf in the device group with a LeafNode tagged under that key. From that Commit on, its leaf in the device group reads
-as its own.
+The Commit that adds a device to the device group sets its entry's `tag_signature_key` to the signature key of the leaf
+it adds ([device-roster-v1.md](./device-roster-v1.md), "Key binding"). The device's first Commit there replaces that
+leaf with one tagged under that key. From that Commit on, its leaf in the device group reads as its own.
 
 During a [move between device groups](../features/device-group.md#moving-between-device-groups), the first own
-Commit in the confirmed destination uses that destination's roster to set its own tag signature key and tag its
-UpdatePath, although the original group remains trusted until Made. This permits no other use of the destination
+Commit in the confirmed destination uses that destination's roster, whose entry for it the destination's Add set, to
+tag its UpdatePath, although the original group remains trusted until Made. This permits no other use of the destination
 roster before that point. After Made, the sole old moved-status Commit preserves the original leaf's signature key
 and preserves or produces a valid old-roster tag instead of retagging it from the destination. These sender exceptions do not change tag validation
 or let old roster material authenticate a leaf under the destination roster. Ordinary KeyPackages and other new leaf
@@ -145,9 +145,7 @@ A device tag never makes a KeyPackage, LeafNode, proposal, Commit or Welcome inv
 about the entry. Most members cannot open a tag, so a rule that rejected one would split the members who can from
 those who cannot. To a device that can read tags, an entry that does not decode, open or verify is the same as no tag.
 The only rule a receiver enforces is the one on required lists in "Registry", which is about the GroupContext, not
-about any tag. The one exception is the device group, where every member holds `leaf_tag_key`: there, a roster update
-that sets a device's `tag_signature_key` is valid only when the committer's leaf carries a tag that reads as that device
-([device-roster-v1.md](./device-roster-v1.md), "Key binding").
+about any tag.
 
 ## Lifecycle
 
