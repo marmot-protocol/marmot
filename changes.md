@@ -36,8 +36,8 @@ Do:
   record whether or not the device keeps a key for the slot.
 - Remove every leaf that signs with the key a device's entry has, whatever its tag says.
 
-The rules are added under the draft id `0x800e`. A device group made under an earlier revision is re-formed, not
-carried over: each device resets its copy locally and the devices are linked again. No message format changes.
+The rules are added under the draft id `0x800e`. This revision does not carry over a device group made under an earlier
+revision. No message format changes.
 
 ## 2026-11-24: A newly linked device gets small state before its chats
 

@@ -75,7 +75,8 @@ A device can tag once it holds its device group's `leaf_tag_key` and its own ros
 ([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From then on:
 
 - it MUST put a tag in the LeafNode of every KeyPackage it creates, whether it publishes the KeyPackage or hands it to a
-  sibling;
+  sibling, except one it creates to confirm a link, which carries none
+  ([../features/device-group.md](../features/device-group.md), "Joining");
 - it MUST put a tag in every LeafNode it creates for its own leaf in any group, including the device group: in an
   Update, or in the UpdatePath of its own Commit. A replacement LeafNode whose signature key is unchanged MAY carry the
   same tag; one with a new signature key needs a new tag. In the device group no replacement LeafNode changes its

@@ -196,8 +196,9 @@ built from its publication, so no other join uses it up. A Welcome it refuses le
 the real one, so a forged Welcome that arrives first does not make the link fail.
 
 A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
-confirmed, so a Welcome sent under an earlier link never matches a later one. The link ends, and the device accepts no
-Welcome under it, once:
+confirmed and that carries no device tag, so a Welcome sent under an earlier link never matches a later one, and its
+leaf reads as its own only once its first Commit tags it. The link ends, and the device accepts no Welcome under it,
+once:
 
 - it joins through the link's Welcome;
 - its wait ends, 600 seconds after it sent its Confirm;
@@ -316,9 +317,9 @@ these requirements decide whether the device can carry out that Add.
   creating a chat may proceed without siblings. Possessing a sibling's private KeyPackages alone is not readiness.
 - The current trusted roster lists the target device, its leaf in the device group carries a device tag that reads as
   its slot, and it is neither `leaving` nor `moved`. The sender has not decided to remove it with that removal still
-  pending. Nor has a roster state it applied held the slot as
-  `removed` while it keeps that record's key ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)):
-  dropping that record on another branch does not end this exclusion, even after a later link of the same slot.
+  pending. Nor has a roster state it applied held the slot as `removed` in the last 30 days ([Devices the roster no
+  longer lists](#devices-the-roster-no-longer-lists)): dropping that record on another branch does not end this
+  exclusion, even after a later link of the same slot.
 - If the current entry names the sender in `linked_by`, the sender waits until the link it approved is made and never
   adds it while that link's failure stands ([A link that is not taken up](#a-link-that-is-not-taken-up)). A local
   pending or failed outcome is not a verdict on an entry whose `linked_by` names another device: that device's later
@@ -1906,12 +1907,13 @@ its device group.
   ("Sender rules").
 - A sibling Welcome is accepted only for a KeyPackage recorded as handed to its sender, so one sibling cannot spend
   another sibling's allocation, even though any sibling could otherwise read the Welcome bytes in the device group.
-- Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records
-  it. One device in the device group therefore cannot file its KeyPackages under a sibling's slot, or make a request
-  in a sibling's name that resets what was handed that sibling, without first rewriting that sibling's roster entry,
-  which the roster lets any device do ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
-  "Security considerations"). Someone holding only the account's signing key has neither `leaf_tag_key` nor a tag
-  signature key. A removed device can tag only with its own old slot, which is no longer a roster device.
+- Device tags tie a request or hand-off, and each handed-over KeyPackage, to its `from` slot as the roster records it.
+  One device in the device group therefore cannot file its KeyPackages under a sibling's slot, or make a request in a
+  sibling's name that resets what was handed that sibling, while that sibling's entry lasts: editing the entry does not
+  change the key its tags verify under ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md),
+  "Key binding"). A device that removes the sibling, with its leaf, could link a new entry for the same slot. Someone
+  holding only the account's signing key has neither `leaf_tag_key` nor a tag signature key. A removed device can tag
+  only with its own old slot, which is no longer a roster device.
 - A rejection, like a KeyPackage a device finds in its own slot that it did not make, only warns the user; it does not
   stop whoever holds the account's signing key ([Rejections](#rejections)). Clients say so, and do not present the
   warning as protection.

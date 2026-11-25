@@ -1186,5 +1186,5 @@ so no device moves it back; a later position moves it again once that one is fur
   file it names, never the rest of that epoch's media.
 - A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in
   the sender's roster entry. That key is bound to the sender's leaf
-  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so a stolen linked
-  device cannot make its deliveries read as another sibling's.
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so while a
+  sibling's entry lasts, a stolen linked device cannot make its deliveries read as that sibling's.
