@@ -13,6 +13,36 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-25: A device's tag signature key is bound when it is added
+
+Pull request: [marmot#521](https://github.com/marmot-protocol/marmot/pull/521).
+Changes [app-components/device-roster-v1.md](./app-components/device-roster-v1.md#key-binding),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md#producing-tags),
+[features/device-group.md](./features/device-group.md#the-removal-commit) and
+[features/account-sync.md](./features/account-sync.md#history-keys).
+
+Any device of an account could rewrite any roster entry's `tag_signature_key`, so a device that rewrote or cleared its
+own key escaped removal, and no key the roster named showed which leaf was whose (mdk#3679).
+
+Do:
+
+- When adding a device to the device group, set its entry's `tag_signature_key` to the signature key of the
+  KeyPackage the Commit adds. The new device's first Commit tags its leaf and no longer sets its key. The new device
+  tags no chat leaf or KeyPackage until that Commit is on its selected branch.
+- Before joining a device group, check that the Welcome's roster gives the device's own slot the confirmed
+  KeyPackage's signature key.
+- Refuse a device-group Commit that adds a leaf without a new entry carrying that leaf's signature key, and a new entry
+  made any other way; a `set_device` that changes or drops an entry's key; a keyed `remove_device` that is standalone or
+  leaves a leaf with that key; a `removed` record whose key is not the one its slot's entry or record had before; and,
+  in a device group, any UpdatePath or Update proposal that changes a leaf's signature key.
+- Send a lone `removed` record, and a `removed` record carried into another device group, without a key. Make the lone
+  record whether or not the device keeps a key for the slot.
+- Remove every leaf that signs with the key a device's entry has, whatever its tag says.
+
+The rules are added under the draft id `0x800e`. This revision does not carry over a device group made under an earlier
+revision. No message format changes. A device whose return to a device group it moved out of fails loses the chat
+memberships its first move kept there ([features/device-group.md](./features/device-group.md#security-considerations)).
+
 ## 2026-11-24: A newly linked device gets small state before its chats
 
 Pull request: [marmot#518](https://github.com/marmot-protocol/marmot/pull/518).

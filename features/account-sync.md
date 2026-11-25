@@ -407,8 +407,8 @@ roster ([../app-components/device-roster-v1.md](../app-components/device-roster-
 A device writes its history key in a roster update it already makes, so the key costs no commit of its own:
 
 - the device that creates the device group puts it in its own entry in the founding roster;
-- a device that joins the device group puts it in the update that first sets its own `tag_signature_key`
-  ([device-group.md](./device-group.md));
+- a device that joins the device group puts it in the roster update of its first Commit there
+  ([device-group.md](./device-group.md), "Matching leaves to devices");
 - a device whose entry has no history key, or another one, writes its own in an update of its own entry, which MAY
   carry other changes to that entry, such as its next KeyPackage announcement.
 
@@ -592,7 +592,7 @@ is in [../implementation-model.md](../implementation-model.md) ("Network destina
 - It sends a history it owes only while the sibling is still a device in its roster whose entry has "bring chat history"
   on and a history key it can seal to, and only while the device still holds the chat. It checks these when it would
   send, and forgets the history as soon as one fails; it does not wait for a history key to appear. A sibling it can
-  add carries a tag, and a device writes its history key in the same update that sets its `tag_signature_key`
+  add carries a tag, and a device writes its history key in the same Commit that first tags its leaf in the device group
   ([History keys](#history-keys)), so a sibling whose client supports history has one by then.
 - It sends only while its own leaf in the device group carries a device tag that reads as its slot, as for heartbeats
   ([device-group.md](./device-group.md#heartbeats)); until then the history stays owed.
@@ -1184,6 +1184,7 @@ so no device moves it back; a later position moves it again once that one is fur
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
   receiving device, and on each device that device later sends that history to. An attachment key opens only the one
   file it names, never the rest of that epoch's media.
-- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in a
-  roster entry that any device can rewrite. A stolen linked device can make its deliveries read as another sibling's,
-  so which device a message was imported from, as a client may show it, is only as trustworthy as the roster.
+- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in
+  the sender's roster entry. That key is bound to the sender's leaf
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so while a
+  sibling's entry lasts, a stolen linked device cannot make its deliveries read as that sibling's.

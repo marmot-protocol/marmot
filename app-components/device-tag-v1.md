@@ -71,23 +71,32 @@ prefix and 114 sealed bytes.
 ## Producing tags
 
 A device can tag once it holds its device group's `leaf_tag_key` and its own roster entry carries its
-`tag_signature_key`, or the Commit it is creating sets that key
-([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). From then on:
+`tag_signature_key`, the signature key of its leaf there
+([../features/device-group.md](../features/device-group.md), "Matching leaves to devices"). A device that joins the
+device group has both from its Welcome, but tags first in the UpdatePath of its own first Commit there. It tags no other
+LeafNode, in a KeyPackage or in another group, until a Commit of its own in the device group is on its selected branch
+of that group: if its link then fails, the devices that applied its Add clean up after its slot, and a chat leaf it had
+tagged would be removed with it ([../features/device-group.md](../features/device-group.md), "A link that is not taken
+up"). A device moving to another device group keeps tagging under its original group until the move is made, as below.
+From then on:
 
 - it MUST put a tag in the LeafNode of every KeyPackage it creates, whether it publishes the KeyPackage or hands it to a
-  sibling;
+  sibling, except one it creates to confirm a link, which carries none
+  ([../features/device-group.md](../features/device-group.md), "Joining");
 - it MUST put a tag in every LeafNode it creates for its own leaf in any group, including the device group: in an
   Update, or in the UpdatePath of its own Commit. A replacement LeafNode whose signature key is unchanged MAY carry the
-  same tag; one with a new signature key needs a new tag;
+  same tag; one with a new signature key needs a new tag. In the device group no replacement LeafNode changes its
+  signature key ([device-roster-v1.md](./device-roster-v1.md), "Key binding"); in other groups one may, and that leaf is
+  then attributed by its tag alone;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
-A device sets the `tag_signature_key` in its own roster entry only in a Commit whose UpdatePath also replaces its own
-leaf in the device group with a LeafNode tagged under that key. From that Commit on, its leaf in the device group reads
-as its own.
+The Commit that adds a device to the device group sets its entry's `tag_signature_key` to the signature key of the leaf
+it adds ([device-roster-v1.md](./device-roster-v1.md), "Key binding"). The device's first Commit there replaces that
+leaf with one tagged under that key. From that Commit on, its leaf in the device group reads as its own.
 
 During a [move between device groups](../features/device-group.md#moving-between-device-groups), the first own
-Commit in the confirmed destination uses that destination's roster to set its own tag signature key and tag its
-UpdatePath, although the original group remains trusted until Made. This permits no other use of the destination
+Commit in the confirmed destination uses that destination's roster, whose entry for it the destination's Add set, to
+tag its UpdatePath, although the original group remains trusted until Made. This permits no other use of the destination
 roster before that point. After Made, the sole old moved-status Commit preserves the original leaf's signature key
 and preserves or produces a valid old-roster tag instead of retagging it from the destination. These sender exceptions do not change tag validation
 or let old roster material authenticate a leaf under the destination roster. Ordinary KeyPackages and other new leaf
