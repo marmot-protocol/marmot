@@ -615,8 +615,8 @@ process crash with valid retained facts. No old-trust reconstruction or historic
 
 ### What it brings
 
-At Made the device captures the rejected slots of its selected old roster, with each original reason, rejection time
-and optional tag signature key. It brings only `not_me` and `removed` records. It brings no rejected KeyPackages,
+At Made the device captures the rejected slots of its selected old roster, with each original reason and rejection
+time. It brings only `not_me` and `removed` records. It brings no rejected KeyPackages,
 device entries, old sealing key, account entry or old devices' settings. Its destination entry/settings come from the
 ordinary link choices.
 
@@ -625,8 +625,8 @@ For each captured rejection it checks the destination again when it commits:
 - If the slot is a destination device, omit the old rejection and tell the user that the confirmed link overrode it.
 - If the destination already rejects the slot, keep that destination record unchanged, regardless of either record's
   reason, age or key.
-- Otherwise import the original record without its tag signature key, under its ordinary expiry rules. The destination
-  cannot check a key from another group
+- Otherwise import the original reason and rejection time, with no tag signature key, under the record's ordinary
+  expiry rules: the destination roster binds no key to the slot
   ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). Importing does not
   refresh its age.
 
@@ -915,7 +915,7 @@ flight or settling only delays the removal. It also waits while the entry has no
 selection can drop after the user decided. The decision is for the slot: if the approving device then removes the entry
 as a failed link, which writes no `removed` record, the decision stands. The deciding device then commits that record
 alone: one roster update with `set_rejected_slot`, reason `removed`, `rejected_at` the time the user decided, and no
-`tag_signature_key`, since this Commit removes no leaf and the roster has no entry whose key it could keep
+`tag_signature_key`, since the roster has no entry whose key it could keep
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"). If it keeps no key for
 the slot ([Devices the roster no longer lists](#devices-the-roster-no-longer-lists)), it makes no record. It does so
 once its state for the device group is settled and lists the slot neither as a device nor as a rejected slot, only while
@@ -967,9 +967,7 @@ listed them. It keeps those of every roster state it applies, including one that
 time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
 catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
 states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
-unclaimed for it. A slot's latest key, for a device, is the most recent key that a roster state this device applied
-listed for the slot; a state that listed the slot with no key does not change it. What it keeps changes nothing about
-how it validates, applies or selects roster states.
+unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
 because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal.
@@ -989,12 +987,14 @@ it. A device cleans up after every slot that is gone for it ([Removing it from c
 private KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
 [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
 signature verifies under a key the slot is read by
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). It also belongs to that
-slot, tagged or not, when its own signature key is a key the slot is read by and no device in the device's trusted
-roster has that key: only the slot's device set that key
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). For a slot its trusted
+roster records as `removed`, a leaf also belongs to that slot, tagged or not, when its own signature key is the key that
+record keeps and no device in that roster has that key: only the slot's device set that key
 ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so only it signs with
-it. A device that never applied a roster listing a key cannot recognize the leaves tagged under it or signed with it,
-which then read as unclaimed for it.
+it. This holds only for a user's removal. A failed link or a dropped branch removes no leaf for its key alone, so a
+device's untagged leaves from before its link stay ([Matching leaves to devices](#matching-leaves-to-devices)). A device
+that never applied a roster listing a key cannot recognize the leaves tagged under it, which then read as unclaimed for
+it.
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
@@ -1014,8 +1014,8 @@ Every device that trusts the device group does this, whichever device decided th
   one; branch selection keeps one, and the other then finds nothing left to remove.
 - In a group that does not require `0x800d`, only an admin can remove one leaf of an account. The device leaves the leaf
   in place, even where it is an admin, and SHOULD tell its user that an admin of that group can remove it.
-- A leaf with no tag that does not sign with a key the slot is read by reads as unclaimed and is left alone. A leaf in a
-  group none of the remaining devices is in stays there: no device of the account can see it.
+- A leaf with no tag reads as unclaimed and is left alone, unless it signs with the key of the slot's `removed`
+  record. A leaf in a group none of the remaining devices is in stays there: no device of the account can see it.
 
 The removed device realizes each such removal in that group. The account stays a member there through the device that
 committed it, so the removed device does not tell its user the account was removed from the group

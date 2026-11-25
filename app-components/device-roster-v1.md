@@ -131,10 +131,10 @@ removal was decided ([../features/device-group.md](../features/device-group.md),
 record made by the Commit that removes the device's entry keeps the `tag_signature_key` that entry had, if it had one,
 so that the account's devices can still recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading
 tags"). A record made after a failed link's undo took the entry, or carried into another device group, keeps none: no
-key it could keep is one the Commit proves ("Key binding"). A `not_me` record has none: a rejected sign-in never had an
-entry. When a device writes a `not_me` record, and
-what it then stops asking about, is in [../features/device-group.md](../features/device-group.md) ("New sign-ins"), and
-what a rejection does beyond that is in its "Rejections".
+key it could keep is one the roster binds to the slot ("Key binding"). A `not_me` record has none: a rejected sign-in
+never had an entry. When a device writes a `not_me` record, and what it then stops asking about, is in
+[../features/device-group.md](../features/device-group.md) ("New sign-ins"), and what a rejection does beyond that is in
+its "Rejections".
 
 A `removed` record lets the account's devices recognize the removed installation if it publishes into its old slot again
 or turns up in a group. A device SHOULD remove a `removed` record once 30 days have passed since its `rejected_at`, by
@@ -252,10 +252,12 @@ Each is decided from the Commit and its candidate parent state alone, and every 
   committer's leaf in the candidate parent state must also carry a tag that reads as S under that roster, so a device
   cannot take another device's slot.
 - **A present key is not cleared.** A `set_device` for S that carries no `tag_signature_key` is invalid when S's entry
-  in the candidate parent's roster has one. Only `remove_device` takes the key out with the entry.
-- **A `removed` record keeps only a key the Commit proves.** A `set_rejected_slot` with reason `removed` for slot S that
-  carries a `tag_signature_key` K is valid only when the Commit that carries it removes a leaf whose signature key is K,
-  or S's entry or `removed` record in the candidate parent's roster has K.
+  in the candidate parent's roster has one.
+- **A keyed entry goes with its leaf.** A `remove_device` for S whose entry in the candidate parent's roster has a key K
+  is valid only when no leaf in the resulting state has K as its signature key. The Commit that removes the entry
+  removes that leaf too, unless it is already gone.
+- **A `removed` record keeps only its slot's key.** A `set_rejected_slot` with reason `removed` for slot S that carries
+  a `tag_signature_key` K is valid only when S's entry or `removed` record in the candidate parent's roster has K.
 - **A leaf keeps its signature key.** No Commit's UpdatePath and no Update proposal changes the signature key of the
   leaf it replaces.
 
@@ -312,10 +314,14 @@ invalid ([README.md](./README.md), "GroupContext Removal").
 - Any device of the account can rewrite any entry, including another device's settings and status, and the
   rejections. A stolen linked device can do the same until it is removed. The roster records decisions; it does not
   protect them from a linked device. The exception is `tag_signature_key` ("Key binding"): no device can set, change or
-  clear another device's key, or make a `removed` record keep a key the removal does not prove. A device whose entry has
+  clear another device's key, drop another device's entry while its leaf stays, or make a `removed` record keep a key
+  its slot's entry did not have. A device whose entry has
   no key yet is not bound to a leaf until it sets one, so another device that has not set its own key either could set
   its key in that slot first; the slot's own device then cannot set its key, and its link fails and is undone
   ([../features/device-group.md](../features/device-group.md), "A link that is not taken up").
+- The founding state's keys are taken as the creating device wrote them. "Key binding" protects every key from the
+  devices that come after; it does not protect against a creating device that was already compromised when it made the
+  group, which also chose `leaf_tag_key` and holds the account's keys.
 - Only the account's own devices are members of a device group, so the roster, its labels, platforms and
   `leaf_tag_key` are never visible to other accounts. A client MUST NOT copy them into any other group or show another
   account's roster.
