@@ -4,10 +4,9 @@ Status: draft.
 
 `marmot.member.device-tag.v1` lets an account's linked devices tell which of the account's leaves in a group belongs to
 which device. Every leaf of one account carries the same credential identity, so nothing else in a group says which
-device holds a leaf. A device tag names the device's slot and the link that put it in the roster, is signed by that
-device, and is sealed under a key that only the account's devices hold, including any removed device
-([device-roster-v1.md](./device-roster-v1.md), "Security considerations"). Other members see opaque bytes that differ in
-every KeyPackage.
+device holds a leaf. A device tag names the device's slot, is signed by that device, and is sealed under a key that
+only the account's devices hold, including any removed device ([device-roster-v1.md](./device-roster-v1.md), "Security
+considerations"). Other members see opaque bytes that differ in every KeyPackage.
 
 The device group, its roster and the keys a tag uses are described in
 [../features/device-group.md](../features/device-group.md) and [device-roster-v1.md](./device-roster-v1.md).
@@ -36,13 +35,11 @@ struct {
 
 struct {
   opaque slot[32];
-  uint64 linked_at;
   opaque signature<1..255>;
 } DeviceTagContentV1;
 
 struct {
   opaque slot[32];
-  uint64 linked_at;
   opaque leaf_signature_key<V>;
 } DeviceTagSignedContentV1;
 ```
@@ -62,16 +59,14 @@ sealed = ChaCha20-Poly1305.encrypt(leaf_tag_key, nonce, DeviceTagContentV1, aad 
 - `nonce` is 12 bytes from a cryptographically secure random source, chosen afresh for every tag.
 - `leaf_signature_key` is the exact contents of the LeafNode's `signature_key` vector, without its length prefix.
 - `slot` is the device's slot id, as in its roster entry.
-- `linked_at` is its roster entry's `linked_at`. No later Commit changes it, and each link of a slot has its own
-  ([device-roster-v1.md](./device-roster-v1.md), "Key binding"), so it names the link the tag was made for.
 - `signature` is `SignWithLabel(tag signature private key, "Marmot DeviceTag", DeviceTagSignedContentV1)`
   ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.1.2), under the signature scheme of the device
-  group's ciphersuite. Its `slot`, `linked_at` and `leaf_signature_key` are the same values as above. The public key
-  is the device's `tag_signature_key` in the roster.
+  group's ciphersuite. Its `slot` and `leaf_signature_key` are the same values as above. The public key is the device's
+  `tag_signature_key` in the roster.
 
-Under ciphersuite `0x0001` a `DeviceTagContentV1` is 106 bytes: the slot, the 8-byte `linked_at`, a 2-byte length
-prefix and a 64-byte Ed25519 signature. Sealing adds a 16-byte authentication tag, so a `DeviceTagV1` is 136 bytes: the
-nonce, a 2-byte length prefix and 122 sealed bytes.
+Under ciphersuite `0x0001` a `DeviceTagContentV1` is 98 bytes: the slot, a 2-byte length prefix and a 64-byte Ed25519
+signature. Sealing adds a 16-byte authentication tag, so a `DeviceTagV1` is 128 bytes: the nonce, a 2-byte length
+prefix and 114 sealed bytes.
 
 ## Producing tags
 
@@ -90,10 +85,9 @@ From then on:
   ([../features/device-group.md](../features/device-group.md), "Joining");
 - it MUST put a tag in every LeafNode it creates for its own leaf in any group, including the device group: in an
   Update, or in the UpdatePath of its own Commit. A replacement LeafNode whose signature key is unchanged MAY carry the
-  same tag if that tag names its current entry's `linked_at`; one with a new signature key, or whose tag names an
-  earlier link of its slot, needs a new tag. In the device group no replacement LeafNode changes its signature key
-  ([device-roster-v1.md](./device-roster-v1.md), "Key binding"); in other groups one may, and that leaf is then
-  attributed by its tag alone;
+  same tag; one with a new signature key needs a new tag. In the device group no replacement LeafNode changes its
+  signature key ([device-roster-v1.md](./device-roster-v1.md), "Key binding"); in other groups one may, and that leaf is
+  then attributed by its tag alone;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
 The Commit that adds a device to the device group sets its entry's `tag_signature_key` to the signature key of the leaf
@@ -126,19 +120,17 @@ credential identity is its own account's, it:
    the leaf's signature key as `aad`, and decodes the result as exactly one `DeviceTagContentV1`. Trailing bytes in
    either mean the entry does not decode;
 2. if `slot` names a device in the roster that has a `tag_signature_key`, verifies `signature` with that key. If it
-   verifies, the leaf belongs to that device, whichever link of its slot `linked_at` names;
+   verifies, the leaf belongs to that device;
 3. if `slot` names a `removed` record in the roster's `rejected_slots` that keeps a `tag_signature_key`, verifies
-   `signature` with that key. If it verifies, the leaf belongs to that removed slot, whichever link `linked_at` names;
+   `signature` with that key. If it verifies, the leaf belongs to that removed slot;
 4. otherwise the leaf is unclaimed. This covers a leaf with no entry, an entry that does not decode or open, a
    signature that does not verify, a slot the roster holds no key for, and a slot the roster does not hold.
 
 A device also keeps the tag signature keys that roster states it applied listed, for a while after they leave the roster
 ([../features/device-group.md](../features/device-group.md), "Devices the roster no longer lists"). Only its cleanup
 after devices the roster no longer lists reads with them: a leaf whose tag decodes and opens as in step 1, names a slot
-that is gone for the device, and verifies under a key the cleanup reads that slot by belongs to that slot for the
-cleanup. A key kept from a `removed` record reads every tag of the slot, and a key kept from a device entry only the
-tags that name that entry's `linked_at` ([../features/device-group.md](../features/device-group.md), "Devices the roster
-no longer lists"). Every other reading is against the roster alone.
+that is gone for the device, and verifies under a key it keeps for that slot belongs to that slot for the cleanup. Every
+other reading is against the roster alone.
 
 A device has at most one leaf in a group. Two leaves in one group that both belong to the same device show that
 device's keys were misused.
@@ -181,52 +173,44 @@ NOT be created, replaced or removed with `AppDataUpdate` ([README.md](./README.m
 - A removed device still holds `leaf_tag_key` ([device-roster-v1.md](./device-roster-v1.md), "Security considerations").
   It can tag a leaf only with its own slot, which its siblings recognize as `removed` while they keep that slot's
   record, and as gone while their settled roster lists no device in the slot and they keep the slot's tag signature key.
-  It chooses the `linked_at` its tags name, which is why a `removed` record's key reads its tags whatever link they
-  name.
-- `linked_at` tells apart the links of an honest device only. A device that moves out of a device group and later
-  returns to it signs with the same key both times; its leaves tagged before the move stay when the return fails,
-  because their tags name the earlier link.
 
 ## Test vectors
 
-Under ciphersuite `0x0001`, with leaf tag key `0x33` repeated 32 times, slot `0x11` repeated 32 times, `linked_at`
-`0x6553f100`, a leaf signature key of `0x66` repeated 32 times, nonce `0x77` repeated 12 times, and an Ed25519 tag
-signature private key ([RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)) of `0x55` repeated 32 times, whose public key
-is `c6822637c7d310ec57627be00ba259d253749f4aaf644470cffbe53a35f73242`.
+Under ciphersuite `0x0001`, with leaf tag key `0x33` repeated 32 times, slot `0x11` repeated 32 times, a leaf signature
+key of `0x66` repeated 32 times, nonce `0x77` repeated 12 times, and an Ed25519 tag signature private key
+([RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)) of `0x55` repeated 32 times, whose public key is
+`c6822637c7d310ec57627be00ba259d253749f4aaf644470cffbe53a35f73242`.
 
-The `SignContent` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.1.2) that is signed, 100 bytes:
+The `SignContent` ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), section 5.1.2) that is signed, 92 bytes:
 
 ```text
 18                                                               label<V>, 24 bytes
 4d4c5320312e30204d61726d6f7420446576696365546167                 "MLS 1.0 Marmot DeviceTag"
-4049                                                             content<V>, 73 bytes
+4041                                                             content<V>, 65 bytes
 1111111111111111111111111111111111111111111111111111111111111111 slot
-000000006553f100                                                 linked_at
 20 6666666666666666666666666666666666666666666666666666666666666666 leaf_signature_key
 ```
 
-The `DeviceTagContentV1`, 106 bytes:
+The `DeviceTagContentV1`, 98 bytes:
 
 ```text
 1111111111111111111111111111111111111111111111111111111111111111 slot
-000000006553f100                                                 linked_at
 4040                                                             signature<1..255>, 64 bytes
-15995c5edc1c4e6086df74b7b894797759507176285607dad1401f6fef757826
-16e10a17f293c6cc7510e802e3e3c79b0c980799d2ca2d70d9d204728aabe50a
+601cd5e2a4fc4fc0871cac3ce66a8f2376b199110700f92abb693460bb282849
+695ff8afe6da3432ca7a60a1b409195e9cac96b3ed1ff25a31ab138f8c455e01
 ```
 
-The `DeviceTagV1`, 136 bytes, whose `sealed` ends with the 16-byte authentication tag:
+The `DeviceTagV1`, 128 bytes, whose `sealed` ends with the 16-byte authentication tag:
 
 ```text
 777777777777777777777777                                         nonce
-407a                                                             sealed<1..255>, 122 bytes
+4072                                                             sealed<1..255>, 114 bytes
 711af2f06f38f0f04032cfdf0f23a8ea57773ecac4fde7f4b8e7d4789c38ba13
-0a321ae25602d07a4f2c6a90a72456adabfe623f575c327646968beda44f0080
-167ea4b68f2786e40294976c24612be2f5b94a6fdd1d5f53efc5cd300cf5fc2a
-0d69a0d6ad614415e7db078557e1b906208510487f5f1e5247ad
+4a727afee6b3858640acf81557466cdb6abd9251bafa8de2c6cb69d4e15993fe
+39ed1ca968e78f4b4e804bf74ed76d782a2ba3d3a3ac51afda04f00318e3a2a5
+7e181129d2430033adf59c6160510eae4782
 ```
 
 ## Migration
 
-This is the first version. A breaking change gets a new component id and document. A tag made under an earlier
-revision of this draft carries no `linked_at`; its sealed content does not decode, so its leaf reads as unclaimed.
+This is the first version. A breaking change gets a new component id and document.

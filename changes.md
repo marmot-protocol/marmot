@@ -27,28 +27,21 @@ own key escaped removal, and no key the roster named showed which leaf was whose
 Do:
 
 - When adding a device to the device group, set its entry's `tag_signature_key` to the signature key of the
-  KeyPackage the Commit adds, and its `linked_at` to one later than any the approving device keeps for that slot. The
-  new device's first Commit tags its leaf and no longer sets its key. The new device tags no chat leaf or KeyPackage
-  until that Commit is on its selected branch.
-- Put the entry's `linked_at` in every device tag, sealed and signed (`DeviceTagContentV1`,
-  `DeviceTagSignedContentV1`), and keep it with each entry key kept for cleanup. In the cleanup after a gone slot, a key
-  kept from a `removed` record reads every tag of the slot; a key kept from an entry reads only the tags of that entry's
-  link, and none for an entry moved cleanup removed. A failed return to a former device group then removes only what it
-  tagged.
+  KeyPackage the Commit adds. The new device's first Commit tags its leaf and no longer sets its key. The new device
+  tags no chat leaf or KeyPackage until that Commit is on its selected branch.
 - Before joining a device group, check that the Welcome's roster gives the device's own slot the confirmed
   KeyPackage's signature key.
 - Refuse a device-group Commit that adds a leaf without a new entry carrying that leaf's signature key, and a new entry
-  made any other way; a `set_device` that changes or drops an entry's key or changes its `linked_at`; a keyed
-  `remove_device` that is standalone or leaves a leaf with that key; a `removed` record whose key is not the one its
-  slot's entry or record had before; and, in a device group, any UpdatePath or Update proposal that changes a leaf's
-  signature key.
+  made any other way; a `set_device` that changes or drops an entry's key; a keyed `remove_device` that is standalone or
+  leaves a leaf with that key; a `removed` record whose key is not the one its slot's entry or record had before; and,
+  in a device group, any UpdatePath or Update proposal that changes a leaf's signature key.
 - Send a lone `removed` record, and a `removed` record carried into another device group, without a key. Make the lone
   record whether or not the device keeps a key for the slot.
 - Remove every leaf that signs with the key a device's entry has, whatever its tag says.
 
 The rules are added under the draft id `0x800e`. This revision does not carry over a device group made under an earlier
-revision. `DeviceTagContentV1` gains `linked_at`, so the tag grows by 8 bytes; a tag from an earlier revision reads as
-unclaimed. No other message format changes.
+revision. No message format changes. A device whose return to a device group it moved out of fails loses the chat
+memberships its first move kept there ([features/device-group.md](./features/device-group.md#security-considerations)).
 
 ## 2026-11-24: A newly linked device gets small state before its chats
 

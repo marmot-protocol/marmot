@@ -149,13 +149,11 @@ Once the link is confirmed, the device adds the new device:
   roster entry; or
 - with no device group, by creating it under the group id its Confirm named ("Creating the device group").
 
-The new device's entry carries the label and settings the user chose, status `active`, `linked_at` (later than every
-`linked_at` the approving device keeps for that slot, [Devices the roster no longer
-lists](#devices-the-roster-no-longer-lists), so that each link of a slot has its own), `linked_by` set to the approving
-device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. Its `tag_signature_key` is the
-signature key of the confirmed KeyPackage's LeafNode ("Matching leaves to devices"). Like every new entry, it carries a
-fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is
-the approval. Its Welcome is sent as for any other Add.
+The new device's entry carries the label and settings the user chose, status `active`, `linked_at`, `linked_by` set to
+the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. Its `tag_signature_key`
+is the signature key of the confirmed KeyPackage's LeafNode ("Matching leaves to devices"). Like every new entry, it
+carries a fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the
+founding Add, is the approval. Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which tags its
 leaf there ("Matching leaves to devices"), is on the selected branch of its state for the
@@ -968,26 +966,23 @@ still be used until its `Lifetime` ends.
 ### Devices the roster no longer lists
 
 A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
-a `removed` record, and an entry's `linked_at` with its key, across restarts, for 30 days by its own clock from the last
-time it applied a roster state that listed them. It keeps those of every roster state it applies, including one that a
-later Commit it applies at the same time replaces and one on a branch that branch selection later drops. A device that
-was away applies each state when it catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no
-fewer than the four that the roster states it applied listed most recently for the slot; a leaf tagged under a key a
-device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it validates, applies or
-selects roster states.
+a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
+listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
+time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
+catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
+states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
+unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
-because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal. The second
-rule below reads no tag that names the moved entry's `linked_at`, so the leaves moved cleanup kept stay even once a
-later link of the slot has failed: that later link has a later `linked_at` ([Approving](#approving)), and the rule reads
-the tags that name it.
+because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal. A later
+link of the slot that fails makes it gone like any failed link, and the cleanup then reads the leaves moved cleanup kept
+too; see the limit in [Security considerations](#security-considerations).
 
 A slot other than the device's own is gone for it:
 
 - while its trusted roster records the slot as `removed`, read by the key that record keeps; and
 - while its state for the device group is settled and its roster lists no device in the slot, if it keeps a key for the
-  slot, read by every key it keeps from a `removed` record of the slot, and by the key of every entry it keeps for the
-  slot other than one moved cleanup removed, for the tags that name that entry's `linked_at`.
+  slot, read by every key it keeps for the slot.
 
 A slot both cover is read by every key either names.
 
@@ -997,11 +992,9 @@ In each the slot's device is not linked: no device lists it, and no removal can 
 slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its private
 KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
 [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
-signature verifies under a key the slot is read by, for the tags that key reads
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device's tags name the
-`linked_at` it chooses, so a `removed` record's key reads all of them; a key kept from an entry reads only the tags of
-that entry's link. A device that never applied a roster listing a key cannot read the leaves tagged under it, which then
-read as unclaimed for it.
+signature verifies under a key the slot is read by
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device that never applied
+a roster listing a key cannot read the leaves tagged under it, which then read as unclaimed for it.
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
@@ -1881,6 +1874,12 @@ its device group.
   roster. Old members keep whatever secrets and content they already hold; changing trust does not revoke those or
   recall old traffic. A `moved` entry is a roster decision, not proof that another device completed a move: any linked
   device can already edit the roster or remove that old leaf. It grants no destination authority.
+- A device that moves back into a device group it moved out of, and keeps one signature key for all its groups, signs
+  there with the key it had before, and the Add that links it again puts that key back in the roster. If that link
+  fails, the cleanup after a failed link reads the leaves moved cleanup kept as well as any the device tagged since, and
+  removes them: the device loses those chat memberships and needs new invitations. This fails closed on purpose. Telling
+  the two apart would rest on something in the tag, which the device writes itself, and a rule that trusted it would let
+  a device whose link failed keep leaves the cleanup should remove.
 - [Explicit local reset](#explicit-local-reset) discards only this device's trust and local group continuity. It gives
   no other device admission authority, erases no secrets held by peers, bypasses no removal, and proves no permanent
   loss. A prior-linked-slot observation is display context, never authentication of a current publication.
