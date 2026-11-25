@@ -149,11 +149,13 @@ Once the link is confirmed, the device adds the new device:
   roster entry; or
 - with no device group, by creating it under the group id its Confirm named ("Creating the device group").
 
-The new device's entry carries the label and settings the user chose, status `active`, `linked_at`, `linked_by` set to
-the approving device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. Its `tag_signature_key`
-is the signature key of the confirmed KeyPackage's LeafNode ("Matching leaves to devices"). Like every new entry, it
-carries a fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the
-founding Add, is the approval. Its Welcome is sent as for any other Add.
+The new device's entry carries the label and settings the user chose, status `active`, `linked_at` (later than every
+`linked_at` the approving device keeps for that slot, [Devices the roster no longer
+lists](#devices-the-roster-no-longer-lists), so that each link of a slot has its own), `linked_by` set to the approving
+device's slot, and `announced_key_package` set to the confirmed `KeyPackageRef`. Its `tag_signature_key` is the
+signature key of the confirmed KeyPackage's LeafNode ("Matching leaves to devices"). Like every new entry, it carries a
+fresh `rename_id` ([Labels, clients and platforms](#labels-clients-and-platforms)). That Commit, or the founding Add, is
+the approval. Its Welcome is sent as for any other Add.
 
 The approving device treats the link as made once the new device's first Commit in the device group, which tags its
 leaf there ("Matching leaves to devices"), is on the selected branch of its state for the
@@ -187,13 +189,14 @@ By the time it sends its Confirm, the new device has recorded the link: the pair
 `KeyPackageRef`, the group id, the signature key of the sender's leaf, and when its wait ends. It keeps that record
 across restarts until the link ends, so that after a restart has erased the session's secrets it can still check a
 Welcome and act on a Cancel. It then waits for a Welcome into that group from that leaf for that KeyPackage, the one
-whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome and only if the
-group requires `0x800e`. On joining it records the group as its device group ("Trust"), except during a
-[move](#moving-between-device-groups), whose trust switch waits until the move is made. While it waits, the group id is
-reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The confirmed
-KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite to a chat
-built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the group id for
-the real one, so a forged Welcome that arrives first does not make the link fail.
+whose `KeyPackageRef` the Welcome's secrets for this device name. It joins only through that Welcome, only if the group
+requires `0x800e`, and only if the roster the Welcome gives lists its own slot with the signature key of the confirmed
+KeyPackage's LeafNode as its `tag_signature_key`. On joining it records the group as its device group ("Trust"), except
+during a [move](#moving-between-device-groups), whose trust switch waits until the move is made. While it waits, the
+group id is reserved: the device joins no other Welcome into it, whether or not that group requires `0x800e`. The
+confirmed KeyPackage is reserved too: the device joins no other Welcome that adds it, into any group, such as an invite
+to a chat built from its publication, so no other join uses it up. A Welcome it refuses leaves the KeyPackage and the
+group id for the real one, so a forged Welcome that arrives first does not make the link fail.
 
 A new device keeps at most one link, and starts each pairing session with a KeyPackage that no earlier link of its own
 confirmed and that carries no device tag, so a Welcome sent under an earlier link never matches a later one, and its
@@ -965,26 +968,26 @@ still be used until its `Lifetime` ends.
 ### Devices the roster no longer lists
 
 A device keeps each slot and `tag_signature_key` that a roster state of its device group listed, in a device entry or in
-a `removed` record, across restarts, for 30 days by its own clock from the last time it applied a roster state that
-listed them. It keeps those of every roster state it applies, including one that a later Commit it applies at the same
-time replaces and one on a branch that branch selection later drops. A device that was away applies each state when it
-catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no fewer than the four that the roster
-states it applied listed most recently for the slot; a leaf tagged under a key a device no longer keeps reads as
-unclaimed for it. What it keeps changes nothing about how it validates, applies or selects roster states.
+a `removed` record, and an entry's `linked_at` with its key, across restarts, for 30 days by its own clock from the last
+time it applied a roster state that listed them. It keeps those of every roster state it applies, including one that a
+later Commit it applies at the same time replaces and one on a branch that branch selection later drops. A device that
+was away applies each state when it catches up, so its 30 days start then. It MAY keep fewer keys for one slot, but no
+fewer than the four that the roster states it applied listed most recently for the slot; a leaf tagged under a key a
+device no longer keeps reads as unclaimed for it. What it keeps changes nothing about how it validates, applies or
+selects roster states.
 
 A slot removed by [moved cleanup](#leaving-the-old-device-group) is not gone for the chat-removal rules below solely
-because that old roster entry is missing, nor because a later link of the slot into this device group then fails
-before it is made ([A link that is not taken up](#a-link-that-is-not-taken-up)). The device distinguishes these
-selected causes from ordinary removal. A device moving back keeps tagging under the group it is moving from until its
-move is made ([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Producing tags"), so a failed
-return tags none of its leaves for the new entry outside the device group, and the leaves that read as its slot are
-the ones moved cleanup kept.
+because that old roster entry is missing. The device distinguishes that selected cause from ordinary removal. The second
+rule below reads no tag that names the moved entry's `linked_at`, so the leaves moved cleanup kept stay even once a
+later link of the slot has failed: that later link has a later `linked_at` ([Approving](#approving)), and the rule reads
+the tags that name it.
 
 A slot other than the device's own is gone for it:
 
 - while its trusted roster records the slot as `removed`, read by the key that record keeps; and
 - while its state for the device group is settled and its roster lists no device in the slot, if it keeps a key for the
-  slot, read by every key it keeps for the slot.
+  slot, read by every key it keeps from a `removed` record of the slot, and by the key of every entry it keeps for the
+  slot other than one moved cleanup removed, for the tags that name that entry's `linked_at`.
 
 A slot both cover is read by every key either names.
 
@@ -994,9 +997,11 @@ In each the slot's device is not linked: no device lists it, and no removal can 
 slot that is gone for it ([Removing it from chats](#removing-it-from-chats) and [Its private
 KeyPackages](#its-private-keypackages)). A leaf of its account belongs to a gone slot when its tag, opened as in
 [../app-components/device-tag-v1.md](../app-components/device-tag-v1.md) ("Reading tags"), names that slot and its
-signature verifies under a key the slot is read by
-([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device that never applied
-a roster listing a key cannot read the leaves tagged under it, which then read as unclaimed for it.
+signature verifies under a key the slot is read by, for the tags that key reads
+([../app-components/device-tag-v1.md](../app-components/device-tag-v1.md), "Reading tags"). A device's tags name the
+`linked_at` it chooses, so a `removed` record's key reads all of them; a key kept from an entry reads only the tags of
+that entry's link. A device that never applied a roster listing a key cannot read the leaves tagged under it, which then
+read as unclaimed for it.
 
 A later branch can list a gone slot again, as one can bring back a removed device ([The removal
 Commit](#the-removal-commit)); waiting until the device group is settled makes that rarer but cannot rule it out. What
@@ -1866,10 +1871,9 @@ its device group.
   slot), or under the key a `removed` record carries ([Devices the roster no longer
   lists](#devices-the-roster-no-longer-lists)). A gone device's leaf that no remaining device reads stays in its groups
   and can still read them. Once a roster state the deciding device applied has held the lone `removed` record it made
-  after a failed link, it does not make that record again ([The removal Commit](#the-removal-commit)). A device that
-  never applied a state holding it, such as one on a branch that dropped it, does not learn the key from it, and once
-  the record is gone the slot reads as a sign-in again. Missing that key is the lesser failure: a record made again
-  whenever it is dropped could be made against every pass that drops old `removed` records.
+  after a failed link, it does not make that record again ([The removal Commit](#the-removal-commit)). Once a branch
+  drops it, the slot reads as a sign-in again. Losing that decision is the lesser failure: a record made again whenever
+  it is dropped could be made against every pass that drops old `removed` records.
 - Any device of the account can set any entry to `leaving`, and its siblings then remove that device ([Its
   siblings](#its-siblings)). A stolen linked device that does so gains nothing: it can already remove any device
   outright.

@@ -105,7 +105,9 @@ Each device the account has linked has one `DeviceEntryV1`:
 - `rename_id` is 16 random bytes. Every entry is created with a fresh one. Every user edit of its label or settings
   writes a new one, and non-user updates preserve it, so a device can tell its own edit from another after a fork
   ([../features/device-group.md](../features/device-group.md), "Labels, clients and platforms").
-- `linked_at` is when the device was linked, in seconds since the Unix epoch, as the linking device wrote it.
+- `linked_at` is when the device was linked, in seconds since the Unix epoch, as the linking device wrote it. The
+  Commit that adds the device sets it, it never changes ("Key binding"), and the device's tags name it
+  ([device-tag-v1.md](./device-tag-v1.md)).
   `linked_by` is the slot of the device that linked it, absent for the device that created the group.
 - `settings` holds one flag per bit: bit 0 (`0x01`) "add to all my chats", bit 1 (`0x02`) "bring chat history", and
   bit 2 (`0x04`) "keep while inactive". The other bits MUST be zero.
@@ -249,8 +251,8 @@ standalone proposal, that breaks one is invalid.
   `set_device` per added leaf, each for a slot the candidate parent's roster does not list as a device and carrying
   that leaf's signature key as its `tag_signature_key`. A `set_device` for a slot the candidate parent's roster does not
   list as a device is valid only as one of these.
-- **A key never changes.** A `set_device` for a slot S that the candidate parent's roster lists as a device carries the
-  `tag_signature_key` S's entry has there.
+- **A key and its link never change.** A `set_device` for a slot S that the candidate parent's roster lists as a device
+  carries the `tag_signature_key` and the `linked_at` S's entry has there.
 - **A keyed entry goes with its leaf.** A `remove_device` for S whose entry in the candidate parent's roster has a key K
   is valid only inline, in a Commit whose resulting state has no leaf with K as its signature key. The Commit that
   removes the entry removes that leaf too, unless it is already gone.
