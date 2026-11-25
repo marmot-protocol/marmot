@@ -13,6 +13,32 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-25: Only a device sets its own tag signature key
+
+Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM).
+Changes [app-components/device-roster-v1.md](./app-components/device-roster-v1.md#key-binding),
+[app-components/device-tag-v1.md](./app-components/device-tag-v1.md#validity),
+[features/device-group.md](./features/device-group.md#the-removal-commit) and
+[features/account-sync.md](./features/account-sync.md#security-considerations).
+
+Any device of an account could rewrite any roster entry's `tag_signature_key`, so a device that rewrote or cleared its
+own key escaped removal, and no key the roster named showed which leaf was whose (mdk#3679).
+
+Do:
+
+- Refuse a roster update that sets slot S's `tag_signature_key` unless it is inline and the committer's resulting leaf
+  signs with that key and carries a tag that reads as S; when S already had a key, the committer's leaf must also have
+  read as S before the Commit.
+- Refuse a `set_device` that drops a key the entry had, a `removed` record whose key is neither that of a leaf the same
+  Commit removes nor the key S's entry or record had before it, and, in a device group, any UpdatePath or Update
+  proposal that changes a leaf's signature key.
+- Send a lone `removed` record, and a `removed` record carried into another device group, without a key.
+- Remove a device's leaf by the signature key its entry has, whatever its tag says, and in chat cleanup treat a leaf
+  that signs with a key a gone slot is read by, and no listed device has, as that slot's, tagged or not.
+
+The rules are added under the draft id `0x800e`. Update every device in a device group before any enforces them.
+No message format changes.
+
 ## 2026-11-24: A newly linked device gets small state before its chats
 
 Pull request: [marmot#518](https://github.com/marmot-protocol/marmot/pull/518).

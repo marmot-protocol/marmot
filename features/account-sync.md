@@ -1184,6 +1184,7 @@ so no device moves it back; a later position moves it again once that one is fur
   them from what the chat's members sent. A `grant` of `true` it invents gives a review label or removal effect on the
   receiving device, and on each device that device later sends that history to. An attachment key opens only the one
   file it names, never the rest of that epoch's media.
-- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in a
-  roster entry that any device can rewrite. A stolen linked device can make its deliveries read as another sibling's,
-  so which device a message was imported from, as a client may show it, is only as trustworthy as the roster.
+- A delivery's `from` is only as good as the sending leaf's device tag, which reads against the `tag_signature_key` in
+  the sender's roster entry. Only that device sets that key
+  ([../app-components/device-roster-v1.md](../app-components/device-roster-v1.md), "Key binding"), so a stolen linked
+  device cannot make its deliveries read as another sibling's.

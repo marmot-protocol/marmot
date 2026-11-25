@@ -118,7 +118,8 @@ Each device the account has linked has one `DeviceEntryV1`:
   bytes under ciphersuite `0x0001`. See [../features/device-group.md](../features/device-group.md), "Slot
   announcements".
 - `tag_signature_key` is the public key the device signs its device tags with, under the signature scheme of the device
-  group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it.
+  group's ciphersuite ([device-tag-v1.md](./device-tag-v1.md)). It is absent until the device sets it, and only the
+  device itself can set it ("Key binding").
 - `history_key` is the device's history key: the public key its siblings seal chat history to
   ([../features/account-sync.md](../features/account-sync.md), "History keys"). It is a public key of the HPKE KEM of
   the device group's ciphersuite, as that KEM serializes it: 32 bytes for X25519 under ciphersuite `0x0001`. It is
@@ -127,11 +128,11 @@ Each device the account has linked has one `DeviceEntryV1`:
 `RejectedSlotV1` records a slot whose sign-in the user rejected (`not_me`) or whose device was removed (`removed`).
 `rejected_at` is when the rejection was recorded, as the recording device wrote it; for a `removed` record, when the
 removal was decided ([../features/device-group.md](../features/device-group.md), "The removal Commit"). A `removed`
-record keeps the `tag_signature_key` the device's entry had, if it had one, so that the account's devices can still
-recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading tags"). A record made after a failed
-link's undo took the entry keeps the slot's latest key for the recording device
-([../features/device-group.md](../features/device-group.md), "Devices the roster no longer lists" and "The removal
-Commit"). A `not_me` record has none: a rejected sign-in never had an entry. When a device writes a `not_me` record, and
+record made by the Commit that removes the device's entry keeps the `tag_signature_key` that entry had, if it had one,
+so that the account's devices can still recognize that device's tags ([device-tag-v1.md](./device-tag-v1.md), "Reading
+tags"). A record made after a failed link's undo took the entry, or carried into another device group, keeps none: no
+key it could keep is one the Commit proves ("Key binding"). A `not_me` record has none: a rejected sign-in never had an
+entry. When a device writes a `not_me` record, and
 what it then stops asking about, is in [../features/device-group.md](../features/device-group.md) ("New sign-ins"), and
 what a rejection does beyond that is in its "Rejections".
 
@@ -237,6 +238,30 @@ A client that applies the update differently, for example by taking the update's
 different GroupContext from every other member's, so its Commit does not stage for them and creates no candidate edge
 ([../protocol-core/convergence.md](../protocol-core/convergence.md), "Candidate branches").
 
+## Key binding
+
+A `tag_signature_key` in the roster is the key of the device whose entry or record holds it. These rules make it so.
+Each is decided from the Commit and its candidate parent state alone, and every member of a device group holds
+`leaf_tag_key`, so every member reaches the same answer. A Commit, or a standalone proposal, that breaks one is invalid.
+
+- **Only a device sets its own key.** An update sets slot S's `tag_signature_key` to K when its `set_device` for S
+  carries K and S's entry in the candidate parent's roster does not, whether that entry has another key, none, or does
+  not exist. Such an update is valid only inline, in a Commit whose committer's leaf in the resulting state has K as its
+  signature key and carries a device tag that names S and verifies under K ([device-tag-v1.md](./device-tag-v1.md),
+  "Reading tags", against the resulting roster). When S's entry in the candidate parent's roster already has a key, the
+  committer's leaf in the candidate parent state must also carry a tag that reads as S under that roster, so a device
+  cannot take another device's slot.
+- **A present key is not cleared.** A `set_device` for S that carries no `tag_signature_key` is invalid when S's entry
+  in the candidate parent's roster has one. Only `remove_device` takes the key out with the entry.
+- **A `removed` record keeps only a key the Commit proves.** A `set_rejected_slot` with reason `removed` for slot S that
+  carries a `tag_signature_key` K is valid only when the Commit that carries it removes a leaf whose signature key is K,
+  or S's entry or `removed` record in the candidate parent's roster has K.
+- **A leaf keeps its signature key.** No Commit's UpdatePath and no Update proposal changes the signature key of the
+  leaf it replaces.
+
+Under these rules a device's leaf in the device group signs with the key its entry has from the Commit that sets it, and
+keeps it until a Commit removes that leaf.
+
 ## Requirement
 
 A group requires this component from its creation or never:
@@ -284,9 +309,13 @@ invalid ([README.md](./README.md), "GroupContext Removal").
 
 ## Security considerations
 
-- Any device of the account can rewrite any entry, including another device's settings, its `tag_signature_key`, and
-  the rejections. A stolen linked device can do the same until it is removed. The roster records decisions; it does not
-  protect them from a linked device.
+- Any device of the account can rewrite any entry, including another device's settings and status, and the
+  rejections. A stolen linked device can do the same until it is removed. The roster records decisions; it does not
+  protect them from a linked device. The exception is `tag_signature_key` ("Key binding"): no device can set, change or
+  clear another device's key, or make a `removed` record keep a key the removal does not prove. A device whose entry has
+  no key yet is not bound to a leaf until it sets one, so another device that has not set its own key either could set
+  its key in that slot first; the slot's own device then cannot set its key, and its link fails and is undone
+  ([../features/device-group.md](../features/device-group.md), "A link that is not taken up").
 - Only the account's own devices are members of a device group, so the roster, its labels, platforms and
   `leaf_tag_key` are never visible to other accounts. A client MUST NOT copy them into any other group or show another
   account's roster.
@@ -375,6 +404,10 @@ A roster with no devices, no rejections and an empty account entry is its `leaf_
 This is the first version. While this component is a draft, its encoding can change under the id `0x800e`, with no
 promise that two revisions of the draft work together. Once it is adopted, a breaking change gets a new component id and
 document.
+
+"Key binding" was added under this draft id. A device that follows the earlier revision makes no update these rules
+refuse, apart from the key a lone or carried `removed` record kept, so every device in a device group updates before
+any enforces them.
 
 The experimental move transition adds `moved(3)` under this draft id. Every participant in a device group using moves
 must update to understand it first. Older draft decoders reject the value, and the component id does not distinguish

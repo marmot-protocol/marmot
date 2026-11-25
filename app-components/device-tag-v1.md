@@ -78,7 +78,9 @@ A device can tag once it holds its device group's `leaf_tag_key` and its own ros
   sibling;
 - it MUST put a tag in every LeafNode it creates for its own leaf in any group, including the device group: in an
   Update, or in the UpdatePath of its own Commit. A replacement LeafNode whose signature key is unchanged MAY carry the
-  same tag; one with a new signature key needs a new tag;
+  same tag; one with a new signature key needs a new tag. In the device group no replacement LeafNode changes its
+  signature key ([device-roster-v1.md](./device-roster-v1.md), "Key binding"); in other groups one may, and that leaf is
+  then attributed by its tag alone;
 - every LeafNode that carries a tag MUST advertise `0x800f` in its `app_components` support list.
 
 A device sets the `tag_signature_key` in its own roster entry only in a Commit whose UpdatePath also replaces its own
@@ -143,7 +145,9 @@ A device tag never makes a KeyPackage, LeafNode, proposal, Commit or Welcome inv
 about the entry. Most members cannot open a tag, so a rule that rejected one would split the members who can from
 those who cannot. To a device that can read tags, an entry that does not decode, open or verify is the same as no tag.
 The only rule a receiver enforces is the one on required lists in "Registry", which is about the GroupContext, not
-about any tag.
+about any tag. The one exception is the device group, where every member holds `leaf_tag_key`: there, a roster update
+that sets a device's `tag_signature_key` is valid only when the committer's leaf carries a tag that reads as that device
+([device-roster-v1.md](./device-roster-v1.md), "Key binding").
 
 ## Lifecycle
 
