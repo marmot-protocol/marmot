@@ -20,6 +20,8 @@ Implementations MUST NOT treat an idea document as an interop surface.
 - [account-sync.md](./account-sync.md) - history for a newly linked device, small-state sync, backups, and recovering when every device is lost.
 - [agents-in-chats.md](./agents-in-chats.md) - working with an AI agent through a chat: what it sends, how it is approved and steered, and what other clients show.
 
+- [group-permissions.md](./group-permissions.md) - three independent admin-controlled permissions for invitations, disappearing messages, and group metadata.
+
 ## From idea to spec
 
 When part of an idea is settled, its rules move into the surface that owns them (foundation, protocol-core,
