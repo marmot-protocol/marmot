@@ -296,12 +296,6 @@ tool call sent once and edited once, that is about 35 events for a turn.
 - **Getting the full output when it was cut.** Fetch it from the agent on request, or attach it as a file. Attachments
   exist only on chat messages today.
 - **A file the agent sends**, such as a report or a patch. There is no item for it yet.
-- **Whether the agent's remarks during a turn alert**, as its final answer does. *(Since settled: they do not.)*
-- **Joining mid-turn.** A new member sees nothing of items that began before they joined. Whether to resend open items
-  for them is open. *(Since settled: they are shown from the item's versions.)*
-- **Telling agents apart from people.** An agent needs to know another member is an agent, so that two agents do not
-  answer each other. A mark in the agent's own profile is the current thinking. *(Since settled: a member that has
-  sent a session item in the chat is an agent, and nothing goes in the public profile; the mark proves nothing.)*
 - **Several agents in one group.** Every agent in a group reads every message. How they are set up, named and kept
   from answering at once needs product work.
 - **Changing the owner's rules from the chat**, and how a client learns who may prompt before someone tries.

@@ -79,10 +79,13 @@ for any kind ([Message kinds](../foundation/application-messages.md#message-kind
 These apply to every tag this document defines on kinds `1201`, `1202`, `1009` (of an item) and `9`.
 
 - **A tag's value** is its second element. A tag with a name and no second element has the empty string as its
-  value, and still counts as present. Elements after the second are ignored, except where NIP-22 gives them a meaning
-  ([Extension](#extension-items-in-subagent-threads)).
-- **A single tag** is one this document says appears at most once. When a single tag appears more than once, with any
-  values, the event is unreadable. A repeated tag never reads as one of its values.
+  value, and still counts as present. Elements after the second are ignored, except where this document (`native`,
+  `left_out`, `cut`) or NIP-22 ([Extension](#extension-items-in-subagent-threads)) gives them a meaning.
+- **A single tag** is one this document says appears at most once. A repeated single tag never reads as one of its
+  values. On kinds `1201`, `1202` and an item's `1009`, a repeated single tag that decides readability
+  ([items](#when-an-item-is-readable), [requests](#tags-1)) makes the event unreadable; a repeated optional one
+  (`native`, `left_out`, `subagent`) is ignored, both copies. On kind `9`, a repeated `turn` or `phase` is ignored and
+  the message is still an ordinary chat message.
 - **An event id** in a tag value is exactly 64 lowercase hexadecimal characters: a Marmot app event id in the same
   group. Uppercase is not an event id.
 - **An account key** in a tag value or a field is exactly 64 lowercase hexadecimal characters: an x-only public key,
@@ -307,7 +310,7 @@ A subagent's `task` item is the root of its thread when the agent tells subagent
 | --- | --- | --- | --- |
 | `kind` | `compaction`, `waiting`, `retry`, `warning`, `model_changed`, `command_output` or `refused` | yes | What the notice is about |
 | `duration_ms` | count | | For `waiting`: how long the agent will wait |
-| `reason` | text | | A word saying why. For `refused`, one of the reasons in [Settling a request](#settling-a-request); for `model_changed`, the harness's reason; for `warning`, `too_large` or `not_delivered` when the agent sends it about its own items |
+| `reason` | text | | A word saying why. For `refused`, one of the reasons in [Settling a request](#settling-a-request); for `model_changed`, the harness's reason; for `warning`, `too_large` (one of its own items could not be sent whole) or `not_delivered` (one of its own items or messages may not have reached the chat) when the agent sends it about its own items. Both are **provisional** |
 
 A `refused` notice is sent only by the agent's own program, never passed on from a harness.
 
@@ -383,8 +386,6 @@ lists name only members of this chat; the agent edits the item when the chat's m
 - **An agent is a member that has sent a session item.** A client MAY mark such a member as an agent and offer its
   commands. The mark proves nothing: any member can send one ([Security](#security-and-privacy-considerations)).
   The reference agent never takes another agent's messages as prompts unless its owner listed that agent.
-- **Future: `project`.** A later version will add a project (a label, the branch, a pull request) sent only to chats
-  that get the agent's full activity. It is not defined here; a reader ignores it until it is.
 
 ## Versions of an item (kind 1009)
 
@@ -414,7 +415,8 @@ The **current version** of an item is its accepted version with the highest `v`;
 accepted versions with the same `v` are ordered by their `created_at`, then by their event id, and the greater wins
 **[Inferred: this is MDK's order; the agent never sends two versions with one `v`]**. The order the versions arrive
 in, and their `created_at`, do not otherwise matter: `created_at` counts whole seconds, and an item often changes
-twice in one. An older version that arrives late changes nothing.
+twice in one. An older version that arrives late changes nothing the item shows, but it is still accepted, so its
+`settles` tags still settle the requests they name ([Settling a request](#settling-a-request)).
 
 The current version's `content` and tags replace the item's. A client:
 
@@ -428,9 +430,12 @@ The current version's `content` and tags replace the item's. A client:
 
 ### A version that arrives before its item
 
-A client MUST keep an edit whose target it has not received, and apply it when the target arrives, for as long as it
-keeps app events under the group's retention. It MUST NOT drop such an edit merely because its target is missing.
-This replaces, for kind `1201` targets, the general rule that a client may drop such an edit.
+A client cannot know a missing target's kind, so it judges such an edit by its own tags: a kind `1009` whose tags,
+without its single `e` tag, read as a [readable item](#when-an-item-is-readable) is a version of an agent item. A client
+MUST keep such an edit whose target it has not received, and apply it when the target arrives, for as long as it keeps
+app events under the group's retention. It MUST NOT drop it merely because its target is missing. This replaces, for
+these edits, the general rule that a client may drop an edit whose target it has not received; an ordinary text edit
+whose target is missing may still be dropped.
 
 ### A member who joined after the item began
 
@@ -438,13 +443,18 @@ A member added to a group cannot read events sent before they joined, so they ma
 its first event. Since every version carries the whole item, a client SHOULD show such an item from its versions:
 
 - The item's row is identified by the target's event id, as named by the versions' `e` tag.
-- It is built from the **earliest** accepted version by `created_at`, then event id, among the readable edits that
-  name the target and that their author has not deleted. That version's author is taken as the item's author: only
-  that account's versions count (rule 3 above).
-- It sits at that version's place in the timeline, and shows the current version, chosen as above.
+- Without the first event, nothing shows who the item's author is, and any member can send a readable edit that
+  names the target. So a client MUST keep the versions of each authenticated author apart: one author's versions never
+  change, replace or hide what another's show. A client SHOULD show only one author's versions, and SHOULD prefer an
+  author it already knows as an agent in the chat (one that has sent a session item there); it MAY show each author's
+  versions as a row of its own.
+- An author's row is built from the **earliest** of that author's readable edits naming the target, that the author
+  has not deleted, in the order the client received them, then by event id. Only that author's versions count (rule 3
+  above).
+- It sits at that version's place in the timeline, and shows that author's current version, chosen as above.
 - A client SHOULD say that the item started before the viewer could see it.
-- If the first event arrives later, as from another device's history, it takes the row's place, and the versions apply
-  to it as usual.
+- If the first event arrives later, as from another device's history, it takes the row's place, and only its author's
+  versions apply to it, as usual; any other author's versions are dropped.
 - Once the client has removed the item under the group's retention, a version of it that arrives later does not bring
   it back.
 
@@ -458,7 +468,7 @@ order gives (rows without `seq` count as 0); it is not a stated rule, and it can
 items of the same second that came first]**.
 
 A client without a thread view SHOULD show, above a `turn` item, the chat message its `started_by` names, as it shows a
-reply's target **[Inferred from MDK's `reply_to_message_id_hex` for agent items]**.
+reply's target **[Inferred from what MDK quotes above an agent item]**.
 
 ## The agent's words
 
@@ -499,8 +509,9 @@ with no `p`, with two or more, or naming another account is not for this agent, 
 `p` here names the recipient; it is not a mention.
 
 A request for an agent is **readable** when its `e`, if present, holds one event id, it has exactly one `details`, and
-`details` is a JSON object whose `action` is a known action with its fields of the right types. A request for the
-agent that is not readable is still settled ([Settling a request](#settling-a-request)).
+`details` is a JSON object whose `action` is a non-empty string. An `action` this document does not define is
+readable and refused as `not_supported`; a known action whose fields are missing or of the wrong types is refused as
+`invalid`. A request for the agent that is not readable is still settled ([Settling a request](#settling-a-request)).
 
 ### Actions
 
@@ -570,7 +581,9 @@ These are the agent's rules; a client cannot check them, and states them so that
 - **An answer counts only if it names the exact item**, the item is `waiting`, and nobody's answer reached it first.
   Ordinary text is never an answer to an approval. An answer never reaches the model as a prompt.
 - **An answer names choices and options by the ids the item offered.**
-- **A request that names an item acts only while that item is live.**
+- **A request that names an item acts only while that item is live**, except that a `set`, `own` or `new_session`
+  request acts on the agent's [current session item](#the-session-item) whatever its state: the item sent on joining
+  is `done`, and a setting such as the folder may be chosen before any session has started.
 - **A request that names no item is dropped, unsettled, when it is more than five minutes old** when the agent reads
   it **[Inferred: measured from the event's `created_at`, as MDK records it]**.
 - **Each request acts at most once**, however often it is delivered.
@@ -746,6 +759,10 @@ govern them.
   repeat a secret answer, and stop carrying `native` once the question is no longer waiting.
 - **Approvals cannot be typed.** "Yes" in the chat is a prompt, never an approval. An agent whose harness accepts typed
   commands that approve or widen what it may do treats those messages as needing the right to approve.
+- **A member who joined late cannot tell an item's author** from its versions alone, since they never hold its first
+  event. Any member can send a readable edit naming an item, so a client keeps each author's versions apart
+  ([A member who joined after the item began](#a-member-who-joined-after-the-item-began)); otherwise one member could
+  hide a real approval or question from late joiners, or show a false one in its place.
 - **Requests are not authenticated beyond MLS.** A request is as authentic as its author's group membership. An agent
   ignores requests named for another agent, and acts on each request once.
 

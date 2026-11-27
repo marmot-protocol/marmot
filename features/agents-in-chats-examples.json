@@ -1,37 +1,34 @@
 {
-  "about": "Example events for the draft 'Agents in chats' specification (kinds 1201, 1202, and kind 1009 versions of an item). Each example gives the inner Marmot app event's kind, tags and content; its id, pubkey and created_at follow the ordinary app-event envelope. Every id and key below is a synthetic 64-hex placeholder (a repeated two-character pattern), never a real key or event. `readable` says whether MDK at bea7b400's readers accept the event as an agent item (1201, 1009) or request (1202); for kinds 9 and 1111 it is always true. `assumed_id` names the placeholder taken as an example's own event id where other examples refer to it (an edit's `e`, a request's `e`, `settles`, a thread's `E` and `e`); real ids are the hash of the event.",
+  "about": "Example events for the draft 'Agents in chats' specification (kinds 1201, 1202, and kind 1009 versions of an item). Each example gives the inner Marmot app event's kind, tags and content; its id, pubkey and created_at follow the ordinary app-event envelope. Every id and key below is a synthetic 64-hex placeholder (a repeated two-character pattern), never a real key or event. `readable` says whether a reader following the feature document accepts the event as an agent item (1201, 1009) or request (1202); for kinds 9 and 1111 it is always true. `assumed_id` names the placeholder taken as an example's own event id where other examples refer to it (an edit's `e`, a request's `e`, `settles`, a thread's `E` and `e`); real ids are the hash of the event.",
   "placeholders": {
-    "agent": "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9",
-    "owner": "0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e",
-    "bob": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
-    "prompt": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
-    "turn_item": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
-    "tool_item": "d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
-    "approval_item": "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3",
-    "question_item": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
-    "session_item": "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5",
-    "joined_item": "dcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc",
-    "task_a": "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-    "task_b": "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7",
-    "b_tool": "d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9",
-    "req_choice": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
-    "req_questions": "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2",
-    "req_interrupt": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
-    "req_new_session": "e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4",
-    "req_set": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
-    "req_own": "e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6",
-    "req_bob": "e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7",
-    "refused_prompt": "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
-    "edit_item": "dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada",
-    "large_item": "dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdb",
-    "lost_item": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    "other_agent": "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8"
+      "agent": "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9",
+      "owner": "0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e",
+      "bob": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+      "prompt": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "turn_item": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+      "tool_item": "d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
+      "approval_item": "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3",
+      "question_item": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+      "session_item": "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5",
+      "joined_item": "dcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc",
+      "task_a": "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
+      "task_b": "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7",
+      "b_tool": "d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9",
+      "req_choice": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+      "req_questions": "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2",
+      "req_interrupt": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "req_new_session": "e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4",
+      "req_set": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+      "req_own": "e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6",
+      "req_bob": "e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7",
+      "refused_prompt": "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+      "edit_item": "dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada",
+      "large_item": "dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdb",
+      "lost_item": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "other_agent": "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8",
+      "req_set_folder": "e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8"
   },
-  "checked_against": {
-    "mdk": "marmot-protocol/mdk bea7b400b78f3ec6d1abb3894d1d8162bdf409da, crates/traits/src/agent_events.rs (AgentItem::from_tags, validate_agent_item_tags, validate_agent_item_edit_tags, AgentRequest::from_tags), ported to Python",
-    "core": "marmot-agents crates/marmot-agent-events (AgentEvent and Body deserialisation) at the master revision this draft was written against",
-    "size": "every example is under 65,536 bytes as an encoded inner event"
-  },
+  "checked_against": "Each example's `readable` flag was checked against MDK's readers at bea7b400b and the marmot-agents core's event types, and every example is under 65,536 bytes as an encoded inner event.",
   "examples": [
     {
       "name": "turn-started",
@@ -39,46 +36,16 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Working"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "turn-1"
-        ],
-        [
-          "seq",
-          "1"
-        ],
-        [
-          "fields",
-          "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "started_by",
-          "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Working"],
+        ["harness", "codex"],
+        ["item_id", "turn-1"],
+        ["seq", "1"],
+        ["fields", "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["started_by", "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"]
       ],
       "content": "",
       "note": "A turn's first event. `started_by` names the person's kind 9 prompt.",
@@ -91,50 +58,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"
-        ],
-        [
-          "v",
-          "3"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Finished"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "turn-1"
-        ],
-        [
-          "seq",
-          "9"
-        ],
-        [
-          "fields",
-          "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\",\"duration_ms\":8120,\"usage\":{\"input_tokens\":5210,\"output_tokens\":312}}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "started_by",
-          "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
-        ]
+        ["e", "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"],
+        ["v", "3"],
+        ["state", "done"],
+        ["title", "Finished"],
+        ["harness", "codex"],
+        ["item_id", "turn-1"],
+        ["seq", "9"],
+        ["fields", "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\",\"duration_ms\":8120,\"usage\":{\"input_tokens\":5210,\"output_tokens\":312}}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["started_by", "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"]
       ],
       "content": "",
       "note": "A later version of the turn: the whole item again, a higher `v`, and one `e` naming its first event.",
@@ -146,50 +80,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "failed"
-        ],
-        [
-          "title",
-          "Failed"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "turn-1"
-        ],
-        [
-          "seq",
-          "4"
-        ],
-        [
-          "fields",
-          "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\",\"duration_ms\":950}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "started_by",
-          "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
-        ]
+        ["e", "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"],
+        ["v", "2"],
+        ["state", "failed"],
+        ["title", "Failed"],
+        ["harness", "codex"],
+        ["item_id", "turn-1"],
+        ["seq", "4"],
+        ["fields", "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\",\"duration_ms\":950}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["started_by", "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"]
       ],
       "content": "The model is not available.",
       "note": "A version that needs a person: a turn that ended failed.",
@@ -201,42 +102,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Thinking"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "rs-1"
-        ],
-        [
-          "seq",
-          "2"
-        ],
-        [
-          "fields",
-          "{\"type\":\"reasoning\",\"body\":{}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Thinking"],
+        ["harness", "codex"],
+        ["item_id", "rs-1"],
+        ["seq", "2"],
+        ["fields", "{\"type\":\"reasoning\",\"body\":{}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Checking which script prints the greeting.",
       "note": "Reasoning carries nothing beyond the content.",
@@ -248,47 +122,16 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Running a command"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-1"
-        ],
-        [
-          "seq",
-          "3"
-        ],
-        [
-          "fields",
-          "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"python3 greet.py\",\"cwd\":\"/work/demo\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "native",
-          "item/started",
-          "{\"item\":{\"id\":\"call-1\",\"type\":\"commandExecution\",\"command\":\"python3 greet.py\"}}"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Running a command"],
+        ["harness", "codex"],
+        ["item_id", "call-1"],
+        ["seq", "3"],
+        ["fields", "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"python3 greet.py\",\"cwd\":\"/work/demo\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["native", "item/started", "{\"item\":{\"id\":\"call-1\",\"type\":\"commandExecution\",\"command\":\"python3 greet.py\"}}"]
       ],
       "content": "python3 greet.py",
       "note": "A tool call's first event, with the harness's own message in `native`.",
@@ -301,51 +144,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Ran a command"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-1"
-        ],
-        [
-          "seq",
-          "6"
-        ],
-        [
-          "fields",
-          "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"python3 greet.py\",\"cwd\":\"/work/demo\",\"exit_code\":0,\"duration_ms\":41,\"output\":\"Hello, world\\n\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "native",
-          "item/completed",
-          "{\"item\":{\"id\":\"call-1\",\"type\":\"commandExecution\",\"exitCode\":0,\"aggregatedOutput\":\"Hello, world\\n\"}}"
-        ]
+        ["e", "d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2"],
+        ["v", "2"],
+        ["state", "done"],
+        ["title", "Ran a command"],
+        ["harness", "codex"],
+        ["item_id", "call-1"],
+        ["seq", "6"],
+        ["fields", "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"python3 greet.py\",\"cwd\":\"/work/demo\",\"exit_code\":0,\"duration_ms\":41,\"output\":\"Hello, world\\n\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["native", "item/completed", "{\"item\":{\"id\":\"call-1\",\"type\":\"commandExecution\",\"exitCode\":0,\"aggregatedOutput\":\"Hello, world\\n\"}}"]
       ],
       "content": "Ran a command: python3 greet.py (exit 0)",
       "note": "The same tool call, finished.",
@@ -357,56 +166,18 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Edited a file"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-2"
-        ],
-        [
-          "seq",
-          "8"
-        ],
-        [
-          "fields",
-          "{\"type\":\"tool\",\"body\":{\"kind\":\"edit\",\"name\":\"apply_patch\",\"changes\":[{\"path\":\"greet.py\",\"change\":\"update\",\"diff\":\"@@ -1 +1 @@\\n-print('Hello')\\n+print('Hello, world')\\n\\n… cut: 91234 bytes in all …\\n\"}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "left_out",
-          "native",
-          "183402"
-        ],
-        [
-          "cut",
-          "diffs",
-          "1"
-        ]
+        ["e", "dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada"],
+        ["v", "2"],
+        ["state", "done"],
+        ["title", "Edited a file"],
+        ["harness", "codex"],
+        ["item_id", "call-2"],
+        ["seq", "8"],
+        ["fields", "{\"type\":\"tool\",\"body\":{\"kind\":\"edit\",\"name\":\"apply_patch\",\"changes\":[{\"path\":\"greet.py\",\"change\":\"update\",\"diff\":\"@@ -1 +1 @@\\n-print('Hello')\\n+print('Hello, world')\\n\\n… cut: 91234 bytes in all …\\n\"}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["left_out", "native", "183402"],
+        ["cut", "diffs", "1"]
       ],
       "content": "Edited greet.py",
       "note": "An item the sender fitted under 64 KiB: the native message left out, a diff cut in its middle.",
@@ -418,42 +189,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "waiting"
-        ],
-        [
-          "title",
-          "Allow this command?"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "approval-1"
-        ],
-        [
-          "seq",
-          "4"
-        ],
-        [
-          "fields",
-          "{\"type\":\"approval\",\"body\":{\"subject\":\"call-1\",\"choices\":[{\"id\":\"allow_once\",\"label\":\"Allow once\",\"effect\":\"allow\"},{\"id\":\"allow_session\",\"label\":\"Allow for this session\",\"effect\":\"allow\"},{\"id\":\"deny\",\"label\":\"Deny\",\"effect\":\"deny\"}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "waiting"],
+        ["title", "Allow this command?"],
+        ["harness", "codex"],
+        ["item_id", "approval-1"],
+        ["seq", "4"],
+        ["fields", "{\"type\":\"approval\",\"body\":{\"subject\":\"call-1\",\"choices\":[{\"id\":\"allow_once\",\"label\":\"Allow once\",\"effect\":\"allow\"},{\"id\":\"allow_session\",\"label\":\"Allow for this session\",\"effect\":\"allow\"},{\"id\":\"deny\",\"label\":\"Deny\",\"effect\":\"deny\"}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "python3 greet.py",
       "note": "Needs a person while it is `waiting`.",
@@ -466,50 +210,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Allow this command?"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "approval-1"
-        ],
-        [
-          "seq",
-          "5"
-        ],
-        [
-          "fields",
-          "{\"type\":\"approval\",\"body\":{\"subject\":\"call-1\",\"choices\":[{\"id\":\"allow_once\",\"label\":\"Allow once\",\"effect\":\"allow\"},{\"id\":\"allow_session\",\"label\":\"Allow for this session\",\"effect\":\"allow\"},{\"id\":\"deny\",\"label\":\"Deny\",\"effect\":\"deny\"}],\"answer\":{\"choice\":\"allow_once\"}}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "settles",
-          "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
-        ]
+        ["e", "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3"],
+        ["v", "2"],
+        ["state", "done"],
+        ["title", "Allow this command?"],
+        ["harness", "codex"],
+        ["item_id", "approval-1"],
+        ["seq", "5"],
+        ["fields", "{\"type\":\"approval\",\"body\":{\"subject\":\"call-1\",\"choices\":[{\"id\":\"allow_once\",\"label\":\"Allow once\",\"effect\":\"allow\"},{\"id\":\"allow_session\",\"label\":\"Allow for this session\",\"effect\":\"allow\"},{\"id\":\"deny\",\"label\":\"Deny\",\"effect\":\"deny\"}],\"answer\":{\"choice\":\"allow_once\"}}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["settles", "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"]
       ],
       "content": "Answered: Allow once",
       "note": "The version that shows the answer's effect settles the answer with `settles`.",
@@ -521,42 +232,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "waiting"
-        ],
-        [
-          "title",
-          "A question"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "q-1"
-        ],
-        [
-          "seq",
-          "5"
-        ],
-        [
-          "fields",
-          "{\"type\":\"question\",\"body\":{\"answer_via\":\"request\",\"questions\":[{\"id\":\"colour\",\"header\":\"Colour\",\"text\":\"Which colour should the banner be?\",\"options\":[{\"id\":\"red\",\"label\":\"Red\"},{\"id\":\"blue\",\"label\":\"Blue\",\"description\":\"The default\"}],\"multiple\":false,\"allow_text\":true},{\"id\":\"token\",\"text\":\"Paste the deploy token.\",\"options\":[],\"multiple\":false,\"allow_text\":true,\"secret\":true}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "waiting"],
+        ["title", "A question"],
+        ["harness", "codex"],
+        ["item_id", "q-1"],
+        ["seq", "5"],
+        ["fields", "{\"type\":\"question\",\"body\":{\"answer_via\":\"request\",\"questions\":[{\"id\":\"colour\",\"header\":\"Colour\",\"text\":\"Which colour should the banner be?\",\"options\":[{\"id\":\"red\",\"label\":\"Red\"},{\"id\":\"blue\",\"label\":\"Blue\",\"description\":\"The default\"}],\"multiple\":false,\"allow_text\":true},{\"id\":\"token\",\"text\":\"Paste the deploy token.\",\"options\":[],\"multiple\":false,\"allow_text\":true,\"secret\":true}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Which colour should the banner be? Paste the deploy token.",
       "note": "Two questions in one item; the second is secret (answerable only in a two-person chat).",
@@ -569,50 +253,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "A question"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "q-1"
-        ],
-        [
-          "seq",
-          "7"
-        ],
-        [
-          "fields",
-          "{\"type\":\"question\",\"body\":{\"answer_via\":\"request\",\"questions\":[{\"id\":\"colour\",\"header\":\"Colour\",\"text\":\"Which colour should the banner be?\",\"options\":[{\"id\":\"red\",\"label\":\"Red\"},{\"id\":\"blue\",\"label\":\"Blue\",\"description\":\"The default\"}],\"multiple\":false,\"allow_text\":true},{\"id\":\"token\",\"text\":\"Paste the deploy token.\",\"options\":[],\"multiple\":false,\"allow_text\":true,\"secret\":true}],\"answer\":[{\"question\":\"colour\",\"options\":[\"blue\"]},{\"question\":\"token\"}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "settles",
-          "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2"
-        ]
+        ["e", "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"],
+        ["v", "2"],
+        ["state", "done"],
+        ["title", "A question"],
+        ["harness", "codex"],
+        ["item_id", "q-1"],
+        ["seq", "7"],
+        ["fields", "{\"type\":\"question\",\"body\":{\"answer_via\":\"request\",\"questions\":[{\"id\":\"colour\",\"header\":\"Colour\",\"text\":\"Which colour should the banner be?\",\"options\":[{\"id\":\"red\",\"label\":\"Red\"},{\"id\":\"blue\",\"label\":\"Blue\",\"description\":\"The default\"}],\"multiple\":false,\"allow_text\":true},{\"id\":\"token\",\"text\":\"Paste the deploy token.\",\"options\":[],\"multiple\":false,\"allow_text\":true,\"secret\":true}],\"answer\":[{\"question\":\"colour\",\"options\":[\"blue\"]},{\"question\":\"token\"}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["settles", "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2"]
       ],
       "content": "Answered",
       "note": "The answer to a secret question names the question only, and the version carries no `native`.",
@@ -624,42 +275,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "waiting"
-        ],
-        [
-          "title",
-          "A question"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "q-2"
-        ],
-        [
-          "seq",
-          "3"
-        ],
-        [
-          "fields",
-          "{\"type\":\"question\",\"body\":{\"answer_via\":\"message\",\"questions\":[{\"id\":\"q-2\",\"text\":\"Which file should I start with?\",\"options\":[],\"multiple\":false,\"allow_text\":true}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "waiting"],
+        ["title", "A question"],
+        ["harness", "codex"],
+        ["item_id", "q-2"],
+        ["seq", "3"],
+        ["fields", "{\"type\":\"question\",\"body\":{\"answer_via\":\"message\",\"questions\":[{\"id\":\"q-2\",\"text\":\"Which file should I start with?\",\"options\":[],\"multiple\":false,\"allow_text\":true}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Which file should I start with?",
       "note": "`answer_via: message`: the person's next chat message is the answer; no kind 1202 is sent.",
@@ -671,42 +295,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Plan"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "plan-1"
-        ],
-        [
-          "seq",
-          "2"
-        ],
-        [
-          "fields",
-          "{\"type\":\"plan\",\"body\":{\"text\":\"Fix the greeting, then run the tests.\",\"entries\":[{\"text\":\"Edit greet.py\",\"state\":\"done\"},{\"text\":\"Run the tests\",\"state\":\"running\"},{\"text\":\"Report\",\"state\":\"pending\"}]}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Plan"],
+        ["harness", "codex"],
+        ["item_id", "plan-1"],
+        ["seq", "2"],
+        ["fields", "{\"type\":\"plan\",\"body\":{\"text\":\"Fix the greeting, then run the tests.\",\"entries\":[{\"text\":\"Edit greet.py\",\"state\":\"done\"},{\"text\":\"Run the tests\",\"state\":\"running\"},{\"text\":\"Report\",\"state\":\"pending\"}]}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Fix the greeting, then run the tests.",
       "note": "A plan as text and as steps.",
@@ -718,42 +315,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Subagent"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "task:thr-2"
-        ],
-        [
-          "seq",
-          "4"
-        ],
-        [
-          "fields",
-          "{\"type\":\"task\",\"body\":{\"kind\":\"subagent\",\"description\":\"Find the fixtures\",\"subject\":\"call-9\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Subagent"],
+        ["harness", "codex"],
+        ["item_id", "task:thr-2"],
+        ["seq", "4"],
+        ["fields", "{\"type\":\"task\",\"body\":{\"kind\":\"subagent\",\"description\":\"Find the fixtures\",\"subject\":\"call-9\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Find the fixtures",
       "note": "A top-level subagent's row: in the main chat, no thread tags. Also the root of its thread.",
@@ -766,42 +336,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Compacted"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "n-1"
-        ],
-        [
-          "seq",
-          "11"
-        ],
-        [
-          "fields",
-          "{\"type\":\"notice\",\"body\":{\"kind\":\"compaction\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Compacted"],
+        ["harness", "codex"],
+        ["item_id", "n-1"],
+        ["seq", "11"],
+        ["fields", "{\"type\":\"notice\",\"body\":{\"kind\":\"compaction\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "The conversation was compacted.",
       "note": "A notice of the harness's.",
@@ -813,42 +356,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Not acted on"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "core-17"
-        ],
-        [
-          "seq",
-          "9"
-        ],
-        [
-          "fields",
-          "{\"type\":\"notice\",\"body\":{\"kind\":\"refused\",\"reason\":\"not_allowed\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "settles",
-          "e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Not acted on"],
+        ["harness", "codex"],
+        ["item_id", "core-17"],
+        ["seq", "9"],
+        ["fields", "{\"type\":\"notice\",\"body\":{\"kind\":\"refused\",\"reason\":\"not_allowed\"}}"],
+        ["session", "sess-1"],
+        ["settles", "e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7"]
       ],
       "content": "Only people the owner chose can approve what this agent does.",
       "note": "The agent's reply to a request it did not act on; one `settles` names the request.",
@@ -860,42 +376,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Not acted on"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "core-18"
-        ],
-        [
-          "seq",
-          "9"
-        ],
-        [
-          "fields",
-          "{\"type\":\"notice\",\"body\":{\"kind\":\"refused\",\"reason\":\"not_allowed\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "started_by",
-          "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Not acted on"],
+        ["harness", "codex"],
+        ["item_id", "core-18"],
+        ["seq", "9"],
+        ["fields", "{\"type\":\"notice\",\"body\":{\"kind\":\"refused\",\"reason\":\"not_allowed\"}}"],
+        ["session", "sess-1"],
+        ["started_by", "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2"]
       ],
       "content": "Only people the owner chose can direct this agent.",
       "note": "A prompt from someone without the right: the notice names that chat message with `started_by`.",
@@ -907,51 +396,17 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdb"
-        ],
-        [
-          "v",
-          "4"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Too large to show"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-3"
-        ],
-        [
-          "seq",
-          "12"
-        ],
-        [
-          "fields",
-          "{\"type\":\"notice\",\"body\":{\"kind\":\"warning\",\"reason\":\"too_large\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "cut",
-          "item",
-          "412377"
-        ]
+        ["e", "dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdb"],
+        ["v", "4"],
+        ["state", "done"],
+        ["title", "Too large to show"],
+        ["harness", "codex"],
+        ["item_id", "call-3"],
+        ["seq", "12"],
+        ["fields", "{\"type\":\"notice\",\"body\":{\"kind\":\"warning\",\"reason\":\"too_large\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["cut", "item", "412377"]
       ],
       "content": "This was too large to send to the chat.",
       "note": "A stand-in for a version that could not be fitted: same item, same version sequence. Provisional.",
@@ -963,46 +418,16 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-        ],
-        [
-          "v",
-          "3"
-        ],
-        [
-          "state",
-          "cancelled"
-        ],
-        [
-          "title",
-          "Not delivered"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-4"
-        ],
-        [
-          "seq",
-          "13"
-        ],
-        [
-          "fields",
-          "{\"type\":\"notice\",\"body\":{\"kind\":\"warning\",\"reason\":\"not_delivered\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["e", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+        ["v", "3"],
+        ["state", "cancelled"],
+        ["title", "Not delivered"],
+        ["harness", "codex"],
+        ["item_id", "call-4"],
+        ["seq", "13"],
+        ["fields", "{\"type\":\"notice\",\"body\":{\"kind\":\"warning\",\"reason\":\"not_delivered\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "The rest of this was not delivered.",
       "note": "The sender's close of an item whose closing version was lost. Provisional.",
@@ -1014,42 +439,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "failed"
-        ],
-        [
-          "title",
-          "Error"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "err-1"
-        ],
-        [
-          "seq",
-          "3"
-        ],
-        [
-          "fields",
-          "{\"type\":\"error\",\"body\":{\"request\":\"turn/start\",\"code\":-32603,\"will_retry\":false}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "failed"],
+        ["title", "Error"],
+        ["harness", "codex"],
+        ["item_id", "err-1"],
+        ["seq", "3"],
+        ["fields", "{\"type\":\"error\",\"body\":{\"request\":\"turn/start\",\"code\":-32603,\"will_retry\":false}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "The harness refused to start the turn.",
       "note": "Something failed outside any one item.",
@@ -1061,42 +459,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Message"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "msg-1"
-        ],
-        [
-          "seq",
-          "2"
-        ],
-        [
-          "fields",
-          "{\"type\":\"message\",\"body\":{\"phase\":\"final\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Message"],
+        ["harness", "codex"],
+        ["item_id", "msg-1"],
+        ["seq", "2"],
+        ["fields", "{\"type\":\"message\",\"body\":{\"phase\":\"final\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "It printed: Hello, world",
       "note": "Defined for completeness. The reference agent never sends one: the agent's words are kind 9 (or kind 1111 in a subagent thread).",
@@ -1108,34 +479,13 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Session"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "core-1"
-        ],
-        [
-          "seq",
-          "1"
-        ],
-        [
-          "fields",
-          "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[],\"commands\":[],\"rights\":{\"prompt\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"],\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]},\"label\":\"laptop\",\"owner\":\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"}}"
-        ]
+        ["v", "1"],
+        ["state", "done"],
+        ["title", "Session"],
+        ["harness", "codex"],
+        ["item_id", "core-1"],
+        ["seq", "1"],
+        ["fields", "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[],\"commands\":[],\"rights\":{\"prompt\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"],\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]},\"label\":\"laptop\",\"owner\":\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"}}"]
       ],
       "content": "No session has started yet.",
       "note": "Sent once when the agent joins a chat, before anyone prompts: done, naming no session. `label` and `owner` appear only when the owner turned them on.",
@@ -1148,38 +498,14 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Session"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "session:sess-1"
-        ],
-        [
-          "seq",
-          "1"
-        ],
-        [
-          "fields",
-          "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"model\",\"label\":\"Model\",\"value\":\"model-b\",\"options\":[\"model-a\",\"model-b\"]},{\"id\":\"approval_policy\",\"label\":\"Approval policy\",\"value\":\"on-request\",\"options\":[\"untrusted\",\"on-request\",\"never\"],\"approve\":true},{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[{\"id\":\"compact\",\"label\":\"Compact\",\"description\":\"Summarise the conversation so far\"}],\"commands\":[{\"name\":\"review\",\"description\":\"Review the current changes\",\"hint\":\"\"},{\"name\":\"init\",\"hint\":\"[path]\"}],\"title\":\"Fix the greeting\",\"rights\":{\"prompt\":\"everyone\",\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]}}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Session"],
+        ["harness", "codex"],
+        ["item_id", "session:sess-1"],
+        ["seq", "1"],
+        ["fields", "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"model\",\"label\":\"Model\",\"value\":\"model-b\",\"options\":[\"model-a\",\"model-b\"]},{\"id\":\"approval_policy\",\"label\":\"Approval policy\",\"value\":\"on-request\",\"options\":[\"untrusted\",\"on-request\",\"never\"],\"approve\":true},{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[{\"id\":\"compact\",\"label\":\"Compact\",\"description\":\"Summarise the conversation so far\"}],\"commands\":[{\"name\":\"review\",\"description\":\"Review the current changes\",\"hint\":\"\"},{\"name\":\"init\",\"hint\":\"[path]\"}],\"title\":\"Fix the greeting\",\"rights\":{\"prompt\":\"everyone\",\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]}}}"],
+        ["session", "sess-1"]
       ],
       "content": "Codex 0.169.0",
       "note": "A session's item: what an app can set and do, who may prompt and approve, and the harness's title.",
@@ -1192,46 +518,16 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Session"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "session:sess-1"
-        ],
-        [
-          "seq",
-          "14"
-        ],
-        [
-          "fields",
-          "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"model\",\"label\":\"Model\",\"value\":\"model-a\",\"options\":[\"model-a\",\"model-b\"]},{\"id\":\"approval_policy\",\"label\":\"Approval policy\",\"value\":\"on-request\",\"options\":[\"untrusted\",\"on-request\",\"never\"],\"approve\":true},{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[{\"id\":\"compact\",\"label\":\"Compact\",\"description\":\"Summarise the conversation so far\"}],\"commands\":[{\"name\":\"review\",\"description\":\"Review the current changes\",\"hint\":\"\"},{\"name\":\"init\",\"hint\":\"[path]\"}],\"title\":\"Fix the greeting\",\"rights\":{\"prompt\":\"everyone\",\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]}}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "settles",
-          "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5"
-        ]
+        ["e", "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5"],
+        ["v", "2"],
+        ["state", "running"],
+        ["title", "Session"],
+        ["harness", "codex"],
+        ["item_id", "session:sess-1"],
+        ["seq", "14"],
+        ["fields", "{\"type\":\"session\",\"body\":{\"harness_version\":\"0.169.0\",\"settings\":[{\"id\":\"model\",\"label\":\"Model\",\"value\":\"model-a\",\"options\":[\"model-a\",\"model-b\"]},{\"id\":\"approval_policy\",\"label\":\"Approval policy\",\"value\":\"on-request\",\"options\":[\"untrusted\",\"on-request\",\"never\"],\"approve\":true},{\"id\":\"folder\",\"label\":\"Folder\",\"value\":\"/work/demo\",\"approve\":true}],\"actions\":[{\"id\":\"compact\",\"label\":\"Compact\",\"description\":\"Summarise the conversation so far\"}],\"commands\":[{\"name\":\"review\",\"description\":\"Review the current changes\",\"hint\":\"\"},{\"name\":\"init\",\"hint\":\"[path]\"}],\"title\":\"Fix the greeting\",\"rights\":{\"prompt\":\"everyone\",\"approve\":[\"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e\"]}}}"],
+        ["session", "sess-1"],
+        ["settles", "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5"]
       ],
       "content": "Codex 0.169.0",
       "note": "The `set` request settled by the session item's next version.",
@@ -1243,14 +539,8 @@
       "author": "agent",
       "kind": 9,
       "tags": [
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "phase",
-          "commentary"
-        ]
+        ["turn", "turn-1"],
+        ["phase", "commentary"]
       ],
       "content": "I'll run python3 greet.py and report its output.",
       "note": "A remark during a turn: an ordinary chat message that does not alert.",
@@ -1262,14 +552,8 @@
       "author": "agent",
       "kind": 9,
       "tags": [
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "settles",
-          "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3"
-        ]
+        ["turn", "turn-1"],
+        ["settles", "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3"]
       ],
       "content": "It printed: Hello, world",
       "note": "The agent's answer. It may settle requests whose effect it shows.",
@@ -1281,18 +565,9 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"choice\",\"choice\":\"allow_once\"}"
-        ],
-        [
-          "e",
-          "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"choice\",\"choice\":\"allow_once\"}"],
+        ["e", "d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3"]
       ],
       "content": "Allow once",
       "note": "An answer to an approval: names the approval's first event.",
@@ -1305,18 +580,9 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"questions\",\"questions\":[{\"question\":\"colour\",\"options\":[\"blue\"]},{\"question\":\"token\",\"options\":[],\"text\":\"<typed in a two-person chat only>\"}]}"
-        ],
-        [
-          "e",
-          "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"questions\",\"questions\":[{\"question\":\"colour\",\"options\":[\"blue\"]},{\"question\":\"token\",\"options\":[],\"text\":\"<typed in a two-person chat only>\"}]}"],
+        ["e", "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"]
       ],
       "content": "Answered",
       "note": "An answer to a question item. A secret answer is sent only in a two-person chat.",
@@ -1329,14 +595,8 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"interrupt\"}"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"interrupt\"}"]
       ],
       "content": "Stop",
       "note": "No `e`: acts on the chat's running turn.",
@@ -1349,18 +609,9 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"interrupt\"}"
-        ],
-        [
-          "e",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"interrupt\"}"],
+        ["e", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6"]
       ],
       "content": "Stop",
       "note": "Stop in a subagent's thread: names its `task` item.",
@@ -1372,14 +623,8 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"new_session\"}"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"new_session\"}"]
       ],
       "content": "New session",
       "note": "Ends this chat's session and starts another.",
@@ -1392,18 +637,9 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"set\",\"setting\":\"model\",\"value\":\"model-a\"}"
-        ],
-        [
-          "e",
-          "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"set\",\"setting\":\"model\",\"value\":\"model-a\"}"],
+        ["e", "d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5"]
       ],
       "content": "Model: model-a",
       "note": "Changes one setting the session item offers.",
@@ -1411,19 +647,28 @@
       "assumed_id": "req_set"
     },
     {
+      "name": "request-set-before-session",
+      "section": "Kind 1202: answers and controls",
+      "author": "owner",
+      "kind": 1202,
+      "tags": [
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"set\",\"setting\":\"folder\",\"value\":\"/work/other\"}"],
+        ["e", "dcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc"]
+      ],
+      "content": "Folder: /work/other",
+      "note": "Names the session item sent on joining, which is `done`: a `set`, `own` or `new_session` acts on the agent's current session item whatever its state. The folder needs the right to approve.",
+      "readable": true,
+      "assumed_id": "req_set_folder"
+    },
+    {
       "name": "request-own",
       "section": "Kind 1202: answers and controls",
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"own\",\"id\":\"compact\"}"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"own\",\"id\":\"compact\"}"]
       ],
       "content": "Compact",
       "note": "One of the harness's own actions, from the session item.",
@@ -1436,74 +681,22 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Subagent"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "task:thr-3"
-        ],
-        [
-          "seq",
-          "6"
-        ],
-        [
-          "fields",
-          "{\"type\":\"task\",\"body\":{\"kind\":\"subagent\",\"description\":\"Read the fixtures\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "subagent",
-          "task:thr-2"
-        ],
-        [
-          "E",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "K",
-          "1201"
-        ],
-        [
-          "P",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "e",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "k",
-          "1201"
-        ],
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Subagent"],
+        ["harness", "codex"],
+        ["item_id", "task:thr-3"],
+        ["seq", "6"],
+        ["fields", "{\"type\":\"task\",\"body\":{\"kind\":\"subagent\",\"description\":\"Read the fixtures\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["subagent", "task:thr-2"],
+        ["E", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["K", "1201"],
+        ["P", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["e", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["k", "1201"],
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"]
       ],
       "content": "Read the fixtures",
       "note": "A nested subagent's row, in A's thread: root and parent are A.",
@@ -1516,74 +709,22 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Running a command"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-31"
-        ],
-        [
-          "seq",
-          "7"
-        ],
-        [
-          "fields",
-          "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"ls fixtures\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "subagent",
-          "task:thr-3"
-        ],
-        [
-          "E",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "K",
-          "1201"
-        ],
-        [
-          "P",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "e",
-          "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "k",
-          "1201"
-        ],
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Running a command"],
+        ["harness", "codex"],
+        ["item_id", "call-31"],
+        ["seq", "7"],
+        ["fields", "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"ls fixtures\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["subagent", "task:thr-3"],
+        ["E", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["K", "1201"],
+        ["P", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["e", "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["k", "1201"],
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"]
       ],
       "content": "ls fixtures",
       "note": "B's command: root A, parent B.",
@@ -1596,64 +737,20 @@
       "author": "agent",
       "kind": 1009,
       "tags": [
-        [
-          "e",
-          "d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9"
-        ],
-        [
-          "v",
-          "2"
-        ],
-        [
-          "state",
-          "done"
-        ],
-        [
-          "title",
-          "Ran a command"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "call-31"
-        ],
-        [
-          "seq",
-          "9"
-        ],
-        [
-          "fields",
-          "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"ls fixtures\",\"exit_code\":0,\"output\":\"a.json\\n\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ],
-        [
-          "subagent",
-          "task:thr-3"
-        ],
-        [
-          "E",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "K",
-          "1201"
-        ],
-        [
-          "P",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ]
+        ["e", "d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9"],
+        ["v", "2"],
+        ["state", "done"],
+        ["title", "Ran a command"],
+        ["harness", "codex"],
+        ["item_id", "call-31"],
+        ["seq", "9"],
+        ["fields", "{\"type\":\"tool\",\"body\":{\"kind\":\"command\",\"name\":\"shell\",\"command\":\"ls fixtures\",\"exit_code\":0,\"output\":\"a.json\\n\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"],
+        ["subagent", "task:thr-3"],
+        ["E", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["K", "1201"],
+        ["P", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"]
       ],
       "content": "Ran a command: ls fixtures (exit 0)",
       "note": "An edit repeats the root tags `E`/`K`/`P` and carries no parent `e`/`k`/`p`: its one `e` is its target.",
@@ -1665,34 +762,12 @@
       "author": "agent",
       "kind": 1111,
       "tags": [
-        [
-          "E",
-          "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "K",
-          "1201"
-        ],
-        [
-          "P",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "e",
-          "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7",
-          "",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "k",
-          "1201"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["E", "d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["K", "1201"],
+        ["P", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["e", "d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7", "", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["k", "1201"],
+        ["turn", "turn-1"]
       ],
       "content": "The fixtures are a.json and b.json.",
       "note": "A subagent's words: a NIP-22 comment under its `task` item. Silent because its author is `P` and `K` is 1201. As MDK writes it: no parent `p`.",
@@ -1704,14 +779,8 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "status",
-          "error"
-        ],
-        [
-          "e",
-          "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
-        ]
+        ["status", "error"],
+        ["e", "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"]
       ],
       "content": "{\"v\": 1, \"status\": \"error\", \"text\": \"Could not deliver the file\"}",
       "note": "The shape today's MDK connectors sent before this document. Unreadable as an item: no `v`. Shown, at most, as a generic row.",
@@ -1723,42 +792,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "paused"
-        ],
-        [
-          "title",
-          "Working"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "turn-9"
-        ],
-        [
-          "seq",
-          "1"
-        ],
-        [
-          "fields",
-          "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "paused"],
+        ["title", "Working"],
+        ["harness", "codex"],
+        ["item_id", "turn-9"],
+        ["seq", "1"],
+        ["fields", "{\"type\":\"turn\",\"body\":{\"started_by\":\"user\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "",
       "note": "An unknown `state` makes the item unreadable.",
@@ -1770,42 +812,15 @@
       "author": "agent",
       "kind": 1201,
       "tags": [
-        [
-          "v",
-          "1"
-        ],
-        [
-          "state",
-          "running"
-        ],
-        [
-          "title",
-          "Browsing"
-        ],
-        [
-          "harness",
-          "codex"
-        ],
-        [
-          "item_id",
-          "web-1"
-        ],
-        [
-          "seq",
-          "4"
-        ],
-        [
-          "fields",
-          "{\"type\":\"browser\",\"body\":{\"url\":\"https://example.invalid/\"}}"
-        ],
-        [
-          "session",
-          "sess-1"
-        ],
-        [
-          "turn",
-          "turn-1"
-        ]
+        ["v", "1"],
+        ["state", "running"],
+        ["title", "Browsing"],
+        ["harness", "codex"],
+        ["item_id", "web-1"],
+        ["seq", "4"],
+        ["fields", "{\"type\":\"browser\",\"body\":{\"url\":\"https://example.invalid/\"}}"],
+        ["session", "sess-1"],
+        ["turn", "turn-1"]
       ],
       "content": "Opening a page",
       "note": "A readable item of a type this document does not define: shown by its title, content and state.",
@@ -1817,18 +832,9 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "p",
-          "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8"
-        ],
-        [
-          "details",
-          "{\"action\":\"interrupt\"}"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["p", "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8"],
+        ["details", "{\"action\":\"interrupt\"}"]
       ],
       "content": "Stop",
       "note": "Names two agents: for neither. No agent replies.",
@@ -1840,14 +846,8 @@
       "author": "person",
       "kind": 1202,
       "tags": [
-        [
-          "p",
-          "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"
-        ],
-        [
-          "details",
-          "{\"action\":\"rewind\",\"to\":\"turn-1\"}"
-        ]
+        ["p", "a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9"],
+        ["details", "{\"action\":\"rewind\",\"to\":\"turn-1\"}"]
       ],
       "content": "Rewind",
       "note": "Readable by MDK (it has an `action`), unknown to the agent: settled by a `refused` notice with reason `not_supported`.",

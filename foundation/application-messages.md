@@ -141,10 +141,11 @@ overlaid body. A history surface MAY list each version with its timestamp.
 A client receiving an edit whose target it has not yet ingested MAY hold the edit for a bounded window and apply it
 when the target arrives, or drop it. Either choice is acceptable.
 
-An edit whose target is an agent item (kind `1201`) follows
+An edit of an agent item (kind `1201`) follows
 [features/agents-in-chats.md](../features/agents-in-chats.md#versions-of-an-item-kind-1009) instead of this
 section: it carries the whole item again, the version with the highest `v` wins rather than the latest
-`created_at`, it is not shown as an edit, and a client keeps it until its target arrives rather than dropping it.
+`created_at`, and it is not shown as an edit. A client that supports that feature keeps such an edit until its target
+arrives rather than dropping it; it tells one whose target is missing by its own tags, which read as an agent item.
 Edits of every other kind are unchanged.
 
 ## Group system events (kind 1210)
