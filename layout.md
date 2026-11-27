@@ -70,6 +70,8 @@ features/
   encrypted-media.md
   encrypted-media-v1.md
   agent-text-streams-quic.md
+  agents-in-chats.md
+  agents-in-chats-examples.json
   push-notifications.md
   device-pairing.md
 ideas/
