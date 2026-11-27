@@ -15,7 +15,7 @@ The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlie
 
 ## 2026-11-27: Agents in chats: kinds 1201 and 1202, and versions of an agent item (draft)
 
-Pull request: [marmot#PRNUM](https://github.com/marmot-protocol/marmot/pull/PRNUM).
+Pull request: [marmot#524](https://github.com/marmot-protocol/marmot/pull/524).
 Adds [features/agents-in-chats.md](./features/agents-in-chats.md). Changes
 [foundation/registries.md](./foundation/registries.md) (kinds `1201` and `1202` move from reserved into the main table)
 and [foundation/application-messages.md](./foundation/application-messages.md#message-edits-kind-1009).
