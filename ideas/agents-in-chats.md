@@ -307,7 +307,7 @@ tool call sent once and edited once, that is about 35 events for a turn.
 
 ## Path into the spec
 
-The draft feature document is [features/agents-in-chats.md](../features/agents-in-chats.md). It takes kinds `1201`
+The feature document is [features/agents-in-chats.md](../features/agents-in-chats.md). It takes kinds `1201`
 and `1202`, and defines the tags, the version rules and the request shapes this section asks for.
 
 Nothing here assigns an id or defines bytes. When the direction is agreed, the rules would move into these surfaces:

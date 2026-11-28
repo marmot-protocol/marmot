@@ -1,9 +1,10 @@
 # Agents in chats v1
 
-Status: draft. It describes what [MDK](https://github.com/marmot-protocol/mdk) (at `50813773d`) and the
-[marmot-agents](https://github.com/marmot-protocol/marmot-agents) core send and read today, and moves the agent
-carrier from [the idea document](../ideas/agents-in-chats.md) into the specification. Passages marked
-**[Inferred]** were concluded rather than read in either implementation, and need checking before adoption.
+Status: adopted. It was written from what [MDK](https://github.com/marmot-protocol/mdk) (at `5c90c1e61`) and the
+[marmot-agents](https://github.com/marmot-protocol/marmot-agents) core send and read, and moves the agent carrier
+from [the idea document](../ideas/agents-in-chats.md) into the specification. The
+[subagent threads](#extension-items-in-subagent-threads) section stays non-normative until the specification defines
+threads.
 
 An agent is a program that takes requests in a chat and acts on them. It joins a group as an ordinary member, with
 an account of its own. This feature defines how its work reaches the chat and how people answer and steer it:
@@ -93,9 +94,8 @@ These apply to every tag this document defines on kinds `1201`, `1202`, `1009` (
 - **A counter** (`v`, `seq`) is a positive integer from `1` to `9223372036854775807`, written in plain decimal: no
   sign, no leading zero, no spaces. Any other spelling is invalid, so one number has one spelling.
 - **JSON in a tag** (`fields`, `details`, `native`) is one UTF-8 JSON value encoded as the tag's string. A JSON
-  object in it MUST NOT repeat a member name; a reader that finds one MAY treat the value as invalid **[Inferred:
-  MDK's reader does not check this for `fields`; the core's reader of requests refuses a repeated member]**. Member
-  order and whitespace carry no meaning, except inside `native`.
+  object in it MUST NOT repeat a member name; a reader that finds one MAY treat the value as invalid. Member order
+  and whitespace carry no meaning, except inside `native`.
 - **Text** is UTF-8 and is compared byte for byte. No normalisation applies.
 - **Unknown tags** are kept. A client stores and passes on every tag of an event it accepts, including those it does
   not read, and a later version replaces them only as [Versions](#versions-of-an-item-kind-1009) says.
@@ -380,9 +380,8 @@ lists name only members of this chat; the agent edits the item when the chat's m
   `session` tag, and edits it as settings change, as the title changes, and when the session ends. It takes the place
   of the earlier one.
 - **The current session item** of an agent in a chat is the readable `session` item from that agent whose first
-  event is the latest in the chat's order **[Inferred: the reference agent treats its newest session item as current,
-  and the joining item as current until a session starts; no rule is written down for apps]**. A `set`, `own` or
-  `new_session` request MAY name it.
+  event is the latest in the chat's order. Until a session starts, that is the item sent on joining. A `set`, `own`
+  or `new_session` request MAY name it.
 - **An agent is a member that has sent a session item.** A client MAY mark such a member as an agent and offer its
   commands. The mark proves nothing: any member can send one ([Security](#security-and-privacy-considerations)).
   The reference agent never takes another agent's messages as prompts unless its owner listed that agent.
@@ -411,13 +410,12 @@ edit of an item (a kind `1009` whose tags are not a readable item) changes nothi
 
 ### The current version
 
-The **current version** of an item is its accepted version with the highest `v`; the first event is a version too,
-at `v` 0 when it is unreadable. Two accepted versions with the same `v` are ordered by their `created_at`, then by
-their event id, and the greater wins **[Inferred: this is MDK's order; the agent never sends two versions with one
-`v`]**. The order the versions arrive in, and their `created_at`, do not otherwise matter: `created_at` counts whole
-seconds, and an item often changes twice in one. An older version that arrives late changes nothing the item shows,
-but it is still accepted, so its `settles` tags still settle the requests they name
-([Settling a request](#settling-a-request)).
+The **current version** of an item is its accepted version with the highest `v`; the first event is a version too, at
+`v` 0 when it is unreadable. Two accepted versions with the same `v` are ordered by their `created_at`, then by their
+event id, and the greater wins. An agent never sends two versions with one `v`. The order the versions arrive in, and
+their `created_at`, do not otherwise matter: `created_at` counts whole seconds, and an item often changes twice in one.
+An older version that arrives late changes nothing the item shows, but it is still accepted, so its `settles` tags still
+settle the requests they name ([Settling a request](#settling-a-request)).
 
 The current version's `content` and tags replace the item's. A client:
 
@@ -466,13 +464,12 @@ its first event. Since every version carries the whole item, a client SHOULD sho
 
 An item has one row, at its first event's place in the chat. A kind `1202` request has no row.
 
-Within one second of `created_at`, clients SHOULD order items by their first event's `seq`, then by event id.
-Rows without a `seq`, such as chat messages, order before items in the same second **[Inferred: this is what MDK's
-order gives (rows without `seq` count as 0); it is not a stated rule, and it can put an agent's words before the
-items of the same second that came first]**.
+Where the chat's order would place rows by `created_at`, clients SHOULD order items of the same second by their
+first event's `seq`, then by event id. Rows without a `seq`, such as chat messages, count as `seq` 0, so they order
+before items of the same second; an agent's words can then show before items of that second that came first.
 
-A client without a thread view SHOULD show, above a `turn` item, the chat message its `started_by` names, as it shows a
-reply's target **[Inferred from what MDK quotes above an agent item]**.
+A client without a thread view SHOULD show, above an item with a `started_by` tag, the chat message it names, as it
+shows a reply's target.
 
 ## The agent's words
 
@@ -490,9 +487,8 @@ as a remark carry no `phase` tag. When the words change after they were sent, th
 is edited: the ordinary rules apply, unchanged. A subagent's words are a kind `1111` comment instead
 ([Extension](#extension-items-in-subagent-threads)).
 
-The ordinary chat-message tag limits still bind the agent's words. An agent puts as many `settles` on its words as
-those limits allow and settles the rest with its turn's next version **[Inferred: MDK caps a chat message at 64 tags
-and 16 KiB of tag text, which the specification does not state]**.
+An agent whose implementation limits the tags it may put on a chat message puts as many `settles` on its words as
+fit, and settles the rest with its turn's next version. A reader accepts any number of `settles`.
 
 ## Kind 1202: answers and controls
 
@@ -593,7 +589,7 @@ These are the agent's rules; a client cannot check them, and states them so that
   request acts on the agent's [current session item](#the-session-item) whatever its state: the item sent on joining
   is `done`, and a setting such as the folder may be chosen before any session has started.
 - **A request that names no item is dropped, unsettled, when it is more than five minutes old** when the agent reads
-  it **[Inferred: measured from the event's `created_at`, as MDK records it]**.
+  it, measured from the event's `created_at`.
 - **Each request acts at most once**, however often it is delivered.
 - **A request from another agent** (a member that has sent a session item) is refused as `not_allowed` unless the
   owner listed that agent.
@@ -616,8 +612,7 @@ contract needs, so that the two documents do not each define an alert policy.
   own comment in a thread whose root is one of its items ([Extension](#extension-items-in-subagent-threads)).
 - **The agent's other words**, kind `9` without `phase`, are ordinary chat messages.
 - **Who is needed**: for an approval, the members who hold the right to approve in the current session item's
-  `rights`; for a question, those who hold the right to prompt **[Inferred: no rule says this yet; it is what #412's
-  "intended responder" would need]**.
+  `rights`; for a question, those who hold the right to prompt.
 
 Until the attention contract is adopted, a client SHOULD alert for a version that needs a person and for nothing else
 of kinds `1201` and `1202`, keyed by the item's first event so that a later version replaces an earlier alert, and
@@ -706,8 +701,9 @@ subagent's item then shows under the top-level subagent until its first event ar
 
 ### The subagent's words, and people in the thread
 
-- A subagent's words are a kind `1111` NIP-22 comment with the root tags and the parent's `e` and `k`, and the `turn`
-  tag. **[Inferred: the reference agent's words in a thread carry no parent `p`, as MDK writes comments.]**
+- A subagent's words are a kind `1111` NIP-22 comment with the root tags and the parent's `e` and `k`, the `turn`
+  tag, and `phase` and `settles` as for the agent's words. They carry no `p` for the parent's author, since a `p` on
+  a message is a mention.
 - **The agent's own words in its threads never alert, wake anyone or count as unread.** A client decides this from
   the comment alone: it is a kind `1111` whose `E` names a root, whose `K` is `1201`, and whose `P` is the comment's
   own authenticated author. Items in the thread keep their own rule: a subagent's waiting approval needs a person.
@@ -730,9 +726,9 @@ Agent events are app payloads like any other: [convergence](../protocol-core/con
 [durability](../protocol-core/durability.md) and [message retention](../app-components/message-retention-v1.md)
 govern them.
 
-- **Convergence.** If convergence withdraws an item's first event or a version, a client recomputes the item's current
-  version from what remains, as if the withdrawn event had never arrived **[Inferred: no source says this for items;
-  it follows from those documents]**. A withdrawn request is no longer pending.
+- **Convergence.** If convergence withdraws a version, a client recomputes the item's current version from what
+  remains. If it withdraws an item's first event, the client shows that event as it shows any withdrawn message, and
+  the item's versions no longer apply. A withdrawn request is no longer pending.
 - **Retention.** An item's first event and its versions expire under the group's retention, each by its own time. A
   client that has removed an item's first event under retention does not show the item again from a later version.
   An agent that can no longer edit an expired item sends its next version as a new item.
