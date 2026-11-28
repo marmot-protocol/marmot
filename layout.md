@@ -78,6 +78,7 @@ ideas/
   README.md
   account-sync.md
   agents-in-chats.md
+  accumulation-relays.md
   multi-device.md
 implementation-model.md
 ```
