@@ -411,12 +411,13 @@ edit of an item (a kind `1009` whose tags are not a readable item) changes nothi
 
 ### The current version
 
-The **current version** of an item is its accepted version with the highest `v`; the first event is a version too. Two
-accepted versions with the same `v` are ordered by their `created_at`, then by their event id, and the greater wins
-**[Inferred: this is MDK's order; the agent never sends two versions with one `v`]**. The order the versions arrive
-in, and their `created_at`, do not otherwise matter: `created_at` counts whole seconds, and an item often changes
-twice in one. An older version that arrives late changes nothing the item shows, but it is still accepted, so its
-`settles` tags still settle the requests they name ([Settling a request](#settling-a-request)).
+The **current version** of an item is its accepted version with the highest `v`; the first event is a version too,
+at `v` 0 when it is unreadable. Two accepted versions with the same `v` are ordered by their `created_at`, then by
+their event id, and the greater wins **[Inferred: this is MDK's order; the agent never sends two versions with one
+`v`]**. The order the versions arrive in, and their `created_at`, do not otherwise matter: `created_at` counts whole
+seconds, and an item often changes twice in one. An older version that arrives late changes nothing the item shows,
+but it is still accepted, so its `settles` tags still settle the requests they name
+([Settling a request](#settling-a-request)).
 
 The current version's `content` and tags replace the item's. A client:
 
