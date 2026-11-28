@@ -13,6 +13,23 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-28: Agents in chats is adopted
+
+Pull request: [marmot#525](https://github.com/marmot-protocol/marmot/pull/525).
+Changes [features/agents-in-chats.md](./features/agents-in-chats.md), which is now adopted. Every passage the draft
+marked as inferred was checked against MDK and the marmot-agents core, and now reads as a plain rule.
+
+Do:
+
+- If convergence withdraws an item's first event, show it as any withdrawn message, and apply none of its versions.
+  A withdrawn version still leaves the current version recomputed from what remains.
+- Without a thread view, show the chat message that `started_by` names above any item that carries it, not only above
+  a `turn` item.
+- Accept any number of `settles` tags on the agent's words. An agent that limits a chat message's tags settles what
+  does not fit with its turn's next version.
+
+The subagent-thread section stays non-normative until the specification defines threads.
+
 ## 2026-11-27: Agents in chats: kinds 1201 and 1202, and versions of an agent item (draft)
 
 Pull request: [marmot#524](https://github.com/marmot-protocol/marmot/pull/524).
