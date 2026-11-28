@@ -491,7 +491,7 @@ is edited: the ordinary rules apply, unchanged. A subagent's words are a kind `1
 
 The ordinary chat-message tag limits still bind the agent's words. An agent puts as many `settles` on its words as
 those limits allow and settles the rest with its turn's next version **[Inferred: MDK caps a chat message at 64 tags
-and 16 KiB of tag text, which the specification does not state; see notes]**.
+and 16 KiB of tag text, which the specification does not state]**.
 
 ## Kind 1202: answers and controls
 
