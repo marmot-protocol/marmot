@@ -1,6 +1,6 @@
 # Agents in chats v1
 
-Status: draft. It describes what [MDK](https://github.com/marmot-protocol/mdk) (at `bea7b400b`) and the
+Status: draft. It describes what [MDK](https://github.com/marmot-protocol/mdk) (at `50813773d`) and the
 [marmot-agents](https://github.com/marmot-protocol/marmot-agents) core send and read today, and moves the agent
 carrier from [the idea document](../ideas/agents-in-chats.md) into the specification. Passages marked
 **[Inferred]** were concluded rather than read in either implementation, and need checking before adoption.
@@ -444,15 +444,18 @@ its first event. Since every version carries the whole item, a client SHOULD sho
 
 - The item's row is identified by the target's event id, as named by the versions' `e` tag.
 - Without the first event, nothing shows who the item's author is, and any member can send a readable edit that
-  names the target. So a client MUST keep the versions of each authenticated author apart: one author's versions never
-  change, replace or hide what another's show. A client SHOULD show only one author's versions, and SHOULD prefer an
-  author it already knows as an agent in the chat (one that has sent a session item there); it MAY show each author's
-  versions as a row of its own.
-- An author's row is built from the **earliest** of that author's readable edits naming the target, that the author
-  has not deleted, in the order the client received them, then by event id. Only that author's versions count (rule 3
-  above).
+  names the target. So a client MUST NOT let one author's versions change or replace another's: a row is built from
+  one author's versions alone.
+- A client SHOULD show one row, built from the **first** readable edit naming the target that its author has not
+  deleted, in the order this client received them (not by `created_at`, which the sender chooses), then by event id.
+  That edit's author is taken as the item's author, and only their versions count (rule 3 above). A client MAY
+  instead show each author's versions as a row of its own, built the same way.
 - It sits at that version's place in the timeline, and shows that author's current version, chosen as above.
-- A client SHOULD say that the item started before the viewer could see it.
+- A client SHOULD say that the item started before the viewer could see it, and MAY show the row's author, so the
+  reader can tell who sent it.
+- As a result, a forged edit that this client receives before the agent's next version takes the row, until the
+  first event arrives. Only a member already in the chat can send one, it reaches only members who joined after the
+  item began, and it cannot make the agent act, since the agent checks every request itself.
 - If the first event arrives later, as from another device's history, it takes the row's place, and only its author's
   versions apply to it, as usual; any other author's versions are dropped.
 - Once the client has removed the item under the group's retention, a version of it that arrives later does not bring
@@ -760,9 +763,13 @@ govern them.
 - **Approvals cannot be typed.** "Yes" in the chat is a prompt, never an approval. An agent whose harness accepts typed
   commands that approve or widen what it may do treats those messages as needing the right to approve.
 - **A member who joined late cannot tell an item's author** from its versions alone, since they never hold its first
-  event. Any member can send a readable edit naming an item, so a client keeps each author's versions apart
-  ([A member who joined after the item began](#a-member-who-joined-after-the-item-began)); otherwise one member could
-  hide a real approval or question from late joiners, or show a false one in its place.
+  event. Any member can send a readable edit naming an item. A client builds the row from one author's versions alone,
+  from the first edit it received rather than the earliest `created_at`, so backdating an edit gains nothing
+  ([A member who joined after the item began](#a-member-who-joined-after-the-item-began)). A forged edit that a late
+  joiner receives before the agent's next version still takes the row on that device until the first event arrives:
+  it can hide a real approval or question from that member, or show a false one in its place, but cannot make the
+  agent act. This is accepted, since it needs a hostile member already in the chat; a client MAY show the row's
+  author.
 - **Requests are not authenticated beyond MLS.** A request is as authentic as its author's group membership. An agent
   ignores requests named for another agent, and acts on each request once.
 

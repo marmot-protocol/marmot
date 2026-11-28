@@ -28,7 +28,7 @@
       "other_agent": "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8",
       "req_set_folder": "e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8"
   },
-  "checked_against": "Each example's `readable` flag was checked against MDK's readers at bea7b400b and the marmot-agents core's event types, and every example is under 65,536 bytes as an encoded inner event.",
+  "checked_against": "Each example's `readable` flag was checked against MDK's readers at 50813773d and the marmot-agents core's event types, and every example is under 65,536 bytes as an encoded inner event.",
   "examples": [
     {
       "name": "turn-started",
