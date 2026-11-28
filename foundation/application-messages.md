@@ -88,6 +88,9 @@ or decline to render unsupported application semantics after delivering the acce
 The optional [group content moderation](../features/content-moderation.md) feature defines reports (kind `1984`),
 admin dismissal labels (kind `1985`), and admin deletion (kind `4891`).
 
+The optional [agents in chats](../features/agents-in-chats.md) feature defines agent items (kind `1201`) and agent
+requests (kind `1202`), and three tags on kind `9`: `turn`, `phase` and `settles`.
+
 Polls use the standard [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) app-event shapes: kind `1068`
 for a poll and kind `1018` for a response. Both are ordinary Marmot app events inside MLS and remain subject to the
 encoding and receiver-authentication rules above. Their inner `relay` tags, when present, never affect delivery;
@@ -137,6 +140,13 @@ overlaid body. A history surface MAY list each version with its timestamp.
 
 A client receiving an edit whose target it has not yet ingested MAY hold the edit for a bounded window and apply it
 when the target arrives, or drop it. Either choice is acceptable.
+
+An edit of an agent item (kind `1201`) follows
+[features/agents-in-chats.md](../features/agents-in-chats.md#versions-of-an-item-kind-1009) instead of this
+section: it carries the whole item again, the version with the highest `v` wins rather than the latest
+`created_at`, and it is not shown as an edit. A client that supports that feature keeps such an edit until its target
+arrives rather than dropping it; it tells one whose target is missing by its own tags, which read as an agent item.
+Edits of every other kind are unchanged.
 
 ## Group system events (kind 1210)
 

@@ -13,6 +13,19 @@ still needs an explicit versioning hook, as [layout.md](./layout.md#features) re
 The log starts at the 2026-07-05 baseline, the oldest commit on `master`. Earlier MIP-era changes are mapped in
 [mip-coverage.md](./mip-coverage.md).
 
+## 2026-11-27: Agents in chats: kinds 1201 and 1202, and versions of an agent item (draft)
+
+Pull request: [marmot#524](https://github.com/marmot-protocol/marmot/pull/524).
+Adds [features/agents-in-chats.md](./features/agents-in-chats.md). Changes
+[foundation/registries.md](./foundation/registries.md) (kinds `1201` and `1202` move from reserved into the main table)
+and [foundation/application-messages.md](./foundation/application-messages.md#message-edits-kind-1009).
+
+Kinds `1201` and `1202` were reserved with no defined meaning. They now carry an agent's items and the answers and
+controls people send it. A kind `1009` edit whose target is a kind `1201` item carries the whole item, the highest `v`
+wins, and it is kept until its target arrives; edits of every other kind are unchanged. Kind `9` gains three optional
+tags, `turn`, `phase` and `settles`. A client that does not support the feature shows each item's `content` and needs
+no change; one that does follows the feature document.
+
 ## 2026-11-25: A device's tag signature key is bound when it is added
 
 Pull request: [marmot#521](https://github.com/marmot-protocol/marmot/pull/521).

@@ -135,6 +135,8 @@ defined in [../transports/nostr.md](../transports/nostr.md).
 | `1018`  | Poll response (NIP-88)              | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1068`  | Poll (NIP-88)                       | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1200`  | Agent text stream start (retired)   | Marmot app payload                  | [agent-text-streams-quic.md](../features/agent-text-streams-quic.md) |
+| `1201`  | Agent item                          | Marmot app payload                  | [agents-in-chats.md](../features/agents-in-chats.md#kind-1201-an-agent-item) |
+| `1202`  | Agent answer or control             | Marmot app payload                  | [agents-in-chats.md](../features/agents-in-chats.md#kind-1202-answers-and-controls) |
 | `1210`  | Group system event                  | Marmot app payload                  | [application-messages.md](application-messages.md)      |
 | `1984`  | Content report (NIP-56)             | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#reports-kind-1984) |
 | `1985`  | Report dismissal labels (NIP-32)    | Marmot app payload                  | [content-moderation.md](../features/content-moderation.md#dismissal-labels-kind-1985) |
@@ -147,10 +149,7 @@ Kind `1200` was the stream start of the retired agent text stream feature. Clien
 display one they receive ([Retirement](../app-components/agent-text-stream-quic-v1.md#retirement)). It remains
 registered so the value is never reassigned.
 
-Kinds `1201` and `1202` are reserved for possible experimental agent activity and operation events. Marmot currently
-defines no payload schema or conformance behavior for them; application experiments use them under the ordinary
-unknown-app-event rules. Future adoption MUST add their exact semantics to the main table before relying on them for
-interoperability. Future durable abort, media-final, or fallback preview app-event kinds likewise MUST be added before
+Future durable abort, media-final, or fallback preview app-event kinds MUST be added to the main table before
 use.
 
 Kind `450` is the local signing event for the adopted account identity proof v2. Its exact event shape is defined by its

@@ -22,6 +22,9 @@ they used to be described in a MIP. The old-to-new MIP map lives in [../mip-cove
 - [encrypted-media-v1.md](./encrypted-media-v1.md) - frozen legacy encrypted-media v1 wire behavior.
 - [agent-text-streams-quic.md](./agent-text-streams-quic.md) - retired QUIC-backed live previews for agent text. Its
   component stays supported for existing groups.
+- [agents-in-chats.md](./agents-in-chats.md) - draft agent items (kind `1201`), answers and controls (kind `1202`),
+  and their versions, for agent programs that take part in a chat. Its examples are in
+  [agents-in-chats-examples.json](./agents-in-chats-examples.json).
 - [push-notifications.md](./push-notifications.md) - optional native push notification flow.
 - [device-pairing.md](./device-pairing.md) - draft code comparison that authenticates a new device to one of the
   account's existing devices.

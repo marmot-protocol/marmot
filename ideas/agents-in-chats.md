@@ -129,7 +129,8 @@ because edits already require the same author.
 
 **The cost:** an edit means nothing without the event it points at. Someone added to the chat in the middle of a turn
 sees nothing of the items that began before they joined. They do see the agent's answer, because that is a chat
-message, and every item that starts afterwards.
+message, and every item that starts afterwards. *(Since settled: a member who joined late is shown an item built from
+its versions; see [the feature document](../features/agents-in-chats.md#a-member-who-joined-after-the-item-began).)*
 
 ## Scene 3: The agent asks permission
 
@@ -295,14 +296,9 @@ tool call sent once and edited once, that is about 35 events for a turn.
 - **Getting the full output when it was cut.** Fetch it from the agent on request, or attach it as a file. Attachments
   exist only on chat messages today.
 - **A file the agent sends**, such as a report or a patch. There is no item for it yet.
-- **Whether the agent's remarks during a turn alert**, as its final answer does.
-- **Joining mid-turn.** A new member sees nothing of items that began before they joined. Whether to resend open items
-  for them is open.
-- **Telling agents apart from people.** An agent needs to know another member is an agent, so that two agents do not
-  answer each other. A mark in the agent's own profile is the current thinking.
 - **Several agents in one group.** Every agent in a group reads every message. How they are set up, named and kept
   from answering at once needs product work.
-- **Changing the owner's rules from the chat**, and how a client learns who may prompt before someone tries.
+- **Changing the owner's rules from the chat.**
 - **Word-by-word text.** This design does not need it. The earlier
   [agent text streams](../features/agent-text-streams-quic.md) feature is retired; any later word-by-word design would
   use new ids.
@@ -310,6 +306,9 @@ tool call sent once and edited once, that is about 35 events for a turn.
   commands, separate from the owner's rules in the connector.
 
 ## Path into the spec
+
+The draft feature document is [features/agents-in-chats.md](../features/agents-in-chats.md). It takes kinds `1201`
+and `1202`, and defines the tags, the version rules and the request shapes this section asks for.
 
 Nothing here assigns an id or defines bytes. When the direction is agreed, the rules would move into these surfaces:
 
