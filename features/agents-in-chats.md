@@ -403,7 +403,7 @@ A client accepts a kind `1009` event *E* as a version of the item whose first ev
 2. *E*'s tags without that `e` tag read as a [readable item](#when-an-item-is-readable), with no further `e` tag.
 3. The account authenticated as *E*'s author is the account authenticated as *F*'s author, in the same group. Any
    device of that account may send it, as for any edit.
-4. *E*'s `v` is greater than *F*'s `v`.
+4. *E*'s `v` is greater than *F*'s `v`, counted as `0` when *F* is unreadable.
 5. *E*'s author has not deleted *E*.
 
 A kind `1009` that names a kind `1201` and fails any of these MUST NOT change the item. In particular an ordinary text
@@ -584,6 +584,10 @@ These are the agent's rules; a client cannot check them, and states them so that
 - **An answer counts only if it names the exact item**, the item is `waiting`, and nobody's answer reached it first.
   Ordinary text is never an answer to an approval. An answer never reaches the model as a prompt.
 - **An answer names choices and options by the ids the item offered.**
+- **A waiting approval keeps what an answer agrees to.** A later version of an approval that is still `waiting` MUST
+  keep its `subject` and its choices' ids and effects; a different action is a new approval item. An answer names only
+  the item and a choice id, so this keeps an answer to the action the person saw. A label may still be shortened to fit
+  the size limit.
 - **A request that names an item acts only while that item is live**, except that a `set`, `own` or `new_session`
   request acts on the agent's [current session item](#the-session-item) whatever its state: the item sent on joining
   is `done`, and a setting such as the folder may be chosen before any session has started.
@@ -646,7 +650,7 @@ take it, and the transport's rules for an event too large for a relay apply.
 | A readable item of a known type | Shows it by type, from its current version | Shows it as an unknown kind: at most one generic row from the first event's `content`, which never updates |
 | A readable item of an unknown type | One generic row: `title`, `content`, `state`; updates with its versions | The same as above |
 | A readable item whose body does not match its type, or holds unknown values | One generic row, as for an unknown type. Unknown members of a body are ignored | The same as above |
-| An unreadable item (missing or invalid required tag, an unknown `state`, the old shape) | As an unknown kind; its versions change nothing | The same |
+| An unreadable item (missing or invalid required tag, an unknown `state`, the old shape) | As an unknown kind, until its author sends a version that is [accepted](#accepting-a-version); that version then shows as any other | As an unknown kind |
 | A kind `1009` naming an item, whose tags are not a readable item | Ignored | Applied, at most, as an ordinary text edit |
 | A request (kind `1202`) | No row; settles from the agent's reply | As an unknown kind; SHOULD NOT show it as chat |
 | A `refused` reason, a `cut` kind, or a tag this document does not name | Accepted; the notice's `content` is shown | Not applicable |
